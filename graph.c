@@ -50,6 +50,7 @@ create_new_node(graph_t *graph, char *node_name){
     node_t * node = calloc(1, sizeof(node_t));
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';
+    node->node_type = NON_PSEUDONODE;
     add_node_to_owning_graph(graph, node);
     return node;    
 }
@@ -128,6 +129,33 @@ insert_edge_between_2_nodes(edge_t *edge,
 void
 set_graph_root(graph_t *graph, node_t *root){
     graph->graph_root = root;
+}
+
+void
+mark_node_pseudonode(node_t *node){
+
+    unsigned int i = 0;
+    edge_end_t *edge_end = NULL;
+    edge_t *edge = NULL;
+
+    node->node_type = PSEUDONODE;
+    for(; i < MAX_NODE_INTF_SLOTS; i++){
+        if(!node->edges[i]) break;
+        
+        edge_end = node->edges[i];
+
+        /*Reset Values*/
+        memset(edge_end->intf_name, 0, IF_NAME_SIZE);
+        strncpy(edge_end->intf_name, "NIL", IF_NAME_SIZE);
+        edge_end->intf_name[IF_NAME_SIZE -1] = '\0';
+        memset(edge_end->prefix, 0, PREFIX_LEN_WITH_MASK + 1);
+        strncpy(edge_end->prefix, "NIL", PREFIX_LEN_WITH_MASK);
+        edge_end->prefix[PREFIX_LEN_WITH_MASK] = '\0';
+
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);         
+        if(get_edge_direction(node, edge) == OUTGOING)
+            edge->metric = 0;
+    }
 }
 
 graph_t *

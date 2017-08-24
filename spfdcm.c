@@ -122,7 +122,8 @@ dump_nbrs(node_t *node){
 
     node_t *nbr_node = NULL;
     edge_t *edge = NULL;
-    printf("printing nbrs of node %s\n", node->node_name);
+    printf("printing nbrs of node %s(%s)\n", node->node_name,
+                (node->node_type == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
 
     ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge){
         printf("    nbr : %s\n", nbr_node->node_name);
@@ -147,15 +148,17 @@ dump_node_info(node_t *node){
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
 
-    printf("    node->node_name : %s\n", node->node_name);
-    printf("SLots :\n");
+    printf("node->node_name : %s, PN STATUS = %s\n", node->node_name, 
+            (node->node_type == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
+
+    printf("Slots :\n");
 
     for(; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
         if(!edge_end)
             break;
 
-        printf("slot%u : %s, %s, %s, local edge-end connected node : %s\n", i, edge_end->intf_name, edge_end->prefix,
+        printf("    slot%u : %s, %s, %s, local edge-end connected node : %s\n", i, edge_end->intf_name, edge_end->prefix,
                 (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
 
     }

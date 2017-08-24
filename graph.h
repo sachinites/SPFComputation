@@ -35,14 +35,15 @@
 
 #include "graphconst.h"
 #include "LinkedListApi.h"
-
+#include <stdlib.h>
+#include <assert.h>
 
 typedef struct edge_end_ edge_end_t;
 
 typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
-    
+    NODE_TYPE node_type;    
     /*SPF Computation members*/
     unsigned int spf_metric;
     struct _node_t *next_hop[MAX_NXT_HOPS]; 
@@ -97,7 +98,8 @@ dump_node_info(node_t *node);
 void 
 dump_edge_info(edge_t *edge);
 
-
+void
+mark_node_pseudonode(node_t *node);
 /* Macros */
 
 /*Iterate over nbrs of a given node*/
@@ -107,6 +109,33 @@ dump_edge_info(edge_t *edge);
 
 #define GET_EGDE_PTR_FROM_TO_EDGE_END(edge_end_ptr)     \
     (edge_t *)((char *)edge_end_ptr - (unsigned int)&(((edge_t *)0)->to))
+
+static inline edge_t *
+GET_EGDE_PTR_FROM_EDGE_END(edge_end_t *edge_end){
+    
+    edge_t *edge = NULL;
+    if(edge_end->dirn == OUTGOING)
+        edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(edge_end);
+    else if(edge_end->dirn == INCOMING)
+        edge = GET_EGDE_PTR_FROM_TO_EDGE_END(edge_end);
+    else
+        assert(0);
+
+    return edge;
+}
+
+/* The function test whether the given edge
+ * is outgoing edge or incoming edge wrt to a goven node*/
+static inline EDGE_END_DIRN
+get_edge_direction(node_t *node, edge_t *edge){
+
+    if(edge->from.node == node && edge->from.dirn == OUTGOING)
+        return OUTGOING;
+    else if(edge->to.node == node && edge->to.dirn == INCOMING)
+        return INCOMING;
+
+    return EDGE_END_DIRN_UNKNOWN;
+}
 
 
 #define ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge)            \

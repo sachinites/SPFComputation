@@ -53,5 +53,8 @@ typedef enum{
     EDGE_END_DIRN_UNKNOWN
 } EDGE_END_DIRN;
 
-
+typedef enum{
+    NON_PSEUDONODE,
+    PSEUDONODE
+} NODE_TYPE;
 #endif /* __GRAPHCONST__ */
