@@ -34,6 +34,8 @@
 #define __GRAPH__
 
 #include "graphconst.h"
+#include "LinkedListApi.h"
+
 
 typedef struct edge_end_ edge_end_t;
 
@@ -41,7 +43,7 @@ typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
     
-    /*SPF Computtaion Data*/
+    /*SPF Computation members*/
     unsigned int spf_metric;
     struct _node_t *next_hop[MAX_NXT_HOPS]; 
 } node_t;
@@ -50,6 +52,7 @@ struct edge_end_{
     node_t *node;
     char intf_name[IF_NAME_SIZE];
     char prefix[PREFIX_LEN_WITH_MASK + 1];
+    EDGE_END_DIRN dirn;
 };
 
 typedef struct _edge_t{
@@ -60,10 +63,11 @@ typedef struct _edge_t{
 
 typedef struct graph_{
     node_t *graph_root;
+    ll_t *graph_node_list;
 } graph_t;
 
 node_t *
-create_new_node(char *node_name);
+create_new_node(graph_t *graph, char *node_name);
 
 
 edge_t *
@@ -76,10 +80,7 @@ create_new_edge(char *from_ifname,
 void
 insert_edge_between_2_nodes(edge_t *edge, 
                             node_t *from_node, 
-                            node_t *to_node);
-
-void 
-insert_interface_into_node(node_t *node, edge_end_t *edge_end);
+                            node_t *to_node, DIRECTION dirn);
 
 void
 set_graph_root(graph_t *graph, node_t *root);
@@ -87,11 +88,42 @@ set_graph_root(graph_t *graph, node_t *root);
 graph_t *
 get_new_graph();
 
-graph_t *
-get_graph();
+void
+dump_nbrs(node_t *node);
 
 void
-dump_graph();
+dump_node_info(node_t *node);
 
+void 
+dump_edge_info(edge_t *edge);
+
+
+/* Macros */
+
+/*Iterate over nbrs of a given node*/
+
+#define GET_EGDE_PTR_FROM_FROM_EDGE_END(edge_end_ptr)   \
+    (edge_t *)((char *)edge_end_ptr - (unsigned int)&(((edge_t *)0)->from))
+
+#define GET_EGDE_PTR_FROM_TO_EDGE_END(edge_end_ptr)     \
+    (edge_t *)((char *)edge_end_ptr - (unsigned int)&(((edge_t *)0)->to))
+
+
+#define ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge)            \
+    nbr_node = NULL;                                             \
+    edge = NULL;                                                 \
+    do{                                                          \
+        unsigned int i = 0;                                      \
+        edge_end_t *edge_end = 0;                                \
+        for(;i < MAX_NODE_INTF_SLOTS; i++){                      \
+            edge_end = node->edges[i];                           \
+            if(!edge_end) break;                                 \
+            if(edge_end->dirn != OUTGOING)                       \
+                continue;                                        \
+            edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(edge_end);    \
+            nbr_node = edge->to.node;
+             
+#define ITERATE_NODE_NBRS_END   }}while(0)      
+   
 #endif /* __GRAPH__ */
 

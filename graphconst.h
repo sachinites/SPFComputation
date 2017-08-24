@@ -35,10 +35,23 @@
 
 #define IF_NAME_SIZE            16
 #define NODE_NAME_SIZE          16
-#define MAX_NODE_INTF_SLOTS     5
+#define MAX_NODE_INTF_SLOTS     10
 #define PREFIX_LEN              15
 #define PREFIX_LEN_WITH_MASK    (PREFIX_LEN + 3)
 #define MAX_NXT_HOPS            1
+
+/*Edge properties*/
+typedef enum{
+    UNIDIRECTIONAL,
+    BIDIRECTIONAL,
+    DIRECTION_UNKNOWN
+} DIRECTION;
+
+typedef enum{
+    OUTGOING,
+    INCOMING,
+    EDGE_END_DIRN_UNKNOWN
+} EDGE_END_DIRN;
 
 
 #endif /* __GRAPHCONST__ */

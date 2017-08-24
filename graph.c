@@ -37,13 +37,20 @@
 #include <malloc.h>
 #include <string.h>
 
+static void
+add_node_to_owning_graph(graph_t *graph, node_t *node){
+    singly_ll_add_node_by_val(graph->graph_node_list, (void *)node);
+}
+
+
 node_t *
-create_new_node(char *node_name){
+create_new_node(graph_t *graph, char *node_name){
     
     assert(node_name);
     node_t * node = calloc(1, sizeof(node_t));
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';
+    add_node_to_owning_graph(graph, node);
     return node;    
 }
 
@@ -73,10 +80,13 @@ create_new_edge(char *from_ifname,
     strncpy(edge->to.prefix, to_prefix, PREFIX_LEN_WITH_MASK + 1);
     edge->to.prefix[PREFIX_LEN_WITH_MASK] = '\0';
 
+    edge->from.dirn = EDGE_END_DIRN_UNKNOWN;
+    edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;
+
     return edge;
 }
 
-void
+static void
 insert_interface_into_node(node_t *node, edge_end_t *edge_end){
     
     unsigned int i = 0;
@@ -85,7 +95,7 @@ insert_interface_into_node(node_t *node, edge_end_t *edge_end){
             continue;
 
         if(i == MAX_NODE_INTF_SLOTS){
-            printf("Error : No slots available in node %s\n", node->node_name);
+            printf("%s() : Error : No slots available in node %s\n", __FUNCTION__, node->node_name);
             return;
         }
 
@@ -98,10 +108,21 @@ insert_interface_into_node(node_t *node, edge_end_t *edge_end){
 void
 insert_edge_between_2_nodes(edge_t *edge,
                             node_t *from_node,
-                            node_t *to_node){
+                            node_t *to_node, DIRECTION dirn){
 
     insert_interface_into_node(from_node, &edge->from);
+    edge->from.dirn = OUTGOING;
     insert_interface_into_node(to_node, &edge->to);
+    edge->to.dirn = INCOMING;
+
+    if(dirn == BIDIRECTIONAL){
+        
+        edge_t *edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric,
+                                        edge->to.prefix, edge->from.prefix);
+
+        insert_edge_between_2_nodes(edge2, to_node, from_node, UNIDIRECTIONAL);
+
+    }
 }
 
 void
@@ -113,6 +134,7 @@ graph_t *
 get_new_graph(){
 
     graph_t *graph = calloc(1, sizeof(graph_t));
+    graph->graph_node_list = init_singly_ll();
     return graph;
 }
 
