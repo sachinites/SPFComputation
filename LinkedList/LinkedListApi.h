@@ -37,4 +37,9 @@ int singly_ll_delete_node(ll_t *ll, singly_ll_node_t *node);
 unsigned int singly_ll_delete_node_by_value(ll_t *ll, void *data, int size);
 singly_ll_node_t *singly_ll_get_node_by_data_ptr(ll_t *ll, void *data);
 unsigned int singly_ll_remove_node_by_dataptr(ll_t *ll, void *data);
+
+#define ITERATE_LIST(list_ptr, node_ptr)                           \
+    node_ptr = GET_HEAD_SINGLY_LL(list_ptr);                       \
+    for(; node_ptr!= NULL; node_ptr = GET_NEXT_NODE_SINGLY_LL(node_ptr))\
+        
 #endif

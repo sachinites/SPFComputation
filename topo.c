@@ -60,7 +60,7 @@ build_linear_topo(){
     insert_edge_between_2_nodes(R0_R1_edge, R0, R1, BIDIRECTIONAL);
     insert_edge_between_2_nodes(R1_R2_edge, R1, R2, BIDIRECTIONAL);
 
-    mark_node_pseudonode(R1);
+    //mark_node_pseudonode(R1);
     set_graph_root(graph, R1);
     return graph;
 }

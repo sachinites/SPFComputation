@@ -39,7 +39,7 @@
 #define PREFIX_LEN              15
 #define PREFIX_LEN_WITH_MASK    (PREFIX_LEN + 3)
 #define MAX_NXT_HOPS            1
-
+#define INFINITE_METRIC         0xFFFFFFFF
 /*Edge properties*/
 typedef enum{
     UNIDIRECTIONAL,

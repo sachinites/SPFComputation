@@ -39,7 +39,16 @@
 extern
 graph_t *graph;
 
+extern void
+spf_computation();
 /*All Command Handler Functions goes here */
+
+static int
+show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    spf_computation();
+    return 0;
+}
 
 static int
 show_graph_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
@@ -47,11 +56,9 @@ show_graph_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
     unsigned int i = 0;
 
     singly_ll_node_t *list_node = NULL;
-    list_node = GET_HEAD_SINGLY_LL(graph->graph_node_list);
 
-    for(; i < GET_NODE_COUNT_SINGLY_LL(graph->graph_node_list); i++){
-        dump_nbrs(list_node->data);
-        list_node = GET_NEXT_NODE_SINGLY_LL(list_node);                
+    ITERATE_LIST(graph->graph_node_list, list_node){
+         dump_nbrs(list_node->data);
     }
     return 0;
 }
@@ -70,16 +77,13 @@ show_graph_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
         node_name = tlv->value;
     }
 
-    list_node = GET_HEAD_SINGLY_LL(graph->graph_node_list);
-
-    for(i = 0; i < GET_NODE_COUNT_SINGLY_LL(graph->graph_node_list); i++){
+    ITERATE_LIST(graph->graph_node_list, list_node){
+        
         node = (node_t *)list_node->data;
         if(strncmp(node_name, node->node_name, strlen(node->node_name)) == 0){
             dump_node_info(node); 
             return 0;       
         }
-
-        list_node = GET_NEXT_NODE_SINGLY_LL(list_node);
     }
 
     printf("INFO : %s Node do not exist\n", node_name);
@@ -97,6 +101,9 @@ spf_init_dcm(){
     param_t *debug  = libcli_get_debug_hook();
     param_t *config = libcli_get_config_hook();
 
+/*Show commands*/
+
+    /*show graph | show graph node name */
     static param_t graph;
     init_param(&graph, CMD, "graph", show_graph_handler, 0, INVALID, 0, "Network graph");
     libcli_register_param(show, &graph);
@@ -109,6 +116,19 @@ spf_init_dcm(){
     init_param(&graph_node_name, LEAF, 0, show_graph_node_handler, 0, STRING, "node-name", "Node Name");
     libcli_register_param(&graph_node, &graph_node_name);
 
+    /*show spf run*/
+
+    static param_t show_spf;
+    init_param(&show_spf, CMD, "spf", 0, 0, INVALID, 0, "Shortest Path Tree");
+    libcli_register_param(show, &show_spf);
+
+    static param_t show_spf_run;
+    init_param(&show_spf_run, CMD, "run", show_spf_run_handler, 0, INVALID, 0, "run SPT computation");
+    libcli_register_param(&show_spf, &show_spf_run);
+    
+
+/*Debug commands*/
+    
 
     support_cmd_negation(config);
 }

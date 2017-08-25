@@ -1,9 +1,9 @@
 CC=gcc
 CFLAGS=-g -Wall
-INCLUDES=-I . -I ./CommandParser -I ./LinkedList
+INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap
 USECLILIB=-lcli
 TARGET:exe
-DSOBJ=LinkedList/LinkedListApi.o
+DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o
 OBJ=graph.o spfdcm.o topo.o spfcomputation.o ${DSOBJ}
 exe:testapp.o ${OBJ} ${CLILIB}
 	${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o exe -L ./CommandParser ${USECLILIB}
@@ -19,6 +19,16 @@ spfcomputation.o:spfcomputation.c
 	${CC} ${CFLAGS} -c ${INCLUDES} spfcomputation.c -o spfcomputation.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
+	${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 clean:
 	rm exe
 	rm *.o
+all:
+	(cd LinkedList; make)
+	(cd CommandParser; make)
+	make
+cleanall:
+	(cd LinkedList; make clean)
+	(cd CommandParser; make clean)
+	rm Heap/*.o
+	make clean

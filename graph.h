@@ -44,9 +44,10 @@ typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
     NODE_TYPE node_type;    
-    /*SPF Computation members*/
     unsigned int spf_metric;
     struct _node_t *next_hop[MAX_NXT_HOPS]; 
+    struct _node_t *direct_next_hop[MAX_NXT_HOPS]; 
+    edge_end_t *pn_intf;/*SPF root will bind the directly connected PN with SPF root's local connected interface*/
 } node_t;
 
 struct edge_end_{
@@ -138,19 +139,19 @@ get_edge_direction(node_t *node, edge_t *edge){
 }
 
 
-#define ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge)            \
-    nbr_node = NULL;                                             \
-    edge = NULL;                                                 \
+#define ITERATE_NODE_NBRS_BEGIN(_node, _nbr_node, _edge)         \
+    _nbr_node = NULL;                                             \
+    _edge = NULL;                                                 \
     do{                                                          \
-        unsigned int i = 0;                                      \
-        edge_end_t *edge_end = 0;                                \
-        for(;i < MAX_NODE_INTF_SLOTS; i++){                      \
-            edge_end = node->edges[i];                           \
-            if(!edge_end) break;                                 \
-            if(edge_end->dirn != OUTGOING)                       \
+        unsigned int _i = 0;                                     \
+        edge_end_t *_edge_end = 0;                               \
+        for(;_i < MAX_NODE_INTF_SLOTS; _i++){                    \
+            _edge_end = _node->edges[_i];                         \
+            if(!_edge_end) break;                                \
+            if(_edge_end->dirn != OUTGOING)                      \
                 continue;                                        \
-            edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(edge_end);    \
-            nbr_node = edge->to.node;
+            _edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);   \
+            _nbr_node = _edge->to.node;
              
 #define ITERATE_NODE_NBRS_END   }}while(0)      
    

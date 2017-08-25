@@ -51,6 +51,7 @@ create_new_node(graph_t *graph, char *node_name){
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';
     node->node_type = NON_PSEUDONODE;
+    node->pn_intf = NULL;
     add_node_to_owning_graph(graph, node);
     return node;    
 }
