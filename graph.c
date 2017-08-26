@@ -61,7 +61,8 @@ create_new_edge(char *from_ifname,
         char *to_ifname,
         unsigned int metric,
         char *from_prefix,
-        char *to_prefix){
+        char *to_prefix,
+        LEVEL level){
 
     assert(from_ifname);
     assert(to_ifname);
@@ -81,6 +82,8 @@ create_new_edge(char *from_ifname,
 
     strncpy(edge->to.prefix, to_prefix, PREFIX_LEN_WITH_MASK + 1);
     edge->to.prefix[PREFIX_LEN_WITH_MASK] = '\0';
+
+    edge->level = level;
 
     edge->from.dirn = EDGE_END_DIRN_UNKNOWN;
     edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;
@@ -120,7 +123,7 @@ insert_edge_between_2_nodes(edge_t *edge,
     if(dirn == BIDIRECTIONAL){
         
         edge_t *edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric,
-                                        edge->to.prefix, edge->from.prefix);
+                                        edge->to.prefix, edge->from.prefix, edge->level);
 
         insert_edge_between_2_nodes(edge2, to_node, from_node, UNIDIRECTIONAL);
 

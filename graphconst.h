@@ -54,6 +54,12 @@ typedef enum{
 } EDGE_END_DIRN;
 
 typedef enum{
+    LEVEL1,
+    LEVEL2,
+    LEVEL_UNKNOWN
+} LEVEL;
+
+typedef enum{
     NON_PSEUDONODE,
     PSEUDONODE
 } NODE_TYPE;

@@ -42,15 +42,15 @@ run_dijkastra(){
 }
 
 
-static void 
-spf_init(){
+static void
+spf_init(candidate_tree_t *ctree){
 
     /*step 1 : Purge NH list of all nodes in the topo*/
 
-    singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
     unsigned int i = 0;
     edge_t *edge = NULL;
+    singly_ll_node_t *list_node = NULL;
 
     ITERATE_LIST(graph->graph_node_list, list_node){    
         node = (node_t *)list_node->data;
@@ -79,12 +79,29 @@ spf_init(){
     ITERATE_NODE_NBRS_END;
 
     /*Step 4 : Initialize candidate tree with root*/
-    
+   
+   CANDIDATE_TREE_INIT(ctree);
+   
+   INSERT_NODE_INTO_CANDIDATE_TREE(ctree, graph->graph_root);
+   
+   /*Step 5 : Link Directly Conneccted PN to the graph root
+    * I dont know why it is done, but lets do */
 
+    ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge){
+
+        if(node->node_type == PSEUDONODE)
+            node->pn_intf = &edge->from;/*There is exactly one PN per LAN per level*/            
+    }
+    ITERATE_NODE_NBRS_END;
 }
 
 void
 spf_computation(){
 
-    spf_init();
+    candidate_tree_t ctree;
+    spf_init(&ctree);
+
+    FREE_CANDIDATE_TREE_INTERNALS(&ctree);
 }
+
+

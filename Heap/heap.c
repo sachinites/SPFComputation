@@ -7,7 +7,7 @@
 #define CMP(a, b) ((*a) <= (*b))
 //#define CMP(a, b) ((a) >= (b))
 
-static const unsigned int base_size = 4;
+static const unsigned int base_size = HEAP_DEFAULT_SIZE;
 
 // Prepares the heap for use
 void heap_init(struct heap * h)
@@ -18,6 +18,11 @@ void heap_init(struct heap * h)
 		.data = malloc(sizeof(type) * base_size)
 	};
 	if (!h->data) _exit(1); // Exit if the memory allocation fails
+}
+
+void free_heap(struct heap * h){
+
+    free(h->data);
 }
 
 void re_init_heap(struct heap * h){

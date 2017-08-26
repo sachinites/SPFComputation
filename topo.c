@@ -52,10 +52,10 @@ build_linear_topo(){
     node_t *R2 = create_new_node(graph, "R2");
 
     edge_t *R0_R1_edge = create_new_edge("eth0/0", "eth0/1", 10,
-            "10.1.1.1/24", "10.1.1.2/24");
+            "10.1.1.1/24", "10.1.1.2/24", LEVEL1);
 
     edge_t *R1_R2_edge = create_new_edge("eth0/2", "eth0/2", 10,
-            "20.1.1.1/24", "20.1.1.2/24");
+            "20.1.1.1/24", "20.1.1.2/24", LEVEL1);
 
     insert_edge_between_2_nodes(R0_R1_edge, R0, R1, BIDIRECTIONAL);
     insert_edge_between_2_nodes(R1_R2_edge, R1, R2, BIDIRECTIONAL);

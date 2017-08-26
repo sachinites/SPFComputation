@@ -60,6 +60,7 @@ struct edge_end_{
 typedef struct _edge_t{
     edge_end_t from;
     unsigned int metric;
+    LEVEL level;
     edge_end_t to;
 } edge_t;
 
@@ -77,7 +78,8 @@ create_new_edge(char *from_ifname,
                 char *to_ifname, 
                 unsigned int metric, 
                 char *from_prefix, 
-                char *to_prefix);
+                char *to_prefix,
+                LEVEL level);
 
 void
 insert_edge_between_2_nodes(edge_t *edge, 

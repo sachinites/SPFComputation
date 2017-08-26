@@ -133,7 +133,18 @@ spf_init_dcm(){
     support_cmd_negation(config);
 }
 
-
+static char *
+get_str_egde_level(edge_t *edge){
+    
+    switch(edge->level){
+        case LEVEL1:
+            return "LEVEL1";
+        case LEVEL2:
+            return "LEVEL2";
+        default:
+            return "LEVEL_UNKNOWN";
+    }
+}
 
 /*All show/dump functions*/
 
@@ -150,7 +161,7 @@ dump_nbrs(node_t *node){
         printf("    egress intf = %s(%s), peer_intf = %s(%s)\n",
                 edge->from.intf_name, edge->from.prefix, edge->to.intf_name, edge->to.prefix);
 
-        printf("    metric = %u\n", edge->metric);
+        printf("    metric = %u, edge level = %s\n", edge->metric, get_str_egde_level(edge));
     }
     ITERATE_NODE_NBRS_END;
 }
@@ -167,6 +178,7 @@ dump_node_info(node_t *node){
 
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
+    edge_t *edge = NULL;
 
     printf("node->node_name : %s, PN STATUS = %s\n", node->node_name, 
             (node->node_type == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
@@ -178,9 +190,11 @@ dump_node_info(node_t *node){
         if(!edge_end)
             break;
 
-        printf("    slot%u : %s, %s, %s, local edge-end connected node : %s\n", i, edge_end->intf_name, edge_end->prefix,
+        printf("    slot%u : %s, %s, %s, local edge-end connected node : %s", i, edge_end->intf_name, edge_end->prefix,
                 (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
 
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        printf(", metric = %u, edge level = %s\n", edge->metric, get_str_egde_level(edge));
     }
 }
 
