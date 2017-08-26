@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  testapp.c
+ *       Filename:  spfutil.h
  *
- *    Description:  Test Main Stub
+ *    Description:  This file contains utilities for SPFComputation project
  *
  *        Version:  1.0
- *        Created:  Wednesday 23 August 2017 07:38:47  IST
+ *        Created:  Sunday 27 August 2017 01:52:40  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,39 +30,11 @@
  * =====================================================================================
  */
 
-#include "graph.h"
-#include <stdio.h>
-#include "libcli.h"
-#include "spfcomputation.h"
+#ifndef __SPFUTIL__
+#define __SPFUTIL__
 
-/*import from spfdcm.c*/
-extern void
-spf_init_dcm();
+#define IS_LEVEL_SET(input_level, level)    (input_level & level)
+#define SET_LEVEL(input_level, level)       (input_level |= level)
 
-/*import from topo.c*/
-extern graph_t *
-build_linear_topo();
 
-/* import from spfcomputation.c*/
-extern
-spf_stats_t spf_stats;
-
-/*Globals */
-graph_t *graph = NULL;
-
-int
-main(int argc, char **argv){
-
-    /* Lib cli initialization */
-    spf_init_dcm();
-
-    /* Topology Initialization*/
-    graph = build_linear_topo();
-
-    /* Initialize the stats*/
-    spf_stats.spf_runs_count[LEVEL1] = 0;
-    spf_stats.spf_runs_count[LEVEL2] = 0;
-
-    start_shell();
-    return 0;
-}
+#endif /* __SPFUTIL__ */ 

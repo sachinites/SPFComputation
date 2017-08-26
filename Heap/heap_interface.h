@@ -23,5 +23,6 @@ typedef struct heap candidate_tree_t;
 #define CANDIDATE_TREE_INIT(heap_ptr)       \
     heap_init(heap_ptr)
 
-#define FREE_CANDIDATE_TREE_INTERNALS(heap_ptr)   \
+#define FREE_CANDIDATE_TREE_INTERNALS(heap_ptr)     \
+    assert(!(heap_ptr)->count);                     \
     free_heap(heap_ptr);

@@ -128,6 +128,13 @@ GET_EGDE_PTR_FROM_EDGE_END(edge_end_t *edge_end){
     return edge;
 }
 
+static inline LEVEL
+GET_EDGE_END_LEVEL(edge_end_t *edge_end){
+    
+    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+    return edge->level;
+}
+
 /* The function test whether the given edge
  * is outgoing edge or incoming edge wrt to a goven node*/
 static inline EDGE_END_DIRN
@@ -142,18 +149,20 @@ get_edge_direction(node_t *node, edge_t *edge){
 }
 
 
-#define ITERATE_NODE_NBRS_BEGIN(_node, _nbr_node, _edge)         \
+#define ITERATE_NODE_NBRS_BEGIN(_node, _nbr_node, _edge, _level)  \
     _nbr_node = NULL;                                             \
     _edge = NULL;                                                 \
-    do{                                                          \
-        unsigned int _i = 0;                                     \
-        edge_end_t *_edge_end = 0;                               \
-        for(;_i < MAX_NODE_INTF_SLOTS; _i++){                    \
+    do{                                                           \
+        unsigned int _i = 0;                                      \
+        edge_end_t *_edge_end = 0;                                \
+        for(;_i < MAX_NODE_INTF_SLOTS; _i++){                     \
             _edge_end = _node->edges[_i];                         \
-            if(!_edge_end) break;                                \
-            if(_edge_end->dirn != OUTGOING)                      \
-                continue;                                        \
+            if(!_edge_end) break;                                 \
+            if(_edge_end->dirn != OUTGOING)                       \
+                continue;                                         \
             _edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);   \
+            if(!IS_LEVEL_SET(_edge->level, _level))               \
+                continue;                                         \
             _nbr_node = _edge->to.node;
              
 #define ITERATE_NODE_NBRS_END   }}while(0)      

@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  testapp.c
+ *       Filename:  spfcomputation.h
  *
- *    Description:  Test Main Stub
+ *    Description:  This file declares the Data structures for SPFComputation
  *
  *        Version:  1.0
- *        Created:  Wednesday 23 August 2017 07:38:47  IST
+ *        Created:  Sunday 27 August 2017 02:42:41  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,39 +30,11 @@
  * =====================================================================================
  */
 
-#include "graph.h"
-#include <stdio.h>
-#include "libcli.h"
-#include "spfcomputation.h"
+#ifndef __SPFCOMPUTATION__
+#define __SPFCOMPUTATION__
 
-/*import from spfdcm.c*/
-extern void
-spf_init_dcm();
+typedef struct spfstats_{
+    unsigned int spf_runs_count[3];
+} spf_stats_t;
 
-/*import from topo.c*/
-extern graph_t *
-build_linear_topo();
-
-/* import from spfcomputation.c*/
-extern
-spf_stats_t spf_stats;
-
-/*Globals */
-graph_t *graph = NULL;
-
-int
-main(int argc, char **argv){
-
-    /* Lib cli initialization */
-    spf_init_dcm();
-
-    /* Topology Initialization*/
-    graph = build_linear_topo();
-
-    /* Initialize the stats*/
-    spf_stats.spf_runs_count[LEVEL1] = 0;
-    spf_stats.spf_runs_count[LEVEL2] = 0;
-
-    start_shell();
-    return 0;
-}
+#endif /* __SPFCOMPUTATION__ */

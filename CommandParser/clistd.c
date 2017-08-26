@@ -261,6 +261,9 @@ dump_all_commands(param_t *root, unsigned int index){
 
         if(!root)
             return;
+    
+        if(IS_PARAM_NO_CMD(root))
+            return;
 
         if(IS_PARAM_CMD(root)){
             untokenize(index);

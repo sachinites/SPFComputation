@@ -32,18 +32,25 @@
 
 #include "graph.h"
 #include "heap_interface.h"
+#include "spfutil.h"
+#include "spfcomputation.h"
 
 extern graph_t *graph;
+spf_stats_t spf_stats;
 
 static void
-run_dijkastra(){
+run_dijkastra(LEVEL level){
 
-
+    spf_stats.spf_runs_count[level]++;
 }
 
 
+/*-----------------------------------------------------------------------------
+ *  Fn to initialize the Necessary Data structure prior to run SPF computation.
+ *  level can be LEVEL1 Or LEVEL2 Or BOTH
+ *-----------------------------------------------------------------------------*/
 static void
-spf_init(candidate_tree_t *ctree){
+spf_init(candidate_tree_t *ctree, LEVEL level){
 
     /*step 1 : Purge NH list of all nodes in the topo*/
 
@@ -71,7 +78,7 @@ spf_init(candidate_tree_t *ctree){
      * Iterate over real physical nbrs of root (that is skip PNs)
      * and initialize their direct next hop list*/
 
-    ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge){
+    ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge, level){
         if(node->node_type == PSEUDONODE)/*Do not initialize direct nxt hop of PNs*/
             continue;
         node->direct_next_hop[0] = node;
@@ -80,14 +87,12 @@ spf_init(candidate_tree_t *ctree){
 
     /*Step 4 : Initialize candidate tree with root*/
    
-   CANDIDATE_TREE_INIT(ctree);
-   
    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, graph->graph_root);
    
    /*Step 5 : Link Directly Conneccted PN to the graph root
     * I dont know why it is done, but lets do */
 
-    ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge){
+    ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge, level){
 
         if(node->node_type == PSEUDONODE)
             node->pn_intf = &edge->from;/*There is exactly one PN per LAN per level*/            
@@ -96,12 +101,23 @@ spf_init(candidate_tree_t *ctree){
 }
 
 void
-spf_computation(){
+spf_computation(LEVEL level){
 
     candidate_tree_t ctree;
-    spf_init(&ctree);
+    CANDIDATE_TREE_INIT(&ctree);
 
-    FREE_CANDIDATE_TREE_INTERNALS(&ctree);
+    if(IS_LEVEL_SET(level, LEVEL1)){
+        spf_init(&ctree, LEVEL1);
+        run_dijkastra(LEVEL1);
+    }
+
+    if(IS_LEVEL_SET(level, LEVEL2)){
+        spf_init(&ctree, LEVEL2);
+        run_dijkastra(LEVEL2);
+    }
+
+    /*Comment out below line to avoid assertion*/
+    //FREE_CANDIDATE_TREE_INTERNALS(&ctree);
 }
 
 

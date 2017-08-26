@@ -54,9 +54,9 @@ typedef enum{
 } EDGE_END_DIRN;
 
 typedef enum{
+    LEVEL_UNKNOWN,
     LEVEL1,
-    LEVEL2,
-    LEVEL_UNKNOWN
+    LEVEL2
 } LEVEL;
 
 typedef enum{

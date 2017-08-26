@@ -35,18 +35,49 @@
 #include "graph.h"
 #include "cmdtlv.h"
 #include <stdio.h>
+#include "spfutil.h"
+#include "spfcomputation.h"
 
 extern
 graph_t *graph;
+
+extern 
+spf_stats_t spf_stats;
 
 extern void
 spf_computation();
 /*All Command Handler Functions goes here */
 
 static int
+validate_level_no(char *value_passed){
+
+    LEVEL level = atoi(value_passed);
+    if(level == LEVEL1 || level == LEVEL2)
+        return VALIDATION_SUCCESS;
+
+    printf("Error : Incorrect Level Value.\n");
+    return VALIDATION_FAILED;
+}
+static int
 show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
-    spf_computation();
+    tlv_struct_t *tlv = NULL;
+    unsigned int i = 0;
+    LEVEL level = LEVEL1 | LEVEL2;;
+
+    TLV_LOOP(tlv_buf, tlv, i){
+        level = atoi(tlv->value);
+    }
+    spf_computation(level);
+    return 0;
+}
+
+static int
+show_spf_stats_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+   
+    printf("SPF Statistics:\n");
+    printf("# LEVEL1 SPF runs : %u\n", spf_stats.spf_runs_count[LEVEL1]);
+    printf("# LEVEL1 SPF runs : %u\n", spf_stats.spf_runs_count[LEVEL2]);
     return 0;
 }
 
@@ -125,8 +156,22 @@ spf_init_dcm(){
     static param_t show_spf_run;
     init_param(&show_spf_run, CMD, "run", show_spf_run_handler, 0, INVALID, 0, "run SPT computation");
     libcli_register_param(&show_spf, &show_spf_run);
+   
+    /*show spf run level */ 
+    static param_t show_spf_run_level;
+    init_param(&show_spf_run_level, CMD, "level", 0, 0, INVALID, 0, "level");
+    libcli_register_param(&show_spf_run, &show_spf_run_level);
     
+    /* show spf run level <Level NO>*/
+    static param_t show_spf_run_level_N;
+    init_param(&show_spf_run_level_N, LEAF, 0, show_spf_run_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
+    libcli_register_param(&show_spf_run_level, &show_spf_run_level_N);
 
+    /* show spf statistics */
+
+    static param_t show_spf_statistics;
+    init_param(&show_spf_statistics, CMD, "statistics", show_spf_stats_handler, 0, INVALID, 0, "SPF Statistics");
+    libcli_register_param(&show_spf, &show_spf_statistics);
 /*Debug commands*/
     
 
@@ -174,15 +219,15 @@ dump_nbrs(node_t *node){
 
     node_t *nbr_node = NULL;
     edge_t *edge = NULL;
-    printf("printing nbrs of node %s(%s)\n", node->node_name,
+    printf("Node : %s(%s)\n", node->node_name,
                 (node->node_type == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
 
-    ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge){
-        printf("    nbr : %s, Area = %s\n", nbr_node->node_name, get_str_node_area(nbr_node->area));
+    ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge, LEVEL1 | LEVEL2){
+        printf("    Neighborr : %s, Area = %s\n", nbr_node->node_name, get_str_node_area(nbr_node->area));
         printf("    egress intf = %s(%s), peer_intf = %s(%s)\n",
                 edge->from.intf_name, edge->from.prefix, edge->to.intf_name, edge->to.prefix);
 
-        printf("    metric = %u, edge level = %s\n", edge->metric, get_str_egde_level(edge->level));
+        printf("    metric = %u, edge level = %s\n\n", edge->metric, get_str_egde_level(edge->level));
     }
     ITERATE_NODE_NBRS_END;
 }
