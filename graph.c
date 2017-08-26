@@ -44,12 +44,13 @@ add_node_to_owning_graph(graph_t *graph, node_t *node){
 
 
 node_t *
-create_new_node(graph_t *graph, char *node_name){
+create_new_node(graph_t *graph, char *node_name, AREA area){
     
     assert(node_name);
     node_t * node = calloc(1, sizeof(node_t));
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';
+    node->area = area;
     node->node_type = NON_PSEUDONODE;
     node->pn_intf = NULL;
     add_node_to_owning_graph(graph, node);

@@ -42,6 +42,7 @@ typedef struct edge_end_ edge_end_t;
 
 typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
+    AREA area;
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
     NODE_TYPE node_type;    
     unsigned int spf_metric;
@@ -70,7 +71,7 @@ typedef struct graph_{
 } graph_t;
 
 node_t *
-create_new_node(graph_t *graph, char *node_name);
+create_new_node(graph_t *graph, char *node_name, AREA area);
 
 
 edge_t *

@@ -47,9 +47,9 @@ build_linear_topo(){
     
     graph_t *graph = get_new_graph();
 
-    node_t *R0 = create_new_node(graph, "R0");
-    node_t *R1 = create_new_node(graph, "R1");
-    node_t *R2 = create_new_node(graph, "R2");
+    node_t *R0 = create_new_node(graph, "R0", AREA1);
+    node_t *R1 = create_new_node(graph, "R1", AREA1);
+    node_t *R2 = create_new_node(graph, "R2", AREA1);
 
     edge_t *R0_R1_edge = create_new_edge("eth0/0", "eth0/1", 10,
             "10.1.1.1/24", "10.1.1.2/24", LEVEL1);

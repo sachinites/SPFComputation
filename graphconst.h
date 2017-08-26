@@ -63,4 +63,19 @@ typedef enum{
     NON_PSEUDONODE,
     PSEUDONODE
 } NODE_TYPE;
+
+/*Let The routers can have any area 
+ * among these*/
+
+typedef enum{
+    AREA1,
+    AREA2,
+    AREA3,
+    AREA4,
+    AREA5,
+    AREA6,
+    AREA_UNKNOWN
+} AREA;
+
+
 #endif /* __GRAPHCONST__ */

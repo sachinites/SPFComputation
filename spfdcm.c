@@ -134,15 +134,36 @@ spf_init_dcm(){
 }
 
 static char *
-get_str_egde_level(edge_t *edge){
+get_str_egde_level(LEVEL level){
     
-    switch(edge->level){
+    switch(level){
         case LEVEL1:
             return "LEVEL1";
         case LEVEL2:
             return "LEVEL2";
         default:
             return "LEVEL_UNKNOWN";
+    }
+}
+
+static char*
+get_str_node_area(AREA area){
+
+    switch(area){
+        case AREA1:
+            return "AREA1";
+        case AREA2:
+            return "AREA2";
+        case AREA3:
+            return "AREA3";
+        case AREA4:
+            return "AREA4";
+        case AREA5:
+            return "AREA5";
+        case AREA6:
+            return "AREA6";
+        default:
+            return "AREA_UNKNOWN";
     }
 }
 
@@ -157,11 +178,11 @@ dump_nbrs(node_t *node){
                 (node->node_type == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
 
     ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge){
-        printf("    nbr : %s\n", nbr_node->node_name);
+        printf("    nbr : %s, Area = %s\n", nbr_node->node_name, get_str_node_area(nbr_node->area));
         printf("    egress intf = %s(%s), peer_intf = %s(%s)\n",
                 edge->from.intf_name, edge->from.prefix, edge->to.intf_name, edge->to.prefix);
 
-        printf("    metric = %u, edge level = %s\n", edge->metric, get_str_egde_level(edge));
+        printf("    metric = %u, edge level = %s\n", edge->metric, get_str_egde_level(edge->level));
     }
     ITERATE_NODE_NBRS_END;
 }
@@ -180,8 +201,8 @@ dump_node_info(node_t *node){
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
 
-    printf("node->node_name : %s, PN STATUS = %s\n", node->node_name, 
-            (node->node_type == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
+    printf("node->node_name : %s, PN STATUS = %s, Area = %s\n", node->node_name, 
+            (node->node_type == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE", get_str_node_area(node->area));
 
     printf("Slots :\n");
 
@@ -194,7 +215,7 @@ dump_node_info(node_t *node){
                 (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
 
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-        printf(", metric = %u, edge level = %s\n", edge->metric, get_str_egde_level(edge));
+        printf(", metric = %u, edge level = %s\n", edge->metric, get_str_egde_level(edge->level));
     }
 }
 
