@@ -58,7 +58,7 @@ get_str_level(LEVEL level){
             return "LEVEL2";
         default:
             if(level == (LEVEL1 | LEVEL2))
-                return "LEVEL1|2";
+                return "LEVEL12";
             else
                 return "LEVEL_UNKNOWN";
     }
@@ -84,4 +84,5 @@ get_str_node_area(AREA area){
             return "AREA_UNKNOWN";
     }
 }
+
 

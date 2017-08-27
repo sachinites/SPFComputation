@@ -6,7 +6,7 @@
  *    Description:  This is a header file to declare structures to define the Network topology
  *
  *        Version:  1.0
- *        Created:  Wednesday 23 August 2017 01:51:55  IST
+ *        Created:  Wednesday 2[MAX_LEVEL] August 2017 01:51:55  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -17,7 +17,7 @@
  *        Copyright (c) 2017 Abhishek Sagar.
  *        This program is free software: you can redistribute it and/or modify
  *        it under the terms of the GNU General Public License as published by  
- *        the Free Software Foundation, version 3.
+ *        the Free Software Foundation, version [MAX_LEVEL].
  *
  *        This program is distributed in the hope that it will be useful, but 
  *        WITHOUT ANY WARRANTY; without even the implied warranty of 
@@ -44,23 +44,23 @@ typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
     AREA area;
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
-    NODE_TYPE node_type;/*ToDo : A node is a PN wrt level*/ 
-    unsigned int spf_metric;/*ToDo : spf_metric is a PN wrt level*/
-    struct _node_t *next_hop[MAX_NXT_HOPS];/*ToDo : Level Specific*/ 
-    struct _node_t *direct_next_hop[MAX_NXT_HOPS];/*ToDo : LevelSpecific*/
-    edge_end_t *pn_intf;/*ToDo : Level Specific. SPF root will bind the directly connected PN with SPF root's local connected interface*/
+    NODE_TYPE node_type[MAX_LEVEL];/*ToDo : A node is a PN wrt level*/ 
+    unsigned int spf_metric[MAX_LEVEL];/*ToDo : spf_metric is a PN wrt level*/
+    struct _node_t *next_hop[MAX_LEVEL][MAX_NXT_HOPS];/*ToDo : Level Specific*/ 
+    struct _node_t *direct_next_hop[MAX_LEVEL][MAX_NXT_HOPS];/*ToDo : LevelSpecific*/
+    edge_end_t *pn_intf[MAX_LEVEL];/*ToDo : Level Specific. SPF root will bind the directly connected PN with SPF root's local connected interface*/
 } node_t;
 
 struct edge_end_{
     node_t *node;
     char intf_name[IF_NAME_SIZE];
-    char prefix[PREFIX_LEN_WITH_MASK + 1];
-    EDGE_END_DIRN dirn;
+    char prefix[MAX_LEVEL][PREFIX_LEN_WITH_MASK + 1];
+    EDGE_END_DIRN dirn;/*dirn of edge is not level dependant*/
 };
 
 typedef struct _edge_t{
     edge_end_t from;
-    unsigned int metric;
+    unsigned int metric[MAX_LEVEL];
     LEVEL level;
     edge_end_t to;
 } edge_t;
@@ -68,7 +68,7 @@ typedef struct _edge_t{
 typedef struct graph_{
     node_t *graph_root;
     ll_t *graph_node_list;
-    ll_t *spf_run_result[3];
+    ll_t *spf_run_result[MAX_LEVEL];
 } graph_t;
 
 node_t *
@@ -95,7 +95,7 @@ graph_t *
 get_new_graph();
 
 void
-dump_nbrs(node_t *node);
+dump_nbrs(node_t *node, LEVEL level);
 
 void
 dump_node_info(node_t *node);
@@ -104,7 +104,7 @@ void
 dump_edge_info(edge_t *edge);
 
 void
-mark_node_pseudonode(node_t *node);
+mark_node_pseudonode(node_t *node, LEVEL level);
 /* Macros */
 
 /*Iterate over nbrs of a given node*/
@@ -168,5 +168,10 @@ get_edge_direction(node_t *node, edge_t *edge){
              
 #define ITERATE_NODE_NBRS_END   }}while(0)      
    
+int
+is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level);
+
+
 #endif /* __GRAPH__ */
+
 

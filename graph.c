@@ -31,6 +31,7 @@
  */
 
 #include "graph.h"
+#include "spfutil.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,8 +52,10 @@ create_new_node(graph_t *graph, char *node_name, AREA area){
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';
     node->area = area;
-    node->node_type = NON_PSEUDONODE;
-    node->pn_intf = NULL;
+    node->node_type[LEVEL1] = NON_PSEUDONODE;
+    node->node_type[LEVEL2] = NON_PSEUDONODE;
+    node->pn_intf[LEVEL1] = NULL;
+    node->pn_intf[LEVEL2] = NULL;
     add_node_to_owning_graph(graph, node);
     return node;    
 }
@@ -72,17 +75,31 @@ create_new_edge(char *from_ifname,
 
     strncpy(edge->from.intf_name, from_ifname, IF_NAME_SIZE);
     edge->from.intf_name[IF_NAME_SIZE - 1] = '\0';
-    
-    edge->metric = metric;
+   
+    if(IS_LEVEL_SET(level, LEVEL1)) 
+        edge->metric[LEVEL1] = metric;
+
+    if(IS_LEVEL_SET(level, LEVEL2)) 
+        edge->metric[LEVEL2] = metric;
 
     strncpy(edge->to.intf_name, to_ifname, IF_NAME_SIZE);
     edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
 
-    strncpy(edge->from.prefix, from_prefix, PREFIX_LEN_WITH_MASK + 1);
-    edge->from.prefix[PREFIX_LEN_WITH_MASK] = '\0';
+    if(IS_LEVEL_SET(level, LEVEL1)){
+        strncpy(edge->from.prefix[LEVEL1], from_prefix, PREFIX_LEN_WITH_MASK + 1);
+        edge->from.prefix[LEVEL1][PREFIX_LEN_WITH_MASK] = '\0';
+        strncpy(edge->to.prefix[LEVEL1], to_prefix, PREFIX_LEN_WITH_MASK + 1);
+        edge->to.prefix[LEVEL1][PREFIX_LEN_WITH_MASK] = '\0';
+    }
 
-    strncpy(edge->to.prefix, to_prefix, PREFIX_LEN_WITH_MASK + 1);
-    edge->to.prefix[PREFIX_LEN_WITH_MASK] = '\0';
+
+    if(IS_LEVEL_SET(level, LEVEL2)){
+        strncpy(edge->from.prefix[LEVEL2], from_prefix, PREFIX_LEN_WITH_MASK + 1);
+        edge->from.prefix[LEVEL2][PREFIX_LEN_WITH_MASK] = '\0';
+        strncpy(edge->to.prefix[LEVEL2], to_prefix, PREFIX_LEN_WITH_MASK + 1);
+        edge->to.prefix[LEVEL2][PREFIX_LEN_WITH_MASK] = '\0';
+    }
+
 
     edge->level = level;
 
@@ -120,14 +137,20 @@ insert_edge_between_2_nodes(edge_t *edge,
     edge->from.dirn = OUTGOING;
     insert_interface_into_node(to_node, &edge->to);
     edge->to.dirn = INCOMING;
+    
+    edge_t *edge2 = NULL;
 
     if(dirn == BIDIRECTIONAL){
-        
-        edge_t *edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric,
-                                        edge->to.prefix, edge->from.prefix, edge->level);
+       
+        if(IS_LEVEL_SET(edge->level, LEVEL1)) 
+            edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric[LEVEL1],
+                                        edge->to.prefix[LEVEL1], edge->from.prefix[LEVEL1], edge->level);
+
+        else if(IS_LEVEL_SET(edge->level, LEVEL2))
+            edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric[LEVEL2],
+                                        edge->to.prefix[LEVEL2], edge->from.prefix[LEVEL2], edge->level);
 
         insert_edge_between_2_nodes(edge2, to_node, from_node, UNIDIRECTIONAL);
-
     }
 }
 
@@ -137,29 +160,35 @@ set_graph_root(graph_t *graph, node_t *root){
 }
 
 void
-mark_node_pseudonode(node_t *node){
+mark_node_pseudonode(node_t *node, LEVEL level){
 
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
 
-    node->node_type = PSEUDONODE;
+    if(level != LEVEL1 && level != LEVEL2)
+        assert(0);
+
+    node->node_type[level] = PSEUDONODE;
+
     for(; i < MAX_NODE_INTF_SLOTS; i++){
-        if(!node->edges[i]) break;
+        if(!node->edges[i]) continue;;
         
         edge_end = node->edges[i];
-
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        
+        if(!IS_LEVEL_SET(edge->level, level))      
+            continue;
         /*Reset Values*/
-        memset(edge_end->intf_name, 0, IF_NAME_SIZE);
-        strncpy(edge_end->intf_name, "NIL", IF_NAME_SIZE);
-        edge_end->intf_name[IF_NAME_SIZE -1] = '\0';
-        memset(edge_end->prefix, 0, PREFIX_LEN_WITH_MASK + 1);
-        strncpy(edge_end->prefix, "NIL", PREFIX_LEN_WITH_MASK);
-        edge_end->prefix[PREFIX_LEN_WITH_MASK] = '\0';
+        //memset(edge_end->intf_name, 0, IF_NAME_SIZE);
+        //strncpy(edge_end->intf_name, "NIL", IF_NAME_SIZE);
+        //edge_end->intf_name[IF_NAME_SIZE -1] = '\0';
+        memset(edge_end->prefix[level], 0, PREFIX_LEN_WITH_MASK + 1);
+        strncpy(edge_end->prefix[level], "NIL", PREFIX_LEN_WITH_MASK);
+        edge_end->prefix[level][PREFIX_LEN_WITH_MASK] = '\0';
 
-        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);         
         if(get_edge_direction(node, edge) == OUTGOING)
-            edge->metric = 0;
+            edge->metric[level] = 0;
     }
 }
 
@@ -171,5 +200,30 @@ get_new_graph(){
     graph->spf_run_result[LEVEL1] = init_singly_ll();
     graph->spf_run_result[LEVEL2] = init_singly_ll();
     return graph;
+}
+
+int
+is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level){
+
+    edge_t *edge = NULL;
+    node_t *temp_nbr_node = NULL,
+           *temp_nbr_node2 = NULL;
+
+    ITERATE_NODE_NBRS_BEGIN(node, temp_nbr_node, edge, level){
+
+        if(temp_nbr_node != node_nbr)
+            continue;
+
+        ITERATE_NODE_NBRS_BEGIN(node_nbr, temp_nbr_node2, edge, level){
+
+            if(temp_nbr_node2 != node)
+                continue;
+
+            return 1;
+        }
+        ITERATE_NODE_NBRS_END;
+    }
+    ITERATE_NODE_NBRS_END;
+    return 0;
 }
 

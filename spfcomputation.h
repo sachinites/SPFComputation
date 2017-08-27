@@ -17,7 +17,7 @@
  *        Copyright (c) 2017 Abhishek Sagar.
  *        This program is free software: you can redistribute it and/or modify
  *        it under the terms of the GNU General Public License as published by  
- *        the Free Software Foundation, version 3.
+ *        the Free Software Foundation, version [MAX_LEVEL].
  *
  *        This program is distributed in the hope that it will be useful, but 
  *        WITHOUT ANY WARRANTY; without even the implied warranty of 
@@ -34,7 +34,7 @@
 #define __SPFCOMPUTATION__
 
 typedef struct spfstats_{
-    unsigned int spf_runs_count[3];
+    unsigned int spf_runs_count[MAX_LEVEL];
 } spf_stats_t;
 
 #endif /* __SPFCOMPUTATION__ */
