@@ -4,7 +4,7 @@ INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap
 USECLILIB=-lcli
 TARGET:exe
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o
-OBJ=graph.o spfdcm.o topo.o spfcomputation.o ${DSOBJ}
+OBJ=graph.o spfdcm.o topo.o spfcomputation.o spfutil.o ${DSOBJ}
 exe:testapp.o ${OBJ} ${CLILIB}
 	${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o exe -L ./CommandParser ${USECLILIB}
 testapp.o:testapp.c
@@ -17,6 +17,8 @@ topo.o:topo.c
 	${CC} ${CFLAGS} -c ${INCLUDES} topo.c -o topo.o
 spfcomputation.o:spfcomputation.c
 	${CC} ${CFLAGS} -c ${INCLUDES} spfcomputation.c -o spfcomputation.o
+spfutil.o:spfutil.c
+	${CC} ${CFLAGS} -c ${INCLUDES} spfutil.c -o spfutil.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
 	${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o

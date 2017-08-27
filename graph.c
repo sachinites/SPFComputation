@@ -168,6 +168,8 @@ get_new_graph(){
 
     graph_t *graph = calloc(1, sizeof(graph_t));
     graph->graph_node_list = init_singly_ll();
+    graph->spf_run_result[LEVEL1] = init_singly_ll();
+    graph->spf_run_result[LEVEL2] = init_singly_ll();
     return graph;
 }
 

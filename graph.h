@@ -44,11 +44,11 @@ typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
     AREA area;
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
-    NODE_TYPE node_type;    
-    unsigned int spf_metric;
-    struct _node_t *next_hop[MAX_NXT_HOPS]; 
-    struct _node_t *direct_next_hop[MAX_NXT_HOPS]; 
-    edge_end_t *pn_intf;/*SPF root will bind the directly connected PN with SPF root's local connected interface*/
+    NODE_TYPE node_type;/*ToDo : A node is a PN wrt level*/ 
+    unsigned int spf_metric;/*ToDo : spf_metric is a PN wrt level*/
+    struct _node_t *next_hop[MAX_NXT_HOPS];/*ToDo : Level Specific*/ 
+    struct _node_t *direct_next_hop[MAX_NXT_HOPS];/*ToDo : LevelSpecific*/
+    edge_end_t *pn_intf;/*ToDo : Level Specific. SPF root will bind the directly connected PN with SPF root's local connected interface*/
 } node_t;
 
 struct edge_end_{
@@ -68,6 +68,7 @@ typedef struct _edge_t{
 typedef struct graph_{
     node_t *graph_root;
     ll_t *graph_node_list;
+    ll_t *spf_run_result[3];
 } graph_t;
 
 node_t *

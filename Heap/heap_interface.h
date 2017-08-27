@@ -3,7 +3,7 @@
 typedef struct heap candidate_tree_t;
 
 #define GET_NODE_PTR_FROM_METRIC_PTR(uint_ptr)      \
-    (node_t *)&((char *)uint_ptr - (unsigned int)&(node_t *)0->spf_metric)
+    (node_t *)((char *)uint_ptr - (unsigned int)&(((node_t *)0)->spf_metric))
 
 #define REMOVE_CANDIDATE_TREE_TOP(heap_ptr)         \
     heap_pop(heap_ptr)

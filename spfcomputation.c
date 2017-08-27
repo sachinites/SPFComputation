@@ -34,14 +34,73 @@
 #include "heap_interface.h"
 #include "spfutil.h"
 #include "spfcomputation.h"
+#include <stdio.h>
 
 extern graph_t *graph;
 spf_stats_t spf_stats;
 
 static void
-run_dijkastra(LEVEL level){
+run_dijkastra(LEVEL level, candidate_tree_t *ctree){
 
     spf_stats.spf_runs_count[level]++;
+    node_t *candidate_node = NULL,
+           *nbr_node = NULL;
+    edge_t *edge = NULL;
+
+    /*Process untill candidate tree is not empty*/
+    printf("%s() : Running Dijkastra with root node = %s\n", __FUNCTION__, (GET_CANDIDATE_TREE_TOP(ctree))->node_name);
+    while(!IS_CANDIDATE_TREE_EMPTY(ctree)){
+        
+        candidate_node = GET_CANDIDATE_TREE_TOP(ctree);
+        REMOVE_CANDIDATE_TREE_TOP(ctree);
+        printf("%s() : Candidate node %s Taken off candidate list\n", __FUNCTION__, candidate_node->node_name);
+       
+        /*Add the node just taken off the candidate tree into result list*/ 
+        singly_ll_add_node_by_val(graph->spf_run_result[level], (void *)candidate_node);
+
+        ITERATE_NODE_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
+            printf("%s() : Processing Nbr : %s\n", __FUNCTION__, nbr_node->node_name);
+            
+            if(candidate_node->spf_metric + edge->metric < nbr_node->spf_metric){
+                printf("%s() : Old Metric : %u, New Metric : %u, Better Next Hop\n",
+                         __FUNCTION__, nbr_node->spf_metric, candidate_node->spf_metric + edge->metric);
+               
+               /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
+               if(is_nh_list_empty(&candidate_node->next_hop[0]) &&
+                  nbr_node->node_type == PSEUDONODE){
+
+                    printf("%s() : case 1 if My own List is empty, and nbr is Pseuodnode , do nothing\n", __FUNCTION__);
+               }
+
+               /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
+               else if(is_nh_list_empty(&candidate_node->next_hop[0]) &&
+                   nbr_node->node_type == NON_PSEUDONODE){
+
+                    printf("%s() : case 2 if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list\n",
+                            __FUNCTION__);
+
+                    copy_nh_list(&nbr_node->direct_next_hop[0], &nbr_node->next_hop[0]);
+               }
+
+               /*case 3 : if My own List is not empty, then nbr should inherit my next hop list*/
+               else if(!is_nh_list_empty(&candidate_node->next_hop[0])){
+
+                     printf("%s() : case 3 if My own List is not empty, then nbr should inherit my next hop list\n", __FUNCTION__);
+                     copy_nh_list(&candidate_node->next_hop[0], &nbr_node->next_hop[0]);
+               }
+                 
+                nbr_node->spf_metric =  candidate_node->spf_metric + edge->metric; 
+                INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node);
+                printf("%s() : %s's spf_metric has been updated to %u, and inserted into candidate list\n",
+                         __FUNCTION__, nbr_node->node_name, nbr_node->spf_metric);
+            }
+            else{
+                printf("%s() : Old Metric : %u, New Metric : %u, Not a Better Next Hop\n",
+                        __FUNCTION__, nbr_node->spf_metric, candidate_node->spf_metric + edge->metric);
+            }
+        }
+        ITERATE_NODE_NBRS_END;
+    }
 }
 
 
@@ -106,14 +165,17 @@ spf_computation(LEVEL level){
     candidate_tree_t ctree;
     CANDIDATE_TREE_INIT(&ctree);
 
+    /*Drain off results list for level */
+    delete_singly_ll(graph->spf_run_result[level]); 
+
     if(IS_LEVEL_SET(level, LEVEL1)){
         spf_init(&ctree, LEVEL1);
-        run_dijkastra(LEVEL1);
+        run_dijkastra(LEVEL1, &ctree);
     }
 
     if(IS_LEVEL_SET(level, LEVEL2)){
         spf_init(&ctree, LEVEL2);
-        run_dijkastra(LEVEL2);
+        run_dijkastra(LEVEL2, &ctree);
     }
 
     /*Comment out below line to avoid assertion*/

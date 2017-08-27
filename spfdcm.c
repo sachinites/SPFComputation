@@ -48,6 +48,21 @@ extern void
 spf_computation();
 /*All Command Handler Functions goes here */
 
+static void
+show_spf_results(LEVEL level){
+    
+    singly_ll_node_t *list_node = NULL;
+    node_t *node = NULL;
+
+    printf("SPF run results for LEVEL : %s, ROOT = %s\n", get_str_level(level), graph->graph_root->node_name);
+
+    ITERATE_LIST(graph->spf_run_result[level], list_node){
+        node = (node_t *)list_node->data;
+        printf("Node : %s, spf_metric : %u\n", node->node_name, node->spf_metric);
+    }
+}
+
+
 static int
 validate_level_no(char *value_passed){
 
@@ -58,6 +73,7 @@ validate_level_no(char *value_passed){
     printf("Error : Incorrect Level Value.\n");
     return VALIDATION_FAILED;
 }
+
 static int
 show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
@@ -68,7 +84,10 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     TLV_LOOP(tlv_buf, tlv, i){
         level = atoi(tlv->value);
     }
+
     spf_computation(level);
+    show_spf_results(level);    
+
     return 0;
 }
 
@@ -77,15 +96,13 @@ show_spf_stats_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
    
     printf("SPF Statistics:\n");
     printf("# LEVEL1 SPF runs : %u\n", spf_stats.spf_runs_count[LEVEL1]);
-    printf("# LEVEL1 SPF runs : %u\n", spf_stats.spf_runs_count[LEVEL2]);
+    printf("# LEVEL2 SPF runs : %u\n", spf_stats.spf_runs_count[LEVEL2]);
     return 0;
 }
 
 static int
 show_graph_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
     
-    unsigned int i = 0;
-
     singly_ll_node_t *list_node = NULL;
 
     ITERATE_LIST(graph->graph_node_list, list_node){
@@ -129,7 +146,7 @@ spf_init_dcm(){
     init_libcli();
 
     param_t *show   = libcli_get_show_hook();
-    param_t *debug  = libcli_get_debug_hook();
+    //param_t *debug  = libcli_get_debug_hook();
     param_t *config = libcli_get_config_hook();
 
 /*Show commands*/
@@ -178,40 +195,6 @@ spf_init_dcm(){
     support_cmd_negation(config);
 }
 
-static char *
-get_str_egde_level(LEVEL level){
-    
-    switch(level){
-        case LEVEL1:
-            return "LEVEL1";
-        case LEVEL2:
-            return "LEVEL2";
-        default:
-            return "LEVEL_UNKNOWN";
-    }
-}
-
-static char*
-get_str_node_area(AREA area){
-
-    switch(area){
-        case AREA1:
-            return "AREA1";
-        case AREA2:
-            return "AREA2";
-        case AREA3:
-            return "AREA3";
-        case AREA4:
-            return "AREA4";
-        case AREA5:
-            return "AREA5";
-        case AREA6:
-            return "AREA6";
-        default:
-            return "AREA_UNKNOWN";
-    }
-}
-
 /*All show/dump functions*/
 
 void
@@ -227,7 +210,7 @@ dump_nbrs(node_t *node){
         printf("    egress intf = %s(%s), peer_intf = %s(%s)\n",
                 edge->from.intf_name, edge->from.prefix, edge->to.intf_name, edge->to.prefix);
 
-        printf("    metric = %u, edge level = %s\n\n", edge->metric, get_str_egde_level(edge->level));
+        printf("    metric = %u, edge level = %s\n\n", edge->metric, get_str_level(edge->level));
     }
     ITERATE_NODE_NBRS_END;
 }
@@ -237,6 +220,7 @@ dump_edge_info(edge_t *edge){
 
 
 }
+
 
 
 void
@@ -260,7 +244,7 @@ dump_node_info(node_t *node){
                 (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
 
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-        printf(", metric = %u, edge level = %s\n", edge->metric, get_str_egde_level(edge->level));
+        printf(", metric = %u, edge level = %s\n", edge->metric, get_str_level(edge->level));
     }
 }
 

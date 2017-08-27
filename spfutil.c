@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  spfutil.h
+ *       Filename:  spfutil.c
  *
- *    Description:  This file contains utilities for SPFComputation project
+ *    Description:  Implementation of spfutil.h
  *
  *        Version:  1.0
- *        Created:  Sunday 27 August 2017 01:52:40  IST
+ *        Created:  Sunday 27 August 2017 12:49:32  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,25 +30,58 @@
  * =====================================================================================
  */
 
-#ifndef __SPFUTIL__
-#define __SPFUTIL__
-
-#include "graph.h"
-
-#define IS_LEVEL_SET(input_level, level)    ((input_level) & (level))
-#define SET_LEVEL(input_level, level)       ((input_level) |= (level))
+#include "spfutil.h"
 
 
 void
-copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]);
+copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
+    
+    unsigned int i = 0;
+    for(; i < MAX_NXT_HOPS; i++){
+        dst_nh_list[i] = src_nh_list[i];
+    }
+}
 
 int
-is_nh_list_empty(node_t *nh_list[]);
+is_nh_list_empty(node_t *nh_list[]){
+
+    return (nh_list[0] == NULL);
+}
 
 char *
-get_str_level(LEVEL level);
+get_str_level(LEVEL level){
+
+    switch(level){
+        case LEVEL1:
+            return "LEVEL1";
+        case LEVEL2:
+            return "LEVEL2";
+        default:
+            if(level == (LEVEL1 | LEVEL2))
+                return "LEVEL1|2";
+            else
+                return "LEVEL_UNKNOWN";
+    }
+}
 
 char*
-get_str_node_area(AREA area);
+get_str_node_area(AREA area){
 
-#endif /* __SPFUTIL__ */ 
+    switch(area){
+        case AREA1:
+            return "AREA1";
+        case AREA2:
+            return "AREA2";
+        case AREA3:
+            return "AREA3";
+        case AREA4:
+            return "AREA4";
+        case AREA5:
+            return "AREA5";
+        case AREA6:
+            return "AREA6";
+        default:
+            return "AREA_UNKNOWN";
+    }
+}
+
