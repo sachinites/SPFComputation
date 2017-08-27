@@ -133,9 +133,9 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
 
     /*step 1 : Purge NH list of all nodes in the topo*/
 
-    node_t *node = NULL;
+    node_t *node = NULL, *pn_nbr = NULL;
     unsigned int i = 0;
-    edge_t *edge = NULL;
+    edge_t *edge = NULL, *pn_edge = NULL;
     singly_ll_node_t *list_node = NULL;
 
     ITERATE_LIST(graph->graph_node_list, list_node){    
@@ -155,11 +155,27 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
 
     /*step 3 : Initialize direct nexthops.
      * Iterate over real physical nbrs of root (that is skip PNs)
-     * and initialize their direct next hop list*/
+     * and initialize their direct next hop list. Also, pls note that
+     * directly PN's nbrs are also direct next hops to root. In Production
+     * code, root has a separate list of directly connected physical real
+     * nbrs. In our case, we dont have such list, hence, altenative is treat
+     * nbrs of directly connected PN as own nbrs, which is infact the concept
+     * of pseudonode*/
 
     ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge, level){
-        if(node->node_type[level] == PSEUDONODE)/*Do not initialize direct nxt hop of PNs*/
+        if(node->node_type[level] == PSEUDONODE){
+
+            ITERATE_NODE_NBRS_BEGIN(node, pn_nbr, pn_edge, level){
+            
+                if(pn_nbr == graph->graph_root)
+                    continue;
+
+                pn_nbr->direct_next_hop[level][0] = pn_nbr;
+            }
+            ITERATE_NODE_NBRS_END;
+
             continue;
+        }
         node->direct_next_hop[level][0] = node;
     }
     ITERATE_NODE_NBRS_END;

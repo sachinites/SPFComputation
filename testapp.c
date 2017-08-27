@@ -40,8 +40,8 @@ extern void
 spf_init_dcm();
 
 /*import from topo.c*/
-extern graph_t *
-build_linear_topo();
+extern graph_t * build_linear_topo();
+extern graph_t * build_multi_area_topo();
 
 /* import from spfcomputation.c*/
 extern
@@ -57,8 +57,8 @@ main(int argc, char **argv){
     spf_init_dcm();
 
     /* Topology Initialization*/
-    graph = build_linear_topo();
-
+    //graph = build_linear_topo();
+    graph = build_multi_area_topo();
     /* Initialize the stats*/
     spf_stats.spf_runs_count[LEVEL1] = 0;
     spf_stats.spf_runs_count[LEVEL2] = 0;

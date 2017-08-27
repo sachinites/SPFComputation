@@ -53,12 +53,20 @@ show_spf_results(LEVEL level){
     
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
+    unsigned int i = 0;
 
-    printf("SPF run results for LEVEL : %s, ROOT = %s\n", get_str_level(level), graph->graph_root->node_name);
+    printf("\nSPF run results for LEVEL : %s, ROOT = %s\n", get_str_level(level), graph->graph_root->node_name);
 
     ITERATE_LIST(graph->spf_run_result[level], list_node){
         node = (node_t *)list_node->data;
-        printf("Node : %s, spf_metric : %u\n", node->node_name, node->spf_metric[level]);
+        printf("DEST : %-10s spf_metric : %-6u", node->node_name, node->spf_metric[level]);
+        printf(" Nxt Hop : ");
+        for( i = 0; i < MAX_NXT_HOPS; i++){
+            if(node->next_hop[level][i] == NULL)
+                break;
+        
+            printf("%-10s\n", node->next_hop[level][i]->node_name);
+        }
     }
 }
 

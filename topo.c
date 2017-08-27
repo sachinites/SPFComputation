@@ -39,7 +39,7 @@ build_linear_topo(){
      *
      * +------+               +------+                +-------+
      * |      |0/0    10.1.1.2|      |0/2     20.1.1.2|       |
-     * |  R0  +---------------+  R1  +----------------+  R2   |
+     * |  R0  +------L12------+  R1  +-----L12--------+  R2   |
      * |      |10.1.1.1    0/1|      |20.1.1.1    0/2 |       |
      * +------+               +------+                +-------+
      *                                                    
@@ -64,3 +64,94 @@ build_linear_topo(){
     set_graph_root(graph, R0);
     return graph;
 }
+
+graph_t *
+build_multi_area_topo(){
+
+#if 0
+                                                                                                      +-------------------+
+                                                                                                      |                   |
+ +----------------------------------------------+                                                     |     +-------+     |
+ | +--------+10.1.1.2            0/0+-------+   |0/2                                         14.1.1.2 |     |       |     |
+ | | R1     +------------L1---------+  R0   +---+---------------------------L2------------------------+-----+ R3    |     |
+ | |        |0/0            10.1.1.1|       |   |14.1.1.1                                          0/2|     |       |     |
+ | +----+---+                       ++------+   |                                                     |     +---+---+     |
+ |      |0/1                         |0/1       |                                                     |      0/1|15.1.1.1 |
+ |      |12.1.1.2                    |11.1.1.1  |                                                     |         |         |
+ |      |                            |          |                                                     |         L12       |
+ |      |                            L1         |                                                     |         |         |
+ |      L1                           |          |                                                     |      0/1|15.1.1.2 |
+ |      |          +-------+0/0      |          |                                                     |     +---+---+     |
+ |      +----------+  R2   +---------+          |                                                     |     | R4    |     |
+ |              0/1|       |11.1.1.2            |                                                     |     |       |     |
+ |        12.1.1.1 +------++                    |                                                     |     +---+---+     |
+ |                        | 0/2                 |                                                     | 16.1.1.1|0/2      |
+ +------------------------+---------------------+                                                     +---------+---------+
+                    AREA1 |20.1.1.1                                                                             |AREA2
+                          |                                                                                     |
+                          |                                                                                     |
+                          |                                             +----------------------+                L2
+                          |                                             |                      |                |
+                          |                                             |       +------+       |                |
+                          |                                             |    0/2|      |       |                |
+                          +--------------L2-----------------------------+-------+ R5   |0/1    |                |
+                                                                        20.1.1.1|      |-------+-------+--------+
+                                                                        |       +---+--+16.1.1.2|
+                                                                        |           |0/0       |
+                                                                        |           |17.1.1.1  |
+                                                                        |           |          |
+                                                                        |           |          |
+                                                                        |           L1         |
+                                                                        |           |          |
+                                                                        |           |          |
+                                                                        |           |          |
+                                                                        |        0/0|17.1.1.2  |
+                                                                        |      +----+---+      |
+                                                                        |      | R6     |      |
+                                                                        |      |        |      |
+                                                                        |      +--------+      |
+                                                                        |                      |
+                                                                        +----------------------+
+                                                                               AREA3
+ 
+#endif
+
+    graph_t *graph = get_new_graph();
+
+    node_t *R0 = create_new_node(graph, "R0", AREA1);
+    node_t *R1 = create_new_node(graph, "R1", AREA1);
+    node_t *R2 = create_new_node(graph, "R2", AREA1);
+    node_t *R3 = create_new_node(graph, "R3", AREA2);
+    node_t *R4 = create_new_node(graph, "R4", AREA2);
+    node_t *R5 = create_new_node(graph, "R5", AREA3);
+    node_t *R6 = create_new_node(graph, "R6", AREA3);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, "10.1.1.1/24", "10.1.1.2/24", LEVEL1)),
+                                R0, R1, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/0", 10, "11.1.1.1/24", "11.1.1.2/24", LEVEL1)),
+                                R0, R2, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, "12.1.1.2/24", "12.1.1.1/24", LEVEL1)),
+                                R1, R2, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, "14.1.1.1/24", "14.1.1.2/24", LEVEL2)),
+                                R0, R3, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, "15.1.1.1/24", "15.1.1.2/24", LEVEL12)),
+                                R3, R4, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 10, "16.1.1.1/24", "16.1.1.2/24", LEVEL2)),
+                                R4, R5, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, "17.1.1.1/24", "17.1.1.2/24", LEVEL1)),
+                                R5, R6, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, "20.1.1.1/24", "20.1.1.2/24", LEVEL2)),
+                                R2, R5, BIDIRECTIONAL);
+
+    set_graph_root(graph, R0);
+    return graph;
+}
+
+
