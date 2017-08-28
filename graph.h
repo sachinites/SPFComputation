@@ -44,11 +44,14 @@ typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
     AREA area;
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
-    NODE_TYPE node_type[MAX_LEVEL];/*ToDo : A node is a PN wrt level*/ 
-    unsigned int spf_metric[MAX_LEVEL];/*ToDo : spf_metric is a PN wrt level*/
-    struct _node_t *next_hop[MAX_LEVEL][MAX_NXT_HOPS];/*ToDo : Level Specific*/ 
-    struct _node_t *direct_next_hop[MAX_LEVEL][MAX_NXT_HOPS];/*ToDo : LevelSpecific*/
-    edge_end_t *pn_intf[MAX_LEVEL];/*ToDo : Level Specific. SPF root will bind the directly connected PN with SPF root's local connected interface*/
+    NODE_TYPE node_type[MAX_LEVEL];
+    unsigned int spf_metric[MAX_LEVEL];
+    struct _node_t *next_hop[MAX_LEVEL][MAX_NXT_HOPS];
+    struct _node_t *direct_next_hop[MAX_LEVEL][MAX_NXT_HOPS];
+    edge_end_t *pn_intf[MAX_LEVEL];
+    char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
+    ll_t *attached_nodes;                                   /*Every node should know the L2 router(s) within a local area which are attached to another Area*/
+    char traversing_bit;                                    /*This bit is only used to traverse the graph, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
 } node_t;
 
 struct edge_end_{

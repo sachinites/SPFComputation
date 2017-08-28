@@ -70,7 +70,8 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
         ITERATE_NODE_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
             printf("%s() : Processing Nbr : %s\n", __FUNCTION__, nbr_node->node_name);
 
-            /*To way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN.*/
+            /*To way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
+             * not consider the node for SPF computation if we find 2-way nbrship is broken*/
 
             if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
 
@@ -81,9 +82,11 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
             printf("%s() : Two Way nbrship verified with nbr %s\n", __FUNCTION__, nbr_node->node_name);
 
             if(candidate_node->spf_metric[level] + edge->metric[level] < nbr_node->spf_metric[level]){
+                
                 printf("%s() : Old Metric : %u, New Metric : %u, Better Next Hop\n",
                         __FUNCTION__, nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
 
+                
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
                 if(is_nh_list_empty(&candidate_node->next_hop[level][0]) &&
                         nbr_node->node_type[level] == PSEUDONODE){
@@ -91,6 +94,8 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
                     printf("%s() : case 1 if My own List is empty, and nbr is Pseuodnode , do nothing\n", __FUNCTION__);
                 }
 
+                
+                
                 /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
                 else if(is_nh_list_empty(&candidate_node->next_hop[level][0]) &&
                         nbr_node->node_type[level] == NON_PSEUDONODE){
@@ -101,6 +106,8 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
                     copy_nh_list(&nbr_node->direct_next_hop[level][0], &nbr_node->next_hop[level][0]);
                 }
 
+                
+                
                 /*case 3 : if My own List is not empty, then nbr should inherit my next hop list*/
                 else if(!is_nh_list_empty(&candidate_node->next_hop[level][0])){
 
@@ -114,6 +121,7 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
                         __FUNCTION__, nbr_node->node_name, nbr_node->spf_metric[level]);
 
             }
+
             else{
                 printf("%s() : Old Metric : %u, New Metric : %u, Not a Better Next Hop\n",
                         __FUNCTION__, nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
@@ -160,9 +168,10 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
      * code, root has a separate list of directly connected physical real
      * nbrs. In our case, we dont have such list, hence, altenative is treat
      * nbrs of directly connected PN as own nbrs, which is infact the concept
-     * of pseudonode*/
+     * of pseudonode. Again, do not compute direct next hops of PN*/
 
     ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge, level){
+        
         if(node->node_type[level] == PSEUDONODE){
 
             ITERATE_NODE_NBRS_BEGIN(node, pn_nbr, pn_edge, level){
@@ -173,12 +182,12 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
                 pn_nbr->direct_next_hop[level][0] = pn_nbr;
             }
             ITERATE_NODE_NBRS_END;
-
             continue;
         }
         node->direct_next_hop[level][0] = node;
     }
     ITERATE_NODE_NBRS_END;
+
 
     /*Step 4 : Initialize candidate tree with root*/
    if(graph->graph_root->node_type[level] == PSEUDONODE) 
@@ -204,6 +213,10 @@ spf_computation(LEVEL level){
     CANDIDATE_TREE_INIT(&ctree);
 
     /*Drain off results list for level */
+    if(level != LEVEL1 && level != LEVEL2){
+        printf("%s() : Error : invalid level specified\n", __FUNCTION__);
+        return;
+    }
 
     delete_singly_ll(graph->spf_run_result[level]); 
 

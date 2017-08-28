@@ -179,10 +179,7 @@ mark_node_pseudonode(node_t *node, LEVEL level){
         
         if(!IS_LEVEL_SET(edge->level, level))      
             continue;
-        /*Reset Values*/
-        //memset(edge_end->intf_name, 0, IF_NAME_SIZE);
-        //strncpy(edge_end->intf_name, "NIL", IF_NAME_SIZE);
-        //edge_end->intf_name[IF_NAME_SIZE -1] = '\0';
+        
         memset(edge_end->prefix[level], 0, PREFIX_LEN_WITH_MASK + 1);
         strncpy(edge_end->prefix[level], "NIL", PREFIX_LEN_WITH_MASK);
         edge_end->prefix[level][PREFIX_LEN_WITH_MASK] = '\0';

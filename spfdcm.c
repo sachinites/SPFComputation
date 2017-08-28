@@ -195,7 +195,7 @@ spf_init_dcm(){
     libcli_register_param(show, &show_spf);
 
     static param_t show_spf_run;
-    init_param(&show_spf_run, CMD, "run", show_spf_run_handler, 0, INVALID, 0, "run SPT computation");
+    init_param(&show_spf_run, CMD, "run", 0, 0, INVALID, 0, "run SPT computation");
     libcli_register_param(&show_spf, &show_spf_run);
    
     /*show spf run level */ 

@@ -23,6 +23,7 @@
 #include "css.h"
 #include <signal.h>
 #include "clicbext.h"
+#include "string_util.h"
 
 extern void
 parse_input_cmd(char *input, unsigned int len);

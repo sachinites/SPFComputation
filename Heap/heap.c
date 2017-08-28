@@ -1,7 +1,7 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <memory.h>
 #include "heap.h"
 
 #define CMP(a, b) ((*a) <= (*b))
