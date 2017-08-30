@@ -60,8 +60,13 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
          * however we process it as ususal like other nodes*/
 
-        if(candidate_node->node_type[level] != PSEUDONODE) 
-            singly_ll_add_node_by_val(graph->spf_run_result[level], (void *)candidate_node);
+        if(candidate_node->node_type[level] != PSEUDONODE){
+
+            spf_result_t *res = calloc(1, sizeof(spf_result_t));
+            res->node = candidate_node;
+            res->spf_metric = candidate_node->spf_metric[level];
+            singly_ll_add_node_by_val(graph->spf_run_result[level], (void *)res);
+        }
 
 
         /*Iterare over all the nbrs of Candidate node*/
@@ -209,8 +214,7 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
 void
 spf_computation(LEVEL level){
 
-    candidate_tree_t ctree;
-    CANDIDATE_TREE_INIT(&ctree);
+    CANDIDATE_TREE_INIT(&graph->spf_info.ctree);
 
     /*Drain off results list for level */
     if(level != LEVEL1 && level != LEVEL2){
@@ -220,17 +224,11 @@ spf_computation(LEVEL level){
 
     delete_singly_ll(graph->spf_run_result[level]); 
 
-    if(IS_LEVEL_SET(level, LEVEL1)){
-        spf_init(&ctree, LEVEL1);
-        run_dijkastra(LEVEL1, &ctree);
-    }
+    spf_init(&graph->spf_info.ctree, level);
+    run_dijkastra(level, &graph->spf_info.ctree);
 
-    else if(IS_LEVEL_SET(level, LEVEL2)){
-        spf_init(&ctree, LEVEL2);
-        run_dijkastra(LEVEL2, &ctree);
-    }
 
-    FREE_CANDIDATE_TREE_INTERNALS(&ctree);
+    FREE_CANDIDATE_TREE_INTERNALS(&graph->spf_info.ctree);
 }
 
 

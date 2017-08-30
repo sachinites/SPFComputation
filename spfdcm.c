@@ -52,20 +52,20 @@ static void
 show_spf_results(LEVEL level){
     
     singly_ll_node_t *list_node = NULL;
-    node_t *node = NULL;
+    spf_result_t *res = NULL;
     unsigned int i = 0;
 
     printf("\nSPF run results for LEVEL : %s, ROOT = %s\n", get_str_level(level), graph->graph_root->node_name);
 
     ITERATE_LIST(graph->spf_run_result[level], list_node){
-        node = (node_t *)list_node->data;
-        printf("DEST : %-10s spf_metric : %-6u", node->node_name, node->spf_metric[level]);
+        res = (spf_result_t *)list_node->data;
+        printf("DEST : %-10s spf_metric : %-6u", res->node->node_name, res->node->spf_metric[level]);
         printf(" Nxt Hop : ");
         for( i = 0; i < MAX_NXT_HOPS; i++){
-            if(node->next_hop[level][i] == NULL)
+            if(res->node->next_hop[level][i] == NULL)
                 break;
         
-            printf("%-10s\n", node->next_hop[level][i]->node_name);
+            printf("%-10s\n", res->node->next_hop[level][i]->node_name);
         }
     }
 }
@@ -81,6 +81,13 @@ validate_level_no(char *value_passed){
     printf("Error : Incorrect Level Value.\n");
     return VALIDATION_FAILED;
 }
+
+static int
+config_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    return 0;
+}
+
 
 static int
 show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
@@ -213,9 +220,35 @@ spf_init_dcm(){
     static param_t show_spf_statistics;
     init_param(&show_spf_statistics, CMD, "statistics", show_spf_stats_handler, 0, INVALID, 0, "SPF Statistics");
     libcli_register_param(&show_spf, &show_spf_statistics);
+
+    /*config commands */
+
+    /*config node <node-name> [no] slot <slot-name> enable*/
+    static param_t config_node;
+    init_param(&config_node, CMD, "node", 0, 0, INVALID, 0, "node");
+    libcli_register_param(config, &config_node);
+
+    static param_t config_node_node_name;
+    init_param(&config_node_node_name, LEAF, 0, 0, 0, STRING, "node-name", "Node Name");
+    libcli_register_param(&config_node, &config_node_node_name);
+
+    static param_t config_node_node_name_slot;
+    init_param(&config_node_node_name_slot, CMD, "slot", 0, 0, INVALID, 0, "slot");
+    libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
+
+    static param_t config_node_node_name_slot_slotname;
+    init_param(&config_node_node_name_slot_slotname, LEAF, 0, 0, 0, STRING, "slot-no", "interface name x/y format");
+    libcli_register_param(&config_node_node_name_slot, &config_node_node_name_slot_slotname);
+
+    static param_t config_node_node_name_slot_slotname_enable;
+    init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", config_node_handler, 0, INVALID, 0, "enable");
+    libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
+
+
 /*Debug commands*/
     
 
+    support_cmd_negation(&config_node_node_name);
     support_cmd_negation(config);
 }
 
@@ -230,9 +263,9 @@ dump_nbrs(node_t *node, LEVEL level){
                 (node->node_type[level] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
 
     ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge, level){
-        printf("    Neighborr : %s, Area = %s\n", nbr_node->node_name, get_str_node_area(nbr_node->area));
-        printf("    egress intf = %s(%s), peer_intf = %s(%s)\n",
-                edge->from.intf_name, edge->from.prefix[level], edge->to.intf_name, edge->to.prefix[level]);
+        printf("    Neighbor : %s, Area = %s\n", nbr_node->node_name, get_str_node_area(nbr_node->area));
+        printf("    egress intf = %s(%s/%d), peer_intf  = %s(%s/%d)\n",
+                    edge->from.intf_name, STR_PREFIX(edge->from._prefix[level]), PREFIX_MASK(edge->from._prefix[level]), edge->to.intf_name, STR_PREFIX(edge->to._prefix[level]), PREFIX_MASK(edge->to._prefix[level]));
 
         printf("    %s metric = %u, edge level = %s\n\n", get_str_level(level),
             edge->metric[level], get_str_level(edge->level));
@@ -267,8 +300,8 @@ dump_node_info(node_t *node){
         if(!edge_end)
             break;
 
-        printf("    slot%u : %s, L1 prefix : %s, L2 prefix : %s, %s, local edge-end connected node : %s", i, edge_end->intf_name, edge_end->prefix[LEVEL1], edge_end->prefix[LEVEL2],
-                (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
+        printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, local edge-end connected node : %s", i, edge_end->intf_name, STR_PREFIX(edge_end->_prefix[LEVEL1]), PREFIX_MASK(edge_end->_prefix[LEVEL1]), 
+                STR_PREFIX(edge_end->_prefix[LEVEL2]), PREFIX_MASK(edge_end->_prefix[LEVEL2]), (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
 
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
         printf(", L1 metric = %u, L2 metric = %u, edge level = %s\n", edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level));

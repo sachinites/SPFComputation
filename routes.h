@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  testapp.c
+ *       Filename:  routes.h
  *
- *    Description:  Test Main Stub
+ *    Description:  This file defines the data structure for routes and prefixes to be installed in RIB
  *
  *        Version:  1.0
- *        Created:  Wednesday 23 August 2017 07:38:47  IST
+ *        Created:  Wednesday 30 August 2017 02:09:28  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,39 +30,20 @@
  * =====================================================================================
  */
 
-#include "graph.h"
-#include <stdio.h>
-#include "libcli.h"
-#include "spfcomputation.h"
+#ifndef __ROUTES__
+#define __ROUTES__
 
-/*import from spfdcm.c*/
-extern void
-spf_init_dcm();
+#include "graphconst.h"
 
-/*import from topo.c*/
-extern graph_t * build_linear_topo();
-extern graph_t * build_multi_area_topo();
+typedef struct prefix_{
 
-/* import from spfcomputation.c*/
-extern
-spf_stats_t spf_stats;
+    char prefix[PREFIX_LEN + 1];
+    unsigned char mask;/*Numeric value [0-32]*/
+} prefix_t;
 
-/*Globals */
-graph_t *graph = NULL;
+prefix_t *
+create_new_prefix(const char *prefix, unsigned char mask);
 
-int
-main(int argc, char **argv){
-
-    /* Lib cli initialization */
-    spf_init_dcm();
-
-    /* Topology Initialization*/
-    graph = build_linear_topo();
-    //graph = build_multi_area_topo();
-    /* Initialize the stats*/
-    spf_stats.spf_runs_count[LEVEL1] = 0;
-    spf_stats.spf_runs_count[LEVEL2] = 0;
-
-    start_shell();
-    return 0;
-}
+#define STR_PREFIX(prefix_t_ptr)    (prefix_t_ptr ? prefix_t_ptr->prefix : "NIL")
+#define PREFIX_MASK(prefix_t_ptr)   (prefix_t_ptr ? prefix_t_ptr->mask : 0)
+#endif /* __ROUTES__ */

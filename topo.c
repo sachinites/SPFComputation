@@ -40,7 +40,7 @@ build_linear_topo(){
      * +------+               +------+                +-------+
      * |      |0/0    10.1.1.2|      |0/2     20.1.1.2|       |
      * |  R0  +------L12------+  R1  +-----L12--------+  R2   |
-     * |      |10.1.1.1    0/1|      |20.1.1.1    0/2 |       |
+     * |      |10.1.1.1    0/1|      |20.1.1.1    0/3 |       |
      * +------+               +------+                +-------+
      *                                                    
      * */
@@ -51,11 +51,16 @@ build_linear_topo(){
     node_t *R1 = create_new_node(graph, "R1", AREA1);
     node_t *R2 = create_new_node(graph, "R2", AREA1);
 
-    edge_t *R0_R1_edge = create_new_edge("eth0/0", "eth0/1", 10,
-            "10.1.1.1/24", "10.1.1.2/24", LEVEL12);
+    prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24);
+    prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24);
+    prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24);
+    prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24);
 
-    edge_t *R1_R2_edge = create_new_edge("eth0/2", "eth0/2", 10,
-            "20.1.1.1/24", "20.1.1.2/24", LEVEL12);
+    edge_t *R0_R1_edge = create_new_edge("eth0/0", "eth0/1", 10,
+            prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL12);
+
+    edge_t *R1_R2_edge = create_new_edge("eth0/2", "eth0/3", 10,
+            prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL12);
 
     insert_edge_between_2_nodes(R0_R1_edge, R0, R1, BIDIRECTIONAL);
     insert_edge_between_2_nodes(R1_R2_edge, R1, R2, BIDIRECTIONAL);
@@ -126,32 +131,31 @@ build_multi_area_topo(){
     node_t *R5 = create_new_node(graph, "R5", AREA3);
     node_t *R6 = create_new_node(graph, "R6", AREA3);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, "10.1.1.1/24", "10.1.1.2/24", LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, create_new_prefix("10.1.1.1", 24), create_new_prefix("10.1.1.2", 24), LEVEL1)),
                                 R0, R1, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/0", 10, "11.1.1.1/24", "11.1.1.2/24", LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/0", 10, create_new_prefix("11.1.1.1", 24), create_new_prefix("11.1.1.2", 24), LEVEL1)),
                                 R0, R2, BIDIRECTIONAL);
     
-    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, "12.1.1.2/24", "12.1.1.1/24", LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, create_new_prefix("12.1.1.1", 24), create_new_prefix("12.1.1.2", 24), LEVEL1)),
                                 R1, R2, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, "14.1.1.1/24", "14.1.1.2/24", LEVEL2)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("14.1.1.1", 24), create_new_prefix("14.1.1.2", 24), LEVEL2)),
                                 R0, R3, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, "15.1.1.1/24", "15.1.1.2/24", LEVEL12)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, create_new_prefix("15.1.1.1", 24), create_new_prefix("15.1.1.2", 24), LEVEL12)),
                                 R3, R4, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 10, "16.1.1.1/24", "16.1.1.2/24", LEVEL2)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 10, create_new_prefix("16.1.1.1", 24), create_new_prefix("16.1.1.2", 24), LEVEL2)),
                                 R4, R5, BIDIRECTIONAL);
     
-    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, "17.1.1.1/24", "17.1.1.2/24", LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, create_new_prefix("17.1.1.1", 24), create_new_prefix("17.1.1.2", 24), LEVEL1)),
                                 R5, R6, BIDIRECTIONAL);
     
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, "20.1.1.1/24", "20.1.1.2/24", LEVEL2)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("20.1.1.1", 24), create_new_prefix("20.1.1.2", 24), LEVEL2)),
                                 R2, R5, BIDIRECTIONAL);
 
     set_graph_root(graph, R0);
     return graph;
 }
-
 

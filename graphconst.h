@@ -61,6 +61,7 @@ typedef enum{
 } LEVEL;
 
 #define LEVEL12 (LEVEL1 | LEVEL2)
+
 typedef enum{
     NON_PSEUDONODE,
     PSEUDONODE

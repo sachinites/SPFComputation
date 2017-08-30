@@ -37,6 +37,8 @@
 #include "LinkedListApi.h"
 #include <stdlib.h>
 #include <assert.h>
+#include "spfcomputation.h"
+#include "routes.h"
 
 typedef struct edge_end_ edge_end_t;
 
@@ -52,13 +54,14 @@ typedef struct _node_t{
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
     ll_t *attached_nodes;                                   /*Every node should know the L2 router(s) within a local area which are attached to another Area*/
     char traversing_bit;                                    /*This bit is only used to traverse the graph, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
+    unsigned int router_flags[MAX_LEVEL];
 } node_t;
 
 struct edge_end_{
     node_t *node;
     char intf_name[IF_NAME_SIZE];
-    char prefix[MAX_LEVEL][PREFIX_LEN_WITH_MASK + 1];
-    EDGE_END_DIRN dirn;/*dirn of edge is not level dependant*/
+    prefix_t * _prefix[MAX_LEVEL];
+    EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
 };
 
 typedef struct _edge_t{
@@ -72,6 +75,7 @@ typedef struct graph_{
     node_t *graph_root;
     ll_t *graph_node_list;
     ll_t *spf_run_result[MAX_LEVEL];
+    spf_info_t spf_info;
 } graph_t;
 
 node_t *
@@ -82,8 +86,8 @@ edge_t *
 create_new_edge(char *from_ifname, 
                 char *to_ifname, 
                 unsigned int metric, 
-                char *from_prefix, 
-                char *to_prefix,
+                prefix_t *from_prefix,
+                prefix_t *to_prefix,
                 LEVEL level);
 
 void
@@ -174,6 +178,8 @@ get_edge_direction(node_t *node, edge_t *edge){
 int
 is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level);
 
+void
+traverse_graph(graph_t *graph, void *(*processing_fn_ptr)(node_t *), LEVEL level);
 
 #endif /* __GRAPH__ */
 

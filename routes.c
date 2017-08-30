@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  testapp.c
+ *       Filename:  routes.c
  *
- *    Description:  Test Main Stub
+ *    Description:  iImplementation of routes.c
  *
  *        Version:  1.0
- *        Created:  Wednesday 23 August 2017 07:38:47  IST
+ *        Created:  Wednesday 30 August 2017 02:14:15  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,39 +30,19 @@
  * =====================================================================================
  */
 
-#include "graph.h"
-#include <stdio.h>
-#include "libcli.h"
-#include "spfcomputation.h"
+#include "routes.h"
+#include <stdlib.h>
+#include <string.h>
 
-/*import from spfdcm.c*/
-extern void
-spf_init_dcm();
 
-/*import from topo.c*/
-extern graph_t * build_linear_topo();
-extern graph_t * build_multi_area_topo();
+prefix_t *
+create_new_prefix(const char *prefix, unsigned char mask){
 
-/* import from spfcomputation.c*/
-extern
-spf_stats_t spf_stats;
-
-/*Globals */
-graph_t *graph = NULL;
-
-int
-main(int argc, char **argv){
-
-    /* Lib cli initialization */
-    spf_init_dcm();
-
-    /* Topology Initialization*/
-    graph = build_linear_topo();
-    //graph = build_multi_area_topo();
-    /* Initialize the stats*/
-    spf_stats.spf_runs_count[LEVEL1] = 0;
-    spf_stats.spf_runs_count[LEVEL2] = 0;
-
-    start_shell();
-    return 0;
+    prefix_t *_prefix = calloc(1, sizeof(prefix_t));
+    strncpy(_prefix->prefix, prefix, strlen(prefix));
+    _prefix->prefix[PREFIX_LEN] = '\0';
+    _prefix->mask = mask;
+    return _prefix;
 }
+
+

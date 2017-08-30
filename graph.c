@@ -64,8 +64,8 @@ edge_t *
 create_new_edge(char *from_ifname,
         char *to_ifname,
         unsigned int metric,
-        char *from_prefix,
-        char *to_prefix,
+        prefix_t *from_prefix,
+        prefix_t *to_prefix,
         LEVEL level){
 
     assert(from_ifname);
@@ -86,23 +86,17 @@ create_new_edge(char *from_ifname,
     edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
 
     if(IS_LEVEL_SET(level, LEVEL1)){
-        strncpy(edge->from.prefix[LEVEL1], from_prefix, PREFIX_LEN_WITH_MASK + 1);
-        edge->from.prefix[LEVEL1][PREFIX_LEN_WITH_MASK] = '\0';
-        strncpy(edge->to.prefix[LEVEL1], to_prefix, PREFIX_LEN_WITH_MASK + 1);
-        edge->to.prefix[LEVEL1][PREFIX_LEN_WITH_MASK] = '\0';
+        edge->from._prefix[LEVEL1] = from_prefix;
+        edge->to._prefix[LEVEL1]   = to_prefix;
     }
 
 
     if(IS_LEVEL_SET(level, LEVEL2)){
-        strncpy(edge->from.prefix[LEVEL2], from_prefix, PREFIX_LEN_WITH_MASK + 1);
-        edge->from.prefix[LEVEL2][PREFIX_LEN_WITH_MASK] = '\0';
-        strncpy(edge->to.prefix[LEVEL2], to_prefix, PREFIX_LEN_WITH_MASK + 1);
-        edge->to.prefix[LEVEL2][PREFIX_LEN_WITH_MASK] = '\0';
+        edge->from._prefix[LEVEL2] = from_prefix;
+        edge->to._prefix[LEVEL2]   = to_prefix;
     }
 
-
-    edge->level = level;
-
+    edge->level     = level;
     edge->from.dirn = EDGE_END_DIRN_UNKNOWN;
     edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;
 
@@ -144,11 +138,11 @@ insert_edge_between_2_nodes(edge_t *edge,
        
         if(IS_LEVEL_SET(edge->level, LEVEL1)) 
             edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric[LEVEL1],
-                                        edge->to.prefix[LEVEL1], edge->from.prefix[LEVEL1], edge->level);
+                                        edge->to._prefix[LEVEL1], edge->from._prefix[LEVEL1], edge->level);
 
         else if(IS_LEVEL_SET(edge->level, LEVEL2))
             edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric[LEVEL2],
-                                        edge->to.prefix[LEVEL2], edge->from.prefix[LEVEL2], edge->level);
+                                        edge->to._prefix[LEVEL2], edge->from._prefix[LEVEL2], edge->level);
 
         insert_edge_between_2_nodes(edge2, to_node, from_node, UNIDIRECTIONAL);
     }
@@ -165,6 +159,7 @@ mark_node_pseudonode(node_t *node, LEVEL level){
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
+    prefix_t *prefix = NULL;
 
     if(level != LEVEL1 && level != LEVEL2)
         assert(0);
@@ -179,10 +174,20 @@ mark_node_pseudonode(node_t *node, LEVEL level){
         
         if(!IS_LEVEL_SET(edge->level, level))      
             continue;
-        
+       
+#if 0
         memset(edge_end->prefix[level], 0, PREFIX_LEN_WITH_MASK + 1);
         strncpy(edge_end->prefix[level], "NIL", PREFIX_LEN_WITH_MASK);
         edge_end->prefix[level][PREFIX_LEN_WITH_MASK] = '\0';
+#endif
+        prefix = edge_end->_prefix[level];
+
+        if(node->node_type[LEVEL1] == PSEUDONODE &&
+            node->node_type[LEVEL2] == PSEUDONODE){
+            free(prefix);
+        }
+
+        edge_end->_prefix[level] = NULL;
 
         if(get_edge_direction(node, edge) == OUTGOING)
             edge->metric[level] = 0;
@@ -222,5 +227,54 @@ is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level){
     }
     ITERATE_NODE_NBRS_END;
     return 0;
+}
+
+/* Fn to traverse the Graph in DFS order. processing_fn_ptr is the
+ * ptr to the fn used to perform the required processing on current node
+ * while traversing the graph*/
+
+static void
+init_graph_traversal(graph_t * graph){
+
+   singly_ll_node_t *list_node = NULL;
+   node_t *node = NULL;
+
+   ITERATE_LIST(graph->graph_node_list, list_node){
+        node = (node_t *)list_node->data;
+        node->traversing_bit = 0;
+   }  
+}
+
+static void
+_traverse_graph(node_t *graph_root, 
+               void *(*processing_fn_ptr)(node_t *), LEVEL level){
+
+    if(!graph_root) 
+        return;
+
+    if(graph_root->traversing_bit == 1)
+        return;
+
+    edge_t *edge = NULL;
+    node_t *nbr_node = NULL;
+
+    processing_fn_ptr(graph_root);
+
+    graph_root->traversing_bit = 1;
+
+    ITERATE_NODE_NBRS_BEGIN(graph_root, nbr_node, edge, level){
+        _traverse_graph(nbr_node, processing_fn_ptr, level);
+    }
+    ITERATE_NODE_NBRS_END;
+}
+
+/*This is the fn to traverse the graph from root. This fn would
+ * simulate the flooding behavior*/
+void
+traverse_graph(graph_t *graph, 
+                void *(*processing_fn_ptr)(node_t *), LEVEL level){
+
+    init_graph_traversal(graph); 
+    _traverse_graph(graph->graph_root, processing_fn_ptr, level);
 }
 
