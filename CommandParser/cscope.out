@@ -1,4 +1,64 @@
-cscope 15 $HOME/Documents/CommandParser               0000172323
+cscope 15 $HOME/Documents/CommandParser               0000177865
+	@clicbext.c
+
+34 
+	~<°dio.h
+>
+
+35 
+	~"˛icbext.h
+"
+
+38 
+	$ãrmö©e_sig«l_h™dÀr
+(){
+
+45 
+	`cﬁÀ˘_suµ‹tßve_d©a
+();
+
+46 
+	`exô
+(0);
+
+47 
+	}
+}
+
+50 
+	$cﬁÀ˘_suµ‹tßve_d©a
+(){
+
+51 
+	`¥ötf
+("%s(Ëi†ˇŒed ...\n", 
+__FUNCTION__
+);
+
+52 
+	}
+}
+
+	@clicbext.h
+
+33 #i‚de‡
+__CLICBEXTN__
+
+
+34 
+	#__CLICBEXTN__
+
+
+	)
+
+37 
+ãrmö©e_sig«l_h™dÀr
+();
+
+40 
+cﬁÀ˘_suµ‹tßve_d©a
+();
+
 	@cliconst.h
 
 19 #i‚de‡
@@ -57,7 +117,7 @@ CONS_INPUT_BUFFER_SIZE
 
 29 
 	#TLV_MAX_BUFFER_SIZE
- 1048
+ 1024
 
 	)
 
@@ -81,7 +141,7 @@ CONS_INPUT_BUFFER_SIZE
 
 34 
 	#MAX_OPTION_SIZE
- 30
+ 16
 
 	)
 
@@ -97,13 +157,13 @@ CONS_INPUT_BUFFER_SIZE
 
 	)
 
-39 
+38 
 	#CHILDREN_START_INDEX
  2
 
 	)
 
-40 
+39 
 	#CHILDREN_END_INDEX
  (
 MAX_OPTION_SIZE
@@ -111,9 +171,45 @@ MAX_OPTION_SIZE
 
 	)
 
-42 
+41 
 	#NEGATE_CHARACTER
  "no"
+
+	)
+
+50 
+	#SHOW_HELP
+ 1
+
+	)
+
+51 
+	#SHOW_HISTORY
+ 2
+
+	)
+
+52 
+	#SHOW_HISTORY_N
+ 3
+
+	)
+
+53 
+	#SHOW_REGISTERED_COMMANDS
+ 4
+
+	)
+
+54 
+	#CONFIG_SUPPORTSAVE_ENABLE
+ 5
+
+	)
+
+55 
+	#CONFIG_CONSOLEN_NAME_NAME
+ 6
 
 	)
 
@@ -139,7 +235,19 @@ MAX_OPTION_SIZE
 	~"css.h
 "
 
-26 
+24 
+	~<sig«l.h
+>
+
+25 
+	~"˛icbext.h
+"
+
+26 
+	~"°rög_utû.h
+"
+
+29 
 ∑r£_öput_cmd
 (*
 öput
@@ -147,11 +255,11 @@ MAX_OPTION_SIZE
 Àn
 );
 
-29 
+32 
 gë_œ°_comm™d
 ();
 
-34 
+37 
 	$öt_vÆid©i⁄_h™dÀr
 (
 Àaf_t
@@ -161,15 +269,15 @@ gë_œ°_comm™d
 vÆue_∑s£d
 ){
 
-37  
+40  
 VALIDATION_SUCCESS
 ;
 
-38 
+41 
 	}
 }
 
-42 
+45 
 	$°rög_vÆid©i⁄_h™dÀr
 (
 Àaf_t
@@ -179,15 +287,15 @@ VALIDATION_SUCCESS
 vÆue_∑s£d
 ){
 
-45  
+48  
 VALIDATION_SUCCESS
 ;
 
-46 
+49 
 	}
 }
 
-50 
+53 
 	$ùv4_vÆid©i⁄_h™dÀr
 (
 Àaf_t
@@ -197,15 +305,15 @@ VALIDATION_SUCCESS
 vÆue_∑s£d
 ){
 
-53  
+56  
 VALIDATION_SUCCESS
 ;
 
-54 
+57 
 	}
 }
 
-58 
+61 
 	$ùv6_vÆid©i⁄_h™dÀr
 (
 Àaf_t
@@ -215,15 +323,15 @@ VALIDATION_SUCCESS
 vÆue_∑s£d
 ){
 
-61  
+64  
 VALIDATION_SUCCESS
 ;
 
-62 
+65 
 	}
 }
 
-66 
+69 
 	$Êﬂt_vÆid©i⁄_h™dÀr
 (
 Àaf_t
@@ -233,15 +341,15 @@ VALIDATION_SUCCESS
 vÆue_∑s£d
 ){
 
-69  
+72  
 VALIDATION_SUCCESS
 ;
 
-70 
+73 
 	}
 }
 
-73 
+76 
 	$boﬁón_vÆid©i⁄_h™dÀr
 (
 Àaf_t
@@ -251,7 +359,7 @@ VALIDATION_SUCCESS
 vÆue_∑s£d
 ){
 
-75 if((
+78 if((
 	`°∫cmp
 (
 vÆue_∑s£d
@@ -259,7 +367,7 @@ vÆue_∑s£d
 	`°æí
 ("TRUE")) == 0) ||
 
-76 (
+79 (
 	`°∫cmp
 (
 vÆue_∑s£d
@@ -267,25 +375,25 @@ vÆue_∑s£d
 	`°æí
 ("FALSE")) ==0))
 
-77  
+80  
 VALIDATION_SUCCESS
 ;
 
-79  
+82  
 VALIDATION_FAILED
 ;
 
-80 
+83 
 	}
 }
 
-85 
+88 
 c⁄sﬁe_«me
 [
 TERMINAL_NAME_SIZE
 ];
 
-88 
+91 
 	$c⁄fig_c⁄sﬁe_«me_h™dÀr
 (
 ∑øm_t
@@ -301,7 +409,7 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-90 
+93 
 év_°ru˘_t
  *
 év
@@ -309,12 +417,12 @@ b
 NULL
 ;
 
-91 
+94 
 i
  = 0;
 
-93 
-	`TLV_LOOP_NEW
+96 
+	`TLV_LOOP
 (
 b
 , 
@@ -323,13 +431,13 @@ b
 i
 ){
 
-94 if(
+97 if(
 íabÀ_‹_dißbÀ
  =
 CONFIG_ENABLE
 )
 
-95 
+98 
 	`£t_devi˚_«me
 (
 év
@@ -337,7 +445,7 @@ CONFIG_ENABLE
 vÆue
 );
 
-97 if(
+100 if(
 	`°∫cmp
 (
 év
@@ -349,21 +457,21 @@ c⁄sﬁe_«me
 	`°æí
 (tlv->value)) == 0)
 
-98 
+101 
 	`£t_devi˚_«me
 (
 DEFAULT_DEVICE_NAME
 );
 
-100 
+103 
 	`¥ötf
 ("Error : Incorrect deviceÇame\n");
 
-104 
+107 
 	}
 }
 
-108 
+111 
 	$ª≥©_œ°_comm™d
 (
 ∑øm_t
@@ -379,29 +487,29 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-109 
+112 
 √w_löe_c⁄sume
 [2];
 
-110 *
+113 *
 œ°_cmd
  = 
 	`gë_œ°_comm™d
 ();
 
-111 
+114 
 	`¥ötf
 ("¥ev : %s", 
 œ°_cmd
 );
 
-112 
+115 
 	`sˇnf
 ("%c", 
 √w_löe_c⁄sume
 );;
 
-113 
+116 
 	`∑r£_öput_cmd
 (
 œ°_cmd
@@ -409,11 +517,11 @@ b
 	`°æí
 (last_cmd));
 
-115 
+118 
 	}
 }
 
-119 
+122 
 	$mode_íãr_ˇŒback
 (
 ∑øm_t
@@ -429,13 +537,13 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-121 if(
+124 if(
 ∑øm
  =
 	`lib˛i_gë_roŸ
 ()){
 
-122 
+125 
 	`¥ötf
 (
 ANSI_COLOR_YELLOW
@@ -443,31 +551,31 @@ ANSI_COLOR_YELLOW
 ANSI_COLOR_RESET
 );
 
-125 
+128 
 	`£t_cmd_åì_curs‹
 (
 ∑øm
 );
 
-126 
+129 
 	`buûd_mode_c⁄sﬁe_«me
 (
 ∑øm
 );
 
-127 
+130 
 	`m¨k_checkpoöt_£rülize_buf„r
 (
 b
 );
 
-128 if(
+131 if(
 	`IS_APPLICATION_CALLBACK_HANDLER_REGISTERED
 (
 ∑øm
 ))
 
-129 
+132 
 	`INVOKE_APPLICATION_CALLBACK_HANDLER
 (
 ∑øm
@@ -477,11 +585,11 @@ b
 íabÀ_‹_dißbÀ
 );
 
-131 
+134 
 	}
 }
 
-135 
+138 
 	$di•œy_sub_›ti⁄s_ˇŒback
 (
 ∑øm_t
@@ -497,21 +605,21 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-137 
+140 
 i
  = 0;
 
-139 if(
+142 if(
 	`IS_APPLICATION_CALLBACK_HANDLER_REGISTERED
 (
 ∑øm
 ))
 
-140 
+143 
 	`¥ötf
 ("<Enter>\n");
 
-142 
+145 
 i
  = 
 CHILDREN_START_INDEX
@@ -519,7 +627,7 @@ CHILDREN_START_INDEX
 CHILDREN_END_INDEX
 ; i++){
 
-143 if(
+146 if(
 ∑øm
 ->
 ›ti⁄s
@@ -527,7 +635,7 @@ CHILDREN_END_INDEX
 i
 ]){
 
-145 if(
+148 if(
 	`IS_PARAM_HIDDEN
 (
 ∑øm
@@ -537,7 +645,7 @@ i
 i
 ]))
 
-148 if(
+151 if(
 	`IS_PARAM_CMD
 (
 ∑øm
@@ -549,7 +657,7 @@ i
 	`IS_PARAM_NO_CMD
 (param->options[i])){
 
-149 
+152 
 	`¥ötf
 (
 ANSI_COLOR_MAGENTA
@@ -567,7 +675,7 @@ i
 	`GET_PARAM_HELP_STRING
 (param->options[i]));
 
-152 
+155 
 	`¥ötf
 (
 ANSI_COLOR_CYAN
@@ -585,11 +693,11 @@ i
 	`GET_PARAM_HELP_STRING
 (param->options[i]));
 
-158 
+161 
 	}
 }
 
-161 
+164 
 £r_buff_t
  *
 	gfûe_ªad_buf„r
@@ -597,7 +705,7 @@ i
 NULL
 ;
 
-164 
+167 
 	$show_hi°‹y_ˇŒback
 (
 ∑øm_t
@@ -613,7 +721,7 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-166 
+169 
 FILE
  *
 f
@@ -621,19 +729,19 @@ f
 	`f›í
 ("LIBCLI_HIST_FILE", "r");
 
-167 if(!
+170 if(!
 f
 ){
 
-168 
+171 
 	`¥ötf
 ("Error : History file couldÇot beÑead\n");
 
-172 
+175 
 i
  = 0;
 
-173 
+176 
 év_°ru˘_t
  *
 év
@@ -641,7 +749,7 @@ i
 NULL
 ;
 
-175 
+178 
 év
  = (
 év_°ru˘_t
@@ -649,11 +757,11 @@ NULL
 b
 ->b);
 
-178 
+181 
 	}
 }
 
-181 
+184 
 	$˛ór_s¸ìn_h™dÀr
 (
 ∑øm_t
@@ -669,15 +777,15 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-183 
+186 
 	`sy°em
 ("clear");
 
-185 
+188 
 	}
 }
 
-188 
+191 
 	$exô_cmd_h™dÀr
 (
 ∑øm_t
@@ -693,17 +801,17 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-190 
+193 
 	`go_⁄e_Àvñ_up_cmd_åì
 (
 	`gë_cmd_åì_curs‹
 ());
 
-192 
+195 
 	}
 }
 
-195 
+198 
 	$íd_cmd_h™dÀr
 (
 ∑øm_t
@@ -719,17 +827,17 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-197 
+200 
 	`gŸo_t›_of_cmd_åì
 (
 	`gë_cmd_åì_curs‹
 ());
 
-199 
+202 
 	}
 }
 
-202 
+205 
 	$c⁄fig_mode_íãr_h™dÀr
 (
 ∑øm_t
@@ -745,29 +853,29 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-204 
+207 
 	`£t_cmd_åì_curs‹
 (
 ∑øm
 );
 
-205 
+208 
 	`buûd_mode_c⁄sﬁe_«me
 (
 ∑øm
 );
 
-206 
+209 
 	`m¨k_checkpoöt_£rülize_buf„r
 (
 b
 );
 
-208 
+211 
 	}
 }
 
-211 
+214 
 	$√g©e_ˇŒback
 (
 ∑øm_t
@@ -783,11 +891,341 @@ b
 íabÀ_‹_dißbÀ
 ){
 
-212 
+215 
 	`¥ötf
 ("Command Negation - TypeÅhe cmd followingÅo Negate\n");
 
-214 
+217 
+	}
+}
+
+220 
+	$suµ‹tßve_h™dÀr
+(
+∑øm_t
+ *
+∑øm
+, 
+£r_buff_t
+ *
+b
+, 
+›_mode
+ 
+íabÀ_‹_dißbÀ
+){
+
+222 
+íabÀ_‹_dißbÀ
+){
+
+223 
+CONFIG_ENABLE
+:
+
+224 
+	`sig«l
+(
+SIGTERM
+, 
+ãrmö©e_sig«l_h™dÀr
+);
+
+225 
+	`sig«l
+(
+SIGSEGV
+, 
+ãrmö©e_sig«l_h™dÀr
+);
+
+226 
+	`sig«l
+(
+SIGABRT
+, 
+ãrmö©e_sig«l_h™dÀr
+);
+
+228 
+CONFIG_DISABLE
+:
+
+229 
+	`sig«l
+(
+SIGTERM
+, 
+SIG_DFL
+);
+
+230 
+	`sig«l
+(
+SIGSEGV
+, 
+SIG_DFL
+);
+
+231 
+	`sig«l
+(
+SIGABRT
+, 
+SIG_DFL
+);
+
+234 
+	`as£π
+(0);
+
+237 
+	}
+}
+
+240 
+	$show_hñp_h™dÀr
+(
+∑øm_t
+ *
+∑øm
+, 
+£r_buff_t
+ *
+b
+, 
+›_mode
+ 
+íabÀ_‹_dißbÀ
+){
+
+242 
+	`¥ötf
+("WelcomeÅo Help Wizard\n");
+
+243 
+	`¥ötf
+("========================\n");
+
+244 
+	`¥ötf
+("1. U£ %†Ch¨a˘îá·îÅhêcomm™dÅÿíã∏comm™d mode\n", 
+MODE_CHARACTER
+);
+
+245 
+	`¥ötf
+("2. U£ %†Ch¨a˘îá·îÅhêcomm™dÅÿ£êpossibÀ fﬁlow u∞sub›ti⁄s\n", 
+SUBOPTIONS_CHARACTER
+);
+
+246 
+	`¥ötf
+("3. Use 'do' from withinÅhe config branchÅo directlyÅrigger operational commands\n");
+
+247 
+	`¥ötf
+("4. Built-in commands:\n");
+
+248 
+	`¥ötf
+("á. cls - clear screen\n");
+
+249 
+	`¥ötf
+(" b.Énd - jumpÅoÅop of cmdÅree\n");
+
+250 
+	`¥ötf
+(" c.Éxit - jump oneÜevel up of commandÅree\n");
+
+251 
+	`¥ötf
+(" d. config [no] consoleÇame <consoleÇame> - set/unsetÇew consoleÇame\n");
+
+252 
+	`¥ötf
+("É. config [no] supportsaveÉnable -Énable/disable supportsave facility\n");
+
+253 
+	`¥ötf
+(" f. debug show cmdtree - ShowÉntire commandÅree\n");
+
+254 
+	`¥ötf
+(" g. show history - show history of commandsÅriggered\n");
+
+255 
+	`¥ötf
+(" h.Ñepeat -ÑepeatÅheÜast command\n");
+
+256 
+	`¥ötf
+(
+ANSI_COLOR_YELLOW
+ " Auth‹ : Abhishek Sag¨, Junùî Nëw‹ks\n" 
+ANSI_COLOR_RESET
+);
+
+258 
+	}
+}
+
+261 
+	$dump_Æl_comm™ds
+(
+∑øm_t
+ *
+roŸ
+, 
+ödex
+){
+
+263 if(!
+roŸ
+)
+
+266 if(
+	`IS_PARAM_NO_CMD
+(
+roŸ
+))
+
+269 if(
+	`IS_PARAM_CMD
+(
+roŸ
+)){
+
+270 
+	`u¡okíize
+(
+ödex
+);
+
+271 
+	`tokíize
+(
+	`GET_CMD_NAME
+(
+roŸ
+), 
+	`°æí
+(GET_CMD_NAME‘oŸ)), 
+ödex
+);
+
+273 if(
+	`IS_PARAM_LEAF
+(
+roŸ
+)){
+
+274 
+	`u¡okíize
+(
+ödex
+);
+
+275 
+	`tokíize
+(
+	`GET_LEAF_ID
+(
+roŸ
+), 
+	`°æí
+(GET_LEAF_ID‘oŸ)), 
+ödex
+);
+
+278 
+i
+ = 
+CHILDREN_START_INDEX
+;
+
+280  ; 
+i
+ <
+CHILDREN_END_INDEX
+; i++)
+
+281 
+	`dump_Æl_comm™ds
+(
+roŸ
+->
+›ti⁄s
+[
+i
+], 
+ödex
++1);
+
+283 if(
+	`IS_APPLICATION_CALLBACK_HANDLER_REGISTERED
+(
+roŸ
+)){
+
+284 
+	`¥öt_tokís
+(
+ödex
+ + 1);
+
+285 
+	`¥ötf
+("\n");
+
+287 
+	}
+}
+
+290 
+	$show_ªsgi°îed_cmd_h™dÀr
+(
+∑øm_t
+ *
+∑øm
+, 
+£r_buff_t
+ *
+b
+, 
+›_mode
+ 
+íabÀ_‹_dißbÀ
+){
+
+293 
+	`ª_öô_tokís
+(
+MAX_CMD_TREE_DEPTH
+);
+
+295 
+∑øm_t
+ *
+roŸ
+ = 
+	`lib˛i_gë_roŸ
+();
+
+297 
+ödex
+ = 0;
+
+298 
+	`dump_Æl_comm™ds
+(
+roŸ
+, 
+ödex
+);
+
+300 
 	}
 }
 
@@ -1067,6 +1505,54 @@ b
 
 83 
 √g©e_ˇŒback
+(
+∑øm_t
+ *
+∑øm
+, 
+£r_buff_t
+ *
+b
+, 
+›_mode
+ 
+íabÀ_‹_dißbÀ
+);
+
+86 
+suµ‹tßve_h™dÀr
+(
+∑øm_t
+ *
+∑øm
+, 
+£r_buff_t
+ *
+b
+, 
+›_mode
+ 
+íabÀ_‹_dißbÀ
+);
+
+89 
+show_hñp_h™dÀr
+(
+∑øm_t
+ *
+∑øm
+, 
+£r_buff_t
+ *
+b
+, 
+›_mode
+ 
+íabÀ_‹_dißbÀ
+);
+
+92 
+show_ªsgi°îed_cmd_h™dÀr
 (
 ∑øm_t
  *
@@ -1633,16 +2119,50 @@ roŸ
 show
 );
 
-192 
+191 
 ∑øm_t
  
-hi°‹y
+hñp
 ;
 
-193 
+192 
 	`öô_∑øm
 (&
-hi°‹y
+hñp
+, 
+CMD
+, "hñp", 
+show_hñp_h™dÀr
+, 0, 
+INVALID
+, 0, "help howÅo useÅhis CLI");
+
+193 
+	`lib˛i_ªgi°î_∑øm
+(&
+show
+, &
+hñp
+);
+
+194 
+	`£t_∑øm_cmd_code
+(&
+hñp
+, 
+SHOW_HELP
+);
+
+197 
+∑øm_t
+ 
+show_hi°‹y
+;
+
+198 
+	`öô_∑øm
+(&
+show_hi°‹y
 , 
 CMD
 , "hi°‹y", 
@@ -1651,21 +2171,29 @@ show_hi°‹y_ˇŒback
 INVALID
 , 0, "Command history");
 
-194 
+199 
 	`lib˛i_ªgi°î_∑øm
 (&
 show
 , &
-hi°‹y
+show_hi°‹y
 );
 
-196 
+200 
+	`£t_∑øm_cmd_code
+(&
+show_hi°‹y
+, 
+SHOW_HISTORY
+);
+
+202 
 ∑øm_t
  
 no_of_comm™ds
 ;
 
-197 
+203 
 	`öô_∑øm
 (&
 no_of_comm™ds
@@ -1677,15 +2205,81 @@ show_hi°‹y_ˇŒback
 INT
 , "N", "No Of CommandsÅo fetch");
 
-198 
+204 
 	`lib˛i_ªgi°î_∑øm
 (&
-hi°‹y
+show_hi°‹y
 , &
 no_of_comm™ds
 );
 
-201 
+205 
+	`£t_∑øm_cmd_code
+(&
+no_of_comm™ds
+, 
+SHOW_HISTORY_N
+);
+
+208 
+∑øm_t
+ 
+show_ªsgi°îed
+;
+
+209 
+	`öô_∑øm
+(&
+show_ªsgi°îed
+, 
+CMD
+, "ªgi°îed", 0, 0, 
+INVALID
+, 0, "registered");
+
+210 
+	`lib˛i_ªgi°î_∑øm
+(&
+show
+, &
+show_ªsgi°îed
+);
+
+212 
+∑øm_t
+ 
+show_ªsgi°îed_cmds
+;
+
+213 
+	`öô_∑øm
+(&
+show_ªsgi°îed_cmds
+, 
+CMD
+, "comm™ds", 
+show_ªsgi°îed_cmd_h™dÀr
+, 0, 
+INVALID
+, 0, "commands");
+
+214 
+	`lib˛i_ªgi°î_∑øm
+(&
+show_ªsgi°îed
+, &
+show_ªsgi°îed_cmds
+);
+
+215 
+	`£t_∑øm_cmd_code
+(&
+show_ªsgi°îed_cmds
+, 
+SHOW_REGISTERED_COMMANDS
+);
+
+218 
 	`öô_∑øm
 (&
 debug
@@ -1695,7 +2289,7 @@ CMD
 INVALID
 , 0, "debug cmds");
 
-202 
+219 
 	`lib˛i_ªgi°î_∑øm
 (&
 roŸ
@@ -1703,7 +2297,7 @@ roŸ
 debug
 );
 
-205 
+222 
 	`öô_∑øm
 (&
 c⁄fig
@@ -1715,7 +2309,7 @@ c⁄fig_mode_íãr_h™dÀr
 INVALID
 , 0, "config cmds");
 
-206 
+223 
 	`lib˛i_ªgi°î_∑øm
 (&
 roŸ
@@ -1723,7 +2317,65 @@ roŸ
 c⁄fig
 );
 
-209 
+225 
+∑øm_t
+ 
+suµ‹tßve
+;
+
+226 
+	`öô_∑øm
+(&
+suµ‹tßve
+, 
+CMD
+, "suµ‹tßve", 0 , 0, 
+INVALID
+, 0, "Collect Support Save Data");
+
+227 
+	`lib˛i_ªgi°î_∑øm
+(&
+c⁄fig
+, &
+suµ‹tßve
+);
+
+229 
+∑øm_t
+ 
+suµ‹tßve_íabÀ
+;
+
+230 
+	`öô_∑øm
+(&
+suµ‹tßve_íabÀ
+, 
+CMD
+, "íabÀ", 
+suµ‹tßve_h™dÀr
+ , 0, 
+INVALID
+, 0, "enable/disable Support Save Data Collection");
+
+231 
+	`lib˛i_ªgi°î_∑øm
+(&
+suµ‹tßve
+, &
+suµ‹tßve_íabÀ
+);
+
+232 
+	`£t_∑øm_cmd_code
+(&
+suµ‹tßve_íabÀ
+, 
+CONFIG_SUPPORTSAVE_ENABLE
+);
+
+235 
 	`öô_∑øm
 (&
 ˛ór
@@ -1733,7 +2385,7 @@ CMD
 INVALID
 , 0, "clear cmds");
 
-210 
+236 
 	`lib˛i_ªgi°î_∑øm
 (&
 roŸ
@@ -1741,7 +2393,7 @@ roŸ
 ˛ór
 );
 
-213 
+239 
 	`öô_∑øm
 (&
 do_hook
@@ -1751,7 +2403,7 @@ CMD
 INVALID
 , 0, "operational commands shortcut");
 
-214 
+240 
 do_hook
 .
 ›ti⁄s
@@ -1761,7 +2413,7 @@ MODE_PARAM_INDEX
 	`lib˛i_gë_sub›ti⁄s_∑øm
 ();
 
-215 
+241 
 do_hook
 .
 ›ti⁄s
@@ -1771,7 +2423,7 @@ SUBOPTIONS_INDEX
 	`lib˛i_gë_sub›ti⁄s_∑øm
 ();
 
-216 
+242 
 do_hook
 .
 ›ti⁄s
@@ -1781,7 +2433,7 @@ CHILDREN_START_INDEX
 show
 ;
 
-217 
+243 
 do_hook
 .
 ›ti⁄s
@@ -1791,7 +2443,7 @@ CHILDREN_START_INDEX
 debug
 ;
 
-218 
+244 
 do_hook
 .
 ›ti⁄s
@@ -1801,13 +2453,13 @@ CHILDREN_START_INDEX
 ˛ór
 ;
 
-221 
+247 
 ∑øm_t
  
 ª≥©
 ;
 
-222 
+248 
 	`öô_∑øm
 (&
 ª≥©
@@ -1819,7 +2471,7 @@ CMD
 INVALID
 , 0, "repeat");
 
-223 
+249 
 	`lib˛i_ªgi°î_∑øm
 (&
 roŸ
@@ -1827,13 +2479,13 @@ roŸ
 ª≥©
 );
 
-226 
+252 
 ∑øm_t
  
 c⁄fig_c⁄sﬁe
 ;
 
-227 
+253 
 	`öô_∑øm
 (&
 c⁄fig_c⁄sﬁe
@@ -1843,7 +2495,7 @@ CMD
 INVALID
 , 0, "console");
 
-228 
+254 
 	`lib˛i_ªgi°î_∑øm
 (&
 c⁄fig
@@ -1851,13 +2503,13 @@ c⁄fig
 c⁄fig_c⁄sﬁe
 );
 
-231 
+257 
 ∑øm_t
  
 c⁄fig_c⁄sﬁe_«me
 ;
 
-232 
+258 
 	`öô_∑øm
 (&
 c⁄fig_c⁄sﬁe_«me
@@ -1867,7 +2519,7 @@ CMD
 INVALID
 , 0, "name");
 
-233 
+259 
 	`lib˛i_ªgi°î_∑øm
 (&
 c⁄fig_c⁄sﬁe
@@ -1875,13 +2527,13 @@ c⁄fig_c⁄sﬁe
 c⁄fig_c⁄sﬁe_«me
 );
 
-235 
+261 
 ∑øm_t
  
 c⁄fig_c⁄sﬁe_«me_«me
 ;
 
-236 
+262 
 	`öô_∑øm
 (&
 c⁄fig_c⁄sﬁe_«me_«me
@@ -1893,7 +2545,7 @@ c⁄fig_c⁄sﬁe_«me_h™dÀr
 STRING
 , "cons-name", "Name of Console");
 
-237 
+263 
 	`lib˛i_ªgi°î_∑øm
 (&
 c⁄fig_c⁄sﬁe_«me
@@ -1901,13 +2553,21 @@ c⁄fig_c⁄sﬁe_«me
 c⁄fig_c⁄sﬁe_«me_«me
 );
 
-240 
+264 
+	`£t_∑øm_cmd_code
+(&
+c⁄fig_c⁄sﬁe_«me_«me
+, 
+CONFIG_CONSOLEN_NAME_NAME
+);
+
+267 
 ∑øm_t
  
 ˛s
 ;
 
-241 
+268 
 	`öô_∑øm
 (&
 ˛s
@@ -1919,25 +2579,25 @@ CMD
 INVALID
 , 0, "clear screen");
 
-242 
+269 
 	`HIDE_PARAM
 (&
 ˛s
 );
 
-243 
+270 
 	`lib˛i_ªgi°î_∑øm
 (0, &
 ˛s
 );
 
-245 
+272 
 ∑øm_t
  
 exô_cmd
 ;
 
-246 
+273 
 	`öô_∑øm
 (&
 exô_cmd
@@ -1949,25 +2609,25 @@ exô_cmd_h™dÀr
 INVALID
 , 0, "Move One Level Up");
 
-247 
+274 
 	`HIDE_PARAM
 (&
 exô_cmd
 );
 
-248 
+275 
 	`lib˛i_ªgi°î_∑øm
 (0, &
 exô_cmd
 );
 
-250 
+277 
 ∑øm_t
  
 íd_cmd
 ;
 
-251 
+278 
 	`öô_∑øm
 (&
 íd_cmd
@@ -1979,19 +2639,19 @@ CMD
 INVALID
 , 0, "Goto TopÜevel");
 
-252 
+279 
 	`HIDE_PARAM
 (&
 íd_cmd
 );
 
-253 
+280 
 	`lib˛i_ªgi°î_∑øm
 (0, &
 íd_cmd
 );
 
-261 
+288 
 	`sig«l
 (
 SIGINT
@@ -1999,11 +2659,11 @@ SIGINT
 ˘æC_sig«l_h™dÀr
 );
 
-262 
+289 
 	}
 }
 
-265 
+292 
 	$öô_∑øm
 (
 ∑øm_t
@@ -2011,53 +2671,53 @@ SIGINT
 ∑øm
 ,
 
-266 
+293 
 ∑øm_ty≥_t
  
 ∑øm_ty≥
 ,
 
-267 *
+294 *
 cmd_«me
 ,
 
-268 
+295 
 cmd_ˇŒback
  
 ˇŒback
 ,
 
-269 
+296 
 u£r_vÆid©i⁄_ˇŒback
  
 u£r_vÆid©i⁄_cb_‚
 ,
 
-270 
+297 
 Àaf_ty≥_t
  
 Àaf_ty≥
 ,
 
-271 *
+298 *
 Àaf_id
 ,
 
-272 *
+299 *
 hñp
 ){
 
-274 
+301 
 i
  = 0;
 
-275 if(
+302 if(
 ∑øm_ty≥
  =
 CMD
 ){
 
-276 
+303 
 	`GET_PARAM_CMD
 (
 ∑øm
@@ -2067,7 +2727,7 @@ CMD
 cmd_t
 ));
 
-277 
+304 
 ∑øm
 ->
 ∑øm_ty≥
@@ -2075,7 +2735,7 @@ cmd_t
 CMD
 ;
 
-278 
+305 
 	`°∫˝y
 (
 	`GET_CMD_NAME
@@ -2091,7 +2751,7 @@ CMD_NAME_SIZE
 	`°æí
 (cmd_name)));
 
-279 
+306 
 	`GET_CMD_NAME
 (
 ∑øm
@@ -2099,13 +2759,13 @@ CMD_NAME_SIZE
 CMD_NAME_SIZE
  -1] = '\0';
 
-281 if(
+308 if(
 ∑øm_ty≥
  =
 LEAF
 ){
 
-282 
+309 
 	`GET_PARAM_LEAF
 (
 ∑øm
@@ -2115,7 +2775,7 @@ LEAF
 Àaf_t
 ));
 
-283 
+310 
 ∑øm
 ->
 ∑øm_ty≥
@@ -2123,7 +2783,7 @@ LEAF
 LEAF
 ;
 
-284 
+311 
 	`GET_PARAM_LEAF
 (
 ∑øm
@@ -2131,7 +2791,7 @@ LEAF
 Àaf_ty≥
  =Üeaf_type;
 
-285 
+312 
 ∑øm
 ->
 cmd_ty≥
@@ -2141,7 +2801,7 @@ cmd_ty≥
 u£r_vÆid©i⁄_cb_‚
  = user_validation_cb_fn;
 
-286 
+313 
 	`°∫˝y
 (
 	`GET_LEAF_ID
@@ -2157,7 +2817,7 @@ LEAF_ID_SIZE
 	`°æí
 (leaf_id)));
 
-287 
+314 
 	`GET_LEAF_ID
 (
 ∑øm
@@ -2165,13 +2825,13 @@ LEAF_ID_SIZE
 LEAF_ID_SIZE
  -1] = '\0';
 
-289 if(
+316 if(
 ∑øm_ty≥
  =
 NO_CMD
 ){
 
-290 
+317 
 	`GET_PARAM_CMD
 (
 ∑øm
@@ -2181,7 +2841,7 @@ NO_CMD
 cmd_t
 ));
 
-291 
+318 
 ∑øm
 ->
 ∑øm_ty≥
@@ -2189,7 +2849,7 @@ cmd_t
 NO_CMD
 ;
 
-292 
+319 
 	`°∫˝y
 (
 	`GET_CMD_NAME
@@ -2201,7 +2861,7 @@ NEGATE_CHARACTER
 	`°æí
 (NEGATE_CHARACTER));
 
-293 
+320 
 	`GET_CMD_NAME
 (
 ∑øm
@@ -2209,13 +2869,13 @@ NEGATE_CHARACTER
 CMD_NAME_SIZE
  -1] = '\0';
 
-296 
+323 
 ∑øm
 ->
 ishiddí
  = 0;
 
-297 
+324 
 ∑øm
 ->
 ∑ª¡
@@ -2223,13 +2883,13 @@ ishiddí
 NULL
 ;
 
-298 
+325 
 ∑øm
 ->
 ˇŒback
  = callback;
 
-299 
+326 
 	`°∫˝y
 (
 	`GET_PARAM_HELP_STRING
@@ -2245,7 +2905,7 @@ PARAM_HELP_STRING_SIZE
 	`°æí
 (help)));
 
-300 
+327 
 	`GET_PARAM_HELP_STRING
 (
 ∑øm
@@ -2253,13 +2913,13 @@ PARAM_HELP_STRING_SIZE
 PARAM_HELP_STRING_SIZE
  -1] = '\0';
 
-302 ; 
+329 ; 
 i
  < 
 MAX_OPTION_SIZE
 ; i++){
 
-303 
+330 
 ∑øm
 ->
 ›ti⁄s
@@ -2269,11 +2929,51 @@ i
 NULL
 ;
 
-305 
+333 
+∑øm
+->
+CMDCODE
+ = -1;
+
+334 
 	}
 }
 
-308 
+337 
+	$£t_∑øm_cmd_code
+(
+∑øm_t
+ *
+∑øm
+, 
+cmd_code
+){
+
+339 if(
+∑øm
+->
+ˇŒback
+ =
+NULL
+)
+
+340 
+	`as£π
+(0);
+
+341 
+∑øm
+->
+CMDCODE
+ = 
+cmd_code
+;
+
+342 
+	}
+}
+
+345 
 	$suµ‹t_cmd_√g©i⁄
 (
 ∑øm_t
@@ -2281,17 +2981,17 @@ NULL
 ∑øm
 ){
 
-310 
+347 
 i
  = 0;
 
-311 
+348 
 	`as£π
 (
 ∑øm
 );
 
-312 
+349 
 	`as£π
 (
 	`gë_cuºít_bønch_hook
@@ -2301,7 +3001,7 @@ i
 	`lib˛i_gë_c⁄fig_hook
 ());
 
-314 
+351 
 ∑øm_t
  *
 √g©e_∑øm
@@ -2315,13 +3015,13 @@ i
 NEGATE_CHARACTER
 );
 
-316 if(
+353 if(
 √g©e_∑øm
  && 
 	`IS_PARAM_NO_CMD
 (negate_param)){
 
-317 
+354 
 	`¥ötf
 ("Eº‹ : Aâem±Åÿadd Du∂iˇã Neg©ê∑øm i¿cmd : %s\n", 
 	`GET_CMD_NAME
@@ -2329,7 +3029,7 @@ NEGATE_CHARACTER
 ∑øm
 ));
 
-321 
+358 
 ∑øm_t
  *
 no_∑øm
@@ -2337,7 +3037,7 @@ no_∑øm
 	`ˇŒoc
 (1, (param_t));
 
-322 
+359 
 	`öô_∑øm
 (
 no_∑øm
@@ -2351,7 +3051,7 @@ NEGATE_CHARACTER
 INVALID
 , 0, "Command Negation");
 
-328 
+365 
 no_∑øm
 ->
 ›ti⁄s
@@ -2361,7 +3061,7 @@ MODE_PARAM_INDEX
 	`lib˛i_gë_sub›ti⁄s_∑øm
 ();
 
-329 
+366 
 no_∑øm
 ->
 ›ti⁄s
@@ -2371,7 +3071,7 @@ SUBOPTIONS_INDEX
 	`lib˛i_gë_sub›ti⁄s_∑øm
 ();
 
-331 
+368 
 i
  = 
 CHILDREN_START_INDEX
@@ -2379,7 +3079,7 @@ CHILDREN_START_INDEX
 CHILDREN_END_INDEX
 ; i++){
 
-332 if(
+369 if(
 ∑øm
 ->
 ›ti⁄s
@@ -2387,7 +3087,7 @@ CHILDREN_END_INDEX
 i
 ]){
 
-333 
+370 
 no_∑øm
 ->
 ›ti⁄s
@@ -2397,7 +3097,7 @@ i
 ∑øm
 ->options[i];
 
-339 
+376 
 	`as£π
 (
 i
@@ -2405,7 +3105,7 @@ i
 CHILDREN_END_INDEX
 );
 
-340 
+377 
 ∑øm
 ->
 ›ti⁄s
@@ -2415,7 +3115,7 @@ i
 no_∑øm
 ;
 
-341 
+378 
 no_∑øm
 ->
 ∑ª¡
@@ -2423,51 +3123,51 @@ no_∑øm
 ∑øm
 ;
 
-343 
+380 
 	}
 }
 
-347 
+384 
 	$£t_devi˚_«me
 (c⁄° *
 c⁄s_«me
 ){
 
-349 ** 
+386 ** 
 tokís
  = 
 NULL
 ;
 
-350 
+387 
 size_t
  
 tokí_˙t
  = 0;
 
-352 
+389 
 	`as£π
 (
 c⁄s_«me
 );
 
-354 if(
+391 if(
 	`°æí
 (
 c⁄sﬁe_«me
 ))
 
-355 
+392 
 tokís
  = 
-	`°r_•lô
+	`°r_•lô2
 (
 c⁄sﬁe_«me
 , '>', &
 tokí_˙t
 );
 
-357 
+394 
 	`•rötf
 (
 c⁄sﬁe_«me
@@ -2475,17 +3175,23 @@ c⁄sﬁe_«me
 c⁄s_«me
 );
 
-359 if(
+396 if(
 tokí_˙t
  > 1){
 
-360 
+397 
 	`°rˇt
 (
 c⁄sﬁe_«me
 , " ");
 
-361 
+398 
+	`°rög_•a˚_åim
+(
+tokís
+[1]);
+
+399 
 	`°rˇt
 (
 c⁄sﬁe_«me
@@ -2493,11 +3199,11 @@ c⁄sﬁe_«me
 tokís
 [1]);
 
-363 
+401 
 	}
 }
 
-367 
+405 
 	$lib˛i_ªgi°î_∑øm
 (
 ∑øm_t
@@ -2507,27 +3213,27 @@ tokís
 chûd
 ){
 
-369 
+407 
 i
  = 0;
 
-370 if(!
+408 if(!
 ∑ª¡
 )
 
-371 
+409 
 ∑ª¡
  = &
 roŸ
 ;
 
-373 if(!
+411 if(!
 	`IS_PARAM_MODE_ENABLE
 (
 ∑ª¡
 )){
 
-374 
+412 
 ∑ª¡
 ->
 ›ti⁄s
@@ -2537,13 +3243,13 @@ MODE_PARAM_INDEX
 	`lib˛i_gë_mode_∑øm
 ();
 
-377 if(!
+415 if(!
 	`IS_PARAM_SUBOPTIONS_ENABLE
 (
 ∑ª¡
 )){
 
-378 
+416 
 ∑ª¡
 ->
 ›ti⁄s
@@ -2553,7 +3259,7 @@ SUBOPTIONS_INDEX
 	`lib˛i_gë_sub›ti⁄s_∑øm
 ();
 
-381 
+419 
 i
  = 
 CHILDREN_START_INDEX
@@ -2561,7 +3267,7 @@ CHILDREN_START_INDEX
 CHILDREN_END_INDEX
 ; i++){
 
-382 if(
+420 if(
 ∑ª¡
 ->
 ›ti⁄s
@@ -2569,7 +3275,7 @@ CHILDREN_END_INDEX
 i
 ])
 
-385 
+423 
 ∑ª¡
 ->
 ›ti⁄s
@@ -2579,27 +3285,27 @@ i
 chûd
 ;
 
-386 
+424 
 chûd
 ->
 ∑ª¡
  =Öarent;
 
-390 
+428 
 	`¥ötf
 ("%s(Ë: Eº‹ : Nÿ•a˚ f‹Çew comm™d\n", 
 __FUNCTION__
 );
 
-391 
+429 
 	`as£π
 (0);
 
-392 
+430 
 	}
 }
 
-395 
+433 
 	$_dump_⁄e_cmd
 (
 ∑øm_t
@@ -2609,17 +3315,17 @@ __FUNCTION__
 èbs
 ){
 
-397 
+435 
 i
  = 0;
 
-399 
+437 
 	`PRINT_TABS
 (
 èbs
 );
 
-401 if(
+439 if(
 	`IS_PARAM_CMD
 (
 ∑øm
@@ -2627,7 +3333,7 @@ i
 	`IS_PARAM_NO_CMD
 (param))
 
-402 
+440 
 	`¥ötf
 ("-->%s(%d)", 
 	`GET_CMD_NAME
@@ -2637,7 +3343,7 @@ i
 èbs
 );
 
-404 
+442 
 	`¥ötf
 ("-->%s(%d)", 
 	`GET_LEAF_TYPE_STR
@@ -2647,13 +3353,13 @@ i
 èbs
 );
 
-406 ; 
+444 ; 
 i
  < 
 MAX_OPTION_SIZE
 ; i++){
 
-407 if(
+445 if(
 ∑øm
 ->
 ›ti⁄s
@@ -2661,11 +3367,11 @@ MAX_OPTION_SIZE
 i
 ]){
 
-408 
+446 
 	`¥ötf
 ("\n");
 
-409 
+447 
 	`_dump_⁄e_cmd
 (
 ∑øm
@@ -2677,53 +3383,53 @@ i
 èbs
 );
 
-410 --
+448 --
 èbs
 ;
 
-415 
+453 
 	}
 }
 
-418 
+456 
 	$dump_cmd_åì
 (){
 
-419 
+457 
 	`_dump_⁄e_cmd
 (&
 roŸ
 , 0);
 
-420 
+458 
 	}
 }
 
-423 
+461 
 comm™d_∑r£r
 ();
 
-426 
+464 
 íh™˚d_comm™d_∑r£r
 ();
 
-429 
+467 
 	$°¨t_shñl
 (){
 
-430 
+468 
 	`comm™d_∑r£r
 ();
 
-431 
+469 
 	}
 }
 
-435 
+473 
 ∑øm_t
 *
 
-436 
+474 
 	$gë_cuºít_bønch_hook
 (
 ∑øm_t
@@ -2731,13 +3437,13 @@ comm™d_∑r£r
 cuºít_∑øm
 ){
 
-437 
+475 
 	`as£π
 (
 cuºít_∑øm
 );
 
-438 
+476 
 	`as£π
 (
 cuºít_∑øm
@@ -2745,7 +3451,7 @@ cuºít_∑øm
 roŸ
 );
 
-439 
+477 
 cuºít_∑øm
 ->
 ∑ª¡
@@ -2753,21 +3459,21 @@ cuºít_∑øm
 roŸ
 ){
 
-440 
+478 
 cuºít_∑øm
  = cuºít_∑øm->
 ∑ª¡
 ;
 
-442  
+480  
 cuºít_∑øm
 ;;
 
-443 
+481 
 	}
 }
 
-451 
+489 
 	$gŸo_t›_of_cmd_åì
 (
 ∑øm_t
@@ -2775,31 +3481,31 @@ cuºít_∑øm
 cuº_cmd_åì_curs‹
 ){
 
-453 ** 
+491 ** 
 tokís
  = 
 NULL
 ;
 
-454 
+492 
 size_t
  
 tokí_˙t
  = 0;
 
-456 
+494 
 	`as£π
 (
 cuº_cmd_åì_curs‹
 );
 
-458 if(
+496 if(
 cuº_cmd_åì_curs‹
  =&
 roŸ
 ){
 
-459 
+497 
 	`¥ötf
 (
 ANSI_COLOR_BLUE
@@ -2807,19 +3513,19 @@ ANSI_COLOR_BLUE
 ANSI_COLOR_RESET
 );
 
-464 if(
+502 if(
 	`IS_PARAM_CMD
 (
 cuº_cmd_åì_curs‹
 )){
 
-465 
+503 
 cuº_cmd_åì_curs‹
  = cuº_cmd_åì_curs‹->
 ∑ª¡
 ;
 
-468 
+506 
 	`mem£t
 (
 	`GET_LEAF_VALUE_PTR
@@ -2829,33 +3535,33 @@ cuº_cmd_åì_curs‹
 LEAF_VALUE_HOLDER_SIZE
 );
 
-469 
+507 
 cuº_cmd_åì_curs‹
  = cuº_cmd_åì_curs‹->
 ∑ª¡
 ;
 
-470 } 
+508 } 
 cuº_cmd_åì_curs‹
  !&
 roŸ
 );
 
-472 
+510 
 	`ª£t_cmd_åì_curs‹
 ();
 
-473 
+511 
 tokís
  = 
-	`°r_•lô
+	`°r_•lô2
 (
 c⁄sﬁe_«me
 , '>', &
 tokí_˙t
 );
 
-474 
+512 
 	`•rötf
 (
 c⁄sﬁe_«me
@@ -2863,11 +3569,11 @@ c⁄sﬁe_«me
 tokís
 [0]);
 
-475 
+513 
 	}
 }
 
-478 
+516 
 	$go_⁄e_Àvñ_up_cmd_åì
 (
 ∑øm_t
@@ -2875,31 +3581,31 @@ tokís
 cuº_cmd_åì_curs‹
 ){
 
-480 ** 
+518 ** 
 tokís
  = 
 NULL
 ;
 
-481 
+519 
 size_t
  
 tokí_˙t
  = 0;
 
-483 
+521 
 	`as£π
 (
 cuº_cmd_åì_curs‹
 );
 
-485 if(
+523 if(
 cuº_cmd_åì_curs‹
  =&
 roŸ
 ){
 
-486 
+524 
 	`¥ötf
 (
 ANSI_COLOR_BLUE
@@ -2907,13 +3613,13 @@ ANSI_COLOR_BLUE
 ANSI_COLOR_RESET
 );
 
-490 if(
+528 if(
 	`IS_PARAM_LEAF
 (
 cuº_cmd_åì_curs‹
 )){
 
-491 
+529 
 	`mem£t
 (
 	`GET_LEAF_VALUE_PTR
@@ -2923,7 +3629,7 @@ cuº_cmd_åì_curs‹
 LEAF_VALUE_HOLDER_SIZE
 );
 
-492 
+530 
 	`£rülize_buf„r_skù
 (
 év_buff
@@ -2931,13 +3637,13 @@ LEAF_VALUE_HOLDER_SIZE
 év_°ru˘_t
 ));
 
-493 
+531 
 	`m¨k_checkpoöt_£rülize_buf„r
 (
 év_buff
 );
 
-496 
+534 
 	`£t_cmd_åì_curs‹
 (
 cuº_cmd_åì_curs‹
@@ -2945,23 +3651,23 @@ cuº_cmd_åì_curs‹
 ∑ª¡
 );
 
-498 if(
+536 if(
 	`gë_cmd_åì_curs‹
 (Ë=&
 roŸ
 ){
 
-499 
+537 
 tokís
  = 
-	`°r_•lô
+	`°r_•lô2
 (
 c⁄sﬁe_«me
 , '>', &
 tokí_˙t
 );
 
-500 
+538 
 	`•rötf
 (
 c⁄sﬁe_«me
@@ -2969,23 +3675,23 @@ c⁄sﬁe_«me
 tokís
 [0]);
 
-501 
+539 
 	`ª£t_£rülize_buf„r
 (
 év_buff
 );
 
-505 
+543 
 	`buûd_mode_c⁄sﬁe_«me
 (
 	`gë_cmd_åì_curs‹
 ());
 
-506 
+544 
 	}
 }
 
-513 
+551 
 	$buûd_mode_c⁄sﬁe_«me
 (
 ∑øm_t
@@ -2993,13 +3699,13 @@ tokís
 d°_∑øm
 ){
 
-515 
+553 
 	`as£π
 (
 d°_∑øm
 );
 
-516 
+554 
 	`as£π
 (
 d°_∑øm
@@ -3007,31 +3713,31 @@ d°_∑øm
 roŸ
 );
 
-518 
+556 
 i
  = 
 MAX_CMD_TREE_DEPTH
  -1;
 
-519 
+557 
 size_t
  
 tokí_˙t
  = 0;
 
-521 ** 
+559 ** 
 tokís
  = 
 NULL
 ;
 
-522 *
+560 *
 ≠≥nd_°rög
  = 
 NULL
 ;
 
-524 
+562 
 cmd_«mes
 [
 MAX_CMD_TREE_DEPTH
@@ -3039,29 +3745,29 @@ MAX_CMD_TREE_DEPTH
 LEAF_VALUE_HOLDER_SIZE
 ];
 
-525 *
+563 *
 admö_£t_c⁄sﬁe_«me
  = 
 NULL
 ;
 
-527 
+565 
 tokís
  = 
-	`°r_•lô
+	`°r_•lô2
 (
 c⁄sﬁe_«me
 , '>', &
 tokí_˙t
 );
 
-528 
+566 
 admö_£t_c⁄sﬁe_«me
  = 
 tokís
 [0];
 
-529 
+567 
 	`•rötf
 (
 c⁄sﬁe_«me
@@ -3069,19 +3775,19 @@ c⁄sﬁe_«me
 admö_£t_c⁄sﬁe_«me
 );
 
-532 
+570 
 	`as£π
 (
 i
  != -1);
 
-533 if(
+571 if(
 	`IS_PARAM_CMD
 (
 d°_∑øm
 ))
 
-534 
+572 
 ≠≥nd_°rög
  = 
 	`GET_CMD_NAME
@@ -3089,7 +3795,7 @@ d°_∑øm
 d°_∑øm
 );
 
-536 
+574 
 ≠≥nd_°rög
  = 
 	`GET_LEAF_VALUE_PTR
@@ -3097,7 +3803,7 @@ d°_∑øm
 d°_∑øm
 );
 
-538 
+576 
 	`°∫˝y
 (
 cmd_«mes
@@ -3109,29 +3815,29 @@ i
 	`°æí
 (append_string));
 
-539 
+577 
 i
 --;
 
-540 
+578 
 d°_∑øm
  = d°_∑øm->
 ∑ª¡
 ;
 
-541 }
+579 }
 d°_∑øm
  !&
 roŸ
 );
 
-543 
+581 
 i
  = i+1; i < 
 MAX_CMD_TREE_DEPTH
  -1; i++){
 
-544 
+582 
 	`°rˇt
 (
 c⁄sﬁe_«me
@@ -3141,13 +3847,13 @@ cmd_«mes
 i
 ]);
 
-545 
+583 
 	`°rˇt
 (
 c⁄sﬁe_«me
 , "-");
 
-548 
+586 
 	`°rˇt
 (
 c⁄sﬁe_«me
@@ -3157,7 +3863,7 @@ cmd_«mes
 i
 ]);
 
-549 
+587 
 	`mem£t
 (
 cmd_«mes
@@ -3167,11 +3873,11 @@ MAX_CMD_TREE_DEPTH
 LEAF_VALUE_HOLDER_SIZE
 );
 
-550 
+588 
 	}
 }
 
-555 
+593 
 	$buûd_cmd_åì_Àaves_d©a
 (
 £r_buff_t
@@ -3179,37 +3885,37 @@ LEAF_VALUE_HOLDER_SIZE
 év_buff
 ,
 
-556 
+594 
 ∑øm_t
  *
 §c_∑øm
 ,
 
-557 
+595 
 ∑øm_t
  *
 d°_∑øm
 ){
 
-559 
+597 
 	`as£π
 (
 év_buff
 );
 
-560 
+598 
 	`as£π
 (
 §c_∑øm
 );
 
-561 
+599 
 	`as£π
 (
 d°_∑øm
 );
 
-563 
+601 
 év_°ru˘_t
  
 év
@@ -3219,7 +3925,7 @@ d°_∑øm
 NULL
 ;
 
-564 
+602 
 év_unôs
  = 0, 
 i
@@ -3227,7 +3933,7 @@ i
 j
  = 0;
 
-566 
+604 
 	`mem£t
 (&
 év
@@ -3235,31 +3941,31 @@ j
 év_°ru˘_t
 ));
 
-567 
+605 
 	`ª£t_£rülize_buf„r
 (
 év_buff
 );
 
-569 
+607 
 d°_∑øm
  !
 §c_∑øm
 ){
 
-570 if(
+608 if(
 	`IS_PARAM_CMD
 (
 d°_∑øm
 )){
 
-571 
+609 
 d°_∑øm
  = d°_∑øm->
 ∑ª¡
 ;
 
-575 
+613 
 	`¥ï¨e_év_‰om_Àaf
 (
 	`GET_PARAM_LEAF
@@ -3269,7 +3975,7 @@ d°_∑øm
 év
 ));
 
-576 
+614 
 	`put_vÆue_ö_év
 ((&
 év
@@ -3279,7 +3985,7 @@ d°_∑øm
 d°_∑øm
 ));
 
-577 
+615 
 	`cﬁÀ˘_év
 (
 év_buff
@@ -3287,7 +3993,7 @@ d°_∑øm
 év
 );
 
-578 
+616 
 	`mem£t
 (&
 év
@@ -3295,19 +4001,19 @@ d°_∑øm
 év_°ru˘_t
 ));
 
-580 
+618 
 d°_∑øm
  = d°_∑øm->
 ∑ª¡
 ;
 
-583 if(
+621 if(
 	`IS_PARAM_LEAF
 (
 d°_∑øm
 )){
 
-584 
+622 
 	`¥ï¨e_év_‰om_Àaf
 (
 	`GET_PARAM_LEAF
@@ -3317,7 +4023,7 @@ d°_∑øm
 év
 ));
 
-585 
+623 
 	`put_vÆue_ö_év
 ((&
 év
@@ -3327,7 +4033,7 @@ d°_∑øm
 d°_∑øm
 ));
 
-586 
+624 
 	`cﬁÀ˘_év
 (
 év_buff
@@ -3335,7 +4041,7 @@ d°_∑øm
 év
 );
 
-590 if(
+628 if(
 	`gë_£rülize_buf„r_size
 (
 év_buff
@@ -3343,7 +4049,7 @@ d°_∑øm
 év_°ru˘_t
 ) << 1)){
 
-594 
+632 
 év_unôs
  = 
 	`gë_£rülize_buf„r_size
@@ -3353,7 +4059,7 @@ d°_∑øm
 év_°ru˘_t
 );
 
-595 
+633 
 év_ãmp
  = (
 év_°ru˘_t
@@ -3363,13 +4069,13 @@ d°_∑øm
 b
 );
 
-596 
+634 
 j
  = 
 év_unôs
  -1;
 
-598 ; 
+636 ; 
 i
  < (
 év_unôs
@@ -3377,7 +4083,7 @@ i
 j
 --){
 
-599 
+637 
 	`sw≠_év_unôs
 (
 év_ãmp
@@ -3387,7 +4093,7 @@ i
 j
 );
 
-601 
+639 
 	}
 }
 
@@ -3419,25 +4125,17 @@ __CMD_HIER__
 	~"˛i°d.h
 "
 
-29 
-	#NULL_OPTIONS
- {0,0,0,0,0,0,0,0,0,0,\
-
-31 0,0,0,0,0,0,0,0,0,0,}
-
-	)
-
-33 
+27 
 	~"˛ic⁄°.h
 "
 
-35 
+29 
 £rülized_buf„r
  
 	t£r_buff_t
 ;
 
-36 (*
+30 (*
 	tcmd_ˇŒback
 )(
 	t∑øm_t
@@ -3453,65 +4151,65 @@ __CMD_HIER__
 	tíabÀ_‹_dübÀ
 );
 
-37 (*
+31 (*
 	tu£r_vÆid©i⁄_ˇŒback
 )(*
 	tÀaf_vÆue
 );
 
-40 
+34 
 _∑øm_t_
  
 	t∑øm_t
 ;
 
-42 
+36 
 	scmd
 {
 
-43 
+37 
 cmd_«me
 [
 CMD_NAME_SIZE
 ];
 
-44 } 
+38 } 
 	tcmd_t
 ;
 
-46 
+40 
 	sÀaf
 {
 
-47 
+41 
 Àaf_ty≥_t
  
 Àaf_ty≥
 ;
 
-48 
+42 
 vÆue_hﬁdî
 [
 LEAF_VALUE_HOLDER_SIZE
 ];
 
-49 
+43 
 u£r_vÆid©i⁄_ˇŒback
  
 u£r_vÆid©i⁄_cb_‚
 ;
 
-50 
+44 
 Àaf_id
 [
 LEAF_ID_SIZE
 ];
 
-51 } 
+45 } 
 	tÀaf_t
 ;
 
-53 
+47 
 	$CLI_VAL_RC
  (*
 	tÀaf_ty≥_h™dÀr
@@ -3523,75 +4221,75 @@ LEAF_ID_SIZE
 	tvÆue_∑s£d
 );
 
-56 
+50 
 CMD
 ,
 
-57 
+51 
 LEAF
 ,
 
-58 
+52 
 NO_CMD
 
 
-59 } 
+53 } 
 	t∑øm_ty≥_t
 ;
 
-61 
+55 
 	u_∑øm_t
 {
 
-62 
+56 
 cmd_t
  *
 cmd
 ;
 
-63 
+57 
 Àaf_t
  *
 Àaf
 ;
 
-64 } 
+58 } 
 	t_∑øm_t
 ;
 
-66 
+60 
 	s_∑øm_t_
 {
 
-67 
+61 
 ∑øm_ty≥_t
  
 ∑øm_ty≥
 ;
 
-68 
+62 
 _∑øm_t
  
 cmd_ty≥
 ;
 
-69 
+63 
 cmd_ˇŒback
  
 ˇŒback
 ;
 
-70 
+64 
 ishiddí
 ;
 
-71 
+65 
 hñp
 [
 PARAM_HELP_STRING_SIZE
 ];
 
-72 
+66 
 ∑øm_t
  *
 ›ti⁄s
@@ -3599,13 +4297,17 @@ PARAM_HELP_STRING_SIZE
 MAX_OPTION_SIZE
 ];
 
-73 
+67 
 ∑øm_t
  *
 ∑ª¡
 ;
 
-77 
+68 
+CMDCODE
+;
+
+72 
 	`gë_°r_Àaf_ty≥
 (
 Àaf_ty≥_t
@@ -3613,7 +4315,7 @@ MAX_OPTION_SIZE
 Àaf_ty≥
 );
 
-80 
+75 
 	#MIN
 (
 a
@@ -3623,7 +4325,7 @@ b
 
 	)
 
-82 
+77 
 	#GET_PARAM_CMD
 (
 ∑øm
@@ -3635,7 +4337,7 @@ cmd
 
 	)
 
-83 
+78 
 	#GET_PARAM_LEAF
 (
 ∑øm
@@ -3647,7 +4349,7 @@ cmd_ty≥
 
 	)
 
-84 
+79 
 	#IS_PARAM_NO_CMD
 (
 ∑øm
@@ -3659,7 +4361,7 @@ NO_CMD
 
 	)
 
-85 
+80 
 	#IS_PARAM_CMD
 (
 ∑øm
@@ -3671,7 +4373,7 @@ CMD
 
 	)
 
-86 
+81 
 	#IS_PARAM_LEAF
 (
 ∑øm
@@ -3683,7 +4385,7 @@ LEAF
 
 	)
 
-87 
+82 
 	#GET_LEAF_TYPE_STR
 (
 ∑øm
@@ -3697,7 +4399,7 @@ LEAF
 
 	)
 
-88 
+83 
 	#GET_LEAF_VALUE_PTR
 (
 ∑øm
@@ -3709,7 +4411,7 @@ vÆue_hﬁdî
 
 	)
 
-89 
+84 
 	#GET_LEAF_TYPE
 (
 ∑øm
@@ -3721,7 +4423,7 @@ vÆue_hﬁdî
 
 	)
 
-90 
+85 
 	#GET_CMD_NAME
 (
 ∑øm
@@ -3733,7 +4435,7 @@ cmd_«me
 
 	)
 
-91 
+86 
 	#GET_PARAM_HELP_STRING
 (
 ∑øm
@@ -3743,7 +4445,7 @@ hñp
 
 	)
 
-92 
+87 
 	#GET_LEAF_ID
 (
 ∑øm
@@ -3755,13 +4457,13 @@ hñp
 
 	)
 
-94 
+89 
 	#IS_LEAF_USER_VALIDATION_CALLBACK_REGISTERED
 (
 ∑øm
 ) \
 
-95 (
+90 (
 ∑øm
 ->
 cmd_ty≥
@@ -3773,7 +4475,7 @@ u£r_vÆid©i⁄_cb_‚
 
 	)
 
-97 
+92 
 	#IS_APPLICATION_CALLBACK_HANDLER_REGISTERED
 (
 ∑øm
@@ -3783,7 +4485,7 @@ u£r_vÆid©i⁄_cb_‚
 
 	)
 
-99 
+94 
 	#_INVOKE_LEAF_USER_VALIDATION_CALLBACK
 (
 ∑øm
@@ -3791,7 +4493,7 @@ u£r_vÆid©i⁄_cb_‚
 ¨g
 ) \
 
-100 (
+95 (
 ∑øm
 ->
 cmd_ty≥
@@ -3805,7 +4507,7 @@ cmd_ty≥
 
 	)
 
-102 
+97 
 	#INVOKE_LEAF_LIB_VALIDATION_CALLBACK
 (
 ∑øm
@@ -3813,7 +4515,7 @@ cmd_ty≥
 ¨g
 ) \
 
-103 (
+98 (
 Àaf_h™dÀr_¨øy
 [
 	`GET_LEAF_TYPE
@@ -3827,7 +4529,7 @@ cmd_ty≥
 
 	)
 
-105 
+100 
 	#INVOKE_APPLICATION_CALLBACK_HANDLER
 (
 ∑øm
@@ -3837,7 +4539,7 @@ cmd_ty≥
 íabÀ_‹_dißbÀ
 ) \
 
-106 
+101 
 ∑øm
 ->
 	`ˇŒback
@@ -3849,7 +4551,7 @@ cmd_ty≥
 
 	)
 
-108 
+103 
 	#IS_PARAM_MODE_ENABLE
 (
 ∑øm_±r
@@ -3863,7 +4565,7 @@ NULL
 
 	)
 
-109 
+104 
 	#IS_PARAM_SUBOPTIONS_ENABLE
 (
 ∑øm_±r
@@ -3877,55 +4579,55 @@ NULL
 
 	)
 
-114 
+109 
 	`is_u£r_ö_cmd_mode
 ();
 
-116 
+111 
 ∑øm_t
  *
 
-117 
+112 
 	`lib˛i_gë_no_hook
 ();
 
-119 
+114 
 ∑øm_t
  *
 
-120 
+115 
 	`lib˛i_gë_do_hook
 ();
 
-122 
+117 
 ∑øm_t
  *
 
-123 
+118 
 	`lib˛i_gë_roŸ
 ();
 
-125 
+120 
 ∑øm_t
  *
 
-126 
+121 
 	`lib˛i_gë_mode_∑øm
 ();
 
-128 
+123 
 ∑øm_t
  *
 
-129 
+124 
 	`lib˛i_gë_sub›ti⁄s_∑øm
 ();
 
-131 
+126 
 ölöe
  
 
-132 
+127 
 	$is_cmd_°rög_m©ch
 (
 ∑øm_t
@@ -3935,7 +4637,7 @@ NULL
 °r
 ){
 
-133  (
+128  (
 	`°∫cmp
 (
 ∑øm
@@ -3947,27 +4649,27 @@ cmd
 cmd_«me
 ,
 
-134 
+129 
 °r
 ,
 
-135 
+130 
 	`°æí
 (
 °r
 )));
 
-136 
+131 
 	}
 }
 
-138 
+133 
 ölöe
  
 ∑øm_t
  **
 
-139 
+134 
 	$gë_chûd_¨øy_±r
 (
 ∑øm_t
@@ -3975,21 +4677,21 @@ cmd_«me
 ∑øm
 ){
 
-140  &
+135  &
 ∑øm
 ->
 ›ti⁄s
 [0];
 
-141 
+136 
 	}
 }
 
-143 
+138 
 ölöe
  
 
-144 
+139 
 	$INVOKE_LEAF_USER_VALIDATION_CALLBACK
 (
 ∑øm_t
@@ -3999,25 +4701,25 @@ cmd_«me
 Àaf_vÆue
 ) {
 
-146 
+141 
 	`as£π
 (
 ∑øm
 );
 
-147 
+142 
 	`as£π
 (
 Àaf_vÆue
 );
 
-150 if(!
+145 if(!
 	`IS_LEAF_USER_VALIDATION_CALLBACK_REGISTERED
 (
 ∑øm
 ))
 
-153  
+148  
 	`_INVOKE_LEAF_USER_VALIDATION_CALLBACK
 (
 ∑øm
@@ -4025,39 +4727,39 @@ cmd_«me
 Àaf_vÆue
 );
 
-154 
+149 
 	}
 }
 
-157 
+152 
 	#PRINT_TABS
 (
 n
 ) \
 
-159 
+154 
 _i
  = 0; \
 
-160 ; 
+155 ; 
 _i
  < 
 n
 ; _i++) \
 
-161 
+156 
 	`¥ötf
 (" "); \
 
-162 } 0);
+157 } 0);
 
 	)
 
-166 
+161 
 ∑øm_t
  *
 
-167 
+162 
 gë_cuºít_bønch_hook
 (
 ∑øm_t
@@ -4065,7 +4767,7 @@ gë_cuºít_bønch_hook
 cuºít_∑øm
 );
 
-170 
+165 
 	#IS_CURRENT_MODE_SHOW
 (Ë(
 	`gë_cuºít_bønch_hook
@@ -4077,7 +4779,7 @@ cuºít_∑øm
 
 	)
 
-171 
+166 
 	#IS_CURRENT_MODE_DEBUG
 (Ë(
 	`gë_cuºít_bønch_hook
@@ -4089,7 +4791,7 @@ cuºít_∑øm
 
 	)
 
-172 
+167 
 	#IS_CURRENT_MODE_CONFIG
 (Ë(
 	`gë_cuºít_bønch_hook
@@ -4101,7 +4803,7 @@ cuºít_∑øm
 
 	)
 
-173 
+168 
 	#IS_CURRENT_MODE_CLEAR
 (Ë(
 	`gë_cuºít_bønch_hook
@@ -4113,11 +4815,11 @@ cuºít_∑øm
 
 	)
 
-176 
+171 
 ª£t_cmd_åì_curs‹
 ();
 
-179 
+174 
 gŸo_t›_of_cmd_åì
 (
 ∑øm_t
@@ -4125,7 +4827,7 @@ gŸo_t›_of_cmd_åì
 cuº_cmd_åì_curs‹
 );
 
-182 
+177 
 go_⁄e_Àvñ_up_cmd_åì
 (
 ∑øm_t
@@ -4133,7 +4835,7 @@ go_⁄e_Àvñ_up_cmd_åì
 cuº_cmd_åì_curs‹
 );
 
-185 
+180 
 £t_cmd_åì_curs‹
 (
 ∑øm_t
@@ -4141,19 +4843,19 @@ cuº_cmd_åì_curs‹
 ∑øm
 );
 
-187 
+182 
 ∑øm_t
  *
 
-188 
+183 
 gë_cmd_åì_curs‹
 ();
 
-190 
+185 
 ∑øm_t
 *
 
-191 
+186 
 föd_m©chög_∑øm
 (
 ∑øm_t
@@ -4163,7 +4865,7 @@ föd_m©chög_∑øm
 cmd_«me
 );
 
-194 
+189 
 buûd_mode_c⁄sﬁe_«me
 (
 ∑øm_t
@@ -4171,7 +4873,7 @@ buûd_mode_c⁄sﬁe_«me
 d°_∑øm
 );
 
-199 
+194 
 buûd_cmd_åì_Àaves_d©a
 (
 £r_buff_t
@@ -4179,13 +4881,13 @@ buûd_cmd_åì_Àaves_d©a
 év_buff
 ,
 
-200 
+195 
 ∑øm_t
  *
 §c_∑øm
 ,
 
-201 
+196 
 ∑øm_t
  *
 d°_∑øm
@@ -4258,6 +4960,28 @@ p›
 )
 
 36 
+	#EXTRACT_CMD_CODE
+(
+£r_buff_±r
+) \
+
+37 
+	`©oi
+(((
+év_°ru˘_t
+ *)
+£r_buff_±r
+ + (
+	`gë_£rülize_buf„r_size
+(
+£r_buff
+)/—lv_°ru˘_tË-1))->
+vÆue
+)
+
+	)
+
+39 
 	#TLV_LOOP
 (
 £r_buff
@@ -4267,13 +4991,13 @@ p›
 i
 ) \
 
-37 
+40 
 	`as£π
 (
 £r_buff
 ); \
 
-38 
+41 
 év±r
  = (
 év_°ru˘_t
@@ -4283,11 +5007,11 @@ i
 b
 ); \
 
-39 
+42 
 i
  = 0; \
 
-40 ; 
+43 ; 
 i
  < (
 	`gë_£rülize_buf„r_size
@@ -4295,105 +5019,13 @@ i
 £r_buff
 )/(
 év_°ru˘_t
-)); i++, 
+Ë-1); i++, 
 év±r
 ++)
 
 	)
 
-42 
-	#TLV_LOOP_OLD
-(
-£r_buff
-, 
-év±r
-, 
-i
-) \
-
-43 
-	`as£π
-(
-£r_buff
-); \
-
-44 
-év±r
- = (
-év_°ru˘_t
- *)(
-£r_buff
-->
-b
-); \
-
-45 
-i
- = 0; \
-
-46 ; 
-i
- < (
-	`gë_£rülize_buf„r_checkpoöt_off£t
-(
-£r_buff
-)/(
-év_°ru˘_t
-)); i++, 
-év±r
-++)
-
-	)
-
-48 
-	#TLV_LOOP_NEW
-(
-£r_buff
-, 
-év±r
-, 
-i
-) \
-
-49 
-	`as£π
-(
-£r_buff
-); \
-
-50 
-év±r
- = (
-év_°ru˘_t
- *)(
-£r_buff
-->
-b
- + 
-	`gë_£rülize_buf„r_checkpoöt_off£t
-(ser_buff)); \
-
-51 
-i
- = 0; \
-
-52 ; 
-i
- < ((
-	`gë_£rülize_buf„r_size
-(
-£r_buff
-Ë- 
-	`gë_£rülize_buf„r_checkpoöt_off£t
-(£r_buff))/(
-év_°ru˘_t
-)); i++, 
-év±r
-++)
-
-	)
-
-54 
+45 
 	#év_c›y_Àaf_id
 (
 év±r
@@ -4401,7 +5033,7 @@ i
 d°
 ) \
 
-55 
+46 
 	`°∫˝y
 (
 d°
@@ -4413,7 +5045,7 @@ d°
 	`°æí
 (tlvptr->leaf_id)); \
 
-56 
+47 
 d°
 [
 	`°æí
@@ -4425,7 +5057,7 @@ d°
 
 	)
 
-59 
+50 
 	#év_c›y_Àaf_vÆue
 (
 év±r
@@ -4433,7 +5065,7 @@ d°
 d°
 ) \
 
-60 
+51 
 	`°∫˝y
 (
 d°
@@ -4445,7 +5077,7 @@ vÆue
 	`°æí
 (tlvptr->value)); \
 
-61 
+52 
 d°
 [
 	`°æí
@@ -4457,7 +5089,7 @@ vÆue
 
 	)
 
-63 
+54 
 	#cﬁÀ˘_év
 (
 £r_buff
@@ -4465,7 +5097,7 @@ vÆue
 év±r
 ) \
 
-64 
+55 
 	`£rülize_°rög
 (
 £r_buff
@@ -4477,7 +5109,7 @@ vÆue
 
 	)
 
-66 
+57 
 	#¥ï¨e_év_‰om_Àaf
 (
 Àaf
@@ -4485,7 +5117,7 @@ vÆue
 év±r
 ) \
 
-67 
+58 
 év±r
 ->
 Àaf_ty≥
@@ -4493,7 +5125,7 @@ vÆue
 Àaf
 ->leaf_type; \
 
-68 
+59 
 	`°∫˝y
 (
 év±r
@@ -4511,7 +5143,7 @@ LEAF_ID_SIZE
 
 	)
 
-70 
+61 
 	#put_vÆue_ö_év
 (
 év±r
@@ -4519,7 +5151,7 @@ LEAF_ID_SIZE
 _vÆ
 ) \
 
-71 
+62 
 	`°∫˝y
 (
 év±r
@@ -4537,11 +5169,11 @@ LEAF_VALUE_HOLDER_SIZE
 
 	)
 
-73 
+64 
 ölöe
  
 
-74 
+65 
 	$¥öt_év_c⁄ã¡
 (
 év_°ru˘_t
@@ -4549,11 +5181,11 @@ LEAF_VALUE_HOLDER_SIZE
 év
 ){
 
-76 if(!
+67 if(!
 év
 )
 
-79 
+70 
 	`¥ötf
 ("év->Àaf_ty≥ = %s\n", 
 	`gë_°r_Àaf_ty≥
@@ -4563,7 +5195,7 @@ LEAF_VALUE_HOLDER_SIZE
 Àaf_ty≥
 ));
 
-80 
+71 
 	`¥ötf
 ("év->Àaf_id = %s\n", 
 év
@@ -4571,7 +5203,7 @@ LEAF_VALUE_HOLDER_SIZE
 Àaf_id
 );
 
-81 
+72 
 	`¥ötf
 ("év->vÆuê = %s\n", 
 év
@@ -4579,15 +5211,15 @@ LEAF_VALUE_HOLDER_SIZE
 vÆue
 );
 
-82 
+73 
 	}
 }
 
-84 
+75 
 ölöe
  
 
-85 
+76 
 	$dump_év_£rülized_buf„r
 (
 £r_buff_t
@@ -4595,11 +5227,11 @@ vÆue
 év_£r_buff
 ){
 
-87 
+78 
 i
  = 0;
 
-88 
+79 
 év_°ru˘_t
  *
 év
@@ -4607,11 +5239,11 @@ i
 NULL
 ;
 
-90 
+81 
 	`¥ötf
 ("OLD TLVs...\n");
 
-91 
+82 
 	`TLV_LOOP_OLD
 (
 év_£r_buff
@@ -4621,21 +5253,21 @@ NULL
 i
 ){
 
-92 
+83 
 	`¥öt_év_c⁄ã¡
 (
 év
 );
 
-93 
+84 
 	`¥ötf
 ("\n");
 
-95 
+86 
 	`¥ötf
 ("NEW TLVs...\n");
 
-96 
+87 
 	`TLV_LOOP_NEW
 (
 év_£r_buff
@@ -4645,25 +5277,25 @@ i
 i
 ){
 
-97 
+88 
 	`¥öt_év_c⁄ã¡
 (
 év
 );
 
-98 
+89 
 	`¥ötf
 ("\n");
 
-100 
+91 
 	}
 }
 
-102 
+93 
 ölöe
  
 
-103 
+94 
 	$sw≠_év_unôs
 (
 év_°ru˘_t
@@ -4673,31 +5305,31 @@ i
 év2
 ){
 
-105 
+96 
 év_°ru˘_t
  
 év
 ;
 
-106 
+97 
 év
  = *
 év1
 ;
 
-107 *
+98 *
 év1
  = *
 év2
 ;
 
-108 *
+99 *
 év2
  = 
 év
 ;
 
-109 
+100 
 	}
 }
 
@@ -4817,7 +5449,17 @@ lib˛i_gë_c⁄fig_hook
 lib˛i_gë_˛ór_hook
 ();
 
-49 
+48 
+£t_∑øm_cmd_code
+(
+∑øm_t
+ *
+∑øm
+, 
+cmd_code
+);
+
+52 
 öô_∑øm
 (
 ∑øm_t
@@ -4825,43 +5467,43 @@ lib˛i_gë_˛ór_hook
 ∑øm
 ,
 
-50 
+53 
 ∑øm_ty≥_t
  
 ∑øm_ty≥
 ,
 
-51 *
+54 *
 cmd_«me
 ,
 
-52 
+55 
 cmd_ˇŒback
  
 ˇŒback
 ,
 
-53 
+56 
 u£r_vÆid©i⁄_ˇŒback
  
 u£r_vÆid©i⁄_cb_‚
 ,
 
-54 
+57 
 Àaf_ty≥_t
  
 Àaf_ty≥
 ,
 
-55 *
+58 *
 Àaf_id
 ,
 
-56 *
+59 *
 hñp
 );
 
-59 
+62 
 lib˛i_ªgi°î_∑øm
 (
 ∑øm_t
@@ -4871,7 +5513,7 @@ lib˛i_ªgi°î_∑øm
 chûd
 );
 
-63 
+66 
 suµ‹t_cmd_√g©i⁄
 (
 ∑øm_t
@@ -4879,15 +5521,15 @@ suµ‹t_cmd_√g©i⁄
 ∑øm
 );
 
-66 
+69 
 dump_cmd_åì
 ();
 
-69 
+72 
 °¨t_shñl
 ();
 
-71 
+74 
 	#HIDE_PARAM
 (
 ∑øm_±r
@@ -4897,7 +5539,7 @@ ishiddí
 
 	)
 
-72 
+75 
 	#IS_PARAM_HIDDEN
 (
 ∑øm_±r
@@ -4986,32 +5628,36 @@ __LIBCLIID__
 >
 
 21 
+	~<°rög.h
+>
+
+22 
 	~"°rög_utû.h
 "
 
-22 
+23 
 	~"cmdév.h
 "
 
-23 
+24 
 	~"˛ic⁄°.h
 "
 
-24 
+25 
 	~"css.h
 "
 
-25 
+26 
 	~"lib˛i.h
 "
 
-27 
+28 
 ∑øm_t
  
 roŸ
 ;
 
-28 
+29 
 Àaf_ty≥_h™dÀr
  
 Àaf_h™dÀr_¨øy
@@ -5019,107 +5665,113 @@ roŸ
 LEAF_MAX
 ];
 
-29 
+30 
 £r_buff_t
  *
 év_buff
 ;
 
-30 
+31 
 	gc⁄sﬁe_«me
 [
 TERMINAL_NAME_SIZE
 ];
 
-33 
+34 
 	$∂a˚_c⁄sﬁe
 (
 √w_löe
 ){
 
-34 if(
+35 if(
 √w_löe
 )
 
-35 
+36 
 	`¥ötf
 ("\n");
 
-36 
+37 
 	`¥ötf
 ("%†$ ", 
 c⁄sﬁe_«me
 );
 
-37 
+38 
 	}
 }
 
-39 
+40 
 	gc⁄s_öput_buf„r
 [
 CONS_INPUT_BUFFER_SIZE
 ];
 
-40 
+41 
 	gœ°_comm™d_öput_buf„r
 [
 CONS_INPUT_BUFFER_SIZE
 ];
 
-43 
+43 
+év_°ru˘_t
+ 
+	gcomm™d_code_év
+;
+
+46 
 	mCOMPLETE
 ,
 
-44 
+47 
 	mERROR
 ,
 
-45 
+48 
 	mINVALID_LEAF
 ,
 
-46 
+49 
 	mUSER_INVALID_LEAF
 ,
 
-47 
+50 
 	mCMD_NOT_FOUND
 ,
 
-48 
+51 
 	mINCOMPLETE_COMMAND
 ,
 
-49 
+52 
 	mMULTIPLE_MATCHING_COMMANDS
 ,
 
-50 
+53 
 	mUNKNOWN
 
 
-51 } 
+54 } 
 	tCMD_PARSE_STATUS
 ;
 
-54 
+57 
 	$gë_œ°_comm™d
 (){
 
-55  
+58  
 œ°_comm™d_öput_buf„r
 ;
 
-56 
+59 
 	}
 }
 
-60 
+63 
 ∑øm_t
 *
 
-61 
+64 
 	$föd_m©chög_∑øm
 (
 ∑øm_t
@@ -5129,13 +5781,13 @@ CONS_INPUT_BUFFER_SIZE
 cmd_«me
 ){
 
-63 
+66 
 i
  = 0, 
 Àaf_ödex
  = -1;
 
-65 ; 
+68 ; 
 ›ti⁄s
 [
 i
@@ -5143,7 +5795,7 @@ i
 CHILDREN_END_INDEX
 ; i++){
 
-66 if(
+69 if(
 	`IS_PARAM_LEAF
 (
 ›ti⁄s
@@ -5151,13 +5803,13 @@ CHILDREN_END_INDEX
 i
 ])){
 
-67 
+70 
 Àaf_ödex
  = 
 i
 ;
 
-71 if(
+74 if(
 	`is_cmd_°rög_m©ch
 (
 ›ti⁄s
@@ -5167,63 +5819,63 @@ i
 cmd_«me
 ) == 0)
 
-72  
+75  
 ›ti⁄s
 [
 i
 ];
 
-75 if(
+78 if(
 Àaf_ödex
  >= 0)
 
-76  
+79  
 ›ti⁄s
 [
 Àaf_ödex
 ];
 
-78  
+81  
 NULL
 ;
 
-79 
+82 
 	}
 }
 
-87 
+90 
 év_°ru˘_t
  
 	gév
 ;
 
-89 
+92 
 CMD_PARSE_STATUS
 
 
-90 
+93 
 	$buûd_év_buf„r
 (**
 tokís
 ,
 
-91 
+94 
 size_t
  
 tokí_˙t
 ,
 
-92 
+95 
 ›_mode
  
 íabÀ_‹_dißbÀ
 ){
 
-94 
+97 
 i
  = 0;
 
-95 
+98 
 ∑øm_t
  *
 ∑ª¡
@@ -5231,7 +5883,7 @@ i
 NULL
 ;
 
-96 
+99 
 ∑øm_t
  *
 ∑øm
@@ -5239,7 +5891,7 @@ NULL
 	`gë_cmd_åì_curs‹
 ();
 
-97 
+100 
 CMD_PARSE_STATUS
  
 °©us
@@ -5247,7 +5899,7 @@ CMD_PARSE_STATUS
 COMPLETE
 ;
 
-100 
+103 
 	`mem£t
 (&
 év
@@ -5255,19 +5907,19 @@ COMPLETE
 év_°ru˘_t
 ));
 
-102 ; 
+105 ; 
 i
  < 
 tokí_˙t
 ; i++){
 
-104 
+107 
 ∑ª¡
  = 
 ∑øm
 ;
 
-105 
+108 
 ∑øm
  = 
 	`föd_m©chög_∑øm
@@ -5279,17 +5931,17 @@ tokís
 i
 ));
 
-107 if(
+110 if(
 ∑øm
 ){
 
-108 if(
+111 if(
 	`IS_PARAM_LEAF
 (
 ∑øm
 )){
 
-112 if(
+115 if(
 	`INVOKE_LEAF_LIB_VALIDATION_CALLBACK
 (
 ∑øm
@@ -5301,7 +5953,7 @@ i
 VALIDATION_SUCCESS
 ){
 
-115 if(
+118 if(
 	`INVOKE_LEAF_USER_VALIDATION_CALLBACK
 (
 ∑øm
@@ -5313,7 +5965,7 @@ i
 VALIDATION_SUCCESS
 ){
 
-117 
+120 
 	`¥ï¨e_év_‰om_Àaf
 (
 	`GET_PARAM_LEAF
@@ -5323,7 +5975,7 @@ VALIDATION_SUCCESS
 év
 ));
 
-118 
+121 
 	`put_vÆue_ö_év
 ((&
 év
@@ -5333,7 +5985,7 @@ tokís
 i
 ));
 
-119 
+122 
 	`°∫˝y
 (
 	`GET_LEAF_VALUE_PTR
@@ -5351,7 +6003,7 @@ i
 LEAF_VALUE_HOLDER_SIZE
 ));
 
-120 
+123 
 	`GET_LEAF_VALUE_PTR
 (
 ∑øm
@@ -5363,7 +6015,7 @@ tokís
 i
 ))] = '\0';
 
-121 
+124 
 	`cﬁÀ˘_év
 (
 év_buff
@@ -5371,7 +6023,7 @@ i
 év
 );
 
-122 
+125 
 	`mem£t
 (&
 év
@@ -5379,67 +6031,67 @@ i
 év_°ru˘_t
 ));
 
-126 
+129 
 °©us
  = 
 USER_INVALID_LEAF
 ;
 
-131 
+134 
 °©us
  = 
 INVALID_LEAF
 ;
 
-136 if(
+139 if(
 	`IS_PARAM_NO_CMD
 (
 ∑øm
 )){
 
-137 
+140 
 íabÀ_‹_dißbÀ
  = 
 CONFIG_DISABLE
 ;
 
-143 
+146 
 °©us
  = 
 CMD_NOT_FOUND
 ;
 
-147 if(
+150 if(
 °©us
  =
 COMPLETE
 ){
 
-148 if(!
+151 if(!
 	`IS_APPLICATION_CALLBACK_HANDLER_REGISTERED
 (
 ∑øm
 ))
 
-149 
+152 
 °©us
  = 
 INCOMPLETE_COMMAND
 ;
 
-152 
+155 
 °©us
 ){
 
-153 
+156 
 MULTIPLE_MATCHING_COMMANDS
 :
 
-156 
+159 
 CMD_NOT_FOUND
 :
 
-157 
+160 
 	`¥ötf
 (
 ANSI_COLOR_RED
@@ -5451,11 +6103,11 @@ tokís
 i
 ));
 
-160 
+163 
 INVALID_LEAF
 :
 
-161 
+164 
 	`¥ötf
 (
 ANSI_COLOR_RED
@@ -5471,11 +6123,11 @@ i
 ∑øm
 ));
 
-164 
+167 
 COMPLETE
 :
 
-165 
+168 
 	`¥ötf
 (
 ANSI_COLOR_GREEN
@@ -5483,13 +6135,13 @@ ANSI_COLOR_GREEN
 ANSI_COLOR_RESET
 );
 
-167 if(
+170 if(
 ∑øm
  =
 	`lib˛i_gë_sub›ti⁄s_∑øm
 ())
 
-168 
+171 
 	`di•œy_sub_›ti⁄s_ˇŒback
 (
 ∑ª¡
@@ -5497,13 +6149,13 @@ ANSI_COLOR_RESET
 MODE_UNKNOWN
 );
 
-170 if(
+173 if(
 ∑øm
  =
 	`lib˛i_gë_mode_∑øm
 ())
 
-171 
+174 
 	`mode_íãr_ˇŒback
 (
 ∑ª¡
@@ -5513,33 +6165,77 @@ MODE_UNKNOWN
 MODE_UNKNOWN
 );
 
-174 if(
+177 
+∑øm_t
+ *
+cuº_hook
+ = 
 	`gë_cuºít_bønch_hook
 (
 ∑øm
-Ë=
+);
+
+179 if(
+cuº_hook
+ =
 	`lib˛i_gë_c⁄fig_hook
 () &&
 
-175 
+180 
 íabÀ_‹_dißbÀ
  !
 CONFIG_DISABLE
 )
 
-176 
+181 
 íabÀ_‹_dißbÀ
  = 
 CONFIG_ENABLE
 ;
 
-178 
+183 if(
+cuº_hook
+ !
+	`lib˛i_gë_c⁄fig_hook
+())
+
+184 
 íabÀ_‹_dißbÀ
  = 
 OPERATIONAL
 ;
 
-180 
+188 
+	`mem£t
+(
+comm™d_code_év
+.
+vÆue
+, 0, 
+LEAF_VALUE_HOLDER_SIZE
+);
+
+189 
+	`•rötf
+(
+comm™d_code_év
+.
+vÆue
+, "%d", 
+∑øm
+->
+CMDCODE
+);
+
+190 
+	`cﬁÀ˘_év
+(
+év_buff
+, &
+comm™d_code_év
+);
+
+192 
 	`INVOKE_APPLICATION_CALLBACK_HANDLER
 (
 ∑øm
@@ -5549,11 +6245,11 @@ OPERATIONAL
 íabÀ_‹_dißbÀ
 );
 
-185 
+197 
 USER_INVALID_LEAF
 :
 
-186 
+198 
 	`¥ötf
 (
 ANSI_COLOR_YELLOW
@@ -5561,11 +6257,11 @@ ANSI_COLOR_YELLOW
 ANSI_COLOR_RESET
 );
 
-189 
+201 
 INCOMPLETE_COMMAND
 :
 
-190 
+202 
 	`¥ötf
 (
 ANSI_COLOR_YELLOW
@@ -5573,7 +6269,7 @@ ANSI_COLOR_YELLOW
 ANSI_COLOR_RESET
 );
 
-194 
+206 
 	`¥ötf
 (
 ANSI_COLOR_RED
@@ -5581,15 +6277,15 @@ ANSI_COLOR_RED
 ANSI_COLOR_RESET
 );
 
-196  
+208  
 °©us
 ;;
 
-197 
+209 
 	}
 }
 
-200 
+212 
 	$∑r£_öput_cmd
 (*
 öput
@@ -5597,19 +6293,19 @@ ANSI_COLOR_RESET
 Àn
 ){
 
-202 ** 
+214 ** 
 tokís
  = 
 NULL
 ;
 
-203 
+215 
 size_t
  
 tokí_˙t
  = 0;
 
-204 
+216 
 CMD_PARSE_STATUS
  
 °©us
@@ -5617,7 +6313,7 @@ CMD_PARSE_STATUS
 COMPLETE
 ;
 
-206 
+218 
 tokís
  = 
 	`°r_•lô2
@@ -5627,31 +6323,31 @@ tokís
 tokí_˙t
 );
 
-207 if(!
+219 if(!
 tokís
 )
 
-210 if(
+222 if(
 tokí_˙t
  > 1 &&
 
-211 ((
+223 ((
 	`°∫cmp
 (
 tokís
 [0], "do", 2) == 0)) &&
 
-212 (
+224 (
 	`gë_cmd_åì_curs‹
 (Ë!
 	`lib˛i_gë_roŸ
 ()))
 
-215 if(
+227 if(
 	`IS_CURRENT_MODE_CONFIG
 ())
 
-217 
+229 
 ∑øm_t
  *
 ﬁd_curs‹_°©e
@@ -5663,19 +6359,19 @@ tokís
 NULL
 ;
 
-218 
+230 
 	`£t_cmd_åì_curs‹
 (
 	`lib˛i_gë_do_hook
 ());
 
-221 
+233 
 	`ª£t_£rülize_buf„r
 (
 év_buff
 );
 
-222 
+234 
 °©us
  = 
 	`buûd_év_buf„r
@@ -5687,33 +6383,33 @@ tokí_˙t
 OPERATIONAL
 );
 
-225 
+237 
 √w_curs‹_°©e
  = 
 	`gë_cmd_åì_curs‹
 ();
 
-230 if(
+242 if(
 √w_curs‹_°©e
  !
 	`lib˛i_gë_do_hook
 ()){
 
-231 if(
+243 if(
 	`IS_CURRENT_MODE_CONFIG
 ()){
 
-232 
+244 
 	`as£π
 (0);
 
-242 
+254 
 	`£t_cmd_åì_curs‹
 (
 ﬁd_curs‹_°©e
 );
 
-244 
+256 
 	`buûd_cmd_åì_Àaves_d©a
 (
 év_buff
@@ -5723,17 +6419,17 @@ OPERATIONAL
 	`gë_cmd_åì_curs‹
 ());
 
-245 
+257 
 	`m¨k_checkpoöt_£rülize_buf„r
 (
 év_buff
 );
 
-249 
+261 
 	`¥ötf
 ("Info : do is supported from within config mode only\n");
 
-252 if((
+264 if((
 	`°∫cmp
 (
 tokís
@@ -5743,13 +6439,13 @@ tokís
 tokí_˙t
  == 1))
 
-253 
+265 
 	`gŸo_t›_of_cmd_åì
 (
 	`gë_cmd_åì_curs‹
 ());
 
-255 if((
+267 if((
 	`°∫cmp
 (
 tokís
@@ -5759,13 +6455,13 @@ tokís
 tokí_˙t
  == 1))
 
-256 
+268 
 	`go_⁄e_Àvñ_up_cmd_åì
 (
 	`gë_cmd_åì_curs‹
 ());
 
-258 if((
+270 if((
 	`°∫cmp
 (
 tokís
@@ -5775,13 +6471,13 @@ tokís
 tokí_˙t
  == 1))
 
-259 
+271 
 	`˛ór_s¸ìn_h™dÀr
 (0, 0, 
 MODE_UNKNOWN
 );
 
-262 
+274 
 °©us
  = 
 	`buûd_év_buf„r
@@ -5793,39 +6489,79 @@ tokí_˙t
 MODE_UNKNOWN
 );
 
-264 
+276 
 	`ª_öô_tokís
-();
+(
+MAX_CMD_TREE_DEPTH
+);
 
-266 if(
+278 if(
 	`is_u£r_ö_cmd_mode
 ())
 
-267 
+279 
 	`ª°‹e_checkpoöt_£rülize_buf„r
 (
 év_buff
 );
 
-269 
+281 
 	`ª£t_£rülize_buf„r
 (
 év_buff
 );
 
-270 
+282 
 	}
 }
 
-274 
+286 
 	$comm™d_∑r£r
 (){
 
-276 
+288 
+	`¥ötf
+("run - \'show help\' cmdÅoÜearn more");
+
+289 
 	`∂a˚_c⁄sﬁe
 (1);
 
-279 if((
+290 
+	`mem£t
+(&
+comm™d_code_év
+, 0, (
+év_°ru˘_t
+));
+
+292 
+comm™d_code_év
+.
+Àaf_ty≥
+ = 
+INT
+;
+
+293 
+	`°∫˝y
+(
+comm™d_code_év
+.
+Àaf_id
+, "CMDCODE", 
+LEAF_ID_SIZE
+);
+
+294 
+comm™d_code_év
+.
+Àaf_id
+[
+LEAF_ID_SIZE
+ -1] = '\0';
+
+298 if((
 	`fgës
 ((*)
 c⁄s_öput_buf„r
@@ -5835,37 +6571,37 @@ c⁄s_öput_buf„r
 NULL
 )){
 
-280 
+299 
 	`¥ötf
 ("error inÑeading from stdin\n");
 
-281 
+300 
 	`exô
 (
 EXIT_SUCCESS
 );
 
-285 if(
+304 if(
 	`°æí
 (
 c⁄s_öput_buf„r
 ) == 1){
 
-286 
+305 
 c⁄s_öput_buf„r
 [0]= '\0';
 
-287 
+306 
 	`∂a˚_c⁄sﬁe
 (0);
 
-291 
+310 
 c⁄s_öput_buf„r
 [
 	`°æí
 (cons_input_buffer) - 1] = '\0';
 
-293 
+312 
 	`∑r£_öput_cmd
 (
 c⁄s_öput_buf„r
@@ -5873,7 +6609,7 @@ c⁄s_öput_buf„r
 	`°æí
 (cons_input_buffer));
 
-295 if(
+314 if(
 	`°∫cmp
 (
 c⁄s_öput_buf„r
@@ -5881,7 +6617,7 @@ c⁄s_öput_buf„r
 	`°æí
 (cons_input_buffer)) == 0){
 
-296 
+315 
 	`mem£t
 (
 c⁄s_öput_buf„r
@@ -5889,11 +6625,11 @@ c⁄s_öput_buf„r
 CONS_INPUT_BUFFER_SIZE
 );
 
-297 
+316 
 	`∂a˚_c⁄sﬁe
 (1);
 
-300 
+319 
 	`mem£t
 (
 œ°_comm™d_öput_buf„r
@@ -5901,7 +6637,7 @@ CONS_INPUT_BUFFER_SIZE
 CONS_INPUT_BUFFER_SIZE
 );
 
-302 
+321 
 	`mem˝y
 (
 œ°_comm™d_öput_buf„r
@@ -5911,13 +6647,13 @@ c⁄s_öput_buf„r
 	`°æí
 (cons_input_buffer));
 
-304 
+323 
 œ°_comm™d_öput_buf„r
 [
 	`°æí
 (last_command_input_buffer)] = '\0';
 
-306 
+325 
 	`mem£t
 (
 c⁄s_öput_buf„r
@@ -5925,11 +6661,11 @@ c⁄s_öput_buf„r
 CONS_INPUT_BUFFER_SIZE
 );
 
-308 
+327 
 	`∂a˚_c⁄sﬁe
 (1);
 
-310 
+329 
 	}
 }
 
@@ -8023,21 +8759,21 @@ CONS_INPUT_BUFFER_SIZE
 MAX_CMD_TREE_DEPTH
 ];
 
-34 
+31 
 	$öô_tokí_¨øy
 (){
 
-36 
+33 
 i
  = 0;
 
-37 ; 
+34 ; 
 i
  < 
 MAX_CMD_TREE_DEPTH
 ; i++){
 
-38 
+35 
 tokís
 [
 i
@@ -8047,25 +8783,27 @@ i
 LEAF_VALUE_HOLDER_SIZE
 );
 
-40 
+37 
 	}
 }
 
-43 
+40 
 	$ª_öô_tokís
-(){
+(
+tokí_˙t
+){
 
-45 
+42 
 i
  = 0;
 
-46 ; 
+43 ; 
 i
  < 
-MAX_CMD_TREE_DEPTH
+tokí_˙t
 ; i++){
 
-47 
+44 
 	`mem£t
 (
 tokís
@@ -8075,11 +8813,83 @@ i
 LEAF_VALUE_HOLDER_SIZE
 );
 
-49 
+46 
 	}
 }
 
-51 ** 
+49 
+	$tokíize
+(*
+tokí
+, 
+size
+, 
+ödex
+){
+
+51 if(
+size
+ > 
+LEAF_VALUE_HOLDER_SIZE
+)
+
+52 
+	`as£π
+(0);
+
+54 
+	`°∫˝y
+(
+tokís
+[
+ödex
+], 
+tokí
+, 
+size
+);
+
+55 
+	}
+}
+
+58 
+	$u¡okíize
+(
+ödex
+){
+
+60 
+	`mem£t
+(
+tokís
+[
+ödex
+], 0, 
+LEAF_VALUE_HOLDER_SIZE
+);
+
+61 
+	}
+}
+
+64 
+	$gë_tokí
+(
+ödex
+){
+
+66  
+tokís
+[
+ödex
+];
+
+67 
+	}
+}
+
+69 ** 
 	$°r_•lô2
 (* 
 _a_°r
@@ -8091,17 +8901,17 @@ size_t
 tokí_˙t
 ){
 
-53 *
+71 *
 tokí
  = 
 NULL
 ;
 
-54 
+72 
 i
  = 0;
 
-56 
+74 
 	`mem£t
 (
 a_°r
@@ -8109,7 +8919,7 @@ a_°r
 CONS_INPUT_BUFFER_SIZE
 );
 
-57 
+75 
 	`mem˝y
 (
 a_°r
@@ -8119,27 +8929,27 @@ _a_°r
 	`°æí
 (_a_str));
 
-59 
+77 
 	`°rög_•a˚_åim
 (
 a_°r
 );
 
-61 if(
+79 if(
 	`°æí
 (
 a_°r
 ) < 1){
 
-62 *
+80 *
 tokí_˙t
  = 0;
 
-63  
+81  
 NULL
 ;
 
-66 
+84 
 tokí
  = 
 	`°πok
@@ -8149,11 +8959,11 @@ a_°r
 a_dñim
 );
 
-67 if(
+85 if(
 tokí
 ){
 
-68 
+86 
 	`°∫˝y
 (
 tokís
@@ -8165,25 +8975,25 @@ tokí
 	`°æí
 (token));
 
-69 
+87 
 i
 ++;
 
-72 *
+90 *
 tokí_˙t
  = 0;
 
-73  
+91  
 NULL
 ;
 
-77  
+95  
 tokí
  !
 NULL
  )
 
-79 
+97 
 tokí
  = 
 	`°πok
@@ -8193,11 +9003,11 @@ NULL
 a_dñim
 );
 
-80 if(
+98 if(
 tokí
 ){
 
-81 
+99 
 	`°∫˝y
 (
 tokís
@@ -8209,41 +9019,41 @@ tokí
 	`°æí
 (token));
 
-82 
+100 
 i
 ++;
 
-86 *
+104 *
 tokí_˙t
  = 
 i
 ;
 
-87  &
+105  &
 tokís
 [0];
 
-88 
+106 
 	}
 }
 
-91 
+109 
 	$°rög_•a˚_åim
 (*
 °rög
 ){
 
-93 if(!
+111 if(!
 °rög
 )
 
-96 * 
+114 * 
 ±r
  = 
 °rög
 ;
 
-97 
+115 
 Àn
  = 
 	`°æí
@@ -8251,11 +9061,11 @@ tokís
 ±r
 );
 
-99 if(!
+117 if(!
 Àn
 ){
 
-103 if(!
+121 if(!
 	`is•a˚
 (
 ±r
@@ -8263,7 +9073,7 @@ tokís
 Àn
 -1])){
 
-107 
+125 
 Àn
 -1 > 0 && 
 	`is•a˚
@@ -8271,25 +9081,25 @@ tokís
 ±r
 [len-1])){
 
-108 
+126 
 ±r
 [--
 Àn
 ] = 0;
 
-111 *
+129 *
 ±r
  && 
 	`is•a˚
 (*ptr)){
 
-112 ++
+130 ++
 ±r
 , --
 Àn
 ;
 
-115 
+133 
 	`memmove
 (
 °rög
@@ -8299,41 +9109,43 @@ tokís
 Àn
  + 1);
 
-116 
+134 
 	}
 }
 
-120 
+138 
 	$¥öt_tokís
-(**
-tokís
+(
+ödex
 ){
 
-121 
+140 
 i
  = 0;
 
-122  ;*(
-tokís
- + 
+141  ; 
 i
-); i++)
+ < 
+ödex
+; i++)
 
-124 
+143 if(
+tokís
+[
+i
+] =
+NULL
+)
+
+146 
 	`¥ötf
-("%d. %s\n", 
+("%†", 
+tokís
+[
 i
-, (*(
-tokís
- + i)));
+]);
 
-126 
-	`‰ì
-(
-tokís
-);
-
-127 
+148 
 	}
 }
 
@@ -8377,8 +9189,8 @@ tokí_˙t
 
 32 
 ¥öt_tokís
-(**
-tokís
+(
+ödex
 );
 
 35 
@@ -8387,7 +9199,31 @@ tokís
 
 38 
 ª_öô_tokís
-();
+(
+tokí_˙t
+);
+
+41 
+tokíize
+(*
+tokí
+, 
+size
+, 
+ödex
+);
+
+44 
+u¡okíize
+(
+ödex
+);
+
+47 
+gë_tokí
+(
+ödex
+);
 
 	@testapp.c
 
@@ -30420,8 +31256,10 @@ __END_DECLS
 .
 1
 /usr/include
-34
-579
+36
+601
+clicbext.c
+clicbext.h
 cliconst.h
 clistd.c
 clistd.h

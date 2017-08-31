@@ -35,7 +35,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <string.h>
 
 static void
@@ -86,14 +85,13 @@ create_new_edge(char *from_ifname,
     edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
 
     if(IS_LEVEL_SET(level, LEVEL1)){
-        edge->from._prefix[LEVEL1] = from_prefix;
-        edge->to._prefix[LEVEL1]   = to_prefix;
+        edge->from.prefix[LEVEL1] = from_prefix;
+        edge->to.prefix[LEVEL1]   = to_prefix;
     }
-
-
+    
     if(IS_LEVEL_SET(level, LEVEL2)){
-        edge->from._prefix[LEVEL2] = from_prefix;
-        edge->to._prefix[LEVEL2]   = to_prefix;
+        edge->from.prefix[LEVEL2] = from_prefix;
+        edge->to.prefix[LEVEL2]   = to_prefix;
     }
 
     edge->level     = level;
@@ -138,11 +136,11 @@ insert_edge_between_2_nodes(edge_t *edge,
        
         if(IS_LEVEL_SET(edge->level, LEVEL1)) 
             edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric[LEVEL1],
-                                        edge->to._prefix[LEVEL1], edge->from._prefix[LEVEL1], edge->level);
+                                        edge->to.prefix[LEVEL1], edge->from.prefix[LEVEL1], edge->level);
 
         else if(IS_LEVEL_SET(edge->level, LEVEL2))
             edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric[LEVEL2],
-                                        edge->to._prefix[LEVEL2], edge->from._prefix[LEVEL2], edge->level);
+                                        edge->to.prefix[LEVEL2], edge->from.prefix[LEVEL2], edge->level);
 
         insert_edge_between_2_nodes(edge2, to_node, from_node, UNIDIRECTIONAL);
     }
@@ -175,19 +173,14 @@ mark_node_pseudonode(node_t *node, LEVEL level){
         if(!IS_LEVEL_SET(edge->level, level))      
             continue;
        
-#if 0
-        memset(edge_end->prefix[level], 0, PREFIX_LEN_WITH_MASK + 1);
-        strncpy(edge_end->prefix[level], "NIL", PREFIX_LEN_WITH_MASK);
-        edge_end->prefix[level][PREFIX_LEN_WITH_MASK] = '\0';
-#endif
-        prefix = edge_end->_prefix[level];
+        prefix = edge_end->prefix[level];
 
         if(node->node_type[LEVEL1] == PSEUDONODE &&
             node->node_type[LEVEL2] == PSEUDONODE){
             free(prefix);
         }
 
-        edge_end->_prefix[level] = NULL;
+        edge_end->prefix[level] = NULL;
 
         if(get_edge_direction(node, edge) == OUTGOING)
             edge->metric[level] = 0;

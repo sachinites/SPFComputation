@@ -126,7 +126,8 @@ show_graph_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
     TLV_LOOP(tlv_buf, tlv, i){
         level = atoi(tlv->value);    
     }
-
+    
+    printf("Graph root : %s\n", graph->graph_root->node_name);
     ITERATE_LIST(graph->graph_node_list, list_node){
          dump_nbrs(list_node->data, level);
     }
@@ -265,7 +266,9 @@ dump_nbrs(node_t *node, LEVEL level){
     ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge, level){
         printf("    Neighbor : %s, Area = %s\n", nbr_node->node_name, get_str_node_area(nbr_node->area));
         printf("    egress intf = %s(%s/%d), peer_intf  = %s(%s/%d)\n",
-                    edge->from.intf_name, STR_PREFIX(edge->from._prefix[level]), PREFIX_MASK(edge->from._prefix[level]), edge->to.intf_name, STR_PREFIX(edge->to._prefix[level]), PREFIX_MASK(edge->to._prefix[level]));
+                    edge->from.intf_name, STR_PREFIX(edge->from.prefix[level]), 
+                    PREFIX_MASK(edge->from.prefix[level]), edge->to.intf_name, 
+                    STR_PREFIX(edge->to.prefix[level]), PREFIX_MASK(edge->to.prefix[level]));
 
         printf("    %s metric = %u, edge level = %s\n\n", get_str_level(level),
             edge->metric[level], get_str_level(edge->level));
@@ -300,8 +303,8 @@ dump_node_info(node_t *node){
         if(!edge_end)
             break;
 
-        printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, local edge-end connected node : %s", i, edge_end->intf_name, STR_PREFIX(edge_end->_prefix[LEVEL1]), PREFIX_MASK(edge_end->_prefix[LEVEL1]), 
-                STR_PREFIX(edge_end->_prefix[LEVEL2]), PREFIX_MASK(edge_end->_prefix[LEVEL2]), (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
+        printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, local edge-end connected node : %s", i, edge_end->intf_name, STR_PREFIX(edge_end->prefix[LEVEL1]), PREFIX_MASK(edge_end->prefix[LEVEL1]), 
+                STR_PREFIX(edge_end->prefix[LEVEL2]), PREFIX_MASK(edge_end->prefix[LEVEL2]), (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
 
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
         printf(", L1 metric = %u, L2 metric = %u, edge level = %s\n", edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level));

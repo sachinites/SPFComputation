@@ -60,7 +60,7 @@ typedef struct _node_t{
 struct edge_end_{
     node_t *node;
     char intf_name[IF_NAME_SIZE];
-    prefix_t * _prefix[MAX_LEVEL];
+    prefix_t * prefix[MAX_LEVEL];
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
 };
 

@@ -20,6 +20,13 @@
 #include "libcli.h"
 #include <stdlib.h>
 
+#define MTRACE_SOURCE               1
+#define MTRACE_SOURCE_DEST          2
+#define MTRACE_SOURCE_DEST_GROUP    3
+#define MTRACE_SOURCE_GROUP         4
+
+
+
 
 int
 show_ip_igmp_groups_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
@@ -58,13 +65,6 @@ config_router_name_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_o
 
 
 int
-show_cmd_tree(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
-        
-    dump_cmd_tree();
-    return 0;
-}
-
-int
 user_vlan_validation_callback(char *vlan_id){
 
     int vlan_no = atoi(vlan_id);
@@ -99,10 +99,6 @@ main(int argc, char **argv){
     init_param(&ipv6, CMD, "ipv6", 0, 0, INVALID, 0, "Internet Protocol(IPV6)");
     libcli_register_param(show, &ipv6);
 
-    static param_t debug_show;
-    init_param(&debug_show, CMD, "show", 0, 0, INVALID, 0, "debug show commands");
-    libcli_register_param(debug, &debug_show);
-     
     static param_t config_router;
     init_param(&config_router, CMD, "router", 0, 0, INVALID, 0, "Configuration Router");
     libcli_register_param(config, &config_router);
@@ -119,10 +115,6 @@ main(int argc, char **argv){
     static param_t igmp_config;
     init_param(&igmp_config, CMD, "configuration", show_ip_igmp_groups_handler, 0, INVALID, 0, "IGMP Protocol Configuration");
     libcli_register_param(&igmp, &igmp_config);
-
-    static param_t debug_show_cmdtree;
-    init_param(&debug_show_cmdtree, CMD, "cmdtree", show_cmd_tree, 0, INVALID, 0, "Display command tree");
-    libcli_register_param(&debug_show, &debug_show_cmdtree);
 
     /*Level 3*/
     static param_t config_router_name_name;
@@ -172,6 +164,7 @@ main(int argc, char **argv){
     static param_t source_ip;
     init_param(&source_ip, LEAF, 0, mtrace_handler, 0, IPV4, "source-ip", "Source Ipv4 address");
     libcli_register_param(&source, &source_ip);
+    set_param_cmd_code(&source_ip, MTRACE_SOURCE);
 
     /*mtrace source <source ip> destination <dest-ip>*/
 
@@ -182,6 +175,7 @@ main(int argc, char **argv){
     static param_t dest_ip;
     init_param(&dest_ip, LEAF, 0, mtrace_handler, 0, IPV4, "destination-ip", "Destination Ipv4 address");
     libcli_register_param(&destination, &dest_ip);
+    set_param_cmd_code(&dest_ip, MTRACE_SOURCE_DEST);
 
     /*mtrace source <source ip> group <group-ip>*/
 
@@ -192,7 +186,7 @@ main(int argc, char **argv){
     static param_t group_ip;
     init_param(&group_ip, LEAF, 0, mtrace_handler, 0, IPV4, "group-ip", "Multicast Group Ipv4 address");
     libcli_register_param(&group, &group_ip);
-
+    set_param_cmd_code(&group_ip, MTRACE_SOURCE_GROUP);
 
     /*mtrace source <source ip> destination <dest-ip> group <group_ip>*/
 
@@ -203,6 +197,7 @@ main(int argc, char **argv){
     static param_t group_ip2;
     init_param(&group_ip2, LEAF, 0, mtrace_handler, 0, IPV4, "group-ip", "Multicast Group Ipv4 address");
     libcli_register_param(&group2, &group_ip2);
+    set_param_cmd_code(&group_ip2, MTRACE_SOURCE_DEST_GROUP);
 
     support_cmd_negation(config);
 
