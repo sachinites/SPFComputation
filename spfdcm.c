@@ -37,6 +37,8 @@
 #include <stdio.h>
 #include "spfutil.h"
 #include "spfcomputation.h"
+#include "logging.h"
+
 
 extern
 graph_t *graph;
@@ -70,6 +72,16 @@ show_spf_results(LEVEL level){
     }
 }
 
+static int
+validate_debug_log_enable_disable(char *value_passed){
+
+    if(strncmp(value_passed, "enable", strlen(value_passed)) == 0 ||
+        strncmp(value_passed, "disable", strlen(value_passed)) == 0)
+        return VALIDATION_SUCCESS;
+
+    printf("Error : Incorrect log status specified\n");
+    return VALIDATION_FAILED;
+}
 
 static int
 validate_level_no(char *value_passed){
@@ -88,6 +100,28 @@ config_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disab
     return 0;
 }
 
+static int
+debug_log_enable_disable_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+    
+    tlv_struct_t *tlv = NULL;
+    unsigned int i = 0;
+    char *value = NULL;
+
+    TLV_LOOP(tlv_buf, tlv, i){
+        value = tlv->value;        
+    }
+
+    if(strncmp(value, "enable", strlen(value)) ==0){
+        enable_logging();
+    }
+    else if(strncmp(value, "disable", strlen(value)) ==0){
+        disable_logging();
+    }
+    else
+        assert(0);
+
+    return 0;
+}
 
 static int
 show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
@@ -169,7 +203,7 @@ spf_init_dcm(){
     init_libcli();
 
     param_t *show   = libcli_get_show_hook();
-    //param_t *debug  = libcli_get_debug_hook();
+    param_t *debug  = libcli_get_debug_hook();
     param_t *config = libcli_get_config_hook();
 
 /*Show commands*/
@@ -247,7 +281,18 @@ spf_init_dcm(){
 
 
 /*Debug commands*/
-    
+
+    /*debug log*/
+    static param_t debug_log;
+    init_param(&debug_log, CMD, "log", 0, 0, INVALID, 0, "logging"); 
+    libcli_register_param(debug, &debug_log);
+
+    /*debug log enable*/
+    static param_t debug_log_enable_disable;
+    init_param(&debug_log_enable_disable, LEAF, 0, debug_log_enable_disable_handler, validate_debug_log_enable_disable, STRING, "log-status", "enable | disable"); 
+    libcli_register_param(&debug_log, &debug_log_enable_disable);
+
+
 
     support_cmd_negation(&config_node_node_name);
     support_cmd_negation(config);

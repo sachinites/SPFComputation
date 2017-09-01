@@ -67,7 +67,7 @@ build_linear_topo(){
 
     mark_node_pseudonode(R1, LEVEL1);
     mark_node_pseudonode(R1, LEVEL2);
-    set_graph_root(graph, R1);
+    set_graph_root(graph, R0);
     return graph;
 }
 

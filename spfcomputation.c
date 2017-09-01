@@ -35,6 +35,7 @@
 #include "spfutil.h"
 #include "spfcomputation.h"
 #include <stdio.h>
+#include "logging.h"
 
 extern graph_t *graph;
 spf_stats_t spf_stats;
@@ -48,14 +49,14 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
     edge_t *edge = NULL;
 
     /*Process untill candidate tree is not empty*/
-    printf("%s() : Running Dijkastra with root node = %s\n", __FUNCTION__, (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name);
+    sprintf(LOG, "Running Dijkastra with root node = %s", (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name); TRACE();
     while(!IS_CANDIDATE_TREE_EMPTY(ctree)){
 
         /*Take the node with miminum spf_metric off the candidate tree*/
     
         candidate_node = GET_CANDIDATE_TREE_TOP(ctree, level);
         REMOVE_CANDIDATE_TREE_TOP(ctree);
-        printf("%s() : Candidate node %s Taken off candidate list\n", __FUNCTION__, candidate_node->node_name);
+        sprintf(LOG, "Candidate node %s Taken off candidate list", candidate_node->node_name); TRACE();
 
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
          * however we process it as ususal like other nodes*/
@@ -73,30 +74,31 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
 
 
         ITERATE_NODE_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
-            printf("%s() : Processing Nbr : %s\n", __FUNCTION__, nbr_node->node_name);
+            sprintf(LOG, "Processing Nbr : %s", nbr_node->node_name); TRACE();
 
             /*To way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
              * not consider the node for SPF computation if we find 2-way nbrship is broken*/
 
             if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
 
-                printf("%s() : Two Way nbrship broken with nbr %s\n", __FUNCTION__, nbr_node->node_name);
+                sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
                 continue;
             }
-
-            printf("%s() : Two Way nbrship verified with nbr %s\n", __FUNCTION__, nbr_node->node_name);
+            
+            sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
 
             if(candidate_node->spf_metric[level] + edge->metric[level] < nbr_node->spf_metric[level]){
                 
-                printf("%s() : Old Metric : %u, New Metric : %u, Better Next Hop\n",
-                        __FUNCTION__, nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
+                sprintf(LOG, "Old Metric : %u, New Metric : %u, Better Next Hop", 
+                        nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
+                TRACE();
 
                 
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
                 if(is_nh_list_empty(&candidate_node->next_hop[level][0]) &&
                         nbr_node->node_type[level] == PSEUDONODE){
 
-                    printf("%s() : case 1 if My own List is empty, and nbr is Pseuodnode , do nothing\n", __FUNCTION__);
+                    sprintf(LOG, "case 1 if My own List is empty, and nbr is Pseuodnode , do nothing"); TRACE();
                 }
 
                 
@@ -104,9 +106,9 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
                 /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
                 else if(is_nh_list_empty(&candidate_node->next_hop[level][0]) &&
                         nbr_node->node_type[level] == NON_PSEUDONODE){
-
-                    printf("%s() : case 2 if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list\n",
-                            __FUNCTION__);
+    
+                     sprintf(LOG, "case 2 if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list");
+                     TRACE();
 
                     copy_nh_list(&nbr_node->direct_next_hop[level][0], &nbr_node->next_hop[level][0]);
                 }
@@ -116,20 +118,21 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
                 /*case 3 : if My own List is not empty, then nbr should inherit my next hop list*/
                 else if(!is_nh_list_empty(&candidate_node->next_hop[level][0])){
 
-                    printf("%s() : case 3 if My own List is not empty, then nbr should inherit my next hop list\n", __FUNCTION__);
+                    sprintf(LOG, "case 3 if My own List is not empty, then nbr should inherit my next hop list"); TRACE();
                     copy_nh_list(&candidate_node->next_hop[level][0], &nbr_node->next_hop[level][0]);
                 }
 
                 nbr_node->spf_metric[level] =  candidate_node->spf_metric[level] + edge->metric[level]; 
                 INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
-                printf("%s() : %s's spf_metric has been updated to %u, and inserted into candidate list\n",
-                        __FUNCTION__, nbr_node->node_name, nbr_node->spf_metric[level]);
-
+                sprintf(LOG, "%s's spf_metric has been updated to %u, and inserted into candidate list", 
+                        nbr_node->node_name, nbr_node->spf_metric[level]); 
+                TRACE();
             }
 
             else{
-                printf("%s() : Old Metric : %u, New Metric : %u, Not a Better Next Hop\n",
-                        __FUNCTION__, nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
+                sprintf(LOG, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
+                        nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
+                TRACE();
             }
         }
         ITERATE_NODE_NBRS_END;
