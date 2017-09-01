@@ -85,13 +85,13 @@ create_new_edge(char *from_ifname,
     edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
 
     if(IS_LEVEL_SET(level, LEVEL1)){
-        edge->from.prefix[LEVEL1] = from_prefix;
-        edge->to.prefix[LEVEL1]   = to_prefix;
+        BIND_PREFIX(edge->from.prefix[LEVEL1], from_prefix);
+        BIND_PREFIX(edge->to.prefix[LEVEL1], to_prefix);
     }
     
     if(IS_LEVEL_SET(level, LEVEL2)){
-        edge->from.prefix[LEVEL2] = from_prefix;
-        edge->to.prefix[LEVEL2]   = to_prefix;
+        BIND_PREFIX(edge->from.prefix[LEVEL2], from_prefix);
+        BIND_PREFIX(edge->to.prefix[LEVEL2], to_prefix);
     }
 
     edge->level     = level;
@@ -157,10 +157,12 @@ mark_node_pseudonode(node_t *node, LEVEL level){
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
-    prefix_t *prefix = NULL;
 
     if(level != LEVEL1 && level != LEVEL2)
         assert(0);
+
+    if(node->node_type[level] == PSEUDONODE)
+        return;
 
     node->node_type[level] = PSEUDONODE;
 
@@ -168,19 +170,12 @@ mark_node_pseudonode(node_t *node, LEVEL level){
         if(!node->edges[i]) continue;;
         
         edge_end = node->edges[i];
-        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
         
-        if(!IS_LEVEL_SET(edge->level, level))      
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        if(!IS_LEVEL_SET(edge->level, level))
             continue;
-       
-        prefix = edge_end->prefix[level];
-
-        if(node->node_type[LEVEL1] == PSEUDONODE &&
-            node->node_type[LEVEL2] == PSEUDONODE){
-            free(prefix);
-        }
-
-        edge_end->prefix[level] = NULL;
+      
+        UNBIND_PREFIX(edge_end->prefix[level]);
 
         if(get_edge_direction(node, edge) == OUTGOING)
             edge->metric[level] = 0;
@@ -271,3 +266,22 @@ traverse_graph(graph_t *graph,
     _traverse_graph(graph->graph_root, processing_fn_ptr, level);
 }
 
+edge_t *
+get_my_pseudonode_nbr(node_t *node, LEVEL level){
+
+    node_t *nbr_node = NULL;
+    edge_t *edge = NULL;
+
+    
+    ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge, level){
+        
+        if(nbr_node->node_type[level] == PSEUDONODE){
+                /*Something terribly wrong with the topo, Two adjacent nodes cannot be 
+                 * Pseudonodes*/
+                assert(node->node_type[level] != PSEUDONODE);
+                return edge;
+        }
+    }
+    ITERATE_NODE_NBRS_END;
+    return NULL;
+}

@@ -39,6 +39,7 @@ typedef struct prefix_{
 
     char prefix[PREFIX_LEN + 1];
     unsigned char mask;/*Numeric value [0-32]*/
+    unsigned char ref_count;
 } prefix_t;
 
 prefix_t *
@@ -46,4 +47,19 @@ create_new_prefix(const char *prefix, unsigned char mask);
 
 #define STR_PREFIX(prefix_t_ptr)    (prefix_t_ptr ? prefix_t_ptr->prefix : "NIL")
 #define PREFIX_MASK(prefix_t_ptr)   (prefix_t_ptr ? prefix_t_ptr->mask : 0)
+
+#define BIND_PREFIX(target_ptr, prefix_ptr) \
+    target_ptr = prefix_ptr;                \
+    prefix_ptr->ref_count++;
+
+#define UNBIND_PREFIX(target_ptr)                   \
+    if(target_ptr){                                 \
+        target_ptr->ref_count--;                    \
+        if(!target_ptr->ref_count){                 \
+            free(target_ptr);                       \
+            target_ptr = NULL;                      \
+        }                                           \
+        target_ptr = NULL;                          \
+    }
+    
 #endif /* __ROUTES__ */

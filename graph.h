@@ -181,6 +181,9 @@ is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level);
 void
 traverse_graph(graph_t *graph, void *(*processing_fn_ptr)(node_t *), LEVEL level);
 
+edge_t *
+get_my_pseudonode_nbr(node_t *node, LEVEL level);
+
 #endif /* __GRAPH__ */
 
 
