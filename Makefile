@@ -37,6 +37,5 @@ cleanall:
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	rm Heap/*.o
-	rm BitOp/*.o
 	rm logging/*.o
 	make clean
