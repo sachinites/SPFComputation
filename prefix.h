@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  routes.h
+ *       Filename:  prefix.h
  *
  *    Description:  This file defines the data structure for routes and prefixes to be installed in RIB
  *
@@ -30,16 +30,28 @@
  * =====================================================================================
  */
 
-#ifndef __ROUTES__
-#define __ROUTES__
+#ifndef __PREFIX__
+#define __PREFIX__
 
 #include "graphconst.h"
+
+#define DEFAULT_PREFIX_METRIC   0
+#define PREFIX_DOWNBIT_FLAG     1 
+         
+/* Key structure for a prefix*/
+typedef struct common_pfx_{
+
+    char prefix[PREFIX_LEN + 1];
+    unsigned char mask;
+} common_pfx_key_t;
 
 typedef struct prefix_{
 
     char prefix[PREFIX_LEN + 1];
     unsigned char mask;/*Numeric value [0-32]*/
-    unsigned char ref_count;
+    unsigned int metric;/*Prefix metric, zero for local prefix, non-zeroi for leaked or external prefixes*/
+    unsigned int prefix_flags;
+    unsigned char ref_count; /*For internal use*/
 } prefix_t;
 
 prefix_t *
@@ -62,4 +74,21 @@ create_new_prefix(const char *prefix, unsigned char mask);
         target_ptr = NULL;                          \
     }
     
+void
+set_prefix_property_metric(prefix_t *prefix, 
+                           unsigned int metric);
+
+void
+set_prefix_flag(unsigned int flag);
+
+typedef int (*comparison_fn)(void *, void *);
+
+comparison_fn
+get_prefix_comparison_fn();
+
+/*This fn leak the prefix from L2 to L1*/
+void
+leak_prefix(char *node_name, char *prefix, char mask);
+
 #endif /* __ROUTES__ */
+

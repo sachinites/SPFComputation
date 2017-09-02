@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "spfcomputation.h"
-#include "routes.h"
+#include "prefix.h"
 
 typedef struct edge_end_ edge_end_t;
 
@@ -51,11 +51,24 @@ typedef struct _node_t{
     struct _node_t *next_hop[MAX_LEVEL][MAX_NXT_HOPS];
     struct _node_t *direct_next_hop[MAX_LEVEL][MAX_NXT_HOPS];
     edge_end_t *pn_intf[MAX_LEVEL];
+    /*Its a level specific database of prefixes hosted on the router, 
+     * but do not belong to any particular interface. These prefixes 
+     * include External prefixes/leaked prefixes/lo prefixes.
+     * We will deal with these prefixes like interface prefixes in 
+     * building the routing table.*/
+    ll_t *local_prefix_list[MAX_LEVEL];                     
+    /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
     ll_t *attached_nodes;                                   /*Every node should know the L2 router(s) within a local area which are attached to another Area*/
     char traversing_bit;                                    /*This bit is only used to traverse the graph, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
-    unsigned int router_flags[MAX_LEVEL];
+    unsigned int instance_flags[MAX_LEVEL];                 /*Simulate protocol instance level flags*/
 } node_t;
+
+/*helping macros*/
+#define GET_NODE_L1_PREFIX_LIST(node_ptr)   (node_ptr->local_prefix_list[LEVEL1])
+#define GET_NODE_L2_PREFIX_LIST(node_ptr)   (node_ptr->local_prefix_list[LEVEL2])
+#define GET_NODE_PREFIX_LIST(node_ptr, level)   (node_ptr->local_prefix_list[level])
+
 
 struct edge_end_{
     node_t *node;
@@ -184,6 +197,15 @@ traverse_graph(graph_t *graph, void *(*processing_fn_ptr)(node_t *), LEVEL level
 edge_t *
 get_my_pseudonode_nbr(node_t *node, LEVEL level);
 
+/*Fn to attach non interface specific prefix on the router*/
+void
+attach_prefix_on_node(node_t *node, 
+                      char *prefix, 
+                      unsigned char mask,
+                      LEVEL level,
+                      unsigned int metric);
 #endif /* __GRAPH__ */
 
+prefix_t *
+node_local_prefix_search(node_t *node, LEVEL level, common_pfx_key_t *key);
 

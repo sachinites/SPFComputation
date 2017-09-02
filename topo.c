@@ -65,8 +65,8 @@ build_linear_topo(){
     insert_edge_between_2_nodes(R0_R1_edge, R0, R1, BIDIRECTIONAL);
     insert_edge_between_2_nodes(R1_R2_edge, R1, R2, BIDIRECTIONAL);
 
-    mark_node_pseudonode(R1, LEVEL1);
-    mark_node_pseudonode(R1, LEVEL2);
+    //mark_node_pseudonode(R1, LEVEL1);
+    //mark_node_pseudonode(R1, LEVEL2);
     set_graph_root(graph, R0);
     return graph;
 }
@@ -155,6 +155,14 @@ build_multi_area_topo(){
     
     insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("20.1.1.1", 24), create_new_prefix("20.1.1.2", 24), LEVEL2)),
                                 R2, R5, BIDIRECTIONAL);
+
+    /*Attach local aditional prefixes on nodes*/
+    attach_prefix_on_node(R1, "90.1.1.1",  24, LEVEL1, 0);
+    attach_prefix_on_node(R3, "100.1.1.1", 24, LEVEL2, 0);
+    attach_prefix_on_node(R3, "101.1.1.1", 24, LEVEL2, 10);
+
+    /*prefix leaking*/
+    //leak_prefix(R3->node_name, "100.1.1.1", 24);
 
     set_graph_root(graph, R0);
     return graph;

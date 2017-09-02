@@ -1,10 +1,10 @@
 CC=gcc
 CFLAGS=-g -Wall
-INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./logging
+INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./BitOp -I ./logging
 USECLILIB=-lcli
 TARGET:exe
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o
-OBJ=graph.o routes.o spfdcm.o topo.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
+OBJ=graph.o prefix.o spfdcm.o topo.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
 exe:testapp.o ${OBJ} ${CLILIB}
 	${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o exe -L ./CommandParser ${USECLILIB}
 testapp.o:testapp.c
@@ -15,8 +15,8 @@ spfdcm.o:spfdcm.c
 	${CC} ${CFLAGS} -c ${INCLUDES} spfdcm.c -o spfdcm.o
 topo.o:topo.c
 	${CC} ${CFLAGS} -c ${INCLUDES} topo.c -o topo.o
-routes.o:routes.c
-	${CC} ${CFLAGS} -c ${INCLUDES} routes.c -o routes.o
+prefix.o:prefix.c
+	${CC} ${CFLAGS} -c ${INCLUDES} prefix.c -o prefix.o
 spfcomputation.o:spfcomputation.c
 	${CC} ${CFLAGS} -c ${INCLUDES} spfcomputation.c -o spfcomputation.o
 spfutil.o:spfutil.c
@@ -37,5 +37,6 @@ cleanall:
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	rm Heap/*.o
+	rm BitOp/*.o
 	rm logging/*.o
 	make clean

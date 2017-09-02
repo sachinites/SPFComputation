@@ -38,7 +38,7 @@
 #include "spfutil.h"
 #include "spfcomputation.h"
 #include "logging.h"
-
+#include "bitsop.h"
 
 extern
 graph_t *graph;
@@ -335,6 +335,9 @@ dump_node_info(node_t *node){
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
+    LEVEL level = LEVEL2;
+    singly_ll_node_t *list_node = NULL;
+    prefix_t *prefix = NULL;
 
     printf("node->node_name : %s, L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s\n", node->node_name, 
             (node->node_type[LEVEL1] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE", 
@@ -354,5 +357,20 @@ dump_node_info(node_t *node){
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
         printf(", L1 metric = %u, L2 metric = %u, edge level = %s\n", edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level));
     }
+
+    unsigned int count = 0;
+    printf("\n");
+    for(level = LEVEL2; level >= LEVEL1; level--){
+
+        printf("LEVEL : %u local prefixes:\n", level);
+        ITERATE_LIST(GET_NODE_PREFIX_LIST(node, level), list_node){
+            count++;
+            prefix = (prefix_t *)list_node->data;        
+            printf("%s/%u%s     ", prefix->prefix, prefix->mask, IS_BIT_SET(prefix->prefix_flags, PREFIX_DOWNBIT_FLAG) ? "*": "");
+            if(count % 5 == 0) printf("\n");
+        }
+        printf("\n"); 
+    }
 }
+    
 

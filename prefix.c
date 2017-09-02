@@ -1,0 +1,121 @@
+/*
+ * =====================================================================================
+ *
+ *       Filename:  prefix.c
+ *
+ *    Description:  Implementation of prefix.h
+ *
+ *        Version:  1.0
+ *        Created:  Wednesday 30 August 2017 02:14:15  IST
+ *       Revision:  1.0
+ *       Compiler:  gcc
+ *
+ *         Author:  Er. Abhishek Sagar, Networking Developer (AS), sachinites@gmail.com
+ *        Company:  Brocade Communications(Jul 2012- Mar 2016), Current : Juniper Networks(Apr 2017 - Present)
+ *        
+ *        This file is part of the SPFComputation distribution (https://github.com/sachinites).
+ *        Copyright (c) 2017 Abhishek Sagar.
+ *        This program is free software: you can redistribute it and/or modify
+ *        it under the terms of the GNU General Public License as published by  
+ *        the Free Software Foundation, version 3.
+ *
+ *        This program is distributed in the hope that it will be useful, but 
+ *        WITHOUT ANY WARRANTY; without even the implied warranty of 
+ *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *        General Public License for more details.
+ *
+ *        You should have received a copy of the GNU General Public License 
+ *        along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =====================================================================================
+ */
+
+#include "prefix.h"
+#include <stdlib.h>
+#include <string.h>
+#include "LinkedListApi.h"
+#include "graph.h"
+#include <stdio.h>
+#include "bitsop.h"
+
+extern graph_t *graph;
+
+prefix_t *
+create_new_prefix(const char *prefix, unsigned char mask){
+
+    prefix_t *_prefix = calloc(1, sizeof(prefix_t));
+    strncpy(_prefix->prefix, prefix, strlen(prefix));
+    _prefix->prefix[PREFIX_LEN] = '\0';
+    _prefix->mask = mask;
+    set_prefix_property_metric(_prefix, DEFAULT_PREFIX_METRIC);
+    return _prefix;
+}
+
+void
+set_prefix_property_metric(prefix_t *prefix,
+                           unsigned int metric){
+
+    prefix->metric = metric;
+}
+
+static int
+prefix_comparison_fn(void *_prefix, void *_key){
+
+    prefix_t *prefix = (prefix_t *)_prefix;
+    common_pfx_key_t *key = (common_pfx_key_t *)_key;
+    if(strncmp(prefix->prefix, key->prefix, strlen(prefix->prefix)) == 0 &&
+            strlen(prefix->prefix) == strlen(key->prefix) &&
+            prefix->mask == key->mask)
+        return 1;
+
+    return 0;
+}
+
+comparison_fn
+get_prefix_comparison_fn(){
+    return prefix_comparison_fn;
+}
+
+void
+leak_prefix(char *node_name, char *_prefix, char mask){
+
+    node_t *node = NULL;
+    prefix_t *prefix = NULL;
+
+    if(!graph){
+        printf("%s() : Network Graph is NULL\n", __FUNCTION__);
+        return;
+    }
+
+    node = (node_t *)singly_ll_search_by_key(graph->graph_node_list, node_name);
+    if(!node){
+        printf("%s() : Node : %s do not exist in graph\n", __FUNCTION__, node_name);
+        return;  
+    }
+
+    common_pfx_key_t pfx_key;
+    memset(&pfx_key, 0, sizeof(common_pfx_key_t));
+    strncpy((char *)&pfx_key.prefix, _prefix, strlen(_prefix));
+    pfx_key.mask = mask;
+
+    prefix = (prefix_t *)singly_ll_search_by_key(GET_NODE_L2_PREFIX_LIST(node), (void *)&pfx_key);
+    if(!prefix){
+       printf("%s() : Error : Node : %s, LEVEL2 : Prefix : %s do not exist\n", __FUNCTION__, node->node_name, _prefix); 
+       return;
+    }
+
+    /*Now add this prefix to L1 prefix list of node*/
+    if(singly_ll_search_by_key(GET_NODE_L1_PREFIX_LIST(node), (void *)&pfx_key)){
+        printf("%s () : Error : Node : %s, prefix : %s already leaked\n", __FUNCTION__, node->node_name, STR_PREFIX(prefix));
+        return;
+    }
+
+    prefix_t *leaked_prefix = calloc(1, sizeof(prefix_t));
+    memcpy(leaked_prefix, prefix, sizeof(prefix_t));
+
+    SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
+
+    singly_ll_add_node_by_val(GET_NODE_L1_PREFIX_LIST(node), leaked_prefix);
+}
+
+

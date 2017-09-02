@@ -57,11 +57,13 @@ main(int argc, char **argv){
     spf_init_dcm();
 
     /* Topology Initialization*/
-    graph = build_linear_topo();
-    //graph = build_multi_area_topo();
+    //graph = build_linear_topo();
+    graph = build_multi_area_topo();
     /* Initialize the stats*/
     spf_stats.spf_runs_count[LEVEL1] = 0;
     spf_stats.spf_runs_count[LEVEL2] = 0;
+
+    leak_prefix("R3", "100.1.1.1", 24);
 
     start_shell();
     return 0;

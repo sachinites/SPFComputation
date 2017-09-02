@@ -244,3 +244,23 @@ delete_singly_ll(ll_t *ll){
 	ll->head = NULL;
 }
 
+void singly_ll_set_comparison_fn(ll_t *ll, int (*comparison_fn)(void *, void *)){
+
+    if(!ll) assert(0) ;
+    ll->comparison_fn = comparison_fn;
+}
+
+void * 
+singly_ll_search_by_key(ll_t *ll, void *key){
+
+    assert(ll);
+    if(!key)
+        return NULL;
+
+    singly_ll_node_t *list_node = NULL;
+    ITERATE_LIST(ll, list_node){
+        if(ll->comparison_fn(list_node->data, key))
+            return list_node->data;
+    }
+    return NULL;
+}

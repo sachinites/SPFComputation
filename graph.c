@@ -42,19 +42,26 @@ add_node_to_owning_graph(graph_t *graph, node_t *node){
     singly_ll_add_node_by_val(graph->graph_node_list, (void *)node);
 }
 
-
 node_t *
 create_new_node(graph_t *graph, char *node_name, AREA area){
     
     assert(node_name);
+    LEVEL level;
     node_t * node = calloc(1, sizeof(node_t));
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';
     node->area = area;
-    node->node_type[LEVEL1] = NON_PSEUDONODE;
-    node->node_type[LEVEL2] = NON_PSEUDONODE;
-    node->pn_intf[LEVEL1] = NULL;
-    node->pn_intf[LEVEL2] = NULL;
+
+    for(level = LEVEL1; level <= LEVEL2; level++){
+
+        node->node_type[level] = NON_PSEUDONODE;
+        node->pn_intf[level] = NULL;
+
+        node->local_prefix_list[level] = init_singly_ll();
+        singly_ll_set_comparison_fn(node->local_prefix_list[level] , 
+                get_prefix_comparison_fn());
+    }
+
     add_node_to_owning_graph(graph, node);
     return node;    
 }
@@ -65,7 +72,7 @@ create_new_edge(char *from_ifname,
         unsigned int metric,
         prefix_t *from_prefix,
         prefix_t *to_prefix,
-        LEVEL level){
+        LEVEL level){/*LEVEL value can be LEVEL12 also*/
 
     assert(from_ifname);
     assert(to_ifname);
@@ -75,14 +82,14 @@ create_new_edge(char *from_ifname,
     strncpy(edge->from.intf_name, from_ifname, IF_NAME_SIZE);
     edge->from.intf_name[IF_NAME_SIZE - 1] = '\0';
    
+    strncpy(edge->to.intf_name, to_ifname, IF_NAME_SIZE);
+    edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
+
     if(IS_LEVEL_SET(level, LEVEL1)) 
         edge->metric[LEVEL1] = metric;
 
     if(IS_LEVEL_SET(level, LEVEL2)) 
         edge->metric[LEVEL2] = metric;
-
-    strncpy(edge->to.intf_name, to_ifname, IF_NAME_SIZE);
-    edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
 
     if(IS_LEVEL_SET(level, LEVEL1)){
         BIND_PREFIX(edge->from.prefix[LEVEL1], from_prefix);
@@ -182,11 +189,23 @@ mark_node_pseudonode(node_t *node, LEVEL level){
     }
 }
 
+static int
+graph_node_comparison_fn(void *_node, void *input_node_name){
+
+    node_t *node = (node_t *)_node;
+    if(strncmp(node->node_name, input_node_name, strlen(input_node_name)) == 0
+        && strlen(node->node_name) == strlen(input_node_name))
+        return 1;
+
+    return 0;
+}
+
 graph_t *
 get_new_graph(){
 
     graph_t *graph = calloc(1, sizeof(graph_t));
     graph->graph_node_list = init_singly_ll();
+    singly_ll_set_comparison_fn(graph->graph_node_list, graph_node_comparison_fn);
     graph->spf_run_result[LEVEL1] = init_singly_ll();
     graph->spf_run_result[LEVEL2] = init_singly_ll();
     return graph;
@@ -284,4 +303,31 @@ get_my_pseudonode_nbr(node_t *node, LEVEL level){
     }
     ITERATE_NODE_NBRS_END;
     return NULL;
+}
+
+void
+attach_prefix_on_node(node_t *node,
+        char *prefix,
+        unsigned char mask,
+        LEVEL level,
+        unsigned int metric){
+
+    assert(prefix);
+    assert(level == LEVEL1 || level == LEVEL2);
+
+    prefix_t *_prefix = NULL;
+
+    _prefix = create_new_prefix(prefix, mask);
+    _prefix->metric = metric;
+    singly_ll_add_node_by_val(node->local_prefix_list[level], (void *)_prefix);
+}
+
+prefix_t *
+node_local_prefix_search(node_t *node, LEVEL level, common_pfx_key_t *key){
+
+    assert(level == LEVEL1 || level == LEVEL2);
+    
+    ll_t *prefix_list = GET_NODE_PREFIX_LIST(node, level);
+
+    return (prefix_t *)singly_ll_search_by_key(prefix_list, key);
 }
