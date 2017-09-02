@@ -6,7 +6,7 @@
  *    Description:  This is a header file to declare structures to define the Network topology
  *
  *        Version:  1.0
- *        Created:  Wednesday 2[MAX_LEVEL] August 2017 01:51:55  IST
+ *        Created:  Wednesday 24 August 2017 01:51:55  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -56,7 +56,9 @@ typedef struct _node_t{
      * include External prefixes/leaked prefixes/lo prefixes.
      * We will deal with these prefixes like interface prefixes in 
      * building the routing table.*/
-    ll_t *local_prefix_list[MAX_LEVEL];                     
+    ll_t *local_prefix_list[MAX_LEVEL]; 
+    /*For SPF computation only*/ 
+    ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of graph which contain result of SPF skeleton run*/
     /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
     ll_t *attached_nodes;                                   /*Every node should know the L2 router(s) within a local area which are attached to another Area*/
@@ -65,8 +67,8 @@ typedef struct _node_t{
 } node_t;
 
 /*helping macros*/
-#define GET_NODE_L1_PREFIX_LIST(node_ptr)   (node_ptr->local_prefix_list[LEVEL1])
-#define GET_NODE_L2_PREFIX_LIST(node_ptr)   (node_ptr->local_prefix_list[LEVEL2])
+#define GET_NODE_L1_PREFIX_LIST(node_ptr)       (node_ptr->local_prefix_list[LEVEL1])
+#define GET_NODE_L2_PREFIX_LIST(node_ptr)       (node_ptr->local_prefix_list[LEVEL2])
 #define GET_NODE_PREFIX_LIST(node_ptr, level)   (node_ptr->local_prefix_list[level])
 
 
@@ -82,12 +84,12 @@ typedef struct _edge_t{
     unsigned int metric[MAX_LEVEL];
     LEVEL level;
     edge_end_t to;
+    char status;/* 0 down, 1 up*/
 } edge_t;
 
 typedef struct graph_{
     node_t *graph_root;
     ll_t *graph_node_list;
-    ll_t *spf_run_result[MAX_LEVEL];
     spf_info_t spf_info;
 } graph_t;
 
@@ -182,6 +184,7 @@ get_edge_direction(node_t *node, edge_t *edge){
             if(_edge_end->dirn != OUTGOING)                       \
                 continue;                                         \
             _edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);   \
+            if(!_edge->status) continue;                          \
             if(!IS_LEVEL_SET(_edge->level, _level))               \
                 continue;                                         \
             _nbr_node = _edge->to.node;

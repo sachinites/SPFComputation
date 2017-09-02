@@ -60,6 +60,8 @@ create_new_node(graph_t *graph, char *node_name, AREA area){
         node->local_prefix_list[level] = init_singly_ll();
         singly_ll_set_comparison_fn(node->local_prefix_list[level] , 
                 get_prefix_comparison_fn());
+
+        node->spf_run_result[level] = init_singly_ll();
     }
 
     add_node_to_owning_graph(graph, node);
@@ -104,7 +106,7 @@ create_new_edge(char *from_ifname,
     edge->level     = level;
     edge->from.dirn = EDGE_END_DIRN_UNKNOWN;
     edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;
-
+    edge->status    = 1;
     return edge;
 }
 
@@ -206,8 +208,6 @@ get_new_graph(){
     graph_t *graph = calloc(1, sizeof(graph_t));
     graph->graph_node_list = init_singly_ll();
     singly_ll_set_comparison_fn(graph->graph_node_list, graph_node_comparison_fn);
-    graph->spf_run_result[LEVEL1] = init_singly_ll();
-    graph->spf_run_result[LEVEL2] = init_singly_ll();
     return graph;
 }
 

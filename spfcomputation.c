@@ -41,7 +41,7 @@ extern graph_t *graph;
 spf_stats_t spf_stats;
 
 static void
-run_dijkastra(LEVEL level, candidate_tree_t *ctree){
+run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
     spf_stats.spf_runs_count[level]++;
     node_t *candidate_node = NULL,
@@ -66,7 +66,7 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
             spf_result_t *res = calloc(1, sizeof(spf_result_t));
             res->node = candidate_node;
             res->spf_metric = candidate_node->spf_metric[level];
-            singly_ll_add_node_by_val(graph->spf_run_result[level], (void *)res);
+            singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
         }
 
 
@@ -145,7 +145,7 @@ run_dijkastra(LEVEL level, candidate_tree_t *ctree){
  *  level can be LEVEL1 Or LEVEL2 Or BOTH
  *-----------------------------------------------------------------------------*/
 static void
-spf_init(candidate_tree_t *ctree, LEVEL level){
+spf_init(candidate_tree_t *ctree, node_t *spf_root, LEVEL level){
 
     /*step 1 : Purge NH list of all nodes in the topo*/
 
@@ -167,7 +167,8 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
         node = (node_t *)list_node->data;
         node->spf_metric[level] = INFINITE_METRIC;
     }
-    graph->graph_root->spf_metric[level] = 0;
+
+    spf_root->spf_metric[level] = 0;
 
     /*step 3 : Initialize direct nexthops.
      * Iterate over real physical nbrs of root (that is skip PNs)
@@ -178,13 +179,13 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
      * nbrs of directly connected PN as own nbrs, which is infact the concept
      * of pseudonode. Again, do not compute direct next hops of PN*/
 
-    ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge, level){
+    ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
         
         if(node->node_type[level] == PSEUDONODE){
 
             ITERATE_NODE_NBRS_BEGIN(node, pn_nbr, pn_edge, level){
             
-                if(pn_nbr == graph->graph_root)
+                if(pn_nbr == spf_root)
                     continue;
 
                 pn_nbr->direct_next_hop[level][0] = pn_nbr;
@@ -198,15 +199,15 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
 
 
     /*Step 4 : Initialize candidate tree with root*/
-   if(graph->graph_root->node_type[level] == PSEUDONODE) 
+   if(spf_root->node_type[level] == PSEUDONODE) 
        assert(0); /*SPF computation never starts with PN*/
 
-   INSERT_NODE_INTO_CANDIDATE_TREE(ctree, graph->graph_root, level);
+   INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
    
    /*Step 5 : Link Directly Conneccted PN to the graph root
     * I dont know why it is done, but lets do */
 
-    ITERATE_NODE_NBRS_BEGIN(graph->graph_root, node, edge, level){
+    ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
 
         if(node->node_type[level] == PSEUDONODE)
             node->pn_intf[level] = &edge->from;/*There is exactly one PN per LAN per level*/            
@@ -215,7 +216,7 @@ spf_init(candidate_tree_t *ctree, LEVEL level){
 }
 
 void
-spf_computation(LEVEL level){
+spf_computation(node_t *spf_root, LEVEL level){
 
     CANDIDATE_TREE_INIT(&graph->spf_info.ctree);
 
@@ -225,10 +226,10 @@ spf_computation(LEVEL level){
         return;
     }
 
-    delete_singly_ll(graph->spf_run_result[level]); 
+    delete_singly_ll(spf_root->spf_run_result[level]); 
 
-    spf_init(&graph->spf_info.ctree, level);
-    run_dijkastra(level, &graph->spf_info.ctree);
+    spf_init(&graph->spf_info.ctree, spf_root, level);
+    run_dijkastra(spf_root, level, &graph->spf_info.ctree);
 
 
     FREE_CANDIDATE_TREE_INTERNALS(&graph->spf_info.ctree);

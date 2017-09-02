@@ -69,7 +69,6 @@ create_new_prefix(const char *prefix, unsigned char mask);
         target_ptr->ref_count--;                    \
         if(!target_ptr->ref_count){                 \
             free(target_ptr);                       \
-            target_ptr = NULL;                      \
         }                                           \
         target_ptr = NULL;                          \
     }

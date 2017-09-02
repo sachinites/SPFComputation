@@ -47,19 +47,19 @@ extern
 spf_stats_t spf_stats;
 
 extern void
-spf_computation();
+spf_computation(node_t *spf_root, LEVEL level);
 /*All Command Handler Functions goes here */
 
 static void
-show_spf_results(LEVEL level){
+show_spf_results(node_t *spf_root, LEVEL level){
     
     singly_ll_node_t *list_node = NULL;
     spf_result_t *res = NULL;
     unsigned int i = 0;
 
-    printf("\nSPF run results for LEVEL : %s, ROOT = %s\n", get_str_level(level), graph->graph_root->node_name);
+    printf("\nSPF run results for LEVEL : %s, ROOT = %s\n", get_str_level(level), spf_root->node_name);
 
-    ITERATE_LIST(graph->spf_run_result[level], list_node){
+    ITERATE_LIST(spf_root->spf_run_result[level], list_node){
         res = (spf_result_t *)list_node->data;
         printf("DEST : %-10s spf_metric : %-6u", res->node->node_name, res->node->spf_metric[level]);
         printf(" Nxt Hop : ");
@@ -129,13 +129,32 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     tlv_struct_t *tlv = NULL;
     unsigned int i = 0;
     LEVEL level = LEVEL1 | LEVEL2;;
+    char *node_name = NULL;
+    node_t *spf_root = NULL, *temp = NULL;
+    singly_ll_node_t* list_node = NULL;
 
     TLV_LOOP(tlv_buf, tlv, i){
-        level = atoi(tlv->value);
+        if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0){
+            level = atoi(tlv->value);
+        }
+        else if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0){
+            node_name = tlv->value;
+        }
     }
 
-    spf_computation(level);
-    show_spf_results(level);    
+    if(node_name == NULL)
+        spf_root = graph->graph_root;
+    else{
+        ITERATE_LIST(graph->graph_node_list, list_node){
+            temp = (node_t *)list_node->data;
+            if(strncmp(temp->node_name, node_name, strlen(node_name)))
+                continue;
+            spf_root = temp;
+            break;
+        }
+    }
+    spf_computation(spf_root, level);
+    show_spf_results(spf_root, level);    
 
     return 0;
 }
@@ -250,6 +269,13 @@ spf_init_dcm(){
     init_param(&show_spf_run_level_N, LEAF, 0, show_spf_run_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
     libcli_register_param(&show_spf_run_level, &show_spf_run_level_N);
 
+    static param_t show_spf_run_level_N_root;
+    init_param(&show_spf_run_level_N_root, CMD, "root", 0, 0, INVALID, 0, "spf root");
+    libcli_register_param(&show_spf_run_level_N, &show_spf_run_level_N_root);
+    
+    static param_t show_spf_run_level_N_root_root_name;
+    init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, 0, STRING, "node-name", "node name to be SPF root");
+    libcli_register_param(&show_spf_run_level_N_root, &show_spf_run_level_N_root_root_name);
     /* show spf statistics */
 
     static param_t show_spf_statistics;

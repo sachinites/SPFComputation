@@ -111,7 +111,12 @@ leak_prefix(char *node_name, char *_prefix, char mask){
     }
 
     prefix_t *leaked_prefix = calloc(1, sizeof(prefix_t));
-    memcpy(leaked_prefix, prefix, sizeof(prefix_t));
+    
+    strncpy(leaked_prefix->prefix, prefix->prefix, strlen(prefix->prefix));
+    leaked_prefix->mask = prefix->mask;
+    leaked_prefix->metric = prefix->metric;
+    leaked_prefix->prefix_flags = prefix->prefix_flags;/*Abhishek : Not sure if flags needs to be copied as it is, will revisit later if it creates some problem*/
+    leaked_prefix->ref_count = 0; /*This is relevant only to interface prefixes*/
 
     SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 
