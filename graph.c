@@ -323,11 +323,17 @@ attach_prefix_on_node(node_t *node,
 }
 
 prefix_t *
-node_local_prefix_search(node_t *node, LEVEL level, common_pfx_key_t *key){
+node_local_prefix_search(node_t *node, LEVEL level, 
+                        char *_prefix, char mask){
+
+    common_pfx_key_t key;
+    memset(&key, 0, sizeof(common_pfx_key_t));
+    strncpy(key.prefix, _prefix, strlen(_prefix));
+    key.mask = mask;
 
     assert(level == LEVEL1 || level == LEVEL2);
     
     ll_t *prefix_list = GET_NODE_PREFIX_LIST(node, level);
 
-    return (prefix_t *)singly_ll_search_by_key(prefix_list, key);
+    return (prefix_t *)singly_ll_search_by_key(prefix_list, &key);
 }

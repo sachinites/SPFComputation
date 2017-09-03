@@ -39,6 +39,8 @@
 #include "spfcomputation.h"
 #include "logging.h"
 #include "bitsop.h"
+#include "spfcmdcodes.h"
+#include "spfclihandler.h"
 
 extern
 graph_t *graph;
@@ -95,8 +97,47 @@ validate_level_no(char *value_passed){
 }
 
 static int
-config_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+node_slot_config_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
+    tlv_struct_t *tlv = NULL;
+    unsigned int i = 0;
+    char *slot_name = NULL;
+    char *node_name = NULL; 
+    node_t *node = NULL;
+    singly_ll_node_t* list_node = NULL;
+    int cmd_code = -1;
+      
+    TLV_LOOP(tlv_buf, tlv, i){
+        if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0){
+            slot_name = tlv->value;
+        }
+        else if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0){
+            node_name = tlv->value;
+        }
+    }
+
+    ITERATE_LIST(graph->graph_node_list, list_node){
+        node = (node_t *)list_node->data;
+        if(strncmp(node->node_name, node_name, strlen(node_name)))
+            continue;
+        break;
+    }
+
+    if(!node){
+        printf("Error : Node %s do not exist in Graph\n", node_name);
+        return 0;
+    }
+
+    cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+
+    switch(cmd_code){
+        case NODE_SLOT_ENABLE:
+            spf_node_slot_enable_disable(node, slot_name, enable_or_disable);
+            break;
+        default:
+            printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, NODE_SLOT_ENABLE);
+            break;
+    }
     return 0;
 }
 
@@ -302,8 +343,9 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name_slot, &config_node_node_name_slot_slotname);
 
     static param_t config_node_node_name_slot_slotname_enable;
-    init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", config_node_handler, 0, INVALID, 0, "enable");
+    init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_node_handler, 0, INVALID, 0, "enable");
     libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
+    set_param_cmd_code(&config_node_node_name_slot_slotname_enable, NODE_SLOT_ENABLE);
 
 
 /*Debug commands*/
@@ -381,7 +423,7 @@ dump_node_info(node_t *node){
                 STR_PREFIX(edge_end->prefix[LEVEL2]), PREFIX_MASK(edge_end->prefix[LEVEL2]), (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
 
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-        printf(", L1 metric = %u, L2 metric = %u, edge level = %s\n", edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level));
+        printf(", L1 metric = %u, L2 metric = %u, edge level = %s, edge_status = %s\n", edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level), edge->status ? "UP" : "DOWN");
     }
 
     unsigned int count = 0;

@@ -210,5 +210,6 @@ attach_prefix_on_node(node_t *node,
 #endif /* __GRAPH__ */
 
 prefix_t *
-node_local_prefix_search(node_t *node, LEVEL level, common_pfx_key_t *key);
+node_local_prefix_search(node_t *node, LEVEL level, 
+                        char *prefix, char mask); /*key*/
 
