@@ -162,7 +162,7 @@ build_multi_area_topo(){
     attach_prefix_on_node(R3, "101.1.1.1", 24, LEVEL2, 10);
 
     /*prefix leaking*/
-    //leak_prefix(R3->node_name, "100.1.1.1", 24);
+    //leak_prefix(R3->node_name, "100.1.1.1", 24, LEVEL2, LEVEL1);
 
     set_graph_root(graph, R0);
     return graph;

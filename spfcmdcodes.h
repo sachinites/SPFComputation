@@ -30,13 +30,13 @@
  * =====================================================================================
  */
 
-#ifndef __SPFDCM__H
-#define __SPFDCM__H
+#ifndef __SPFCMDCODES__H
+#define __SPFCMDCODES__H
 
 /*CLI command codes*/
 
-#define NODE_SLOT_ENABLE    1   /*config node <node-name> [no] slot <slot-name> enable*/
+#define CMDCODE_NODE_SLOT_ENABLE    1   /*config node <node-name> [no] slot <slot-name> enable*/
 
 
 
-#endif /* __SPFDCM__H */
+#endif /* __SPFCMDCODES__H */

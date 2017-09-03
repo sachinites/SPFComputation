@@ -36,20 +36,22 @@
 #include "spfcomputation.h"
 #include <stdio.h>
 #include "logging.h"
+#include "routes.h"
+
 
 extern graph_t *graph;
-spf_stats_t spf_stats;
 
 static void
 run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
-    spf_stats.spf_runs_count[level]++;
     node_t *candidate_node = NULL,
            *nbr_node = NULL;
     edge_t *edge = NULL;
 
     /*Process untill candidate tree is not empty*/
-    sprintf(LOG, "Running Dijkastra with root node = %s", (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name); TRACE();
+    sprintf(LOG, "Running Dijkastra with root node = %s, Level = %u", 
+            (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name, level); TRACE();
+
     while(!IS_CANDIDATE_TREE_EMPTY(ctree)){
 
         /*Take the node with miminum spf_metric off the candidate tree*/
@@ -65,6 +67,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
             spf_result_t *res = calloc(1, sizeof(spf_result_t));
             res->node = candidate_node;
+            candidate_node->spf_result = res; /*back pointer from node to result node*/
             res->spf_metric = candidate_node->spf_metric[level];
             singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
         }
@@ -145,12 +148,14 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
  *  level can be LEVEL1 Or LEVEL2 Or BOTH
  *-----------------------------------------------------------------------------*/
 static void
-spf_init(candidate_tree_t *ctree, node_t *spf_root, LEVEL level){
+spf_init(candidate_tree_t *ctree, 
+         node_t *spf_root, 
+         LEVEL level){
 
     /*step 1 : Purge NH list of all nodes in the topo*/
 
-    node_t *node = NULL, *pn_nbr = NULL;
     unsigned int i = 0;
+    node_t *node = NULL, *pn_nbr = NULL;
     edge_t *edge = NULL, *pn_edge = NULL;
     singly_ll_node_t *list_node = NULL;
 
@@ -216,9 +221,11 @@ spf_init(candidate_tree_t *ctree, node_t *spf_root, LEVEL level){
 }
 
 void
-spf_computation(node_t *spf_root, LEVEL level){
+spf_computation(node_t *spf_root, 
+                spf_info_t *spf_info, 
+                LEVEL level){
 
-    CANDIDATE_TREE_INIT(&graph->spf_info.ctree);
+    RE_INIT_CANDIDATE_TREE(&spf_info->ctree);
 
     /*Drain off results list for level */
     if(level != LEVEL1 && level != LEVEL2){
@@ -228,11 +235,17 @@ spf_computation(node_t *spf_root, LEVEL level){
 
     delete_singly_ll(spf_root->spf_run_result[level]); 
 
-    spf_init(&graph->spf_info.ctree, spf_root, level);
-    run_dijkastra(spf_root, level, &graph->spf_info.ctree);
+    spf_init(&spf_info->ctree, spf_root, level);
+    spf_info->spf_level_info[level].version++;
+    run_dijkastra(spf_root, level, &spf_info->ctree);
 
+    //FREE_CANDIDATE_TREE_INTERNALS(&spf_info->ctree);
 
-    FREE_CANDIDATE_TREE_INTERNALS(&graph->spf_info.ctree);
+    /* Route Building After SPF computation*/
+
+    sprintf(LOG, "%s() : Route building starts After SPF skeleton run", __FUNCTION__); TRACE();
+
+    spf_postprocessing(spf_info, spf_root, level);
 }
 
 

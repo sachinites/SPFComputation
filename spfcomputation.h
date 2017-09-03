@@ -46,10 +46,6 @@
 /*TRUE if this Router is connecteded to atleast one other Router in other AREA through L2 link*/
 #define MULTI_AREA  (1 << 1)
 
-typedef struct spfstats_{
-    unsigned int spf_runs_count[MAX_LEVEL];
-} spf_stats_t;
-
 typedef struct spf_result_{
 
     struct _node_t *node; /* Next hop details are stored in the node itself*/
@@ -61,14 +57,20 @@ typedef struct spf_result_{
 
 typedef struct spf_level_info_{
 
-
+    unsigned int version; /* Version of spf run on this level*/
 } spf_level_info_t;
 
 typedef struct spf_info_{
 
-    candidate_tree_t ctree; /*Candidate tree should be part of spf_info. At any fiven point of time, either L1 or L2 SPF computation is done which uses candidate tree. Hence, candidate tree need not be level specific*/    
+    /*Candidate tree should be part of spf_info. 
+     * At any fiven point of time, either L1 or 
+     * L2 SPF computation is done which uses candidate tree. 
+     * Hence, candidate tree need not be level specific*/    
+    candidate_tree_t ctree;     
     spf_level_info_t spf_level_info[MAX_LEVEL];
-    ll_t routes;/*Routes computed as a result of SPF run, routes computed are not level specific*/
+    ll_t *routes;/*Routes computed as a result of SPF run, routes computed are not level specific*/
+
+    char spff_multi_area; /* use not known : set to 1 if this node is Attached to other L2 node present in other area*/
 } spf_info_t;
 
 /* A DS to hold level specific SPF configs and 

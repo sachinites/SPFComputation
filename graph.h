@@ -56,7 +56,8 @@ typedef struct _node_t{
      * include External prefixes/leaked prefixes/lo prefixes.
      * We will deal with these prefixes like interface prefixes in 
      * building the routing table.*/
-    ll_t *local_prefix_list[MAX_LEVEL]; 
+    ll_t *local_prefix_list[MAX_LEVEL];
+    spf_result_t *spf_result;                               /* use not known : back pointer to spf_result_t node which is created during spf run*/ 
     /*For SPF computation only*/ 
     ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of graph which contain result of SPF skeleton run*/
     /*Not in use currently*/
@@ -213,3 +214,10 @@ prefix_t *
 node_local_prefix_search(node_t *node, LEVEL level, 
                         char *prefix, char mask); /*key*/
 
+/*Return 1, if node1 and node2 are present in same LAN segment in topo.
+ * Means, node1 is 1 hop(PN) away from node2 and vice versa, else return 0
+ * Note : We have assumed, that node can be connected to atmost one PN per level
+ * at a time in this project*/
+
+int
+is_same_lan_segment_nodes(node_t *node1, node_t *node2, LEVEL level);

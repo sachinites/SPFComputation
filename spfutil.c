@@ -31,7 +31,13 @@
  */
 
 #include "spfutil.h"
+#include "logging.h"
 
+extern void
+spf_computation(node_t *spf_root, 
+                spf_info_t *spf_info, 
+                LEVEL level);
+extern graph_t *graph;
 
 void
 copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
@@ -85,4 +91,28 @@ get_str_node_area(AREA area){
     }
 }
 
+/* set spf_info->spff_multi_area bit, if computing node is
+ * L2 Attached. This fn is called assuming current spf run is 
+ * L2 */
+void
+spf_determine_multi_area_attachment(spf_info_t *spf_info,
+                                    node_t *spf_root){
 
+    singly_ll_node_t *list_node = NULL;
+    spf_result_t *res = NULL;
+    AREA myarea = spf_root->area;
+   
+    ITERATE_LIST(spf_root->spf_run_result[LEVEL2], list_node){
+        
+        res = (spf_result_t *)list_node->data;
+        if(res->node->area == myarea){
+            spf_info->spff_multi_area = 1;
+            sprintf(LOG, "spf_root->spff_multi_area set, root = %s", __FUNCTION__); TRACE();
+            break;   
+        }
+    }
+
+    if(spf_info->spff_multi_area == 0){
+        sprintf(LOG, "spf_root : %s is not L2 Attached with remote Area", spf_root->node_name); TRACE();
+    }
+}

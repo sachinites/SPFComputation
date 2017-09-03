@@ -77,7 +77,7 @@ get_prefix_comparison_fn(){
 }
 
 void
-leak_prefix(char *node_name, char *_prefix, char mask){
+leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL to_level){
 
     node_t *node = NULL;
     prefix_t *prefix = NULL;
@@ -98,14 +98,15 @@ leak_prefix(char *node_name, char *_prefix, char mask){
     strncpy((char *)&pfx_key.prefix, _prefix, strlen(_prefix));
     pfx_key.mask = mask;
 
-    prefix = (prefix_t *)singly_ll_search_by_key(GET_NODE_L2_PREFIX_LIST(node), (void *)&pfx_key);
+    prefix = (prefix_t *)singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, from_level), (void *)&pfx_key);
     if(!prefix){
-       printf("%s() : Error : Node : %s, LEVEL2 : Prefix : %s do not exist\n", __FUNCTION__, node->node_name, _prefix); 
+       printf("%s() : Error : Node : %s, LEVEL : %u, Prefix : %s do not exist\n", 
+                        __FUNCTION__, node->node_name, from_level, _prefix); 
        return;
     }
 
     /*Now add this prefix to L1 prefix list of node*/
-    if(singly_ll_search_by_key(GET_NODE_L1_PREFIX_LIST(node), (void *)&pfx_key)){
+    if(singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, to_level), (void *)&pfx_key)){
         printf("%s () : Error : Node : %s, prefix : %s already leaked\n", __FUNCTION__, node->node_name, STR_PREFIX(prefix));
         return;
     }
@@ -120,7 +121,6 @@ leak_prefix(char *node_name, char *_prefix, char mask){
 
     SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 
-    singly_ll_add_node_by_val(GET_NODE_L1_PREFIX_LIST(node), leaked_prefix);
+    singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, to_level), leaked_prefix);
 }
-
 

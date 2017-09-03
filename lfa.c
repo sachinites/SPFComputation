@@ -42,7 +42,7 @@ LFA Link/Link-and-node Protection
                     DIST(N,D) < DIST(S,D)              - Means, Select LFA among nbrs such that, N is a downstream router to Destination D
 
     Inequality 3 : Node protection Criteria
-                    DIST(N,D) < DIST(N,E) + DIST(E,D)  - Means, S can safely re-route traffic to N, since N's path to D do not contain failed Next Hop E.
+                    DIST(N,D) < DIST(N,E) + DIST(E,D)  - Means, S can safely re-route traffic to N, since N's path to D do not contain failed Hop E.
                                                                                  
            +-----+                      +-----+                                  
            |  S  +----------------------+  N  |                                  
@@ -56,12 +56,12 @@ LFA Link/Link-and-node Protection
               |                           |                             5. We need to investigate this subset of potential LFAs to possibly find one LFA which provide node protection(hence link protection)        
               |                           |                             6. Test the remaining set for inequality 3
               |                           |                                     
-              |                           |                             
-              |         +------+          |                             
-              |         |      |          |                             
-              +---------+  E   +----------+                                      
-                        |      |                                                 
-                        +---+--+                                                 
+              |                           |                            
+              |         +------+          |                             Note : If primary-NH(LFA(S)) = primary-NH(S) (= E in the diag), then Whether node protection is provided to E's Failure depends on LFA(N). 
+              |         |      |          |                                    If primary-NH(LFA(S)) != primary-NH(S), then it is not guaranteed whether LFA(S) (=N) provide node protection, because path from N to D could possibly go through E. Inequality 3
+              +---------+  E   +----------+                                       ensures that path from N to D do not pass through E, hence, node protection is ensured (in PTP topology only - that is when N and S are not in same LAN segment).                                  
+                        |      |                                               Thus, node Protection entirely depends whether the LFA(S) (=N) is capable to find the shortest path to D which do not pass through E. If N has such path, N provides node protection.
+                        +---+--+                                               Inequality 3 ensures that shortest path from N to D will never contain E (Not even as a next hop)
                             |                                                    
                             |                                                    
                             |                                                    

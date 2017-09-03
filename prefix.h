@@ -87,7 +87,8 @@ get_prefix_comparison_fn();
 
 /*This fn leak the prefix from L2 to L1*/
 void
-leak_prefix(char *node_name, char *prefix, char mask);
+leak_prefix(char *node_name, char *prefix, char mask, 
+            LEVEL from_level, LEVEL to_level);
 
 #endif /* __ROUTES__ */
 

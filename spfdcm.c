@@ -45,11 +45,8 @@
 extern
 graph_t *graph;
 
-extern 
-spf_stats_t spf_stats;
-
 extern void
-spf_computation(node_t *spf_root, LEVEL level);
+spf_computation(node_t *spf_root, spf_info_t *spf_info, LEVEL level);
 /*All Command Handler Functions goes here */
 
 static void
@@ -85,6 +82,16 @@ validate_debug_log_enable_disable(char *value_passed){
     return VALIDATION_FAILED;
 }
 
+static int 
+validate_node_extistence(char *node_name){
+
+    if(singly_ll_search_by_key(graph->graph_node_list, node_name))
+        return VALIDATION_SUCCESS;
+
+    printf("Error : Node %s do not exist\n", node_name);
+    return VALIDATION_FAILED;
+}
+
 static int
 validate_level_no(char *value_passed){
 
@@ -97,45 +104,32 @@ validate_level_no(char *value_passed){
 }
 
 static int
-node_slot_config_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     tlv_struct_t *tlv = NULL;
     unsigned int i = 0;
     char *slot_name = NULL;
     char *node_name = NULL; 
     node_t *node = NULL;
-    singly_ll_node_t* list_node = NULL;
     int cmd_code = -1;
       
     TLV_LOOP(tlv_buf, tlv, i){
-        if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0){
+        if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
             slot_name = tlv->value;
-        }
-        else if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0){
+        else if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
-        }
     }
 
-    ITERATE_LIST(graph->graph_node_list, list_node){
-        node = (node_t *)list_node->data;
-        if(strncmp(node->node_name, node_name, strlen(node_name)))
-            continue;
-        break;
-    }
-
-    if(!node){
-        printf("Error : Node %s do not exist in Graph\n", node_name);
-        return 0;
-    }
+    node = (node_t *)singly_ll_search_by_key(graph->graph_node_list, node_name);
 
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
     switch(cmd_code){
-        case NODE_SLOT_ENABLE:
+        case CMDCODE_NODE_SLOT_ENABLE:
             spf_node_slot_enable_disable(node, slot_name, enable_or_disable);
             break;
         default:
-            printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, NODE_SLOT_ENABLE);
+            printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, CMDCODE_NODE_SLOT_ENABLE);
             break;
     }
     return 0;
@@ -171,8 +165,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     unsigned int i = 0;
     LEVEL level = LEVEL1 | LEVEL2;;
     char *node_name = NULL;
-    node_t *spf_root = NULL, *temp = NULL;
-    singly_ll_node_t* list_node = NULL;
+    node_t *spf_root = NULL;
 
     TLV_LOOP(tlv_buf, tlv, i){
         if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0){
@@ -185,16 +178,15 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
 
     if(node_name == NULL)
         spf_root = graph->graph_root;
-    else{
-        ITERATE_LIST(graph->graph_node_list, list_node){
-            temp = (node_t *)list_node->data;
-            if(strncmp(temp->node_name, node_name, strlen(node_name)))
-                continue;
-            spf_root = temp;
-            break;
-        }
+    else
+        spf_root = (node_t *)singly_ll_search_by_key(graph->graph_node_list, node_name);
+   
+    if(!spf_root){
+        printf("%s() : Node %s not found\n", __FUNCTION__, node_name);   
+        return 0; 
     }
-    spf_computation(spf_root, level);
+
+    spf_computation(spf_root, &graph->spf_info, level);
     show_spf_results(spf_root, level);    
 
     return 0;
@@ -204,8 +196,8 @@ static int
 show_spf_stats_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
    
     printf("SPF Statistics:\n");
-    printf("# LEVEL1 SPF runs : %u\n", spf_stats.spf_runs_count[LEVEL1]);
-    printf("# LEVEL2 SPF runs : %u\n", spf_stats.spf_runs_count[LEVEL2]);
+    printf("# LEVEL1 SPF runs : %u\n", graph->spf_info.spf_level_info[LEVEL1].version);
+    printf("# LEVEL2 SPF runs : %u\n", graph->spf_info.spf_level_info[LEVEL2].version);
     return 0;
 }
 
@@ -234,24 +226,14 @@ show_graph_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     tlv_struct_t *tlv = NULL;
     unsigned int i = 0;
     char *node_name = NULL;
-    singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
 
-    /*We get only one TLV*/
     TLV_LOOP(tlv_buf, tlv, i){
         node_name = tlv->value;
     }
 
-    ITERATE_LIST(graph->graph_node_list, list_node){
-        
-        node = (node_t *)list_node->data;
-        if(strncmp(node_name, node->node_name, strlen(node->node_name)) == 0){
-            dump_node_info(node); 
-            return 0;       
-        }
-    }
-
-    printf("INFO : %s Node do not exist\n", node_name);
+    node =  (node_t *)singly_ll_search_by_key(graph->graph_node_list, node_name);
+    dump_node_info(node); 
     return 0;
 }
 
@@ -287,7 +269,7 @@ spf_init_dcm(){
     libcli_register_param(&graph, &graph_node);
 
     static param_t graph_node_name;
-    init_param(&graph_node_name, LEAF, 0, show_graph_node_handler, 0, STRING, "node-name", "Node Name");
+    init_param(&graph_node_name, LEAF, 0, show_graph_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
     libcli_register_param(&graph_node, &graph_node_name);
 
     /*show spf run*/
@@ -315,7 +297,7 @@ spf_init_dcm(){
     libcli_register_param(&show_spf_run_level_N, &show_spf_run_level_N_root);
     
     static param_t show_spf_run_level_N_root_root_name;
-    init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, 0, STRING, "node-name", "node name to be SPF root");
+    init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, validate_node_extistence, STRING, "node-name", "node name to be SPF root");
     libcli_register_param(&show_spf_run_level_N_root, &show_spf_run_level_N_root_root_name);
     /* show spf statistics */
 
@@ -331,7 +313,7 @@ spf_init_dcm(){
     libcli_register_param(config, &config_node);
 
     static param_t config_node_node_name;
-    init_param(&config_node_node_name, LEAF, 0, 0, 0, STRING, "node-name", "Node Name");
+    init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
     libcli_register_param(&config_node, &config_node_node_name);
 
     static param_t config_node_node_name_slot;
@@ -339,16 +321,16 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
 
     static param_t config_node_node_name_slot_slotname;
-    init_param(&config_node_node_name_slot_slotname, LEAF, 0, 0, 0, STRING, "slot-no", "interface name x/y format");
+    init_param(&config_node_node_name_slot_slotname, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
     libcli_register_param(&config_node_node_name_slot, &config_node_node_name_slot_slotname);
 
     static param_t config_node_node_name_slot_slotname_enable;
-    init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_node_handler, 0, INVALID, 0, "enable");
+    init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_handler, 0, INVALID, 0, "enable");
     libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
-    set_param_cmd_code(&config_node_node_name_slot_slotname_enable, NODE_SLOT_ENABLE);
+    set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_NODE_SLOT_ENABLE);
 
 
-/*Debug commands*/
+    /*Debug commands*/
 
     /*debug log*/
     static param_t debug_log;
@@ -361,6 +343,8 @@ spf_init_dcm(){
     libcli_register_param(&debug_log, &debug_log_enable_disable);
 
 
+    /* Added Negation support to appropriate command, post this
+     * do not extend any negation supported commands*/
 
     support_cmd_negation(&config_node_node_name);
     support_cmd_negation(config);
@@ -394,8 +378,6 @@ dump_edge_info(edge_t *edge){
 
 
 }
-
-
 
 void
 dump_node_info(node_t *node){

@@ -64,6 +64,7 @@ create_new_node(graph_t *graph, char *node_name, AREA area){
         node->spf_run_result[level] = init_singly_ll();
     }
 
+    node->spf_result = NULL;
     add_node_to_owning_graph(graph, node);
     return node;    
 }
@@ -208,6 +209,10 @@ get_new_graph(){
     graph_t *graph = calloc(1, sizeof(graph_t));
     graph->graph_node_list = init_singly_ll();
     singly_ll_set_comparison_fn(graph->graph_node_list, graph_node_comparison_fn);
+    CANDIDATE_TREE_INIT(&graph->spf_info.ctree);
+    graph->spf_info.spf_level_info[LEVEL1].version = 0;
+    graph->spf_info.spf_level_info[LEVEL2].version = 0;
+    graph->spf_info.routes = init_singly_ll();/*List of routes calculated, routes are not categories under Levels*/
     return graph;
 }
 

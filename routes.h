@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  spfutil.h
+ *       Filename:  routes.h
  *
- *    Description:  This file contains utilities for SPFComputation project
+ *    Description:  This file declares the Data structure for routing table construction
  *
  *        Version:  1.0
- *        Created:  Sunday 27 August 2017 01:52:40  IST
+ *        Created:  Monday 04 September 2017 12:06:27  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,29 +30,23 @@
  * =====================================================================================
  */
 
-#ifndef __SPFUTIL__
-#define __SPFUTIL__
+#ifndef __ROUTES__
+#define __ROUTES__
 
 #include "graph.h"
 
-#define IS_LEVEL_SET(input_level, level)    ((input_level) & (level))
-#define SET_LEVEL(input_level, level)       ((input_level) |= (level))
-
+/*Routine to build the routing table*/
 
 void
-copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]);
-
-int
-is_nh_list_empty(node_t *nh_list[]);
-
-char *
-get_str_level(LEVEL level);
-
-char*
-get_str_node_area(AREA area);
+spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
+                   node_t *spf_root,    /* computing node which stores the result of spf run*/
+                   LEVEL level);        /*Level of spf run*/
 
 void
-spf_determine_multi_area_attachment(spf_info_t *spf_info,
-                                    node_t *spf_root);
+build_routing_table(spf_info_t *spf_info,
+                    node_t *spf_root, LEVEL level);
 
-#endif /* __SPFUTIL__ */ 
+void
+start_route_installation(spf_info_t *spf_info, 
+                         LEVEL level);
+#endif /* __ROUTES__ */
