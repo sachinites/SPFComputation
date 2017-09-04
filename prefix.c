@@ -34,11 +34,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "LinkedListApi.h"
-#include "graph.h"
+#include "instance.h"
 #include <stdio.h>
 #include "bitsop.h"
 
-extern graph_t *graph;
+extern instance_t *instance;
 
 prefix_t *
 create_new_prefix(const char *prefix, unsigned char mask){
@@ -82,14 +82,14 @@ leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL t
     node_t *node = NULL;
     prefix_t *prefix = NULL;
 
-    if(!graph){
+    if(!instance){
         printf("%s() : Network Graph is NULL\n", __FUNCTION__);
         return;
     }
 
-    node = (node_t *)singly_ll_search_by_key(graph->graph_node_list, node_name);
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     if(!node){
-        printf("%s() : Node : %s do not exist in graph\n", __FUNCTION__, node_name);
+        printf("%s() : Node : %s do not exist in instance\n", __FUNCTION__, node_name);
         return;  
     }
 

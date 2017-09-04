@@ -37,7 +37,7 @@ extern void
 spf_computation(node_t *spf_root, 
                 spf_info_t *spf_info, 
                 LEVEL level);
-extern graph_t *graph;
+extern instance_t *instance;
 
 void
 copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
@@ -101,13 +101,17 @@ spf_determine_multi_area_attachment(spf_info_t *spf_info,
     singly_ll_node_t *list_node = NULL;
     spf_result_t *res = NULL;
     AREA myarea = spf_root->area;
-   
+    
+    spf_info->spff_multi_area = 0;
+       
     ITERATE_LIST(spf_root->spf_run_result[LEVEL2], list_node){
         
         res = (spf_result_t *)list_node->data;
-        if(res->node->area == myarea){
+        if(res->node->area != myarea && 
+                is_two_way_nbrship(res->node, spf_root, LEVEL2)){
             spf_info->spff_multi_area = 1;
-            sprintf(LOG, "spf_root->spff_multi_area set, root = %s", __FUNCTION__); TRACE();
+            sprintf(LOG, "spf_root : %s is L2 Attached with remote Area node : %s", 
+                            spf_root->node_name, res->node->node_name); TRACE();
             break;   
         }
     }

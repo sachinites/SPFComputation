@@ -33,7 +33,7 @@
 #ifndef __SPFCLIHANDLER__
 #define __SPFCLIHANDLER__
 
-#include "graph.h"
+#include "instance.h"
 #include "libcli.h"
 
 void

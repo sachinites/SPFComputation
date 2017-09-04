@@ -32,7 +32,7 @@
 
 
 #include "libcli.h"
-#include "graph.h"
+#include "instance.h"
 #include "cmdtlv.h"
 #include <stdio.h>
 #include "spfutil.h"
@@ -43,7 +43,7 @@
 #include "spfclihandler.h"
 
 extern
-graph_t *graph;
+instance_t *instance;
 
 extern void
 spf_computation(node_t *spf_root, spf_info_t *spf_info, LEVEL level);
@@ -85,7 +85,7 @@ validate_debug_log_enable_disable(char *value_passed){
 static int 
 validate_node_extistence(char *node_name){
 
-    if(singly_ll_search_by_key(graph->graph_node_list, node_name))
+    if(singly_ll_search_by_key(instance->instance_node_list, node_name))
         return VALIDATION_SUCCESS;
 
     printf("Error : Node %s do not exist\n", node_name);
@@ -120,7 +120,7 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
             node_name = tlv->value;
     }
 
-    node = (node_t *)singly_ll_search_by_key(graph->graph_node_list, node_name);
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
 
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
@@ -177,16 +177,16 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     }
 
     if(node_name == NULL)
-        spf_root = graph->graph_root;
+        spf_root = instance->instance_root;
     else
-        spf_root = (node_t *)singly_ll_search_by_key(graph->graph_node_list, node_name);
+        spf_root = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
    
     if(!spf_root){
         printf("%s() : Node %s not found\n", __FUNCTION__, node_name);   
         return 0; 
     }
 
-    spf_computation(spf_root, &graph->spf_info, level);
+    spf_computation(spf_root, &instance->spf_info, level);
     show_spf_results(spf_root, level);    
 
     return 0;
@@ -196,13 +196,13 @@ static int
 show_spf_stats_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
    
     printf("SPF Statistics:\n");
-    printf("# LEVEL1 SPF runs : %u\n", graph->spf_info.spf_level_info[LEVEL1].version);
-    printf("# LEVEL2 SPF runs : %u\n", graph->spf_info.spf_level_info[LEVEL2].version);
+    printf("# LEVEL1 SPF runs : %u\n", instance->spf_info.spf_level_info[LEVEL1].version);
+    printf("# LEVEL2 SPF runs : %u\n", instance->spf_info.spf_level_info[LEVEL2].version);
     return 0;
 }
 
 static int
-show_graph_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+show_instance_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
     
     singly_ll_node_t *list_node = NULL;
     tlv_struct_t *tlv = NULL;
@@ -213,15 +213,15 @@ show_graph_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
         level = atoi(tlv->value);    
     }
     
-    printf("Graph root : %s\n", graph->graph_root->node_name);
-    ITERATE_LIST(graph->graph_node_list, list_node){
+    printf("Graph root : %s\n", instance->instance_root->node_name);
+    ITERATE_LIST(instance->instance_node_list, list_node){
          dump_nbrs(list_node->data, level);
     }
     return 0;
 }
 
 static int
-show_graph_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+show_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     tlv_struct_t *tlv = NULL;
     unsigned int i = 0;
@@ -232,7 +232,7 @@ show_graph_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
         node_name = tlv->value;
     }
 
-    node =  (node_t *)singly_ll_search_by_key(graph->graph_node_list, node_name);
+    node =  (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     dump_node_info(node); 
     return 0;
 }
@@ -250,27 +250,27 @@ spf_init_dcm(){
 
 /*Show commands*/
 
-    /*show graph level <level>*/
-    static param_t graph;
-    init_param(&graph, CMD, "graph", 0, 0, INVALID, 0, "Network graph");
-    libcli_register_param(show, &graph);
+    /*show instance level <level>*/
+    static param_t instance;
+    init_param(&instance, CMD, "instance", 0, 0, INVALID, 0, "Network graph");
+    libcli_register_param(show, &instance);
 
-    static param_t graph_level;
-    init_param(&graph_level, CMD, "level", 0, 0, INVALID, 0, "level");
-    libcli_register_param(&graph, &graph_level);
+    static param_t instance_level;
+    init_param(&instance_level, CMD, "level", 0, 0, INVALID, 0, "level");
+    libcli_register_param(&instance, &instance_level);
 
-    static param_t graph_level_level;
-    init_param(&graph_level_level, LEAF, 0, show_graph_handler, validate_level_no, INT, "level-no", "level");
-    libcli_register_param(&graph_level, &graph_level_level);
+    static param_t instance_level_level;
+    init_param(&instance_level_level, LEAF, 0, show_instance_handler, validate_level_no, INT, "level-no", "level");
+    libcli_register_param(&instance_level, &instance_level_level);
 
-    /*show graph node <node-name>*/
-    static param_t graph_node;
-    init_param(&graph_node, CMD, "node", 0, 0, INVALID, 0, "node");
-    libcli_register_param(&graph, &graph_node);
+    /*show instance node <node-name>*/
+    static param_t instance_node;
+    init_param(&instance_node, CMD, "node", 0, 0, INVALID, 0, "node");
+    libcli_register_param(&instance, &instance_node);
 
-    static param_t graph_node_name;
-    init_param(&graph_node_name, LEAF, 0, show_graph_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
-    libcli_register_param(&graph_node, &graph_node_name);
+    static param_t instance_node_name;
+    init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
+    libcli_register_param(&instance_node, &instance_node_name);
 
     /*show spf run*/
 

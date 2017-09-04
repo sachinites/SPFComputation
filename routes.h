@@ -33,7 +33,7 @@
 #ifndef __ROUTES__
 #define __ROUTES__
 
-#include "graph.h"
+#include "instance.h"
 
 /*Routine to build the routing table*/
 

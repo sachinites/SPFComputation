@@ -30,7 +30,7 @@
  * =====================================================================================
  */
 
-#include "graph.h"
+#include "instance.h"
 #include <stdio.h>
 #include "libcli.h"
 #include "spfcomputation.h"
@@ -40,11 +40,11 @@ extern void
 spf_init_dcm();
 
 /*import from topo.c*/
-extern graph_t * build_linear_topo();
-extern graph_t * build_multi_area_topo();
+extern instance_t * build_linear_topo();
+extern instance_t * build_multi_area_topo();
 
 /*Globals */
-graph_t *graph = NULL;
+instance_t *instance = NULL;
 
 int
 main(int argc, char **argv){
@@ -53,8 +53,8 @@ main(int argc, char **argv){
     spf_init_dcm();
 
     /* Topology Initialization*/
-    //graph = build_linear_topo();
-    graph = build_multi_area_topo();
+    //instance = build_linear_topo();
+    instance = build_multi_area_topo();
 
     leak_prefix("R3", "100.1.1.1", 24, LEVEL2, LEVEL1);
 

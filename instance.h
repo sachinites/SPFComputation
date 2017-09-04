@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  graph.h
+ *       Filename:  instance.h
  *
  *    Description:  This is a header file to declare structures to define the Network topology
  *
@@ -33,7 +33,7 @@
 #ifndef __GRAPH__
 #define __GRAPH__
 
-#include "graphconst.h"
+#include "instanceconst.h"
 #include "LinkedListApi.h"
 #include <stdlib.h>
 #include <assert.h>
@@ -59,11 +59,11 @@ typedef struct _node_t{
     ll_t *local_prefix_list[MAX_LEVEL];
     spf_result_t *spf_result;                               /* use not known : back pointer to spf_result_t node which is created during spf run*/ 
     /*For SPF computation only*/ 
-    ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of graph which contain result of SPF skeleton run*/
+    ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of instance which contain result of SPF skeleton run*/
     /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
     ll_t *attached_nodes;                                   /*Every node should know the L2 router(s) within a local area which are attached to another Area*/
-    char traversing_bit;                                    /*This bit is only used to traverse the graph, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
+    char traversing_bit;                                    /*This bit is only used to traverse the instance, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
     unsigned int instance_flags[MAX_LEVEL];                 /*Simulate protocol instance level flags*/
 } node_t;
 
@@ -88,14 +88,14 @@ typedef struct _edge_t{
     char status;/* 0 down, 1 up*/
 } edge_t;
 
-typedef struct graph_{
-    node_t *graph_root;
-    ll_t *graph_node_list;
+typedef struct instance_{
+    node_t *instance_root;
+    ll_t *instance_node_list;
     spf_info_t spf_info;
-} graph_t;
+} instance_t;
 
 node_t *
-create_new_node(graph_t *graph, char *node_name, AREA area);
+create_new_node(instance_t *instance, char *node_name, AREA area);
 
 
 edge_t *
@@ -112,10 +112,10 @@ insert_edge_between_2_nodes(edge_t *edge,
                             node_t *to_node, DIRECTION dirn);
 
 void
-set_graph_root(graph_t *graph, node_t *root);
+set_instance_root(instance_t *instance, node_t *root);
 
-graph_t *
-get_new_graph();
+instance_t *
+get_new_instance();
 
 void
 dump_nbrs(node_t *node, LEVEL level);
@@ -196,7 +196,7 @@ int
 is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level);
 
 void
-traverse_graph(graph_t *graph, void *(*processing_fn_ptr)(node_t *), LEVEL level);
+traverse_instance(instance_t *instance, void *(*processing_fn_ptr)(node_t *), LEVEL level);
 
 edge_t *
 get_my_pseudonode_nbr(node_t *node, LEVEL level);

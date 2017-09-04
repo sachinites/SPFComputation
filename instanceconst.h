@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  graphconst.h
+ *       Filename:  instanceconst.h
  *
  *    Description:  This file contains Graph Constants only
  *

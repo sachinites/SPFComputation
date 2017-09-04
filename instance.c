@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  graph.c
+ *       Filename:  instance.c
  *
  *    Description:  The topology construction is done in this file
  *
@@ -30,7 +30,7 @@
  * =====================================================================================
  */
 
-#include "graph.h"
+#include "instance.h"
 #include "spfutil.h"
 #include <assert.h>
 #include <stdio.h>
@@ -38,12 +38,12 @@
 #include <string.h>
 
 static void
-add_node_to_owning_graph(graph_t *graph, node_t *node){
-    singly_ll_add_node_by_val(graph->graph_node_list, (void *)node);
+add_node_to_owning_instance(instance_t *instance, node_t *node){
+    singly_ll_add_node_by_val(instance->instance_node_list, (void *)node);
 }
 
 node_t *
-create_new_node(graph_t *graph, char *node_name, AREA area){
+create_new_node(instance_t *instance, char *node_name, AREA area){
     
     assert(node_name);
     LEVEL level;
@@ -65,7 +65,7 @@ create_new_node(graph_t *graph, char *node_name, AREA area){
     }
 
     node->spf_result = NULL;
-    add_node_to_owning_graph(graph, node);
+    add_node_to_owning_instance(instance, node);
     return node;    
 }
 
@@ -157,8 +157,8 @@ insert_edge_between_2_nodes(edge_t *edge,
 }
 
 void
-set_graph_root(graph_t *graph, node_t *root){
-    graph->graph_root = root;
+set_instance_root(instance_t *instance, node_t *root){
+    instance->instance_root = root;
 }
 
 void
@@ -193,7 +193,7 @@ mark_node_pseudonode(node_t *node, LEVEL level){
 }
 
 static int
-graph_node_comparison_fn(void *_node, void *input_node_name){
+instance_node_comparison_fn(void *_node, void *input_node_name){
 
     node_t *node = (node_t *)_node;
     if(strncmp(node->node_name, input_node_name, strlen(input_node_name)) == 0
@@ -203,17 +203,17 @@ graph_node_comparison_fn(void *_node, void *input_node_name){
     return 0;
 }
 
-graph_t *
-get_new_graph(){
+instance_t *
+get_new_instance(){
 
-    graph_t *graph = calloc(1, sizeof(graph_t));
-    graph->graph_node_list = init_singly_ll();
-    singly_ll_set_comparison_fn(graph->graph_node_list, graph_node_comparison_fn);
-    CANDIDATE_TREE_INIT(&graph->spf_info.ctree);
-    graph->spf_info.spf_level_info[LEVEL1].version = 0;
-    graph->spf_info.spf_level_info[LEVEL2].version = 0;
-    graph->spf_info.routes = init_singly_ll();/*List of routes calculated, routes are not categories under Levels*/
-    return graph;
+    instance_t *instance = calloc(1, sizeof(instance_t));
+    instance->instance_node_list = init_singly_ll();
+    singly_ll_set_comparison_fn(instance->instance_node_list, instance_node_comparison_fn);
+    CANDIDATE_TREE_INIT(&instance->spf_info.ctree);
+    instance->spf_info.spf_level_info[LEVEL1].version = 0;
+    instance->spf_info.spf_level_info[LEVEL2].version = 0;
+    instance->spf_info.routes = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
+    return instance;
 }
 
 int
@@ -243,51 +243,51 @@ is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level){
 
 /* Fn to traverse the Graph in DFS order. processing_fn_ptr is the
  * ptr to the fn used to perform the required processing on current node
- * while traversing the graph*/
+ * while traversing the instance*/
 
 static void
-init_graph_traversal(graph_t * graph){
+init_instance_traversal(instance_t * instance){
 
    singly_ll_node_t *list_node = NULL;
    node_t *node = NULL;
 
-   ITERATE_LIST(graph->graph_node_list, list_node){
+   ITERATE_LIST(instance->instance_node_list, list_node){
         node = (node_t *)list_node->data;
         node->traversing_bit = 0;
    }  
 }
 
 static void
-_traverse_graph(node_t *graph_root, 
+_traverse_instance(node_t *instance_root, 
                void *(*processing_fn_ptr)(node_t *), LEVEL level){
 
-    if(!graph_root) 
+    if(!instance_root) 
         return;
 
-    if(graph_root->traversing_bit == 1)
+    if(instance_root->traversing_bit == 1)
         return;
 
     edge_t *edge = NULL;
     node_t *nbr_node = NULL;
 
-    processing_fn_ptr(graph_root);
+    processing_fn_ptr(instance_root);
 
-    graph_root->traversing_bit = 1;
+    instance_root->traversing_bit = 1;
 
-    ITERATE_NODE_NBRS_BEGIN(graph_root, nbr_node, edge, level){
-        _traverse_graph(nbr_node, processing_fn_ptr, level);
+    ITERATE_NODE_NBRS_BEGIN(instance_root, nbr_node, edge, level){
+        _traverse_instance(nbr_node, processing_fn_ptr, level);
     }
     ITERATE_NODE_NBRS_END;
 }
 
-/*This is the fn to traverse the graph from root. This fn would
+/*This is the fn to traverse the instance from root. This fn would
  * simulate the flooding behavior*/
 void
-traverse_graph(graph_t *graph, 
+traverse_instance(instance_t *instance, 
                 void *(*processing_fn_ptr)(node_t *), LEVEL level){
 
-    init_graph_traversal(graph); 
-    _traverse_graph(graph->graph_root, processing_fn_ptr, level);
+    init_instance_traversal(instance); 
+    _traverse_instance(instance->instance_root, processing_fn_ptr, level);
 }
 
 edge_t *

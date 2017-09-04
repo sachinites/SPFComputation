@@ -30,9 +30,9 @@
  * =====================================================================================
  */
 
-#include "graph.h"
+#include "instance.h"
 
-graph_t *
+instance_t *
 build_linear_topo(){
 
     /*
@@ -45,11 +45,11 @@ build_linear_topo(){
      *                                                    
      * */
     
-    graph_t *graph = get_new_graph();
+    instance_t *instance = get_new_instance();
 
-    node_t *R0 = create_new_node(graph, "R0", AREA1);
-    node_t *R1 = create_new_node(graph, "R1", AREA1);
-    node_t *R2 = create_new_node(graph, "R2", AREA1);
+    node_t *R0 = create_new_node(instance, "R0", AREA1);
+    node_t *R1 = create_new_node(instance, "R1", AREA1);
+    node_t *R2 = create_new_node(instance, "R2", AREA1);
 
     prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24);
     prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24);
@@ -67,11 +67,11 @@ build_linear_topo(){
 
     //mark_node_pseudonode(R1, LEVEL1);
     //mark_node_pseudonode(R1, LEVEL2);
-    set_graph_root(graph, R0);
-    return graph;
+    set_instance_root(instance, R0);
+    return instance;
 }
 
-graph_t *
+instance_t *
 build_multi_area_topo(){
 
 #if 0
@@ -122,15 +122,15 @@ build_multi_area_topo(){
  
 #endif
 
-    graph_t *graph = get_new_graph();
+    instance_t *instance = get_new_instance();
 
-    node_t *R0 = create_new_node(graph, "R0", AREA1);
-    node_t *R1 = create_new_node(graph, "R1", AREA1);
-    node_t *R2 = create_new_node(graph, "R2", AREA1);
-    node_t *R3 = create_new_node(graph, "R3", AREA2);
-    node_t *R4 = create_new_node(graph, "R4", AREA2);
-    node_t *R5 = create_new_node(graph, "R5", AREA3);
-    node_t *R6 = create_new_node(graph, "R6", AREA3);
+    node_t *R0 = create_new_node(instance, "R0", AREA1);
+    node_t *R1 = create_new_node(instance, "R1", AREA1);
+    node_t *R2 = create_new_node(instance, "R2", AREA1);
+    node_t *R3 = create_new_node(instance, "R3", AREA2);
+    node_t *R4 = create_new_node(instance, "R4", AREA2);
+    node_t *R5 = create_new_node(instance, "R5", AREA3);
+    node_t *R6 = create_new_node(instance, "R6", AREA3);
 
     insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, create_new_prefix("10.1.1.1", 24), create_new_prefix("10.1.1.2", 24), LEVEL1)),
                                 R0, R1, BIDIRECTIONAL);
@@ -164,7 +164,7 @@ build_multi_area_topo(){
     /*prefix leaking*/
     //leak_prefix(R3->node_name, "100.1.1.1", 24, LEVEL2, LEVEL1);
 
-    set_graph_root(graph, R0);
-    return graph;
+    set_instance_root(instance, R0);
+    return instance;
 }
 

@@ -33,7 +33,7 @@
 #ifndef __SPFUTIL__
 #define __SPFUTIL__
 
-#include "graph.h"
+#include "instance.h"
 
 #define IS_LEVEL_SET(input_level, level)    ((input_level) & (level))
 #define SET_LEVEL(input_level, level)       ((input_level) |= (level))

@@ -33,7 +33,7 @@
 #ifndef __PREFIX__
 #define __PREFIX__
 
-#include "graphconst.h"
+#include "instanceconst.h"
 
 #define DEFAULT_PREFIX_METRIC   0
 #define PREFIX_DOWNBIT_FLAG     1 

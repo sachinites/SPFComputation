@@ -30,7 +30,7 @@
  * =====================================================================================
  */
 
-#include "graph.h"
+#include "instance.h"
 #include "heap_interface.h"
 #include "spfutil.h"
 #include "spfcomputation.h"
@@ -39,7 +39,7 @@
 #include "routes.h"
 
 
-extern graph_t *graph;
+extern instance_t *instance;
 
 static void
 run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
@@ -159,7 +159,7 @@ spf_init(candidate_tree_t *ctree,
     edge_t *edge = NULL, *pn_edge = NULL;
     singly_ll_node_t *list_node = NULL;
 
-    ITERATE_LIST(graph->graph_node_list, list_node){    
+    ITERATE_LIST(instance->instance_node_list, list_node){    
         node = (node_t *)list_node->data;
         for(i = 0; i < MAX_NXT_HOPS; i++){
             node->next_hop[level][i] = 0;
@@ -168,7 +168,7 @@ spf_init(candidate_tree_t *ctree,
     }
 
     /*step 2 : Metric intialization*/
-    ITERATE_LIST(graph->graph_node_list, list_node){
+    ITERATE_LIST(instance->instance_node_list, list_node){
         node = (node_t *)list_node->data;
         node->spf_metric[level] = INFINITE_METRIC;
     }
@@ -209,7 +209,7 @@ spf_init(candidate_tree_t *ctree,
 
    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
    
-   /*Step 5 : Link Directly Conneccted PN to the graph root
+   /*Step 5 : Link Directly Conneccted PN to the instance root
     * I dont know why it is done, but lets do */
 
     ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
@@ -243,7 +243,7 @@ spf_computation(node_t *spf_root,
 
     /* Route Building After SPF computation*/
 
-    sprintf(LOG, "%s() : Route building starts After SPF skeleton run", __FUNCTION__); TRACE();
+    sprintf(LOG, "Route building starts After SPF skeleton run"); TRACE();
 
     spf_postprocessing(spf_info, spf_root, level);
 }
