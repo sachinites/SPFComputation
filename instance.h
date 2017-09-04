@@ -30,8 +30,8 @@
  * =====================================================================================
  */
 
-#ifndef __GRAPH__
-#define __GRAPH__
+#ifndef __INSTANCE__
+#define __INSTANCE__
 
 #include "instanceconst.h"
 #include "LinkedListApi.h"
@@ -39,6 +39,8 @@
 #include <assert.h>
 #include "spfcomputation.h"
 #include "prefix.h"
+#include "heap_interface.h"
+
 
 typedef struct edge_end_ edge_end_t;
 
@@ -60,18 +62,18 @@ typedef struct _node_t{
     spf_result_t *spf_result;                               /* use not known : back pointer to spf_result_t node which is created during spf run*/ 
     /*For SPF computation only*/ 
     ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of instance which contain result of SPF skeleton run*/
+    char attached;                                          /*Set if the router is L1L2 router. Admin responsibility to configure it as per the topology*/
+
+    /*Every node in production has its own spf_info and 
+     * instance flags*/
+    spf_info_t spf_info;
+    unsigned int instance_flags;/*Hope instance flags are notr level specific, is there any ? If we come across later, we will have level specific flags*/
+
     /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
     ll_t *attached_nodes;                                   /*Every node should know the L2 router(s) within a local area which are attached to another Area*/
     char traversing_bit;                                    /*This bit is only used to traverse the instance, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
-    unsigned int instance_flags[MAX_LEVEL];                 /*Simulate protocol instance level flags*/
 } node_t;
-
-/*helping macros*/
-#define GET_NODE_L1_PREFIX_LIST(node_ptr)       (node_ptr->local_prefix_list[LEVEL1])
-#define GET_NODE_L2_PREFIX_LIST(node_ptr)       (node_ptr->local_prefix_list[LEVEL2])
-#define GET_NODE_PREFIX_LIST(node_ptr, level)   (node_ptr->local_prefix_list[level])
-
 
 struct edge_end_{
     node_t *node;
@@ -91,7 +93,7 @@ typedef struct _edge_t{
 typedef struct instance_{
     node_t *instance_root;
     ll_t *instance_node_list;
-    spf_info_t spf_info;
+    candidate_tree_t ctree;/*Candidate tree is shared by all nodes for SPF run*/
 } instance_t;
 
 node_t *
@@ -128,9 +130,39 @@ dump_edge_info(edge_t *edge);
 
 void
 mark_node_pseudonode(node_t *node, LEVEL level);
+
+int
+is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level);
+
+void
+traverse_instance(instance_t *instance, void *(*processing_fn_ptr)(node_t *), LEVEL level);
+
+edge_t *
+get_my_pseudonode_nbr(node_t *node, LEVEL level);
+
+/*Fn to attach non interface specific prefix on the router*/
+void
+attach_prefix_on_node(node_t *node, 
+                      char *prefix, 
+                      unsigned char mask,
+                      LEVEL level,
+                      unsigned int metric);
+
+prefix_t *
+node_local_prefix_search(node_t *node, LEVEL level, 
+                        char *prefix, char mask); /*key*/
+
+/*Return 1, if node1 and node2 are present in same LAN segment in topo.
+ * Means, node1 is 1 hop(PN) away from node2 and vice versa, else return 0
+ * Note : We have assumed, that node can be connected to atmost one PN per level
+ * at a time in this project*/
+
+int
+is_same_lan_segment_nodes(node_t *node1, node_t *node2, LEVEL level);
+
 /* Macros */
 
-/*Iterate over nbrs of a given node*/
+#define GET_NODE_PREFIX_LIST(node_ptr, level)   (node_ptr->local_prefix_list[level])
 
 #define GET_EGDE_PTR_FROM_FROM_EDGE_END(edge_end_ptr)   \
     (edge_t *)((char *)edge_end_ptr - (unsigned int)&(((edge_t *)0)->from))
@@ -192,32 +224,5 @@ get_edge_direction(node_t *node, edge_t *edge){
              
 #define ITERATE_NODE_NBRS_END   }}while(0)      
    
-int
-is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level);
 
-void
-traverse_instance(instance_t *instance, void *(*processing_fn_ptr)(node_t *), LEVEL level);
-
-edge_t *
-get_my_pseudonode_nbr(node_t *node, LEVEL level);
-
-/*Fn to attach non interface specific prefix on the router*/
-void
-attach_prefix_on_node(node_t *node, 
-                      char *prefix, 
-                      unsigned char mask,
-                      LEVEL level,
-                      unsigned int metric);
-#endif /* __GRAPH__ */
-
-prefix_t *
-node_local_prefix_search(node_t *node, LEVEL level, 
-                        char *prefix, char mask); /*key*/
-
-/*Return 1, if node1 and node2 are present in same LAN segment in topo.
- * Means, node1 is 1 hop(PN) away from node2 and vice versa, else return 0
- * Note : We have assumed, that node can be connected to atmost one PN per level
- * at a time in this project*/
-
-int
-is_same_lan_segment_nodes(node_t *node1, node_t *node2, LEVEL level);
+#endif /* __INSTANCE__ */

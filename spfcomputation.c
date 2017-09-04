@@ -225,7 +225,7 @@ spf_computation(node_t *spf_root,
                 spf_info_t *spf_info, 
                 LEVEL level){
 
-    RE_INIT_CANDIDATE_TREE(&spf_info->ctree);
+    RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
     /*Drain off results list for level */
     if(level != LEVEL1 && level != LEVEL2){
@@ -235,9 +235,9 @@ spf_computation(node_t *spf_root,
 
     delete_singly_ll(spf_root->spf_run_result[level]); 
 
-    spf_init(&spf_info->ctree, spf_root, level);
+    spf_init(&instance->ctree, spf_root, level);
     spf_info->spf_level_info[level].version++;
-    run_dijkastra(spf_root, level, &spf_info->ctree);
+    run_dijkastra(spf_root, level, &instance->ctree);
 
     //FREE_CANDIDATE_TREE_INTERNALS(&spf_info->ctree);
 

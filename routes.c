@@ -33,13 +33,23 @@
 #include "routes.h"
 #include "spfutil.h"
 #include "logging.h"
+#include "bitsop.h"
 
+extern instance_t *instance;
 extern void
 spf_computation(node_t *spf_root,
                 spf_info_t *spf_info,
                 LEVEL level);
 
 /*Routine to build the routing table*/
+
+static void
+install_default_route(spf_info_t *spf_info,
+                      LEVEL level){
+
+
+}
+
 
 void
 spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
@@ -55,6 +65,7 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
        
     if(level == LEVEL2 && spf_info->spf_level_info[LEVEL1].version){
         /*If at least 1 SPF L1 run has been triggered*/
+        
         spf_determine_multi_area_attachment(spf_info, spf_root);  
         /*Schedule level 1 spf run, just to make sure L1 routes are up
          *      * to date before building L2 routes*/
@@ -72,8 +83,33 @@ void
 build_routing_table(spf_info_t *spf_info,
                     node_t *spf_root, LEVEL level){
 
-    sprintf(LOG, "Entered ... spf_root : %s, Level : %u", spf_root->node_name, level); TRACE();
+    singly_ll_node_t *list_node = NULL;
+    spf_result_t *result = NULL;
 
+
+    sprintf(LOG, "Entered ... spf_root : %s, Level : %u", spf_root->node_name, level); TRACE();
+    
+    /*Walk over the SPF result list computed in spf run
+     * in the same order. Note that order of this list is :
+     * most distant router from spf root is first*/
+
+    ITERATE_LIST(spf_root->spf_run_result[level], list_node){
+        
+         result = (spf_result_t *)list_node->data;
+       
+        /*If computing router is a pure L1 router, and if computing
+         * router is connected to L1L2 router with in its own area, then
+         * computing router should install the default gw in RIB*/
+         
+        if(level == LEVEL1                                         &&       /*The current run us LEVEL1*/
+           !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)   &&       /* By default, router should process Attached Bit*/
+           spf_info->spff_multi_area == 0                          &&       /*computing router L1-only router. For L1-only router this bit is never set*/
+           result->node != NULL                                    &&       /*first fragment of the node whose result is being processed exist*/
+           result->node->attached){                                         /*Router neing inspected is L1L2 router*/
+
+                install_default_route(spf_info, level);
+        }
+    }
 }
 
 void

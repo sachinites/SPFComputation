@@ -36,7 +36,7 @@
 /*CLI command codes*/
 
 #define CMDCODE_NODE_SLOT_ENABLE    1   /*config node <node-name> [no] slot <slot-name> enable*/
-
-
+#define CMDCODE_INSTANCE_IGNOREBIT_ENABLE   2   /*config node <node-name> [no] ignorebit enable*/
+#define CMDCODE_INSTANCE_ATTACHBIT_ENABLE   3   /*config node <node-name [no] attachbit enable>*/
 
 #endif /* __SPFCMDCODES__H */

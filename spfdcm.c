@@ -129,11 +129,46 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
             spf_node_slot_enable_disable(node, slot_name, enable_or_disable);
             break;
         default:
-            printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, CMDCODE_NODE_SLOT_ENABLE);
+            printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, cmd_code);
             break;
     }
     return 0;
 }
+
+static int
+instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    int cmd_code = -1;
+    node_t *node = NULL;
+    tlv_struct_t *tlv = NULL;
+    unsigned int i = 0;
+    char *node_name = NULL;
+        
+    cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+    
+    TLV_LOOP(tlv_buf, tlv, i){
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+    }
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+    
+    switch(cmd_code){
+        case CMDCODE_INSTANCE_IGNOREBIT_ENABLE:
+            (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->instance_flags, IGNOREATTACHED) :
+                    UNSET_BIT(node->instance_flags, IGNOREATTACHED);
+        break;
+        case CMDCODE_INSTANCE_ATTACHBIT_ENABLE:
+            node->attached = (enable_or_disable == CONFIG_ENABLE) ? 1 : 0;
+            break; 
+        default:
+            printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, cmd_code);
+            break;
+      
+    }
+    return 0;
+}
+
 
 static int
 debug_log_enable_disable_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
@@ -186,7 +221,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
         return 0; 
     }
 
-    spf_computation(spf_root, &instance->spf_info, level);
+    spf_computation(spf_root, &spf_root->spf_info, level);
     show_spf_results(spf_root, level);    
 
     return 0;
@@ -196,8 +231,8 @@ static int
 show_spf_stats_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
    
     printf("SPF Statistics:\n");
-    printf("# LEVEL1 SPF runs : %u\n", instance->spf_info.spf_level_info[LEVEL1].version);
-    printf("# LEVEL2 SPF runs : %u\n", instance->spf_info.spf_level_info[LEVEL2].version);
+    //printf("# LEVEL1 SPF runs : %u\n", instance->spf_info.spf_level_info[LEVEL1].version);
+    //printf("# LEVEL2 SPF runs : %u\n", instance->spf_info.spf_level_info[LEVEL2].version);
     return 0;
 }
 
@@ -329,6 +364,25 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
     set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_NODE_SLOT_ENABLE);
 
+    /* config node <node-name> [no] ignorebit enable*/
+    static param_t config_node_node_name_ignorebit;
+    init_param(&config_node_node_name_ignorebit, CMD, "ignorebit", 0, 0, INVALID, 0, "ignore L1 LSPs from Attached router when set");
+    libcli_register_param(&config_node_node_name, &config_node_node_name_ignorebit);
+
+    static param_t config_node_node_name_ignorebit_enable;
+    init_param(&config_node_node_name_ignorebit_enable, CMD, "enable", instance_node_config_handler, 0, INVALID, 0, "enable"); 
+    libcli_register_param(&config_node_node_name_ignorebit, &config_node_node_name_ignorebit_enable);
+    set_param_cmd_code(&config_node_node_name_ignorebit_enable, CMDCODE_INSTANCE_IGNOREBIT_ENABLE);
+
+    /* config node <node-name> [no] attachbit enable*/    
+    static param_t config_node_node_name_attachbit;
+    init_param(&config_node_node_name_attachbit, CMD, "attachbit", 0, 0, INVALID, 0, "Set / Unset Attach bit");
+    libcli_register_param(&config_node_node_name, &config_node_node_name_attachbit);
+
+    static param_t config_node_node_name_attachbit_enable;
+    init_param(&config_node_node_name_attachbit_enable, CMD, "enable", instance_node_config_handler, 0, INVALID, 0, "enable"); 
+    libcli_register_param(&config_node_node_name_attachbit, &config_node_node_name_attachbit_enable);
+    set_param_cmd_code(&config_node_node_name_attachbit_enable, CMDCODE_INSTANCE_ATTACHBIT_ENABLE);
 
     /*Debug commands*/
 
@@ -421,6 +475,14 @@ dump_node_info(node_t *node){
         }
         printf("\n"); 
     }
+
+    printf("node->instance_flags:\n");
+    printf("    IGNOREATTACHED : %s\n", IS_BIT_SET(node->instance_flags, IGNOREATTACHED) ? "SET" : "UNSET");
+    printf("node->attached : %s\n", (node->attached) ? "SET" : "UNSET");
+    /* print spf info flags*/
+
+    /* print node flags*/
+
 }
     
 

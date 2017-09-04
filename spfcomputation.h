@@ -37,14 +37,6 @@
  *  Do not #include graph.h in this file, as it will create circular dependency.
  *  Keep this file independant of graph.h using forward declaration
  *-----------------------------------------------------------------------------*/
-#include "heap_interface.h"
-
-
-/* Router global flags*/
-/*When this bit is set on a router, router will ignore the ATTACHED bit flag advertised by the L1L2 router of the Area in its L1 LSP */
-#define IGNORE_ATTACH_BIT   (1 << 0)
-/*TRUE if this Router is connecteded to atleast one other Router in other AREA through L2 link*/
-#define MULTI_AREA  (1 << 1)
 
 typedef struct spf_result_{
 
@@ -62,15 +54,9 @@ typedef struct spf_level_info_{
 
 typedef struct spf_info_{
 
-    /*Candidate tree should be part of spf_info. 
-     * At any fiven point of time, either L1 or 
-     * L2 SPF computation is done which uses candidate tree. 
-     * Hence, candidate tree need not be level specific*/    
-    candidate_tree_t ctree;     
     spf_level_info_t spf_level_info[MAX_LEVEL];
     ll_t *routes;/*Routes computed as a result of SPF run, routes computed are not level specific*/
-
-    char spff_multi_area; /* use not known : set to 1 if this node is Attached to other L2 node present in other area*/
+    char spff_multi_area; /* use not known : set to 1 if this node is Attached to other L2 node present in specifically other area*/
 } spf_info_t;
 
 /* A DS to hold level specific SPF configs and 
