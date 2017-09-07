@@ -4,7 +4,7 @@ INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./BitOp -I ./loggi
 USECLILIB=-lcli
 TARGET:exe
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o
-OBJ=instance.o routes.o prefix.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
+OBJ=instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
 exe:testapp.o ${OBJ} ${CLILIB}
 	${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o exe -L ./CommandParser ${USECLILIB}
 testapp.o:testapp.c
@@ -13,6 +13,8 @@ instance.o:instance.c
 	${CC} ${CFLAGS} -c ${INCLUDES} instance.c -o instance.o
 lfa.o:lfa.c
 	${CC} ${CFLAGS} -c ${INCLUDES} lfa.c -o lfa.o
+rlfa.o:rlfa.c
+	${CC} ${CFLAGS} -c ${INCLUDES} rlfa.c -o rlfa.o
 spfdcm.o:spfdcm.c
 	${CC} ${CFLAGS} -c ${INCLUDES} spfdcm.c -o spfdcm.o
 topo.o:topo.c
