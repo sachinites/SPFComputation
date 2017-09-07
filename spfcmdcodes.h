@@ -35,8 +35,10 @@
 
 /*CLI command codes*/
 
-#define CMDCODE_NODE_SLOT_ENABLE    1   /*config node <node-name> [no] slot <slot-name> enable*/
+#define CMDCODE_NODE_SLOT_ENABLE            1   /*config node <node-name> [no] slot <slot-name> enable*/
 #define CMDCODE_INSTANCE_IGNOREBIT_ENABLE   2   /*config node <node-name> [no] ignorebit enable*/
 #define CMDCODE_INSTANCE_ATTACHBIT_ENABLE   3   /*config node <node-name [no] attachbit enable>*/
+#define CMDCODE_SHOW_SPF_STATS              4   /*show spf run level <level-no> [root <node-name> [statistics]]*/
+#define CMDCODE_SHOW_SPF_RUN                5   /*show spf run level <level-no> [root <node-name>]*/
 
 #endif /* __SPFCMDCODES__H */

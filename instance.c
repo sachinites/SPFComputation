@@ -212,9 +212,6 @@ get_new_instance(){
     instance->instance_node_list = init_singly_ll();
     singly_ll_set_comparison_fn(instance->instance_node_list, instance_node_comparison_fn);
     CANDIDATE_TREE_INIT(&instance->ctree);
-    //instance->spf_info.spf_level_info[LEVEL1].version = 0;
-    //instance->spf_info.spf_level_info[LEVEL2].version = 0;
-    //instance->spf_info.routes = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
     return instance;
 }
 

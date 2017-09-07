@@ -31,10 +31,10 @@
  */
 
 
+#include <stdio.h>
 #include "libcli.h"
 #include "instance.h"
 #include "cmdtlv.h"
-#include <stdio.h>
 #include "spfutil.h"
 #include "spfcomputation.h"
 #include "logging.h"
@@ -56,7 +56,7 @@ show_spf_results(node_t *spf_root, LEVEL level){
     spf_result_t *res = NULL;
     unsigned int i = 0;
 
-    printf("\nSPF run results for LEVEL : %s, ROOT = %s\n", get_str_level(level), spf_root->node_name);
+    printf("\nSPF run results for LEVEL%u, ROOT = %s\n", level, spf_root->node_name);
 
     ITERATE_LIST(spf_root->spf_run_result[level], list_node){
         res = (spf_result_t *)list_node->data;
@@ -193,6 +193,14 @@ debug_log_enable_disable_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
     return 0;
 }
 
+static void
+show_spf_run_stats(node_t *node, LEVEL level){
+
+    printf("SPF Statistics - root : %s, LEVEL%u\n", node->node_name, level);
+    printf("# SPF runs : %u\n", node->spf_info.spf_level_info[level].version);
+}
+
+
 static int
 show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
@@ -201,7 +209,10 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     LEVEL level = LEVEL1 | LEVEL2;;
     char *node_name = NULL;
     node_t *spf_root = NULL;
+    int CMDCODE = -1;
 
+    CMDCODE = EXTRACT_CMD_CODE(tlv_buf);
+     
     TLV_LOOP(tlv_buf, tlv, i){
         if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0){
             level = atoi(tlv->value);
@@ -216,23 +227,18 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     else
         spf_root = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
    
-    if(!spf_root){
-        printf("%s() : Node %s not found\n", __FUNCTION__, node_name);   
-        return 0; 
-    }
-
-    spf_computation(spf_root, &spf_root->spf_info, level);
-    show_spf_results(spf_root, level);    
-
-    return 0;
-}
-
-static int
-show_spf_stats_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
    
-    printf("SPF Statistics:\n");
-    //printf("# LEVEL1 SPF runs : %u\n", instance->spf_info.spf_level_info[LEVEL1].version);
-    //printf("# LEVEL2 SPF runs : %u\n", instance->spf_info.spf_level_info[LEVEL2].version);
+    switch(CMDCODE){
+        case CMDCODE_SHOW_SPF_RUN:
+            spf_computation(spf_root, &spf_root->spf_info, level);
+            show_spf_results(spf_root, level);
+            break;
+        case CMDCODE_SHOW_SPF_STATS:
+            show_spf_run_stats(spf_root, level);
+            break;
+        default:
+            assert(0);
+    }
     return 0;
 }
 
@@ -326,19 +332,22 @@ spf_init_dcm(){
     static param_t show_spf_run_level_N;
     init_param(&show_spf_run_level_N, LEAF, 0, show_spf_run_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
     libcli_register_param(&show_spf_run_level, &show_spf_run_level_N);
+    set_param_cmd_code(&show_spf_run_level_N, CMDCODE_SHOW_SPF_RUN);
 
     static param_t show_spf_run_level_N_root;
     init_param(&show_spf_run_level_N_root, CMD, "root", 0, 0, INVALID, 0, "spf root");
     libcli_register_param(&show_spf_run_level_N, &show_spf_run_level_N_root);
-    
+     
     static param_t show_spf_run_level_N_root_root_name;
     init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, validate_node_extistence, STRING, "node-name", "node name to be SPF root");
     libcli_register_param(&show_spf_run_level_N_root, &show_spf_run_level_N_root_root_name);
+    set_param_cmd_code(&show_spf_run_level_N_root_root_name, CMDCODE_SHOW_SPF_RUN);
     /* show spf statistics */
 
     static param_t show_spf_statistics;
-    init_param(&show_spf_statistics, CMD, "statistics", show_spf_stats_handler, 0, INVALID, 0, "SPF Statistics");
-    libcli_register_param(&show_spf, &show_spf_statistics);
+    init_param(&show_spf_statistics, CMD, "statistics", show_spf_run_handler, 0, INVALID, 0, "SPF Statistics");
+    libcli_register_param(&show_spf_run_level_N_root_root_name, &show_spf_statistics);
+    set_param_cmd_code(&show_spf_statistics, CMDCODE_SHOW_SPF_STATS);
 
     /*config commands */
 
@@ -436,7 +445,7 @@ dump_edge_info(edge_t *edge){
 void
 dump_node_info(node_t *node){
 
-    unsigned int i = 0;
+    unsigned int i = 0, count = 0;
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
     LEVEL level = LEVEL2;
@@ -462,7 +471,6 @@ dump_node_info(node_t *node){
         printf(", L1 metric = %u, L2 metric = %u, edge level = %s, edge_status = %s\n", edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level), edge->status ? "UP" : "DOWN");
     }
 
-    unsigned int count = 0;
     printf("\n");
     for(level = LEVEL2; level >= LEVEL1; level--){
 
@@ -476,13 +484,10 @@ dump_node_info(node_t *node){
         printf("\n"); 
     }
 
-    printf("node->instance_flags:\n");
+    printf("FLAGS : \n");
     printf("    IGNOREATTACHED : %s\n", IS_BIT_SET(node->instance_flags, IGNOREATTACHED) ? "SET" : "UNSET");
-    printf("node->attached : %s\n", (node->attached) ? "SET" : "UNSET");
-    /* print spf info flags*/
-
-    /* print node flags*/
-
+    printf("    ATTACHED       : %s\n", (node->attached) ? "SET" : "UNSET");
+    printf("    MULTIAREA      : %s\n", node->spf_info.spff_multi_area ? "SET" : "UNSET");
 }
     
 

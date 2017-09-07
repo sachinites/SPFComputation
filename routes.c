@@ -102,7 +102,7 @@ build_routing_table(spf_info_t *spf_info,
          * computing router should install the default gw in RIB*/
          
         if(level == LEVEL1                                         &&       /*The current run us LEVEL1*/
-           !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)   &&       /* By default, router should process Attached Bit*/
+           !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)   &&       /*By default, router should process Attached Bit*/
            spf_info->spff_multi_area == 0                          &&       /*computing router L1-only router. For L1-only router this bit is never set*/
            result->node != NULL                                    &&       /*first fragment of the node whose result is being processed exist*/
            result->node->attached){                                         /*Router neing inspected is L1L2 router*/
