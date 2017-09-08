@@ -110,6 +110,7 @@ create_new_edge(char *from_ifname,
     edge->from.dirn = EDGE_END_DIRN_UNKNOWN;
     edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;
     edge->status    = 1;
+    edge->inv_edge  = NULL;
     return edge;
 }
 
@@ -154,6 +155,8 @@ insert_edge_between_2_nodes(edge_t *edge,
             edge2 = create_new_edge(edge->to.intf_name, edge->from.intf_name, edge->metric[LEVEL2],
                                         edge->to.prefix[LEVEL2], edge->from.prefix[LEVEL2], edge->level);
 
+        edge->inv_edge = edge2;
+        edge2->inv_edge = edge;
         insert_edge_between_2_nodes(edge2, to_node, from_node, UNIDIRECTIONAL);
     }
 }
@@ -194,7 +197,7 @@ mark_node_pseudonode(node_t *node, LEVEL level){
     }
 }
 
-static int
+int
 instance_node_comparison_fn(void *_node, void *input_node_name){
 
     node_t *node = (node_t *)_node;

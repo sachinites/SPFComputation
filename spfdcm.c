@@ -45,8 +45,6 @@
 extern
 instance_t *instance;
 
-extern void
-spf_computation(node_t *spf_root, spf_info_t *spf_info, LEVEL level);
 /*All Command Handler Functions goes here */
 
 static void
@@ -230,7 +228,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
    
     switch(CMDCODE){
         case CMDCODE_SHOW_SPF_RUN:
-            spf_computation(spf_root, &spf_root->spf_info, level);
+            spf_computation(spf_root, &spf_root->spf_info, level, 0);
             show_spf_results(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_STATS:

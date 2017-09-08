@@ -41,6 +41,51 @@
 
 extern instance_t *instance;
 
+void
+inverse_topology(instance_t *instance){
+
+    /*Inverse the topology graph, inverse the edge directions
+     * between all pair of nodes.*/
+
+    singly_ll_node_t* list_node = NULL;
+    node_t *node = NULL, *temp_node = NULL;
+    unsigned int i = 0;
+    edge_end_t *from_edge_end = NULL,
+               *to_edge_end = NULL;
+
+    edge_t *edge = NULL;
+
+    ITERATE_LIST(instance->instance_node_list, list_node){
+        node = (node_t *)list_node->data;
+    
+        for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+            
+            from_edge_end = node->edges[i];
+            if(from_edge_end->dirn != OUTGOING)
+                continue;
+
+            /*Reverse the edge properties*/
+            /*We need to swap metric with reverse edge and
+             * end nodes of an edge. We will space the dirn later in one go*/
+
+            edge = GET_EGDE_PTR_FROM_EDGE_END(from_edge_end);
+            to_edge_end = &edge->to;  
+            
+            /*swap end nodes*/
+            temp_node = from_edge_end->node;
+            from_edge_end->node = to_edge_end->node;
+            to_edge_end->node = temp_node;
+
+            /*swap metric*/
+                  
+
+// incomplete ...
+
+        }
+    }
+}
+
+
 static void
 run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
@@ -150,7 +195,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 static void
 spf_init(candidate_tree_t *ctree, 
          node_t *spf_root, 
-         LEVEL level){
+         LEVEL level, char rspf){
 
     /*step 1 : Purge NH list of all nodes in the topo*/
 
@@ -204,26 +249,29 @@ spf_init(candidate_tree_t *ctree,
 
 
     /*Step 4 : Initialize candidate tree with root*/
+#if 0
    if(spf_root->node_type[level] == PSEUDONODE) 
        assert(0); /*SPF computation never starts with PN*/
-
+#endif
    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
    
    /*Step 5 : Link Directly Conneccted PN to the instance root
     * I dont know why it is done, but lets do */
 
-    ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
+   if(rspf == 0){
+       ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
 
-        if(node->node_type[level] == PSEUDONODE)
-            node->pn_intf[level] = &edge->from;/*There is exactly one PN per LAN per level*/            
-    }
-    ITERATE_NODE_NBRS_END;
+           if(node->node_type[level] == PSEUDONODE)
+               node->pn_intf[level] = &edge->from;/*There is exactly one PN per LAN per level*/            
+       }
+       ITERATE_NODE_NBRS_END;
+   }
 }
 
 void
 spf_computation(node_t *spf_root, 
                 spf_info_t *spf_info, 
-                LEVEL level){
+                LEVEL level, char rspf){
 
     RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
@@ -235,8 +283,14 @@ spf_computation(node_t *spf_root,
 
     delete_singly_ll(spf_root->spf_run_result[level]); 
 
-    spf_init(&instance->ctree, spf_root, level);
-    spf_info->spf_level_info[level].version++;
+    if(rspf)
+        inverse_topology(instance);
+
+    spf_init(&instance->ctree, spf_root, level, rspf);
+
+    if(!rspf)
+        spf_info->spf_level_info[level].version++;
+
     run_dijkastra(spf_root, level, &instance->ctree);
 
     //FREE_CANDIDATE_TREE_INTERNALS(&spf_info->ctree);
@@ -247,5 +301,4 @@ spf_computation(node_t *spf_root,
 
     spf_postprocessing(spf_info, spf_root, level);
 }
-
 

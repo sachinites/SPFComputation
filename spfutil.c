@@ -33,10 +33,6 @@
 #include "spfutil.h"
 #include "logging.h"
 
-extern void
-spf_computation(node_t *spf_root, 
-                spf_info_t *spf_info, 
-                LEVEL level);
 extern instance_t *instance;
 
 void

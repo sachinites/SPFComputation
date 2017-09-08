@@ -62,5 +62,11 @@ typedef struct spf_info_{
 /* A DS to hold level specific SPF configs and 
  * results*/
 
+typedef struct _node_t node_t;
+
+void
+spf_computation(node_t *spf_root,
+        spf_info_t *spf_info,
+        LEVEL level, char rspf);
 
 #endif /* __SPFCOMPUTATION__ */

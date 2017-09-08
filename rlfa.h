@@ -33,20 +33,40 @@
 #ifndef __RLFA__
 #define __RLFA__
 
-#include "instance.h"
+#include "LinkedListApi.h"
+#include "instanceconst.h"
+#include "spfcomputation.h"
 
-typedef ll_t p_space;
-typedef ll_t q_space;
+typedef ll_t * p_space_set_t;
+typedef ll_t * q_space_set_t;
+typedef ll_t * pq_space_set_t;
+
+typedef struct _node_t node_t;
+typedef struct _edge_t edge_t;
+
+void
+Compute_and_Store_Forward_SPF(node_t *spf_root,
+                            spf_info_t *spf_info,
+                            LEVEL level);
+void
+Compute_Neighbor_SPFs(node_t *spf_root, edge_t *edge, 
+                      LEVEL level);
+
+p_space_set_t 
+compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
+
+p_space_set_t 
+compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
+
+q_space_set_t
+compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level);
+
+pq_space_set_t
+Intersect_Extended_P_and_Q_Space(p_space_set_t pset, q_space_set_t qset);
 
 
-p_space *
-find_p_space(node_t *node, edge_t *edge);
-
-p_space *
-find_extended_p_space(node_t *node, edge_t *edge);
-
-q_space *
-find_q_space(node_t *node, edge_t *edge);
+void
+compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest);
 
 
 #endif /* __RLFA__ */
