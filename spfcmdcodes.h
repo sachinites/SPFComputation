@@ -40,5 +40,8 @@
 #define CMDCODE_INSTANCE_ATTACHBIT_ENABLE   3   /*config node <node-name [no] attachbit enable>*/
 #define CMDCODE_SHOW_SPF_STATS              4   /*show spf run level <level-no> [root <node-name> [statistics]]*/
 #define CMDCODE_SHOW_SPF_RUN                5   /*show spf run level <level-no> [root <node-name>]*/
-
+#define CMDCODE_SHOW_SPF_RUN_INVERSE        6   /*show spf run level <level-no> [root <node-name>] inverse*/
+#define CMDCODE_SHOW_INSTANCE_NODE_PSPACE   7   /*show instance node <node-name> level <level-no> pspace [slot-no]*/
+#define CMDCODE_SHOW_INSTANCE_NODE_QSPACE   8   /*show instance node <node-name> level <level-no> qspace [slot-no]*/
+#define CMDCODE_SHOW_INSTANCE_NODE_EXPSPACE 9   /*show instance node <node-name> level <level-no> expspace [slot-no]*/
 #endif /* __SPFCMDCODES__H */

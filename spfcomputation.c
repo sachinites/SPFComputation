@@ -41,19 +41,19 @@
 
 extern instance_t *instance;
 
+/* Inverse the topology wrt to level*/
 void
-inverse_topology(instance_t *instance){
+inverse_topology(instance_t *instance, LEVEL level){
 
     /*Inverse the topology graph, inverse the edge directions
      * between all pair of nodes.*/
 
     singly_ll_node_t* list_node = NULL;
-    node_t *node = NULL, *temp_node = NULL;
-    unsigned int i = 0;
-    edge_end_t *from_edge_end = NULL,
-               *to_edge_end = NULL;
-
-    edge_t *edge = NULL;
+    node_t *node = NULL;
+    unsigned int i = 0, edge_metric = 0;
+    edge_end_t *from_edge_end = NULL;
+    
+    edge_t *edge = NULL;;
 
     ITERATE_LIST(instance->instance_node_list, list_node){
         node = (node_t *)list_node->data;
@@ -61,25 +61,54 @@ inverse_topology(instance_t *instance){
         for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
             
             from_edge_end = node->edges[i];
+            if(!from_edge_end)
+                break;
+
             if(from_edge_end->dirn != OUTGOING)
                 continue;
 
             /*Reverse the edge properties*/
-            /*We need to swap metric with reverse edge and
-             * end nodes of an edge. We will space the dirn later in one go*/
+            /*It is enough to swap metric of an edge with reverse edge. There
+             * is a strong assumption that all edges are bidrectional */
 
             edge = GET_EGDE_PTR_FROM_EDGE_END(from_edge_end);
-            to_edge_end = &edge->to;  
-            
-            /*swap end nodes*/
-            temp_node = from_edge_end->node;
-            from_edge_end->node = to_edge_end->node;
-            to_edge_end->node = temp_node;
 
-            /*swap metric*/
-                  
+            if(!IS_LEVEL_SET(edge->level, level))
+                continue;
 
-// incomplete ...
+            if(!edge->inv_edge)
+                continue;
+
+            edge_metric = edge->metric[level];
+            edge->metric[level] = edge->inv_edge->metric[level];
+            edge->inv_edge->metric[level] = edge_metric;
+            edge->inv_edge->inv_edge = NULL;
+             
+        }
+    }
+
+    /*repair*/
+    ITERATE_LIST(instance->instance_node_list, list_node){
+        
+        node = (node_t *)list_node->data;
+        for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+
+            from_edge_end = node->edges[i];
+            if(!from_edge_end)
+                break;
+
+            if(from_edge_end->dirn != OUTGOING)
+                continue;
+
+            edge = GET_EGDE_PTR_FROM_EDGE_END(from_edge_end);
+
+            if(!edge->inv_edge)
+                continue;
+
+            if(!IS_LEVEL_SET(edge->level, level))
+                continue;
+
+            edge->inv_edge->inv_edge = edge;
 
         }
     }
@@ -177,6 +206,10 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 TRACE();
             }
 
+            else if(candidate_node->spf_metric[level] + edge->metric[level] == nbr_node->spf_metric[level]){
+                sprintf(LOG, "Old Metric : %u, New Metric : %u, ECMP path",
+                        nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]); TRACE();
+            }
             else{
                 sprintf(LOG, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
                         nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
@@ -284,7 +317,7 @@ spf_computation(node_t *spf_root,
     delete_singly_ll(spf_root->spf_run_result[level]); 
 
     if(rspf)
-        inverse_topology(instance);
+        inverse_topology(instance, level);
 
     spf_init(&instance->ctree, spf_root, level, rspf);
 
@@ -296,9 +329,10 @@ spf_computation(node_t *spf_root,
     //FREE_CANDIDATE_TREE_INTERNALS(&spf_info->ctree);
 
     /* Route Building After SPF computation*/
-
-    sprintf(LOG, "Route building starts After SPF skeleton run"); TRACE();
-
-    spf_postprocessing(spf_info, spf_root, level);
+    /*We dont buiuld routing table for reverse spf run*/
+    if(!rspf){
+        sprintf(LOG, "Route building starts After SPF skeleton run"); TRACE();
+        spf_postprocessing(spf_info, spf_root, level);
+    }
 }
 

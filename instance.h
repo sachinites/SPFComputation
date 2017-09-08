@@ -68,9 +68,6 @@ typedef struct _node_t{
      * instance flags*/
     spf_info_t spf_info;
     unsigned int instance_flags;/*Hope instance flags are notr level specific, is there any ? If we come across later, we will have level specific flags*/
-    /*Structures for LFA computing*/
-    p_space_set_t pspace;                                       /*set of p space routers of this node wrt to edge pspace_edge */
-    edge_t *protected_link;
 
     /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
@@ -165,7 +162,7 @@ int
 is_same_lan_segment_nodes(node_t *node1, node_t *node2, LEVEL level);
 
 void
-inverse_topology(instance_t *instance);
+inverse_topology(instance_t *instance, LEVEL level);
 
 
 /* Macros */

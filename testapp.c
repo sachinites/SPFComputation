@@ -58,7 +58,7 @@ main(int argc, char **argv){
     //instance = build_linear_topo();
     //instance = build_multi_area_topo();
     instance = build_ring_topo();
-    leak_prefix("R3", "100.1.1.1", 24, LEVEL2, LEVEL1);
+    //leak_prefix("R3", "100.1.1.1", 24, LEVEL2, LEVEL1);
 
     start_shell();
     return 0;

@@ -36,6 +36,8 @@
 #include "instance.h"
 #include "spfutil.h"
 
+extern instance_t *instance;
+
 extern int
 instance_node_comparison_fn(void *_node, void *input_node_name);
 
@@ -84,7 +86,6 @@ compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
     spf_result_t *res = NULL;
     singly_ll_node_t* list_node = NULL;
 
-    /*1. Run SPF on node as normal*/
     Compute_and_Store_Forward_SPF(node, &node->spf_info, level);
     ll_t *spf_result = node->spf_run_result[level];
 
@@ -99,7 +100,7 @@ compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
         res = (spf_result_t *)list_node->data;
 
         /*Skip all nodes in the nw which are reachable through S--E*/
-        if(res->node->next_hop[level][0] == failed_edge->to.node)
+         if(res->node->next_hop[level][0] == failed_edge->to.node)
             continue;
         /*Do not add computing node itself*/
         if(res->node == node)
@@ -174,8 +175,11 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
     singly_ll_set_comparison_fn(q_space, instance_node_comparison_fn);
 
     /*Compute q space here*/ 
+    
 
-
+    inverse_topology(instance, level);
+    q_space = compute_p_space(node, failed_edge->inv_edge, level);  
+    inverse_topology(instance, level);
     return q_space;
 }
 

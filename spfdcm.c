@@ -134,6 +134,117 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
 }
 
 static int
+show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    char *node_name = NULL,
+         *slot_name = NULL;
+    LEVEL level;
+    unsigned int i = 0;
+    tlv_struct_t *tlv = NULL;
+    node_t *node = NULL, *p_node = NULL,
+            *q_node = NULL;
+
+    edge_end_t *edge_end = NULL;
+    singly_ll_node_t *list_node = NULL;
+    int cmdcode = -1;
+
+    TLV_LOOP(tlv_buf, tlv, i){
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
+            level = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
+             slot_name = tlv->value;
+    }
+
+   cmdcode = EXTRACT_CMD_CODE(tlv_buf); 
+   node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
+   switch(cmdcode){
+       case CMDCODE_SHOW_INSTANCE_NODE_PSPACE:
+       case CMDCODE_SHOW_INSTANCE_NODE_EXPSPACE:
+           {
+               p_space_set_t p_space = NULL;
+               for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
+
+                   edge_end = node->edges[i];
+                   if(edge_end == NULL){
+                       printf("Error : slot-no %s do not exist\n", slot_name);
+                       return 0;
+                   }
+
+                   if(strncmp(slot_name, edge_end->intf_name, strlen(edge_end->intf_name)))
+                       continue;
+
+                   if(edge_end->dirn != OUTGOING)
+                       continue;
+
+                   edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+                   if(cmdcode == CMDCODE_SHOW_INSTANCE_NODE_PSPACE)
+                       p_space = compute_p_space(node, edge, level);
+                   else
+                       p_space = compute_extended_p_space(node, edge, level);
+
+                   if(cmdcode == CMDCODE_SHOW_INSTANCE_NODE_PSPACE)
+                       printf("Node %s p-space : ", node->node_name);
+                   else
+                        printf("Node %s Extended p-space : ", node->node_name);
+
+                   ITERATE_LIST(p_space, list_node){
+
+                       p_node = (node_t *) list_node->data;
+                       printf("%s ", p_node->node_name);   
+                   }
+
+                   /*free p-space*/
+                   delete_singly_ll(p_space);
+                   free(p_space);
+                   p_space = NULL;
+                   return 0;
+               }
+           }
+           break;
+       case CMDCODE_SHOW_INSTANCE_NODE_QSPACE:
+           {
+
+               for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
+                   edge_end = node->edges[i];
+                   if(edge_end == NULL){
+                       printf("Error : slot-no %s do not exist\n", slot_name);
+                       return 0;
+                   }
+
+                   if(strncmp(slot_name, edge_end->intf_name, strlen(edge_end->intf_name)))
+                       continue;
+
+                   if(edge_end->dirn != INCOMING)
+                       continue;
+
+                   edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+                   q_space_set_t q_space = compute_q_space(node, edge, level);
+                   printf("Node %s q-space : ", node->node_name);
+                   ITERATE_LIST(q_space, list_node){
+
+                       q_node = (node_t *) list_node->data;
+                       printf("%s ", q_node->node_name);   
+                   }
+
+                   /*free q-space*/
+                   delete_singly_ll(q_space);
+                   free(q_space);
+                   q_space = NULL;
+                   return 0;
+               }
+           }
+           break;
+          default:
+            ;
+   }
+   return 0;
+}
+
+
+static int
 instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     int cmd_code = -1;
@@ -234,6 +345,10 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
         case CMDCODE_SHOW_SPF_STATS:
             show_spf_run_stats(spf_root, level);
             break;
+        case CMDCODE_SHOW_SPF_RUN_INVERSE:
+            spf_computation(spf_root, &spf_root->spf_info, level, 1);
+            show_spf_results(spf_root, level);
+            break;
         default:
             assert(0);
     }
@@ -311,6 +426,44 @@ spf_init_dcm(){
     init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
     libcli_register_param(&instance_node, &instance_node_name);
 
+    /*show instance node <node-name> level <level-no> pspace*/
+    
+    static param_t instance_node_name_level;
+    init_param(&instance_node_name_level, CMD, "level", 0, 0, INVALID, 0, "level");
+    libcli_register_param(&instance_node_name, &instance_node_name_level);
+
+    static param_t instance_node_name_level_level;
+    init_param(&instance_node_name_level_level, LEAF, 0, show_instance_handler, validate_level_no, INT, "level-no", "level");
+    libcli_register_param(&instance_node_name_level, &instance_node_name_level_level);
+    
+    static param_t instance_node_name_level_level_pspace;
+    init_param(&instance_node_name_level_level_pspace, CMD, "pspace", 0, 0, INVALID, 0, "pspace of a Node");
+    libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_pspace);
+
+    static param_t instance_node_name_level_level_pspace_intf;
+    init_param(&instance_node_name_level_level_pspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
+    libcli_register_param(&instance_node_name_level_level_pspace, &instance_node_name_level_level_pspace_intf);
+    set_param_cmd_code(&instance_node_name_level_level_pspace_intf, CMDCODE_SHOW_INSTANCE_NODE_PSPACE); 
+     
+    static param_t instance_node_name_level_level_qspace;
+    init_param(&instance_node_name_level_level_qspace, CMD, "qspace", 0, 0, INVALID, 0, "qspace of a Node");
+    libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_qspace);
+
+    static param_t instance_node_name_level_level_qspace_intf;
+    init_param(&instance_node_name_level_level_qspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
+    libcli_register_param(&instance_node_name_level_level_qspace, &instance_node_name_level_level_qspace_intf);
+    set_param_cmd_code(&instance_node_name_level_level_qspace_intf, CMDCODE_SHOW_INSTANCE_NODE_QSPACE); 
+
+    
+    static param_t instance_node_name_level_level_expspace;
+    init_param(&instance_node_name_level_level_expspace, CMD, "expspace", 0, 0, INVALID, 0, "extended pspace of a Node");
+    libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_expspace);
+
+    static param_t instance_node_name_level_level_expspace_intf;
+    init_param(&instance_node_name_level_level_expspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
+    libcli_register_param(&instance_node_name_level_level_expspace, &instance_node_name_level_level_expspace_intf);
+    set_param_cmd_code(&instance_node_name_level_level_expspace_intf, CMDCODE_SHOW_INSTANCE_NODE_EXPSPACE); 
+
     /*show spf run*/
 
     static param_t show_spf;
@@ -332,6 +485,12 @@ spf_init_dcm(){
     libcli_register_param(&show_spf_run_level, &show_spf_run_level_N);
     set_param_cmd_code(&show_spf_run_level_N, CMDCODE_SHOW_SPF_RUN);
 
+
+    static param_t show_spf_run_level_N_inverse;
+    init_param(&show_spf_run_level_N_inverse, CMD, "inverse", show_spf_run_handler, 0, INVALID, 0, "Inverse SPF");
+    libcli_register_param(&show_spf_run_level_N, &show_spf_run_level_N_inverse);
+    set_param_cmd_code(&show_spf_run_level_N_inverse, CMDCODE_SHOW_SPF_RUN_INVERSE);
+
     static param_t show_spf_run_level_N_root;
     init_param(&show_spf_run_level_N_root, CMD, "root", 0, 0, INVALID, 0, "spf root");
     libcli_register_param(&show_spf_run_level_N, &show_spf_run_level_N_root);
@@ -340,6 +499,11 @@ spf_init_dcm(){
     init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, validate_node_extistence, STRING, "node-name", "node name to be SPF root");
     libcli_register_param(&show_spf_run_level_N_root, &show_spf_run_level_N_root_root_name);
     set_param_cmd_code(&show_spf_run_level_N_root_root_name, CMDCODE_SHOW_SPF_RUN);
+    
+    static param_t show_spf_run_level_N_root_root_name_inverse;
+    init_param(&show_spf_run_level_N_root_root_name_inverse, CMD, "inverse", show_spf_run_handler, 0, INVALID, 0, "Inverse SPF");
+    libcli_register_param(&show_spf_run_level_N_root_root_name, &show_spf_run_level_N_root_root_name_inverse);
+    set_param_cmd_code(&show_spf_run_level_N_root_root_name_inverse, CMDCODE_SHOW_SPF_RUN_INVERSE);
     /* show spf statistics */
 
     static param_t show_spf_statistics;
