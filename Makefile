@@ -6,37 +6,53 @@ TARGET:exe
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o
 OBJ=instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
 exe:testapp.o ${OBJ} ${CLILIB}
-	${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o exe -L ./CommandParser ${USECLILIB}
+	@echo "Building final executable"
+	@echo "Linking ..."
+	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o exe -L ./CommandParser ${USECLILIB}
+	@echo "Executable created. Finished Success"
 testapp.o:testapp.c
-	${CC} ${CFLAGS} -c ${INCLUDES} testapp.c -o testapp.o
+	@echo "Building testapp.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} testapp.c -o testapp.o
 instance.o:instance.c
-	${CC} ${CFLAGS} -c ${INCLUDES} instance.c -o instance.o
+	@echo "Building instance.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} instance.c -o instance.o
 lfa.o:lfa.c
-	${CC} ${CFLAGS} -c ${INCLUDES} lfa.c -o lfa.o
+	@echo "Building lfa.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} lfa.c -o lfa.o
 rlfa.o:rlfa.c
-	${CC} ${CFLAGS} -c ${INCLUDES} rlfa.c -o rlfa.o
+	@echo "Building rlfa.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} rlfa.c -o rlfa.o
 spfdcm.o:spfdcm.c
-	${CC} ${CFLAGS} -c ${INCLUDES} spfdcm.c -o spfdcm.o
+	@echo "Building spfdcm.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} spfdcm.c -o spfdcm.o
 topo.o:topo.c
-	${CC} ${CFLAGS} -c ${INCLUDES} topo.c -o topo.o
+	@echo "Building topo.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} topo.c -o topo.o
 prefix.o:prefix.c
-	${CC} ${CFLAGS} -c ${INCLUDES} prefix.c -o prefix.o
+	@echo "Building prefix.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} prefix.c -o prefix.o
 routes.o:routes.c
-	${CC} ${CFLAGS} -c ${INCLUDES} routes.c -o routes.o
+	@echo "Building routes.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} routes.c -o routes.o
 spfcomputation.o:spfcomputation.c
-	${CC} ${CFLAGS} -c ${INCLUDES} spfcomputation.c -o spfcomputation.o
+	@echo "Building spfcomputation.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} spfcomputation.c -o spfcomputation.o
 spfutil.o:spfutil.c
-	${CC} ${CFLAGS} -c ${INCLUDES} spfutil.c -o spfutil.o
+	@echo "Building spfutil.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} spfutil.c -o spfutil.o
 spfclihandler.o:spfclihandler.c
-	${CC} ${CFLAGS} -c ${INCLUDES} spfclihandler.c -o spfclihandler.o
+	@echo "Building spfclihandler.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} spfclihandler.c -o spfclihandler.o
 logging.o:./logging/logging.c
-	${CC} ${CFLAGS} -c ${INCLUDES} ./logging/logging.c -o ./logging/logging.o
+	@echo "Building logging.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./logging/logging.c -o ./logging/logging.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
-	${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 clean:
-	rm exe
-	rm *.o
+	@ rm exe
+	@ rm *.o
+	@echo "cleaned compiled/build files"
 all:
 	(cd LinkedList; make)
 	(cd CommandParser; make)

@@ -123,8 +123,7 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
     /*Compute p space of all nbrs of node except failed_edge->to.node
      * and union it. Remove duplicates from union*/
 
-    node_t *nbr_node = NULL, 
-           *y = NULL;
+    node_t *nbr_node = NULL; 
     edge_t *edge = NULL;
     p_space_set_t ex_p_space = NULL;
     singly_ll_node_t *list_node1 = NULL, 
@@ -134,7 +133,8 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
                  d_nbr_to_self = 0,
                  d_self_to_y = 0;
 
-    spf_result_t *spf_result = NULL;
+    spf_result_t *spf_result_y = NULL,
+                 *spf_result_nbr = NULL;
 
     ex_p_space = init_singly_ll();
     singly_ll_set_comparison_fn(ex_p_space, instance_node_comparison_fn);
@@ -144,20 +144,16 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
     /*Run SPF on all nbrs of S except E*/
     Compute_Neighbor_SPFs(node, failed_edge, level);
 
-    /*iterate over entire network*/ 
-    ITERATE_LIST(instance->instance_node_list, list_node1){
+    /*iterate over entire network. Note that node->spf_run_result list
+     * carries all nodes of the network reachable from source at level l.
+     * We deem this list as the "entire network"*/ 
 
-        y = (node_t *)list_node1->data;
-        ITERATE_LIST(node->spf_run_result[level], list_node2){
+    ITERATE_LIST(node->spf_run_result[level], list_node1){
 
-            spf_result = (spf_result_t *)list_node2->data;
+        spf_result_y = (spf_result_t *)list_node1->data;
 
-            if(spf_result->node == y){
-                d_self_to_y = spf_result->spf_metric;
-                break;
-            }
-        }
-
+        d_self_to_y = spf_result_y->spf_metric;
+        
         ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge, level){
 
             /*skip E */
@@ -166,22 +162,22 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
             //d_nbr_to_y
             ITERATE_LIST(nbr_node->spf_run_result[level], list_node2){
 
-                spf_result = (spf_result_t *)list_node2->data;
+                spf_result_nbr = (spf_result_t *)list_node2->data;
 
-                if(spf_result->node == node)
-                    d_nbr_to_self = spf_result->spf_metric;
+                if(spf_result_nbr->node == node)
+                    d_nbr_to_self = spf_result_nbr->spf_metric;
 
-                if(spf_result->node == y)
-                    d_nbr_to_y = spf_result->spf_metric;
+                if(spf_result_nbr->node == spf_result_y->node)
+                    d_nbr_to_y = spf_result_nbr->spf_metric;
             }
 
             /*Apply RFC 5286 Inequality 1*/
             if(d_nbr_to_y < (d_nbr_to_self + d_self_to_y)){
 
-                if(singly_ll_search_by_key(ex_p_space, y->node_name))
+                if(singly_ll_search_by_key(ex_p_space, spf_result_y->node))
                     continue;
 
-                singly_ll_add_node_by_val(ex_p_space, y);
+                singly_ll_add_node_by_val(ex_p_space, spf_result_y->node);
             }   
 
             d_nbr_to_self = 0;
@@ -199,14 +195,15 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
     /* Need to check how to compute Q space*/
 
-    node_t *S = NULL, *y = NULL, *E = NULL;
+    node_t *S = NULL, *E = NULL;
     singly_ll_node_t *list_node1 = NULL,
                      *list_node2 = NULL;
     unsigned int d_S_to_E = 0,
                  d_S_to_y = 0,
                  d_E_to_y = 0;
 
-    spf_result_t *spf_result = NULL;
+    spf_result_t *spf_result_y = NULL,
+                 *spf_result_e = NULL;
 
     q_space_set_t q_space = init_singly_ll();
     singly_ll_set_comparison_fn(q_space, instance_node_comparison_fn);
@@ -222,35 +219,28 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
     ITERATE_LIST(E->spf_run_result[level], list_node1){
 
-        spf_result = (spf_result_t *)list_node1->data;
-        if(spf_result->node == S){
-            d_S_to_E = spf_result->spf_metric;
+        spf_result_e = (spf_result_t *)list_node1->data;
+        if(spf_result_e->node == S){
+            d_S_to_E = spf_result_e->spf_metric;
             break;
         }
     }
 
     /*Iterare over all nodes of the network*/
 
-    ITERATE_LIST(instance->instance_node_list, list_node1){
+    ITERATE_LIST(S->spf_run_result[level], list_node1){
 
-        y = (node_t *)list_node1->data;
-
+        spf_result_y = (spf_result_t *)list_node1->data;
+        
         /*Now find d_S_to_y */
-        ITERATE_LIST(S->spf_run_result[level], list_node2){
-
-            spf_result = (spf_result_t *)list_node2->data;
-            if(spf_result->node == y){
-                d_S_to_y = spf_result->spf_metric;
-                break;
-            }
-        }
+        d_S_to_y = spf_result_y->spf_metric;
 
         /*Now find d_E_to_y */
         ITERATE_LIST(E->spf_run_result[level], list_node2){
 
-            spf_result = (spf_result_t *)list_node2->data;
-            if(spf_result->node == y){
-                d_E_to_y = spf_result->spf_metric;
+            spf_result_e = (spf_result_t *)list_node2->data;
+            if(spf_result_e->node == spf_result_y->node){
+                d_E_to_y = spf_result_e->spf_metric;
                 break;
             }
         }
@@ -258,14 +248,14 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
         if(d_E_to_y < (d_S_to_y + d_S_to_E)){
             /*I think check for duplicates is not required
              * will remove after UT*/
-            if(singly_ll_search_by_key(q_space, y->node_name)){
+            if(singly_ll_search_by_key(q_space, spf_result_y->node->node_name)){
                 d_S_to_y = 0;
                 d_E_to_y = 0;
                 continue;
             }
 
-            if(y!=E) /*Do not add self*/
-                singly_ll_add_node_by_val(q_space, y);
+            if(spf_result_y->node != E) /*Do not add self*/
+                singly_ll_add_node_by_val(q_space, spf_result_y->node);
         }
 
         d_S_to_y = 0;
