@@ -64,9 +64,17 @@ typedef struct spf_info_{
 
 typedef struct _node_t node_t;
 
+
+typedef enum {
+
+    SKELETON_RUN,
+    FULL_RUN
+} spf_type_t;
+
+
 void
 spf_computation(node_t *spf_root,
         spf_info_t *spf_info,
-        LEVEL level, char rspf);
+        LEVEL level, spf_type_t spf_type);
 
 #endif /* __SPFCOMPUTATION__ */

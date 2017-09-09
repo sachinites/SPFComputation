@@ -39,7 +39,7 @@ extern instance_t *instance;
 extern void
 spf_computation(node_t *spf_root,
                 spf_info_t *spf_info,
-                LEVEL level, char rspf);
+                LEVEL level, spf_type_t spf_type);
 
 /*Routine to build the routing table*/
 
@@ -70,7 +70,7 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
         /*Schedule level 1 spf run, just to make sure L1 routes are up
          *      * to date before building L2 routes*/
         sprintf(LOG, "L2 spf run, triggering L1 SPF run first before building L2 routes"); TRACE();
-        spf_computation(spf_root, spf_info, LEVEL1, 0);
+        spf_computation(spf_root, spf_info, LEVEL1, FULL_RUN);
     }
 
     build_routing_table(spf_info, spf_root, level);

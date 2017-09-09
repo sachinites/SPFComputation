@@ -387,14 +387,16 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
    
     switch(CMDCODE){
         case CMDCODE_SHOW_SPF_RUN:
-            spf_computation(spf_root, &spf_root->spf_info, level, 0);
+            spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);
             show_spf_results(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_STATS:
             show_spf_run_stats(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_RUN_INVERSE:
-            spf_computation(spf_root, &spf_root->spf_info, level, 1);
+            inverse_topology(instance, level);
+            spf_computation(spf_root, &spf_root->spf_info, level, SKELETON_RUN);
+            inverse_topology(instance, level);
             show_spf_results(spf_root, level);
             break;
         default:

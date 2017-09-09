@@ -46,7 +46,7 @@ Compute_and_Store_Forward_SPF(node_t *spf_root,
                             spf_info_t *spf_info,
                             LEVEL level){
 
-    spf_computation(spf_root, spf_info, level, 1);
+    spf_computation(spf_root, spf_info, level, SKELETON_RUN);
 }
 
 

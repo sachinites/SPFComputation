@@ -228,7 +228,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 static void
 spf_init(candidate_tree_t *ctree, 
          node_t *spf_root, 
-         LEVEL level, char rspf){
+         LEVEL level){
 
     /*step 1 : Purge NH list of all nodes in the topo*/
 
@@ -291,20 +291,18 @@ spf_init(candidate_tree_t *ctree,
    /*Step 5 : Link Directly Conneccted PN to the instance root
     * I dont know why it is done, but lets do */
 
-   if(rspf == 0){
        ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
 
            if(node->node_type[level] == PSEUDONODE)
                node->pn_intf[level] = &edge->from;/*There is exactly one PN per LAN per level*/            
        }
        ITERATE_NODE_NBRS_END;
-   }
 }
 
 void
 spf_computation(node_t *spf_root, 
                 spf_info_t *spf_info, 
-                LEVEL level, char rspf){
+                LEVEL level, spf_type_t spf_type){
 
     RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
@@ -316,12 +314,9 @@ spf_computation(node_t *spf_root,
 
     delete_singly_ll(spf_root->spf_run_result[level]); 
 
-    if(rspf)
-        inverse_topology(instance, level);
+    spf_init(&instance->ctree, spf_root, level);
 
-    spf_init(&instance->ctree, spf_root, level, rspf);
-
-    if(!rspf)
+    if(spf_type == FULL_RUN)
         spf_info->spf_level_info[level].version++;
 
     run_dijkastra(spf_root, level, &instance->ctree);
@@ -330,7 +325,7 @@ spf_computation(node_t *spf_root,
 
     /* Route Building After SPF computation*/
     /*We dont buiuld routing table for reverse spf run*/
-    if(!rspf){
+    if(spf_type == FULL_RUN){
         sprintf(LOG, "Route building starts After SPF skeleton run"); TRACE();
         spf_postprocessing(spf_info, spf_root, level);
     }
