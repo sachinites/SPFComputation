@@ -142,7 +142,7 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
     unsigned int i = 0;
     tlv_struct_t *tlv = NULL;
     node_t *node = NULL, *p_node = NULL,
-            *q_node = NULL;
+            *q_node = NULL, *pq_node = NULL;
 
     edge_end_t *edge_end = NULL;
     singly_ll_node_t *list_node = NULL;
@@ -235,6 +235,54 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                    q_space = NULL;
                    return 0;
                }
+           }
+           break;
+       case CMDCODE_SHOW_INSTANCE_NODE_PQSPACE:
+           {
+               /*compute extended p-space first*/
+
+               p_space_set_t ex_p_space = NULL;
+               edge_t *edge = NULL;
+
+               for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
+
+                   edge_end = node->edges[i];
+                   if(edge_end == NULL){
+                       printf("Error : slot-no %s do not exist\n", slot_name);
+                       return 0;
+                   }
+
+                   if(strncmp(slot_name, edge_end->intf_name, strlen(edge_end->intf_name)))
+                       continue;
+
+                   if(edge_end->dirn != OUTGOING)
+                       continue;
+
+                   edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+                   ex_p_space = compute_extended_p_space(node, edge, level);
+                   break;
+               }
+
+               /*Compute Q space now*/
+               q_space_set_t q_space = compute_q_space(edge->to.node, edge, level);
+
+
+               /*now merge extended p-space and q-space*/
+
+               pq_space_set_t pq_space = Intersect_Extended_P_and_Q_Space(ex_p_space, q_space);
+               ex_p_space = NULL;
+               q_space = NULL;
+
+               printf("Node %s pq-space : ", node->node_name);
+               ITERATE_LIST(pq_space, list_node){
+
+                   pq_node = (node_t *) list_node->data;
+                   printf("%s ", pq_node->node_name);   
+               }
+
+               delete_singly_ll(pq_space);
+               free(pq_space);
+               pq_space = NULL;
            }
            break;
           default:
@@ -453,8 +501,17 @@ spf_init_dcm(){
     init_param(&instance_node_name_level_level_qspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
     libcli_register_param(&instance_node_name_level_level_qspace, &instance_node_name_level_level_qspace_intf);
     set_param_cmd_code(&instance_node_name_level_level_qspace_intf, CMDCODE_SHOW_INSTANCE_NODE_QSPACE); 
-
     
+    static param_t instance_node_name_level_level_pqspace;
+    init_param(&instance_node_name_level_level_pqspace, CMD, "pqspace", 0, 0, INVALID, 0, "pqspace of a Node");
+    libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_pqspace);
+
+    static param_t instance_node_name_level_level_pqspace_intf;
+    init_param(&instance_node_name_level_level_pqspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
+    libcli_register_param(&instance_node_name_level_level_pqspace, &instance_node_name_level_level_pqspace_intf);
+    set_param_cmd_code(&instance_node_name_level_level_pqspace_intf, CMDCODE_SHOW_INSTANCE_NODE_PQSPACE); 
+
+
     static param_t instance_node_name_level_level_expspace;
     init_param(&instance_node_name_level_level_expspace, CMD, "expspace", 0, 0, INVALID, 0, "extended pspace of a Node");
     libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_expspace);

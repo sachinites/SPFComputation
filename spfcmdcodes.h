@@ -44,4 +44,5 @@
 #define CMDCODE_SHOW_INSTANCE_NODE_PSPACE   7   /*show instance node <node-name> level <level-no> pspace [slot-no]*/
 #define CMDCODE_SHOW_INSTANCE_NODE_QSPACE   8   /*show instance node <node-name> level <level-no> qspace [slot-no]*/
 #define CMDCODE_SHOW_INSTANCE_NODE_EXPSPACE 9   /*show instance node <node-name> level <level-no> expspace [slot-no]*/
+#define CMDCODE_SHOW_INSTANCE_NODE_PQSPACE  10  /*show instance node <node-name> level <level-no> pqspace [slot-no]*/
 #endif /* __SPFCMDCODES__H */
