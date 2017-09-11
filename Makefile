@@ -3,13 +3,14 @@ CFLAGS=-g -Wall
 INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./BitOp -I ./logging
 USECLILIB=-lcli
 TARGET:exe
+TARGET_NAME=exe
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o
 OBJ=instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
-exe:testapp.o ${OBJ} ${CLILIB}
-	@echo "Building final executable"
-	@echo "Linking ..."
-	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o exe -L ./CommandParser ${USECLILIB}
-	@echo "Executable created. Finished Success"
+${TARGET_NAME}:testapp.o ${OBJ}
+	@echo "Building final executable : ${TARGET_NAME}"
+	@echo "Linking with libcli.a(${USECLILIB})"
+	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o ${TARGET_NAME} -L ./CommandParser ${USECLILIB}
+	@echo "Executable created : ${TARGET_NAME}. Finished."
 testapp.o:testapp.c
 	@echo "Building testapp.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} testapp.c -o testapp.o
@@ -52,7 +53,7 @@ ${DSOBJ}:
 clean:
 	@ rm exe
 	@ rm *.o
-	@echo "cleaned compiled/build files"
+	@echo "cleaned compiled binaries."
 all:
 	(cd LinkedList; make)
 	(cd CommandParser; make)

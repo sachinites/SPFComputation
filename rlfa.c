@@ -321,14 +321,14 @@ compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
     ex_p_space = NULL;
     q_space = NULL;
 
-    /*Now we have PQ nodes in the list. All PQ nodes should be 
+    /* Now we have PQ nodes in the list. All PQ nodes should be 
      * downstream wrt to S. So, we need to apply downstream constraint
      * on PQ nodes, and filter those which do not satisfy this constraint.
      * Note that, p nodes identified by compute_extended_p_space() need not
      * satisfy downstream criteria wrt S, but p nodes identified by compute_p_space()
-     * surely does wrt S*/
+     * surely does satisfy downstream criteria wrt S*/
 
-    /*PQ nodes are, by definition, are those nodes in the network which relay the traffic 
+    /* PQ nodes are, by definition, are those nodes in the network which relay the traffic 
      * from S to E through Path S->PQ_node->E while not traversing the link S-E. But what 
      * if E node failed itself (worst than prepared failure). In this case, PQ node will 
      * route the traffic to its own LFA/RLFA. So, we need to make sure that PQ node do not 

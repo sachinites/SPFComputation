@@ -471,6 +471,7 @@ spf_init_dcm(){
     static param_t instance_node;
     init_param(&instance_node, CMD, "node", 0, 0, INVALID, 0, "node");
     libcli_register_param(&instance, &instance_node);
+    libcli_register_display_callback(&instance_node, display_instance_nodes);
 
     static param_t instance_node_name;
     init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
@@ -489,6 +490,7 @@ spf_init_dcm(){
     static param_t instance_node_name_level_level_pspace;
     init_param(&instance_node_name_level_level_pspace, CMD, "pspace", 0, 0, INVALID, 0, "pspace of a Node");
     libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_pspace);
+    libcli_register_display_callback(&instance_node_name_level_level_pspace, display_instance_node_interfaces);
 
     static param_t instance_node_name_level_level_pspace_intf;
     init_param(&instance_node_name_level_level_pspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
@@ -498,6 +500,7 @@ spf_init_dcm(){
     static param_t instance_node_name_level_level_qspace;
     init_param(&instance_node_name_level_level_qspace, CMD, "qspace", 0, 0, INVALID, 0, "qspace of a Node");
     libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_qspace);
+    libcli_register_display_callback(&instance_node_name_level_level_qspace, display_instance_node_interfaces);
 
     static param_t instance_node_name_level_level_qspace_intf;
     init_param(&instance_node_name_level_level_qspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
@@ -507,6 +510,7 @@ spf_init_dcm(){
     static param_t instance_node_name_level_level_pqspace;
     init_param(&instance_node_name_level_level_pqspace, CMD, "pqspace", 0, 0, INVALID, 0, "pqspace of a Node");
     libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_pqspace);
+    libcli_register_display_callback(&instance_node_name_level_level_pqspace, display_instance_node_interfaces);
 
     static param_t instance_node_name_level_level_pqspace_intf;
     init_param(&instance_node_name_level_level_pqspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
