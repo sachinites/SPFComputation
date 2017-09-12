@@ -282,11 +282,9 @@ Intersect_Extended_P_and_Q_Space(p_space_set_t p_space, q_space_set_t q_space){
 
     delete_singly_ll(p_space);
     free(p_space);
-    p_space = NULL;
 
     delete_singly_ll(q_space);
     free(q_space);
-    q_space = NULL;
 
     return pq_space;
 }

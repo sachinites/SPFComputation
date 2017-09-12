@@ -557,6 +557,7 @@ spf_init_dcm(){
     static param_t show_spf_run_level_N_root;
     init_param(&show_spf_run_level_N_root, CMD, "root", 0, 0, INVALID, 0, "spf root");
     libcli_register_param(&show_spf_run_level_N, &show_spf_run_level_N_root);
+    libcli_register_display_callback(&show_spf_run_level_N_root, display_instance_nodes); 
      
     static param_t show_spf_run_level_N_root_root_name;
     init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, validate_node_extistence, STRING, "node-name", "node name to be SPF root");
@@ -580,6 +581,7 @@ spf_init_dcm(){
     static param_t config_node;
     init_param(&config_node, CMD, "node", 0, 0, INVALID, 0, "node");
     libcli_register_param(config, &config_node);
+    libcli_register_display_callback(&config_node, display_instance_nodes); 
 
     static param_t config_node_node_name;
     init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
@@ -588,6 +590,7 @@ spf_init_dcm(){
     static param_t config_node_node_name_slot;
     init_param(&config_node_node_name_slot, CMD, "slot", 0, 0, INVALID, 0, "slot");
     libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
+    libcli_register_display_callback(&config_node_node_name_slot, display_instance_node_interfaces);
 
     static param_t config_node_node_name_slot_slotname;
     init_param(&config_node_node_name_slot_slotname, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");

@@ -51,9 +51,8 @@ ${DSOBJ}:
 	(cd LinkedList;  make)
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 clean:
-	@ rm exe
-	@ rm *.o
-	@echo "cleaned compiled binaries."
+	rm exe
+	rm *.o
 all:
 	(cd LinkedList; make)
 	(cd CommandParser; make)

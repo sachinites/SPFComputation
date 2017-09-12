@@ -88,10 +88,6 @@ leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL t
     }
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-    if(!node){
-        printf("%s() : Node : %s do not exist in instance\n", __FUNCTION__, node_name);
-        return;  
-    }
 
     common_pfx_key_t pfx_key;
     memset(&pfx_key, 0, sizeof(common_pfx_key_t));
