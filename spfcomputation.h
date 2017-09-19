@@ -55,8 +55,12 @@ typedef struct spf_level_info_{
 typedef struct spf_info_{
 
     spf_level_info_t spf_level_info[MAX_LEVEL];
-    ll_t *routes;/*Routes computed as a result of SPF run, routes computed are not level specific*/
     char spff_multi_area; /* use not known : set to 1 if this node is Attached to other L2 node present in specifically other area*/
+    /*spf info containers for routes*/
+    ll_t *routes;/*Routes computed as a result of SPF run, routes computed are not level specific*/
+    ll_t *priority_routes;/*Always add route in this list*/
+    ll_t *deferred_routes;
+
 } spf_info_t;
 
 /* A DS to hold level specific SPF configs and 

@@ -67,6 +67,8 @@ create_new_node(instance_t *instance, char *node_name, AREA area){
 
     node->spf_result = NULL;
     node->spf_info.routes = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
+    node->spf_info.priority_routes = init_singly_ll();
+    node->spf_info.deferred_routes = init_singly_ll();
     add_node_to_owning_instance(instance, node);
     return node;    
 }

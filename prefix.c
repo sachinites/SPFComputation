@@ -48,6 +48,10 @@ create_new_prefix(const char *prefix, unsigned char mask){
     _prefix->prefix[PREFIX_LEN] = '\0';
     _prefix->mask = mask;
     set_prefix_property_metric(_prefix, DEFAULT_PREFIX_METRIC);
+    /*No need to initialse the plugins
+     *                         rt_patnode, 
+     *                         deferred_route_node
+     *                         priority_route_node*/
     return _prefix;
 }
 
