@@ -209,6 +209,9 @@ get_edge_direction(node_t *node, edge_t *edge){
     return EDGE_END_DIRN_UNKNOWN;
 }
 
+edge_end_t *
+get_min_oif(node_t *node, node_t *node_nbr, LEVEL level);
+
 
 #define ITERATE_NODE_NBRS_BEGIN(_node, _nbr_node, _edge, _level)  \
     _nbr_node = NULL;                                             \

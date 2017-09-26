@@ -346,3 +346,25 @@ node_local_prefix_search(node_t *node, LEVEL level,
 
     return (prefix_t *)singly_ll_search_by_key(prefix_list, &key);
 }
+
+edge_end_t *
+get_min_oif(node_t *node, node_t *node_nbr, LEVEL level){
+
+    unsigned int i = 0, min_metric = 0xFFFFFFFF;
+    edge_end_t *edge_end = NULL, *min_edge_oif = NULL;
+    edge_t *edge = NULL;
+    
+    for(; i < MAX_NODE_INTF_SLOTS; i++){
+        edge_end = node->edges[i];
+        if(!edge_end || (edge_end->dirn != OUTGOING))   
+            continue;
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        if(edge->to.node == node_nbr){
+            if(edge->metric[level] < min_metric){
+                min_metric = edge->metric[level];
+                min_edge_oif = edge_end;
+            }
+        }
+    }
+    return min_edge_oif;
+}

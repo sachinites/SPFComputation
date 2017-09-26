@@ -64,7 +64,8 @@ show_spf_results(node_t *spf_root, LEVEL level){
             if(res->node->next_hop[level][i] == NULL)
                 break;
         
-            printf("%-10s\n", res->node->next_hop[level][i]->node_name);
+            printf("%-10s       OIF : %-7s\n", res->node->next_hop[level][i]->node_name, (get_min_oif(spf_root, res->node->next_hop[level][i], level))->intf_name);
+
         }
     }
 }
