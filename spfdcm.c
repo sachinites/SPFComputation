@@ -41,6 +41,7 @@
 #include "bitsop.h"
 #include "spfcmdcodes.h"
 #include "spfclihandler.h"
+#include "rttable.h"
 
 extern
 instance_t *instance;
@@ -131,6 +132,24 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
             printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, cmd_code);
             break;
     }
+    return 0;
+}
+
+static int
+show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    char *node_name = NULL;
+    unsigned int i = 0;
+    tlv_struct_t *tlv = NULL;
+    node_t *node = NULL;
+
+    TLV_LOOP(tlv_buf, tlv, i){
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+             node_name = tlv->value;
+    }
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+    show_routing_table(node->spf_info.rttable);
     return 0;
 }
 
@@ -327,6 +346,60 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     return 0;
 }
 
+static int
+config_static_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    node_t *host_node = NULL;
+    tlv_struct_t *tlv = NULL;
+    unsigned int i = 0;
+    char *nh_name = NULL, 
+         *host_node_name = NULL,
+         *dest_ip = NULL,
+         *gw_ip   = NULL,
+         *intf_name = NULL;
+
+    int mask = 0;
+    rttable_entry_t *rt_entry = calloc(1, sizeof(rttable_entry_t));
+
+    TLV_LOOP(tlv_buf, tlv, i){
+        
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            host_node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "nh-name", strlen("nh-name")) ==0)
+            nh_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "destination", strlen("destination")) ==0)
+            dest_ip = tlv->value;
+        else if(strncmp(tlv->leaf_id, "mask", strlen("mask")) ==0)
+            mask = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "gateway", strlen("gateway")) ==0)
+            gw_ip = tlv->value;
+        else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
+            intf_name =  tlv->value;
+        else
+            assert(0);
+    }
+
+    strncpy(rt_entry->dest.prefix, dest_ip, 15);
+    rt_entry->dest.prefix[15] = '\0';
+    rt_entry->dest.mask = mask;
+    rt_entry->version = 0;
+    rt_entry->cost = 0;
+    rt_entry->primary_nh_count = 1;
+    rt_entry->primary_nh[0].nh_type = ipnh;
+    strncpy(rt_entry->primary_nh[0].oif, intf_name, IF_NAME_SIZE);
+    rt_entry->primary_nh[0].oif[IF_NAME_SIZE] = '\0'; 
+    strncpy(rt_entry->primary_nh[0].nh_name, nh_name, NODE_NAME_SIZE);
+    rt_entry->primary_nh[0].nh_name[NODE_NAME_SIZE] = '\0';
+    strncpy(rt_entry->primary_nh[0].gwip, gw_ip, 15);
+    rt_entry->primary_nh[0].gwip[15] = '\0';
+
+    host_node = singly_ll_search_by_key(instance->instance_node_list, host_node_name);
+    if(rt_route_install(host_node->spf_info.rttable, rt_entry))
+        return 0;
+    free(rt_entry);
+    rt_entry = NULL;
+    return -1;
+}
 
 static int
 debug_log_enable_disable_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
@@ -454,7 +527,7 @@ spf_init_dcm(){
     param_t *config = libcli_get_config_hook();
 
 /*Show commands*/
-
+    
     /*show instance level <level>*/
     static param_t instance;
     init_param(&instance, CMD, "instance", 0, 0, INVALID, 0, "Network graph");
@@ -477,6 +550,11 @@ spf_init_dcm(){
     static param_t instance_node_name;
     init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
     libcli_register_param(&instance_node, &instance_node_name);
+
+    /*show instance node <node-name> route*/
+    static param_t route;
+    init_param(&route, CMD, "route", show_route_handler, 0, INVALID, 0, "routing table");
+    libcli_register_param(&instance_node_name, &route);
 
     /*show instance node <node-name> level <level-no> pspace*/
     
@@ -618,9 +696,35 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name, &config_node_node_name_attachbit);
 
     static param_t config_node_node_name_attachbit_enable;
-    init_param(&config_node_node_name_attachbit_enable, CMD, "enable", instance_node_config_handler, 0, INVALID, 0, "enable"); 
+    init_param(&config_node_node_name_attachbit_enable, CMD, "enable", instance_node_config_handler, 0, INVALID, 0, "enable");
     libcli_register_param(&config_node_node_name_attachbit, &config_node_node_name_attachbit_enable);
     set_param_cmd_code(&config_node_node_name_attachbit_enable, CMDCODE_INSTANCE_ATTACHBIT_ENABLE);
+
+    /*config node <node name> static-route 10.1.1.1 24 20.1.1.1 S eth0/1*/
+
+    static param_t config_node_node_name_static_route;
+    init_param(&config_node_node_name_static_route, CMD, "static-route", 0, 0, INVALID, 0, "configure static route");
+    libcli_register_param(&config_node_node_name, &config_node_node_name_static_route);
+
+    static param_t config_node_node_name_static_route_dest;
+    init_param(&config_node_node_name_static_route_dest, LEAF, 0, 0, 0, STRING, "destination", "Destination subnet (ipv4)");
+    libcli_register_param(&config_node_node_name_static_route, &config_node_node_name_static_route_dest);
+
+    static param_t config_node_node_name_static_route_dest_mask;
+    init_param(&config_node_node_name_static_route_dest_mask, LEAF, 0, 0, validate_ipv4_mask, INT, "mask", "mask (0-32)");
+    libcli_register_param(&config_node_node_name_static_route_dest, &config_node_node_name_static_route_dest_mask);
+
+    static param_t config_node_node_name_static_route_dest_mask_nhip;
+    init_param(&config_node_node_name_static_route_dest_mask_nhip, LEAF, 0, 0, 0, STRING, "gateway", "Gateway Address(ipv4)");
+    libcli_register_param(&config_node_node_name_static_route_dest_mask, &config_node_node_name_static_route_dest_mask_nhip);
+
+    static param_t config_node_node_name_static_route_dest_mask_nhip_nhname;
+    init_param(&config_node_node_name_static_route_dest_mask_nhip_nhname, LEAF, 0, 0, validate_node_extistence, STRING, "nh-name", "Next Hop Node Name");  
+    libcli_register_param(&config_node_node_name_static_route_dest_mask_nhip, &config_node_node_name_static_route_dest_mask_nhip_nhname);
+
+    static param_t config_node_node_name_static_route_dest_mask_nhip_nhname_slotno;
+    init_param(&config_node_node_name_static_route_dest_mask_nhip_nhname_slotno, LEAF, 0, config_static_route_handler, 0, STRING, "slot-no", "interface name ethx/y format");
+    libcli_register_param(&config_node_node_name_static_route_dest_mask_nhip_nhname, &config_node_node_name_static_route_dest_mask_nhip_nhname_slotno); 
 
     /*Debug commands*/
 

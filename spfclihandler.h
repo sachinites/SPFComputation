@@ -45,4 +45,8 @@ display_instance_nodes(param_t *param, ser_buff_t *tlv_buf);
 
 void
 display_instance_node_interfaces(param_t *param, ser_buff_t *tlv_buf);
+
+int
+validate_ipv4_mask(char *mask);
+
 #endif /* __SPFCLIHANDLER__ */

@@ -5,7 +5,7 @@ USECLILIB=-lcli
 TARGET:exe
 TARGET_NAME=exe
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o
-OBJ=instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
+OBJ=rttable.o instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -44,6 +44,9 @@ spfutil.o:spfutil.c
 spfclihandler.o:spfclihandler.c
 	@echo "Building spfclihandler.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} spfclihandler.c -o spfclihandler.o
+rttable.o:rttable.c
+	@echo "Building rttable.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} rttable.c -o rttable.o
 logging.o:./logging/logging.c
 	@echo "Building logging.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./logging/logging.c -o ./logging/logging.o

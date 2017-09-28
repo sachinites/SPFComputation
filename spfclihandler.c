@@ -105,3 +105,13 @@ display_instance_node_interfaces(param_t *param, ser_buff_t *tlv_buf){
         printf("    %s %s\n", edge_end->intf_name, (edge_end->dirn == OUTGOING) ? "->" : "<-");
     }
 }
+
+int
+validate_ipv4_mask(char *mask){
+
+    int _mask = atoi(mask);
+    if(_mask >= 0 && _mask <= 32)
+        return VALIDATION_SUCCESS;
+    return VALIDATION_FAILED;
+}
+

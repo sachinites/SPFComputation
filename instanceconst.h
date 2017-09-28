@@ -86,5 +86,10 @@ typedef enum{
     AREA_UNKNOWN
 } AREA;
 
+typedef enum nh_type{
+
+    ipnh,
+    lspnh
+} nh_type_t;
 
 #endif /* __GRAPHCONST__ */
