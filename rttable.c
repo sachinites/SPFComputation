@@ -107,6 +107,8 @@ rt_route_lookup(rttable *rttable, char *prefix, char mask){
 int
 rt_route_install(rttable *rttable, rttable_entry_t *rt_entry){
 
+    apply_mask(rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->dest.prefix);
+
     if(rt_route_lookup(rttable, rt_entry->dest.prefix, rt_entry->dest.mask)){
         printf("%s() : Error : Attempt to add Duplicate route : %s/%d", __FUNCTION__, rt_entry->dest.prefix, rt_entry->dest.mask);
         return -1;
@@ -195,7 +197,6 @@ show_routing_table(rttable *rttable){
     assert(rttable);
     singly_ll_node_t *list_node = NULL;
     rttable_entry_t *rt_entry = NULL;
-    char prefix_with_mask[PREFIX_LEN_WITH_MASK + 1];
     char subnet[PREFIX_LEN_WITH_MASK + 1];
 
     printf("Table %s\n", rttable->table_name);
@@ -204,13 +205,17 @@ show_routing_table(rttable *rttable){
     ITERATE_LIST(GET_RT_TABLE(rttable), list_node){
 
         rt_entry = (rttable_entry_t *)list_node->data;
-        memset(prefix_with_mask, 0, sizeof(prefix_with_mask));
-        memset(subnet, 0, sizeof(subnet));
-        apply_mask(rt_entry->dest.prefix, rt_entry->dest.mask, prefix_with_mask);
-        sprintf(subnet, "%s/%d", prefix_with_mask, rt_entry->dest.mask);
+        sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
         printf("%-20s      %-4d        %-6d     %-20s    %-8s   %-22s      %s\n",
                 subnet, rt_entry->version,  rt_entry->cost,
                 rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name, rt_entry->primary_nh[0].oif, 
                 rt_entry->backup_nh.nh_name);
     }
+}
+
+
+void
+show_traceroute(char *node_name, char *dst_prefix){
+
+
 }

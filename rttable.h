@@ -64,7 +64,9 @@ typedef struct rttable_{
     ll_t *rt_list;
 } rttable;
 
-#define RT_ENTRY_MATCH(rtptr, _prefix, _mask) (strncmp(rtptr->dest.prefix, _prefix, 16) == 0 && rtptr->dest.mask == _mask)
+#define RT_ENTRY_MATCH(rtptr, _prefix, _mask) \
+    (strncmp(rtptr->dest.prefix, _prefix, 16) == 0 && rtptr->dest.mask == _mask)
+
 #define GET_NEW_RT_ENTRY()                  (calloc(1, sizeof(rttable_entry_t)));
 #define FLUSH_RT_ENTRY(rtptr)               (memset(rtptr, 0, sizeof(rttable_entry_t)));
 #define GET_BACK_UP_NH(rtptr)               (&(rtptr->backup_nh))
@@ -72,12 +74,12 @@ typedef struct rttable_{
 #define GET_RT_TABLE(rttableptr)            (rttableptr->rt_list)
 
 
-#define ITERATE_PR_NH(rt)           \
-do{                                 \
-    unsigned int _i = 0;            \
-    nh_t *_nh = NULL;               \
-    for(; _i < MAX_NXT_HOPS; _i++){ \
-t.= &rt->primary_nh[i];
+#define ITERATE_PR_NH_BEGIN(rt_entry)     \
+do{                                       \
+    unsigned int _i = 0;                  \
+    nh_t *_nh = NULL;                     \
+    for(; _i < MAX_NXT_HOPS; _i++){       \
+        _nh = &rt_entry->primary_nh[i];
                 
 #define ITERATE_PR_NH_END  }}while(0)
 
@@ -117,6 +119,9 @@ init_rttable(char *table_name);
 
 void
 show_routing_table(rttable *rttable);
+
+void
+show_traceroute(char *node_name, char *dst_prefix);
 
 #endif /* __RTTABLE__ */
 

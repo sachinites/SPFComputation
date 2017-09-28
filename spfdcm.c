@@ -359,10 +359,10 @@ config_static_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_
          *intf_name = NULL;
 
     int mask = 0;
-    rttable_entry_t *rt_entry = calloc(1, sizeof(rttable_entry_t));
+    rttable_entry_t *rt_entry = NULL;
 
     TLV_LOOP(tlv_buf, tlv, i){
-        
+
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             host_node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "nh-name", strlen("nh-name")) ==0)
@@ -379,26 +379,40 @@ config_static_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_
             assert(0);
     }
 
-    strncpy(rt_entry->dest.prefix, dest_ip, 15);
-    rt_entry->dest.prefix[15] = '\0';
-    rt_entry->dest.mask = mask;
-    rt_entry->version = 0;
-    rt_entry->cost = 0;
-    rt_entry->primary_nh_count = 1;
-    rt_entry->primary_nh[0].nh_type = ipnh;
-    strncpy(rt_entry->primary_nh[0].oif, intf_name, IF_NAME_SIZE);
-    rt_entry->primary_nh[0].oif[IF_NAME_SIZE] = '\0'; 
-    strncpy(rt_entry->primary_nh[0].nh_name, nh_name, NODE_NAME_SIZE);
-    rt_entry->primary_nh[0].nh_name[NODE_NAME_SIZE] = '\0';
-    strncpy(rt_entry->primary_nh[0].gwip, gw_ip, 15);
-    rt_entry->primary_nh[0].gwip[15] = '\0';
-
     host_node = singly_ll_search_by_key(instance->instance_node_list, host_node_name);
-    if(rt_route_install(host_node->spf_info.rttable, rt_entry))
-        return 0;
-    free(rt_entry);
-    rt_entry = NULL;
-    return -1;
+
+    switch(enable_or_disable){
+        case CONFIG_ENABLE:
+            
+            rt_entry = calloc(1, sizeof(rttable_entry_t));
+
+            strncpy(rt_entry->dest.prefix, dest_ip, 15);
+            rt_entry->dest.prefix[15] = '\0';
+            rt_entry->dest.mask = mask;
+            rt_entry->version = 0;
+            rt_entry->cost = 0;
+            rt_entry->primary_nh_count = 1;
+            rt_entry->primary_nh[0].nh_type = ipnh;
+            strncpy(rt_entry->primary_nh[0].oif, intf_name, IF_NAME_SIZE);
+            rt_entry->primary_nh[0].oif[IF_NAME_SIZE] = '\0'; 
+            strncpy(rt_entry->primary_nh[0].nh_name, nh_name, NODE_NAME_SIZE);
+            rt_entry->primary_nh[0].nh_name[NODE_NAME_SIZE] = '\0';
+            strncpy(rt_entry->primary_nh[0].gwip, gw_ip, 15);
+            rt_entry->primary_nh[0].gwip[15] = '\0';
+
+            if(rt_route_install(host_node->spf_info.rttable, rt_entry) > 0)
+                return 0;
+            free(rt_entry);
+            rt_entry = NULL;
+            return -1;
+
+        case CONFIG_DISABLE:
+            rt_route_delete(host_node->spf_info.rttable, dest_ip, mask);
+            break;
+        default:
+            ;
+    }
+    return 0;
 }
 
 static int
