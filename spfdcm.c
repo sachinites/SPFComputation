@@ -154,6 +154,27 @@ show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
 }
 
 static int
+show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    char *node_name = NULL;
+    char *prefix = NULL;
+    unsigned int i = 0;
+    tlv_struct_t *tlv = NULL;
+
+    TLV_LOOP(tlv_buf, tlv, i){
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+             node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "prefix", strlen("prefix")) ==0)
+            prefix = tlv->value;
+        else
+            assert(0);
+    }
+
+    show_traceroute(node_name, prefix);
+    return 0; 
+}
+
+static int
 show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     char *node_name = NULL,
@@ -565,6 +586,16 @@ spf_init_dcm(){
     init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
     libcli_register_param(&instance_node, &instance_node_name);
 
+    /*show instance node <node-name> traceroute <prefix>*/
+
+    static param_t traceroute;
+    init_param(&traceroute, CMD, "traceroute", 0, 0, INVALID, 0, "trace route");
+    libcli_register_param(&instance_node_name, &traceroute);
+
+    static param_t traceroute_prefix;
+    init_param(&traceroute_prefix, LEAF, 0, show_traceroute_handler, 0, IPV4, "prefix", "Destination address (ipv4)");
+    libcli_register_param(&traceroute, &traceroute_prefix);
+
     /*show instance node <node-name> route*/
     static param_t route;
     init_param(&route, CMD, "route", show_route_handler, 0, INVALID, 0, "routing table");
@@ -721,7 +752,7 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name, &config_node_node_name_static_route);
 
     static param_t config_node_node_name_static_route_dest;
-    init_param(&config_node_node_name_static_route_dest, LEAF, 0, 0, 0, STRING, "destination", "Destination subnet (ipv4)");
+    init_param(&config_node_node_name_static_route_dest, LEAF, 0, 0, 0, IPV4, "destination", "Destination subnet (ipv4)");
     libcli_register_param(&config_node_node_name_static_route, &config_node_node_name_static_route_dest);
 
     static param_t config_node_node_name_static_route_dest_mask;
@@ -729,7 +760,7 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name_static_route_dest, &config_node_node_name_static_route_dest_mask);
 
     static param_t config_node_node_name_static_route_dest_mask_nhip;
-    init_param(&config_node_node_name_static_route_dest_mask_nhip, LEAF, 0, 0, 0, STRING, "gateway", "Gateway Address(ipv4)");
+    init_param(&config_node_node_name_static_route_dest_mask_nhip, LEAF, 0, 0, 0, IPV4, "gateway", "Gateway Address(ipv4)");
     libcli_register_param(&config_node_node_name_static_route_dest_mask, &config_node_node_name_static_route_dest_mask_nhip);
 
     static param_t config_node_node_name_static_route_dest_mask_nhip_nhname;

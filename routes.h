@@ -37,6 +37,19 @@
 
 /*Routine to build the routing table*/
 
+typedef struct routes_{
+
+    prefix_t *prefix;
+    int version;
+    int flags;
+    int level;
+    // ... and many more members
+    /*prefix plugins*/
+    singly_ll_node_t rt_patnode;/*plugin into spf_info->routes*/
+    singly_ll_node_t deferred_route_node;/*plugin into spf_info->deferred_routes*/
+    singly_ll_node_t priority_route_node;/*plugin into spf_into priority_routes*/
+} routes_t;
+
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
                    node_t *spf_root,    /* computing node which stores the result of spf run*/

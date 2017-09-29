@@ -54,11 +54,7 @@ typedef struct prefix_{
     unsigned int prefix_flags;
     unsigned int version;/*spf level version in which this route is computed*/
     ll_t prefix_thread;/*list of like prefixes*/
-    /*prefix plugins*/
-    singly_ll_node_t rt_patnode;/*plugin into spf_info->routes*/
-    singly_ll_node_t deferred_route_node;/*plugin into spf_info->deferred_routes*/
-    singly_ll_node_t priority_route_node;/*plugin into spf_into priority_routes*/
-
+    
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;

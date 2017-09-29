@@ -109,7 +109,7 @@ int
 rt_route_update(rttable *rttable, rttable_entry_t *rt_entry);
 
 rttable_entry_t *
-get_longest_prefix_match(rttable *rttable, char *prefix, char mask);
+get_longest_prefix_match(rttable *rttable, char *prefix);
 
 void
 rt_table_destory(rttable *rttable);

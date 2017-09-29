@@ -37,6 +37,8 @@
 #include <arpa/inet.h>
 #include "bitsop.h"
 
+extern instance_t *instance;
+
 void
 add_primary_nh(rttable_entry_t *rt_entry, nh_t *nh){
 
@@ -168,10 +170,29 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
 }
 
 rttable_entry_t *
-get_longest_prefix_match(rttable *rttable, char *prefix, char mask){
+get_longest_prefix_match(rttable *rttable, char *prefix){
 
-    return NULL;
+    singly_ll_node_t *list_node = NULL;
+    rttable_entry_t *rt_entry = NULL, 
+                    *lpm_rt_entry = NULL;
+    char subnet[PREFIX_LEN_WITH_MASK + 1];
+    char longest_mask = 0;
+
+    ITERATE_LIST(GET_RT_TABLE(rttable), list_node){
+
+        rt_entry = (rttable_entry_t *)list_node->data;
+        memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
+        apply_mask(prefix, rt_entry->dest.mask, subnet);
+        if(strncmp(subnet, rt_entry->dest.prefix, strlen(subnet))){
+            if( rt_entry->dest.mask > longest_mask){
+                longest_mask = rt_entry->dest.mask;
+                lpm_rt_entry = rt_entry;
+            }
+        }
+    }
+    return lpm_rt_entry;
 }
+
 
 void
 rt_table_destory(rttable *rttable){
@@ -205,6 +226,7 @@ show_routing_table(rttable *rttable){
     ITERATE_LIST(GET_RT_TABLE(rttable), list_node){
 
         rt_entry = (rttable_entry_t *)list_node->data;
+        memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
         sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
         printf("%-20s      %-4d        %-6d     %-20s    %-8s   %-22s      %s\n",
                 subnet, rt_entry->version,  rt_entry->cost,
@@ -214,8 +236,38 @@ show_routing_table(rttable *rttable){
 }
 
 
+/*-----------------------------------------------------------------------------
+ *  Path trace for Destination dst_prefix is invoked on node node_name
+ *-----------------------------------------------------------------------------*/
+
+typedef struct _node_t node_t;
+
 void
 show_traceroute(char *node_name, char *dst_prefix){
 
+    node_t *node = NULL;
+    rttable_entry_t * rt_entry = NULL;
+    
+    printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
+    do{
+        node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+        rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
+        if(!rt_entry){
+            printf("X\n");
+            break;
+        }
 
+        /*IF the best route present in routing table is the local route
+         * means destination has arrived*/
+        if(rt_entry->dest.mask == 32){
+            printf(". Complete\n");
+            break;
+        }
+
+        printf("%s(%s)--->(%s)", node->node_name, rt_entry->primary_nh[0].oif, 
+                rt_entry->primary_nh[0].gwip);
+
+            node_name = rt_entry->primary_nh[0].nh_name;
+    }
+    while(1);
 }
