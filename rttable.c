@@ -183,7 +183,7 @@ get_longest_prefix_match(rttable *rttable, char *prefix){
         rt_entry = (rttable_entry_t *)list_node->data;
         memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
         apply_mask(prefix, rt_entry->dest.mask, subnet);
-        if(strncmp(subnet, rt_entry->dest.prefix, strlen(subnet))){
+        if(strncmp(subnet, rt_entry->dest.prefix, strlen(subnet)) == 0){
             if( rt_entry->dest.mask > longest_mask){
                 longest_mask = rt_entry->dest.mask;
                 lpm_rt_entry = rt_entry;
@@ -247,27 +247,28 @@ show_traceroute(char *node_name, char *dst_prefix){
 
     node_t *node = NULL;
     rttable_entry_t * rt_entry = NULL;
-    
+    unsigned int i = 1;
+     
     printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
     do{
         node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
         rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
         if(!rt_entry){
-            printf("X\n");
+            printf("Node %s : No route to prefix : %s\n", node_name, dst_prefix);
             break;
         }
 
         /*IF the best route present in routing table is the local route
          * means destination has arrived*/
-        if(rt_entry->dest.mask == 32){
-            printf(". Complete\n");
+        if(strncmp(rt_entry->primary_nh[0].nh_name, node_name, strlen(node_name)) == 0){
+            printf("Trace Complete\n");
             break;
         }
 
-        printf("%s(%s)--->(%s)", node->node_name, rt_entry->primary_nh[0].oif, 
-                rt_entry->primary_nh[0].gwip);
+        printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[0].oif, 
+                rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name);
 
-            node_name = rt_entry->primary_nh[0].nh_name;
+        node_name = rt_entry->primary_nh[0].nh_name;
     }
     while(1);
 }
