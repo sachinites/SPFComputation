@@ -35,6 +35,7 @@
 #include "logging.h"
 #include "bitsop.h"
 
+
 extern instance_t *instance;
 extern void
 spf_computation(node_t *spf_root,
@@ -44,12 +45,20 @@ spf_computation(node_t *spf_root,
 /*Routine to build the routing table*/
 
 static void
-install_default_route(spf_info_t *spf_info,
-                      LEVEL level){
+update_route(spf_info_t *spf_info, 
+             spf_result_t *result, 
+             prefix_t *prefix, 
+             LEVEL level, int linkage){
+
+
+    /* If this prefix is of infinite metric, then dicard it from installing it in RIB*/
+    if(prefix->metric > INFINITE_METRIC){
+        sprintf(LOG, "prefix : %s/%u discarded because of infinite metric", prefix->prefix, prefix->mask); TRACE();
+        return;
+    }
 
 
 }
-
 
 void
 spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
@@ -86,7 +95,6 @@ build_routing_table(spf_info_t *spf_info,
     singly_ll_node_t *list_node = NULL;
     spf_result_t *result = NULL;
 
-
     sprintf(LOG, "Entered ... spf_root : %s, Level : %u", spf_root->node_name, level); TRACE();
     
     /*Walk over the SPF result list computed in spf run
@@ -107,9 +115,21 @@ build_routing_table(spf_info_t *spf_info,
            result->node != NULL                                    &&       /*first fragment of the node whose result is being processed exist*/
            result->node->attached){                                         /*Router being inspected is L1L2 router*/
 
-                install_default_route(spf_info, level);
+                /* Installation of Default route in L1-only router RIB*/
+
+                common_pfx_key_t common_pfx;
+                memset(&common_pfx, 0, sizeof(common_pfx_key_t));
+                if(node_local_prefix_search(result->node, level, common_pfx.prefix, common_pfx.mask) == NULL){
+                
+                /* Default prefix 0.0.0.0/0 is not advertised by 'node' which is L1L2 router*/
+                    sprintf(LOG, "Default prefix 0.0.0.0/0 not found in L1L2 node %s prefix db for %s", 
+                                result->node->node_name, get_str_level(level));  TRACE();
+                    prefix_t *prefix = calloc(1, sizeof(prefix_t));
+                    fill_prefix(prefix, &common_pfx, 0, FALSE);
+                    update_route(spf_info, result, prefix, level, FALSE);
+                }
         }
-    }
+    } /*ITERATE_LIST ENDS*/
 }
 
 void

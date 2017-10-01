@@ -118,6 +118,58 @@ create_new_edge(char *from_ifname,
     return edge;
 }
 
+void
+attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
+
+    prefix_t *prefix = NULL;
+    LEVEL level_it, level;
+    if(edge_end->dirn != OUTGOING)
+        return;
+
+    level = (GET_EGDE_PTR_FROM_FROM_EDGE_END(edge_end))->level;
+
+    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+        if(!IS_LEVEL_SET(level_it, level))
+            continue;
+
+        prefix = edge_end->prefix[level_it];
+
+        if(node_local_prefix_search(node, level_it, prefix->prefix, prefix->mask))
+            return;
+
+        singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level_it), prefix);
+        prefix->ref_count++;
+    }
+}
+
+void
+dettach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
+
+    singly_ll_node_t *prefix_list_node = NULL;
+    prefix_t *prefix = NULL;
+    LEVEL level_it, level;
+
+    if(edge_end->dirn != OUTGOING)
+        return;
+
+    level = (GET_EGDE_PTR_FROM_FROM_EDGE_END(edge_end))->level;
+
+    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+
+        if(!IS_LEVEL_SET(level_it, level))
+            continue;
+
+        prefix_list_node = singly_ll_get_node_by_data_ptr(GET_NODE_PREFIX_LIST(node, level), 
+                edge_end->prefix[level]);
+        if(!prefix_list_node)
+            return;
+
+        prefix = (prefix_t *)prefix_list_node->data;
+        prefix->ref_count--;
+        singly_ll_delete_node(GET_NODE_PREFIX_LIST(node, level), prefix_list_node);
+    }
+}
+
 static void
 insert_interface_into_node(node_t *node, edge_end_t *edge_end){
     
@@ -133,6 +185,9 @@ insert_interface_into_node(node_t *node, edge_end_t *edge_end){
 
         node->edges[i] = edge_end;
         edge_end->node = node;
+
+        /*insert the edge prefixes into node's prefix list*/
+        attach_edge_end_prefix_on_node(node, edge_end);       
         break;
     }
 }
@@ -142,10 +197,10 @@ insert_edge_between_2_nodes(edge_t *edge,
                             node_t *from_node,
                             node_t *to_node, DIRECTION dirn){
 
-    insert_interface_into_node(from_node, &edge->from);
     edge->from.dirn = OUTGOING;
-    insert_interface_into_node(to_node, &edge->to);
+    insert_interface_into_node(from_node, &edge->from);
     edge->to.dirn = INCOMING;
+    insert_interface_into_node(to_node, &edge->to);
     
     edge_t *edge2 = NULL;
 

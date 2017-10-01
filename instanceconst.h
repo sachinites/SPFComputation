@@ -39,8 +39,7 @@
 #define PREFIX_LEN              15
 #define PREFIX_LEN_WITH_MASK    (PREFIX_LEN + 3)
 #define MAX_NXT_HOPS            1
-#define INFINITE_METRIC         0xFFFFFFFF
-
+#define INFINITE_METRIC         (0xFFFFFFFF -1)
 /* instance global flags */
 
 #define IGNOREATTACHED  1   /*If this bit is set, then L1-only router will not install default gateway to L1L2 router of the local Area*/
@@ -92,4 +91,9 @@ typedef enum nh_type{
     lspnh
 } nh_type_t;
 
+typedef enum{
+
+    FALSE,
+    TRUE
+} boolean;
 #endif /* __GRAPHCONST__ */

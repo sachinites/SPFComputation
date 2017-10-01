@@ -54,9 +54,17 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
 
         if(strncmp(edge_end->intf_name, slot_name, strlen(edge_end->intf_name)) == 0 &&
             strlen(edge_end->intf_name) == strlen(slot_name)){
-            
+          
             edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
             edge->status = (enable_or_disable == CONFIG_DISABLE) ? 0 : 1;
+            if(edge->status == 0){
+                /*remove the edge_end prefixes from node*/
+                dettach_edge_end_prefix_on_node(edge->from.node, &edge->from);
+            }
+            else{
+                /*Attach the edge end prefix to node.*/
+                attach_edge_end_prefix_on_node(edge->from.node, &edge->from);
+            }
             found = 1;
         }
     }

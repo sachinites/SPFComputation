@@ -46,6 +46,8 @@ typedef struct common_pfx_{
     unsigned char mask;
 } common_pfx_key_t;
 
+typedef struct _node_t node_t;
+
 typedef struct prefix_{
 
     char prefix[PREFIX_LEN + 1];
@@ -54,7 +56,6 @@ typedef struct prefix_{
     unsigned int prefix_flags;
     unsigned int version;/*spf level version in which this route is computed*/
     ll_t prefix_thread;/*list of like prefixes*/
-    
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;
@@ -94,6 +95,10 @@ get_prefix_comparison_fn();
 void
 leak_prefix(char *node_name, char *prefix, char mask, 
             LEVEL from_level, LEVEL to_level);
+
+void
+fill_prefix(prefix_t *prefix, common_pfx_key_t *common_prefix,
+            unsigned int metric, boolean downbit);
 
 #endif /* __ROUTES__ */
 

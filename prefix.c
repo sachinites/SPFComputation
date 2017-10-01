@@ -120,3 +120,18 @@ leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL t
     singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, to_level), leaked_prefix);
 }
 
+/*We assume the caller has zeroes out the memory of the prefix*/
+void
+fill_prefix(prefix_t *prefix, common_pfx_key_t *common_prefix,
+        unsigned int metric, boolean downbit){
+
+    strncpy(prefix->prefix, common_prefix->prefix, PREFIX_LEN);
+    prefix->prefix[PREFIX_LEN] = '\0';
+    prefix->mask = common_prefix->mask;
+    prefix->metric = metric;
+    if(downbit)
+        SET_BIT(prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
+
+    singly_ll_set_comparison_fn(&prefix->prefix_thread, get_prefix_comparison_fn());
+}
+

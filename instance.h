@@ -232,5 +232,10 @@ get_min_oif(node_t *node, node_t *node_nbr, LEVEL level);
              
 #define ITERATE_NODE_NBRS_END   }}while(0)      
    
+void
+attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end);
+
+void
+dettach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end);
 
 #endif /* __INSTANCE__ */
