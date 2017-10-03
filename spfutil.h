@@ -55,4 +55,10 @@ void
 spf_determine_multi_area_attachment(spf_info_t *spf_info,
                                     node_t *spf_root);
 
+#define THREAD_NODE_TO_STRUCT(structure, member_name, fn_name)                      \
+    static inline structure * fn_name (char *member_addr){                          \
+        unsigned int member_offset = (unsigned int)&((structure *)0)->member_name;  \
+        return (structure *)(member_addr - member_offset);                          \
+    }
+    
 #endif /* __SPFUTIL__ */ 

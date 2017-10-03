@@ -53,11 +53,7 @@ typedef struct _node_t{
     struct _node_t *next_hop[MAX_LEVEL][MAX_NXT_HOPS];
     struct _node_t *direct_next_hop[MAX_LEVEL][MAX_NXT_HOPS];
     edge_end_t *pn_intf[MAX_LEVEL];
-    /*Its a level specific database of prefixes hosted on the router, 
-     * but do not belong to any particular interface. These prefixes 
-     * include External prefixes/leaked prefixes/lo prefixes.
-     * We will deal with these prefixes like interface prefixes in 
-     * building the routing table.*/
+
     ll_t *local_prefix_list[MAX_LEVEL];
     spf_result_t *spf_result;                               /* use not known : back pointer to spf_result_t node which is created during spf run*/ 
     /*For SPF computation only*/ 

@@ -15,6 +15,46 @@ singly_ll_node_t* singly_ll_init_node(void* data){
     return node;
 }
 
+void 
+copy_singly_ll(ll_t *src, ll_t *dst){
+    
+    singly_ll_node_t* node = NULL;
+
+    if(!src || !dst)
+        return;
+
+    delete_singly_ll(dst);
+    ITERATE_LIST(src, node){
+        if(!node->data) 
+            continue;
+        singly_ll_add_node_by_val(dst, node->data);
+    }
+    singly_ll_set_comparison_fn(dst, src->comparison_fn);
+}
+
+
+ll_t *
+union_singly_ll(ll_t *list1, ll_t *list2){
+    
+    singly_ll_node_t* node = NULL;
+
+    if(!list1)
+        return list2;
+    if(!list2)
+        return list1;
+
+    ll_t *res = init_singly_ll();
+    singly_ll_set_comparison_fn(res, list1->comparison_fn ? list1->comparison_fn : list2->comparison_fn);
+
+    ITERATE_LIST(list1, node){
+        singly_ll_add_node_by_val(res, node->data);
+    }
+    ITERATE_LIST(list2, node){
+        singly_ll_add_node_by_val(res, node->data);
+    }
+    return res;
+}
+
 int 
 singly_ll_add_node(ll_t* ll, singly_ll_node_t *node){
     if(!ll) return -1;

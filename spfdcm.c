@@ -521,14 +521,35 @@ show_instance_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_dis
     tlv_struct_t *tlv = NULL;
     unsigned int i = 0;
     LEVEL level = LEVEL_UNKNOWN;
+    char *node_name = NULL;
+    int CMDCODE = -1;
+    node_t *node = NULL;
+
+    CMDCODE = EXTRACT_CMD_CODE(tlv_buf); 
 
     TLV_LOOP(tlv_buf, tlv, i){
-        level = atoi(tlv->value);    
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) == 0)
+            node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) == 0)
+            level = atoi(tlv->value);   
+        else
+            assert(0); 
     }
     
-    printf("Graph root : %s\n", instance->instance_root->node_name);
-    ITERATE_LIST(instance->instance_node_list, list_node){
-         dump_nbrs(list_node->data, level);
+    switch(CMDCODE){
+        
+        case CMDCODE_SHOW_INSTANCE_LEVEL:
+            printf("Graph root : %s\n", instance->instance_root->node_name);
+            ITERATE_LIST(instance->instance_node_list, list_node){
+                dump_nbrs(list_node->data, level);
+            }
+            break;
+        case CMDCODE_SHOW_INSTANCE_NODE_LEVEL:
+            node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+            dump_nbrs(node, level);
+            break;
+        default:
+            assert(0);
     }
     return 0;
 }
@@ -561,7 +582,7 @@ spf_init_dcm(){
     param_t *debug  = libcli_get_debug_hook();
     param_t *config = libcli_get_config_hook();
 
-/*Show commands*/
+    /*Show commands*/
     
     /*show instance level <level>*/
     static param_t instance;
@@ -571,10 +592,11 @@ spf_init_dcm(){
     static param_t instance_level;
     init_param(&instance_level, CMD, "level", 0, 0, INVALID, 0, "level");
     libcli_register_param(&instance, &instance_level);
-
+     
     static param_t instance_level_level;
     init_param(&instance_level_level, LEAF, 0, show_instance_handler, validate_level_no, INT, "level-no", "level");
     libcli_register_param(&instance_level, &instance_level_level);
+    set_param_cmd_code(&instance_level_level, CMDCODE_SHOW_INSTANCE_LEVEL);
 
     /*show instance node <node-name>*/
     static param_t instance_node;
@@ -601,8 +623,7 @@ spf_init_dcm(){
     init_param(&route, CMD, "route", show_route_handler, 0, INVALID, 0, "routing table");
     libcli_register_param(&instance_node_name, &route);
 
-    /*show instance node <node-name> level <level-no> pspace*/
-    
+    /*show instance node <node-name> level <level-no>*/ 
     static param_t instance_node_name_level;
     init_param(&instance_node_name_level, CMD, "level", 0, 0, INVALID, 0, "level");
     libcli_register_param(&instance_node_name, &instance_node_name_level);
@@ -610,7 +631,9 @@ spf_init_dcm(){
     static param_t instance_node_name_level_level;
     init_param(&instance_node_name_level_level, LEAF, 0, show_instance_handler, validate_level_no, INT, "level-no", "level");
     libcli_register_param(&instance_node_name_level, &instance_node_name_level_level);
+    set_param_cmd_code(&instance_node_name_level_level, CMDCODE_SHOW_INSTANCE_NODE_LEVEL);
     
+    /*show instance node <node-name> level <level-no> pspace*/
     static param_t instance_node_name_level_level_pspace;
     init_param(&instance_node_name_level_level_pspace, CMD, "pspace", 0, 0, INVALID, 0, "pspace of a Node");
     libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_pspace);
@@ -852,7 +875,7 @@ dump_node_info(node_t *node){
     printf("\n");
     for(level = LEVEL2; level >= LEVEL1; level--){
 
-        printf("LEVEL : %u local prefixes:\n", level);
+        printf("%s prefixes:\n", get_str_level(level));
         ITERATE_LIST(GET_NODE_PREFIX_LIST(node, level), list_node){
             count++;
             prefix = (prefix_t *)list_node->data;        

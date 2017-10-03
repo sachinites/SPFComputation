@@ -30,6 +30,7 @@
  * =====================================================================================
  */
 
+#include "spfutil.h"
 #include "prefix.h"
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +45,8 @@ prefix_t *
 create_new_prefix(const char *prefix, unsigned char mask){
 
     prefix_t *_prefix = calloc(1, sizeof(prefix_t));
-    strncpy(_prefix->prefix, prefix, strlen(prefix));
+    if(prefix)
+        strncpy(_prefix->prefix, prefix, strlen(prefix));
     _prefix->prefix[PREFIX_LEN] = '\0';
     _prefix->mask = mask;
     set_prefix_property_metric(_prefix, DEFAULT_PREFIX_METRIC);
@@ -75,6 +77,10 @@ comparison_fn
 get_prefix_comparison_fn(){
     return prefix_comparison_fn;
 }
+
+THREAD_NODE_TO_STRUCT(prefix_t,     
+                      like_prefix_thread, 
+                      get_prefix_from_like_prefix_thread);
 
 void
 leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL to_level){
@@ -131,7 +137,5 @@ fill_prefix(prefix_t *prefix, common_pfx_key_t *common_prefix,
     prefix->metric = metric;
     if(downbit)
         SET_BIT(prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
-
-    singly_ll_set_comparison_fn(&prefix->prefix_thread, get_prefix_comparison_fn());
 }
 

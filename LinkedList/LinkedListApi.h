@@ -40,6 +40,9 @@ singly_ll_node_t *singly_ll_get_node_by_data_ptr(ll_t *ll, void *data);
 unsigned int singly_ll_remove_node_by_dataptr(ll_t *ll, void *data);
 void singly_ll_set_comparison_fn(ll_t *ll, int (*comparison_fn)(void *, void *));
 void * singly_ll_search_by_key(ll_t *ll, void *key);
+void copy_singly_ll(ll_t *src, ll_t *dst);
+ll_t * union_singly_ll(ll_t *list1, ll_t *list2);
+
 
 #define ITERATE_LIST(list_ptr, node_ptr)                           \
     node_ptr = GET_HEAD_SINGLY_LL(list_ptr);                       \

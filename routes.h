@@ -39,21 +39,50 @@
 
 typedef struct routes_{
 
-    prefix_t *prefix;
+    common_pfx_key_t rt_key;
     int version;
     int flags;
-    int level;
-    // ... and many more members
+    LEVEL level;
+    node_t *hosting_node;
+    unsigned int spf_metric;
+    unsigned int lsp_metric; /*meaningful if this LSP route*/
+
+    /* NH lists*/
+    ll_t *primary_nh_list;/*Taking it as a list to accomodate ECMP*/
+    ll_t *backup_nh_list;
+
+    ll_t *like_prefix_list;
+    
     /*prefix plugins*/
     singly_ll_node_t rt_patnode;/*plugin into spf_info->routes*/
     singly_ll_node_t deferred_route_node;/*plugin into spf_info->deferred_routes*/
     singly_ll_node_t priority_route_node;/*plugin into spf_into priority_routes*/
 } routes_t;
 
+routes_t *route_malloc();
+
+void
+route_set_key(routes_t *route, char *ipv4_addr, char mask);
+
+void
+free_route(routes_t *route);
+
+#define ROUTE_ADD_PRIMARY_NH(routeptr, nodeptr)     \
+    singly_ll_add_node_by_val(routeptr->primary_nh_list, nodeptr);
+
+#define ROUTE_FLUSH_PRIMARY_NH_LIST(routeptr)       \
+    delete_singly_ll(routeptr->primary_nh_list);
+
+#define ROUTE_ADD_BACKUP_NH(routeptr, nodeptr)      \
+    singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr);
+
+#define ROUTE_FLUSH_BACKUP_NH_LIST(routeptr)   \
+    delete_singly_ll(routeptr->backup_nh_list);
+
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
-                   node_t *spf_root,    /* computing node which stores the result of spf run*/
-                   LEVEL level);        /*Level of spf run*/
+                   node_t *spf_root,          /* computing node which stores the result of spf run*/
+                   LEVEL level);              /*Level of spf run*/
 
 void
 build_routing_table(spf_info_t *spf_info,

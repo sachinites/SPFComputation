@@ -55,10 +55,11 @@ typedef struct prefix_{
     unsigned int metric;/*Prefix metric, zero for local prefix, non-zeroi for leaked or external prefixes*/
     unsigned int prefix_flags;
     unsigned int version;/*spf level version in which this route is computed*/
-    ll_t prefix_thread;/*list of like prefixes*/
+    singly_ll_node_t like_prefix_thread;/*glue for like prefixe*/
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;
+
 
 prefix_t *
 create_new_prefix(const char *prefix, unsigned char mask);

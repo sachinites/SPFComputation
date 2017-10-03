@@ -30,8 +30,8 @@
  * =====================================================================================
  */
 
-#include "routes.h"
 #include "spfutil.h"
+#include "routes.h"
 #include "logging.h"
 #include "bitsop.h"
 
@@ -41,9 +41,62 @@ extern void
 spf_computation(node_t *spf_root,
                 spf_info_t *spf_info,
                 LEVEL level, spf_type_t spf_type);
+extern int
+instance_node_comparison_fn(void *_node, void *input_node_name);
 
+THREAD_NODE_TO_STRUCT(prefix_t,
+        like_prefix_thread,
+        get_prefix_from_like_prefix_thread);
+
+
+routes_t *
+route_malloc(){
+
+    routes_t *route = calloc(1, sizeof(routes_t));
+    route->primary_nh_list = init_singly_ll();
+    singly_ll_set_comparison_fn(route->primary_nh_list, instance_node_comparison_fn);
+    route->backup_nh_list = init_singly_ll();
+    singly_ll_set_comparison_fn(route->backup_nh_list, instance_node_comparison_fn);
+    route->like_prefix_list = init_singly_ll();
+    return route;
+}
+
+void
+route_set_key(routes_t *route, char *ipv4_addr, char mask){
+
+    assert(route);
+    assert(ipv4_addr);
+
+    strncpy(route->rt_key.prefix, ipv4_addr, strlen(ipv4_addr));
+    route->rt_key.prefix[PREFIX_LEN] = '\0';
+    route->rt_key.mask = mask;
+}
+
+void
+free_route(routes_t *route){
+
+    if(!route)  return;
+    
+    route->hosting_node = 0;
+    
+    ROUTE_FLUSH_PRIMARY_NH_LIST(route);
+    free(route->primary_nh_list);
+    route->primary_nh_list = 0;
+
+    ROUTE_FLUSH_BACKUP_NH_LIST(route);
+    free(route->backup_nh_list);
+    route->backup_nh_list = 0;
+
+    delete_singly_ll(route->like_prefix_list);
+    free(route->like_prefix_list);
+    route->like_prefix_list = NULL;
+}
 /*Routine to build the routing table*/
 
+
+/*-----------------------------------------------------------------------------
+ *  
+ *-----------------------------------------------------------------------------*/
 static void
 update_route(spf_info_t *spf_info, 
              spf_result_t *result, 
@@ -57,6 +110,7 @@ update_route(spf_info_t *spf_info,
         return;
     }
 
+        
 
 }
 
@@ -92,7 +146,10 @@ void
 build_routing_table(spf_info_t *spf_info,
                     node_t *spf_root, LEVEL level){
 
-    singly_ll_node_t *list_node = NULL;
+    singly_ll_node_t *list_node = NULL,
+                     *prefix_list_node = NULL;
+
+    prefix_t *prefix = NULL;
     spf_result_t *result = NULL;
 
     sprintf(LOG, "Entered ... spf_root : %s, Level : %u", spf_root->node_name, level); TRACE();
@@ -109,26 +166,40 @@ build_routing_table(spf_info_t *spf_info,
          * router is connected to L1L2 router with in its own area, then
          * computing router should install the default gw in RIB*/
          
-        if(level == LEVEL1                                         &&       /*The current run us LEVEL1*/
-           !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)   &&       /*By default, router should process Attached Bit*/
-           spf_info->spff_multi_area == 0                          &&       /*computing router L1-only router. For L1-only router this bit is never set*/
-           result->node != NULL                                    &&       /*first fragment of the node whose result is being processed exist*/
-           result->node->attached){                                         /*Router being inspected is L1L2 router*/
+         if(level == LEVEL1                                              &&       /*The current run us LEVEL1*/
+                 !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)   &&       /*By default, router should process Attached Bit*/
+                 spf_info->spff_multi_area == 0                          &&       /*computing router L1-only router. For L1-only router this bit is never set*/
+                 result->node != NULL                                    &&       /*first fragment of the node whose result is being processed exist*/
+                 result->node->attached){                                         /*Router being inspected is L1L2 router*/
 
-                /* Installation of Default route in L1-only router RIB*/
+             /* Installation of Default route in L1-only router RIB*/
 
-                common_pfx_key_t common_pfx;
-                memset(&common_pfx, 0, sizeof(common_pfx_key_t));
-                if(node_local_prefix_search(result->node, level, common_pfx.prefix, common_pfx.mask) == NULL){
-                
-                /* Default prefix 0.0.0.0/0 is not advertised by 'node' which is L1L2 router*/
-                    sprintf(LOG, "Default prefix 0.0.0.0/0 not found in L1L2 node %s prefix db for %s", 
-                                result->node->node_name, get_str_level(level));  TRACE();
-                    prefix_t *prefix = calloc(1, sizeof(prefix_t));
-                    fill_prefix(prefix, &common_pfx, 0, FALSE);
-                    update_route(spf_info, result, prefix, level, FALSE);
-                }
+             common_pfx_key_t common_pfx;
+             memset(&common_pfx, 0, sizeof(common_pfx_key_t));
+             if(node_local_prefix_search(result->node, level, common_pfx.prefix, common_pfx.mask) == NULL){
+
+                 /* Default prefix 0.0.0.0/0 is not advertised by 'node' which is L1L2 router*/
+                 sprintf(LOG, "Default prefix 0.0.0.0/0 not found in L1L2 node %s prefix db for %s", 
+                         result->node->node_name, get_str_level(level));  TRACE();
+                 prefix_t *prefix = calloc(1, sizeof(prefix_t));
+                 fill_prefix(prefix, &common_pfx, 0, FALSE);
+                 update_route(spf_info, result, prefix, level, FALSE);
+             }
+         }
+
+        /*Iterate over all the prefixes of result->node for level 'level'*/
+        
+        prefix = NULL;
+        
+        ITERATE_LIST(GET_NODE_PREFIX_LIST(result->node, level), prefix_list_node){
+        
+            prefix = (prefix_t *)prefix_list_node->data;  
+            update_route(spf_info, result, prefix, level, TRUE);
         }
+
+        /*Add alias routes here
+         * */
+
     } /*ITERATE_LIST ENDS*/
 }
 
