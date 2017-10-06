@@ -193,8 +193,6 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
 q_space_set_t
 compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
-    /* Need to check how to compute Q space*/
-
     node_t *S = NULL, *E = NULL;
     singly_ll_node_t *list_node1 = NULL,
                      *list_node2 = NULL;

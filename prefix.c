@@ -124,6 +124,7 @@ leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL t
     SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 
     singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, to_level), leaked_prefix);
+    leaked_prefix->hosting_node = node;
 }
 
 /*We assume the caller has zeroes out the memory of the prefix*/

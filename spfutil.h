@@ -60,5 +60,8 @@ spf_determine_multi_area_attachment(spf_info_t *spf_info,
         unsigned int member_offset = (unsigned int)&((structure *)0)->member_name;  \
         return (structure *)(member_addr - member_offset);                          \
     }
-    
+
+void
+apply_mask(char *prefix, char mask, char *str_prefix);
+
 #endif /* __SPFUTIL__ */ 

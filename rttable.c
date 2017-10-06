@@ -36,6 +36,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include "bitsop.h"
+#include "logging.h"
+#include "spfutil.h"
 
 extern instance_t *instance;
 
@@ -71,24 +73,6 @@ set_backup_nh(rttable_entry_t *rt_entry, nh_t *bck_nh){
 
 }
 
-/*str_prefix is O/P.
- *char str_prefix[16]
- * */
-
-void
-apply_mask(char *prefix, char mask, char *str_prefix){
-
-   unsigned int binary_prefix = 0, i = 0;
-   inet_pton(AF_INET, prefix, &binary_prefix);
-   binary_prefix = htonl(binary_prefix); 
-   for(; i < (32 - mask); i++)
-       UNSET_BIT(binary_prefix, i);
-   binary_prefix = htonl(binary_prefix);
-   inet_ntop(AF_INET, &binary_prefix, str_prefix, 16);
-   str_prefix[15] = '\0';
-}
-
-
 rttable_entry_t *
 rt_route_lookup(rttable *rttable, char *prefix, char mask){
 
@@ -109,12 +93,15 @@ rt_route_lookup(rttable *rttable, char *prefix, char mask){
 int
 rt_route_install(rttable *rttable, rttable_entry_t *rt_entry){
 
-    apply_mask(rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->dest.prefix);
+    //apply_mask(rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->dest.prefix);
 
+    /*
     if(rt_route_lookup(rttable, rt_entry->dest.prefix, rt_entry->dest.mask)){
         printf("%s() : Error : Attempt to add Duplicate route : %s/%d", __FUNCTION__, rt_entry->dest.prefix, rt_entry->dest.mask);
         return -1;
     }
+    */
+    sprintf(LOG, "Added route %s/%d to Routing table, nh_name = %s", rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->primary_nh[0].nh_name); TRACE();
     singly_ll_add_node_by_val(GET_RT_TABLE(rttable), rt_entry);
     return 1;
 }
@@ -271,4 +258,47 @@ show_traceroute(char *node_name, char *dst_prefix){
         node_name = rt_entry->primary_nh[0].nh_name;
     }
     while(1);
+}
+
+/* Store only prefix related info in rttable_entry_t*/
+void
+prepare_new_rt_entry_template(rttable_entry_t *rt_entry, 
+                               char *prefix, char mask){
+
+    strncpy(rt_entry->dest.prefix, prefix, PREFIX_LEN + 1);
+    rt_entry->dest.prefix[PREFIX_LEN] = '\0';
+    rt_entry->dest.mask = mask;
+    
+    /*Rest of the members of rt_entry will be filled in update_route*/
+}
+
+
+void
+prepare_new_nxt_hop_template(node_t *computing_node, 
+                             node_t *nxt_hop_node, 
+                             nh_t *nh_template,
+                             LEVEL level){
+
+    assert(nh_template);
+    assert(nxt_hop_node);
+    assert(computing_node);
+
+    edge_t *edge = NULL;
+    edge_end_t *oif = NULL, 
+               *remote_end = NULL;
+
+    nh_template->nh_type = IPNH; /*We have not implemented yet LSP NH functionality*/
+    oif = get_min_oif(computing_node, nxt_hop_node, level);
+
+    assert(oif);
+
+    strncpy(nh_template->oif, oif->intf_name, IF_NAME_SIZE);
+    nh_template->oif[IF_NAME_SIZE] = '\0';
+    strncpy(nh_template->nh_name, nxt_hop_node->node_name, NODE_NAME_SIZE);
+    nh_template->nh_name[NODE_NAME_SIZE] = '\0';
+
+    edge = GET_EGDE_PTR_FROM_EDGE_END(oif);
+    remote_end = &edge->to;
+    strncpy(nh_template->gwip, remote_end->prefix[level]->prefix, PREFIX_LEN + 1);
+    nh_template->gwip[PREFIX_LEN] = '\0';
 }

@@ -36,6 +36,14 @@
 #include "instance.h"
 
 /*Routine to build the routing table*/
+typedef enum RTE_INSTALL_STATUS{
+
+    RTE_STALE,
+    RTE_ADDED,
+    RTE_UPDATED,
+    RTE_CHANGED,
+    RTE_NO_CHANGE
+} route_intall_status; 
 
 typedef struct routes_{
 
@@ -51,12 +59,10 @@ typedef struct routes_{
     ll_t *primary_nh_list;/*Taking it as a list to accomodate ECMP*/
     ll_t *backup_nh_list;
 
+    /*same subnet prefix lists*/
     ll_t *like_prefix_list;
-    
-    /*prefix plugins*/
-    singly_ll_node_t rt_patnode;/*plugin into spf_info->routes*/
-    singly_ll_node_t deferred_route_node;/*plugin into spf_info->deferred_routes*/
-    singly_ll_node_t priority_route_node;/*plugin into spf_into priority_routes*/
+   
+    route_intall_status install_state; 
 } routes_t;
 
 routes_t *route_malloc();
@@ -68,16 +74,24 @@ void
 free_route(routes_t *route);
 
 #define ROUTE_ADD_PRIMARY_NH(routeptr, nodeptr)     \
-    singly_ll_add_node_by_val(routeptr->primary_nh_list, nodeptr);
+    singly_ll_add_node_by_val(routeptr->primary_nh_list, nodeptr)
 
 #define ROUTE_FLUSH_PRIMARY_NH_LIST(routeptr)       \
-    delete_singly_ll(routeptr->primary_nh_list);
+    delete_singly_ll(routeptr->primary_nh_list)
 
 #define ROUTE_ADD_BACKUP_NH(routeptr, nodeptr)      \
     singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr);
 
 #define ROUTE_FLUSH_BACKUP_NH_LIST(routeptr)   \
-    delete_singly_ll(routeptr->backup_nh_list);
+    delete_singly_ll(routeptr->backup_nh_list)
+
+#define ROUTE_ADD_LIKE_PREFIX_LIST(routeptr, prefixptr) \
+    singly_ll_add_node_by_val(routeptr->like_prefix_list, prefixptr)
+
+#define ROUTE_ADD(spfinfo_ptr, routeptr)    \
+    singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
+    singly_ll_add_node_by_val(spfinfo_ptr->priority_routes_list, routeptr)
+
 
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
@@ -91,4 +105,8 @@ build_routing_table(spf_info_t *spf_info,
 void
 start_route_installation(spf_info_t *spf_info, 
                          LEVEL level);
+
+int
+route_search_comparison_fn(void * route, void *key);
+
 #endif /* __ROUTES__ */

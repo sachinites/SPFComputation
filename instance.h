@@ -71,6 +71,19 @@ typedef struct _node_t{
     char traversing_bit;                                    /*This bit is only used to traverse the instance, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
 } node_t;
 
+static inline unsigned int 
+next_hop_count(node_t **nh_array){
+
+    unsigned int i = 0;
+    for(; i < MAX_NXT_HOPS; i++){
+
+        if(nh_array[i])
+            continue;
+        break;
+    }
+    return i;
+}
+
 struct edge_end_{
     node_t *node;
     char intf_name[IF_NAME_SIZE];

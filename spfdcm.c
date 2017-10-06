@@ -413,7 +413,7 @@ config_static_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_
             rt_entry->version = 0;
             rt_entry->cost = 0;
             rt_entry->primary_nh_count = 1;
-            rt_entry->primary_nh[0].nh_type = ipnh;
+            rt_entry->primary_nh[0].nh_type = IPNH;
             strncpy(rt_entry->primary_nh[0].oif, intf_name, IF_NAME_SIZE);
             rt_entry->primary_nh[0].oif[IF_NAME_SIZE] = '\0'; 
             strncpy(rt_entry->primary_nh[0].nh_name, nh_name, NODE_NAME_SIZE);
@@ -879,7 +879,7 @@ dump_node_info(node_t *node){
         ITERATE_LIST(GET_NODE_PREFIX_LIST(node, level), list_node){
             count++;
             prefix = (prefix_t *)list_node->data;        
-            printf("%s/%u%s     ", prefix->prefix, prefix->mask, IS_BIT_SET(prefix->prefix_flags, PREFIX_DOWNBIT_FLAG) ? "*": "");
+            printf("%s/%u%s(%s)     ", prefix->prefix, prefix->mask, IS_BIT_SET(prefix->prefix_flags, PREFIX_DOWNBIT_FLAG) ? "*": "", prefix->hosting_node->node_name);
             if(count % 5 == 0) printf("\n");
         }
         printf("\n"); 

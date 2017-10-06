@@ -87,8 +87,8 @@ typedef enum{
 
 typedef enum nh_type{
 
-    ipnh,
-    lspnh
+    IPNH,
+    LSPNH
 } nh_type_t;
 
 typedef enum{

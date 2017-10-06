@@ -32,6 +32,8 @@
 
 #include "spfutil.h"
 #include "logging.h"
+#include <arpa/inet.h>
+#include "bitsop.h"
 
 extern instance_t *instance;
 
@@ -116,3 +118,17 @@ spf_determine_multi_area_attachment(spf_info_t *spf_info,
         sprintf(LOG, "spf_root : %s is not L2 Attached with remote Area", spf_root->node_name); TRACE();
     }
 }
+
+void
+apply_mask(char *prefix, char mask, char *str_prefix){
+
+    unsigned int binary_prefix = 0, i = 0;
+    inet_pton(AF_INET, prefix, &binary_prefix);
+    binary_prefix = htonl(binary_prefix);
+    for(; i < (32 - mask); i++)
+        UNSET_BIT(binary_prefix, i);
+    binary_prefix = htonl(binary_prefix);
+    inet_ntop(AF_INET, &binary_prefix, str_prefix, 16);
+    str_prefix[15] = '\0';
+}
+

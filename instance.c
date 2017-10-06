@@ -67,10 +67,17 @@ create_new_node(instance_t *instance, char *node_name, AREA area){
     }
 
     node->spf_result = NULL;
-    node->spf_info.routes = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
-    node->spf_info.priority_routes = init_singly_ll();
-    node->spf_info.deferred_routes = init_singly_ll();
+    node->spf_info.routes_list = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
+    singly_ll_set_comparison_fn(node->spf_info.routes_list, route_search_comparison_fn);
+
+    node->spf_info.priority_routes_list = init_singly_ll();
+    singly_ll_set_comparison_fn(node->spf_info.priority_routes_list, route_search_comparison_fn);
+
+    node->spf_info.deferred_routes_list = init_singly_ll();
+    singly_ll_set_comparison_fn(node->spf_info.deferred_routes_list, route_search_comparison_fn);
+
     node->spf_info.rttable = init_rttable("inet.0");
+    node->spf_info.node = node; /*back ptr*/
     add_node_to_owning_instance(instance, node);
     return node;    
 }
@@ -115,6 +122,7 @@ create_new_edge(char *from_ifname,
     edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;
     edge->status    = 1;
     edge->inv_edge  = NULL;
+   
     return edge;
 }
 
@@ -138,6 +146,7 @@ attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
             return;
 
         singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level_it), prefix);
+        prefix->hosting_node = node;
         prefix->ref_count++;
     }
 }
@@ -386,6 +395,7 @@ attach_prefix_on_node(node_t *node,
     _prefix = create_new_prefix(prefix, mask);
     _prefix->metric = metric;
     singly_ll_add_node_by_val(node->local_prefix_list[level], (void *)_prefix);
+    _prefix->hosting_node = node;
 }
 
 prefix_t *

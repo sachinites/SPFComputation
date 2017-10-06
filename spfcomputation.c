@@ -41,12 +41,26 @@
 
 extern instance_t *instance;
 
+/*Comparison function for routes searching in spf_info lists*/
+/*return 0 or failure, 1 on success*/
+
+int
+route_search_comparison_fn(void * route, void *key){
+
+    common_pfx_key_t *_key = (common_pfx_key_t *)key;
+    routes_t *_route = (routes_t *)route;
+
+    if(strncmp(_key->prefix, _route->rt_key.prefix, PREFIX_LEN + 1) == 0 &&
+        _key->mask == _route->rt_key.mask)
+        return 1;
+
+    return 0;
+}
+
+
 /* Inverse the topology wrt to level*/
 void
 inverse_topology(instance_t *instance, LEVEL level){
-
-    /*Inverse the topology graph, inverse the edge directions
-     * between all pair of nodes.*/
 
     singly_ll_node_t* list_node = NULL;
     node_t *node = NULL;
@@ -83,7 +97,6 @@ inverse_topology(instance_t *instance, LEVEL level){
             edge->metric[level] = edge->inv_edge->metric[level];
             edge->inv_edge->metric[level] = edge_metric;
             edge->inv_edge->inv_edge = NULL;
-             
         }
     }
 
@@ -146,9 +159,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
         }
 
-
         /*Iterare over all the nbrs of Candidate node*/
-
 
         ITERATE_NODE_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
             sprintf(LOG, "Processing Nbr : %s", nbr_node->node_name); TRACE();
@@ -169,7 +180,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 sprintf(LOG, "Old Metric : %u, New Metric : %u, Better Next Hop", 
                         nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
                 TRACE();
-
                 
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
                 if(is_nh_list_empty(&candidate_node->next_hop[level][0]) &&
@@ -178,8 +188,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     sprintf(LOG, "case 1 if My own List is empty, and nbr is Pseuodnode , do nothing"); TRACE();
                 }
 
-                
-                
                 /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
                 else if(is_nh_list_empty(&candidate_node->next_hop[level][0]) &&
                         nbr_node->node_type[level] == NON_PSEUDONODE){
@@ -190,8 +198,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     copy_nh_list(&nbr_node->direct_next_hop[level][0], &nbr_node->next_hop[level][0]);
                 }
 
-                
-                
                 /*case 3 : if My own List is not empty, then nbr should inherit my next hop list*/
                 else if(!is_nh_list_empty(&candidate_node->next_hop[level][0])){
 

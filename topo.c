@@ -243,7 +243,7 @@ build_ring_topo(){
     insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("40.1.1.1", 30), create_new_prefix("40.1.1.2", 30), LEVEL1)),
                                 C, B, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("50.1.1.1", 30), create_new_prefix("10.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("50.1.1.1", 30), create_new_prefix("50.1.1.2", 30), LEVEL1)),
                                 B, A, BIDIRECTIONAL);
     
     insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, create_new_prefix("60.1.1.1", 30), create_new_prefix("60.1.1.2", 30), LEVEL1)),
