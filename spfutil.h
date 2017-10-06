@@ -38,7 +38,6 @@
 #define IS_LEVEL_SET(input_level, level)    ((input_level) & (level))
 #define SET_LEVEL(input_level, level)       ((input_level) |= (level))
 
-
 void
 copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]);
 

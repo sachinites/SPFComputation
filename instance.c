@@ -64,6 +64,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area){
 
         node->spf_run_result[level] = init_singly_ll();
         node->spf_info.spf_level_info[level].version = 0;
+        node->spf_info.spf_level_info[level].node = node; /*back ptr*/
     }
 
     node->spf_result = NULL;
@@ -77,7 +78,6 @@ create_new_node(instance_t *instance, char *node_name, AREA area){
     singly_ll_set_comparison_fn(node->spf_info.deferred_routes_list, route_search_comparison_fn);
 
     node->spf_info.rttable = init_rttable("inet.0");
-    node->spf_info.node = node; /*back ptr*/
     add_node_to_owning_instance(instance, node);
     return node;    
 }
@@ -420,7 +420,7 @@ get_min_oif(node_t *node, node_t *node_nbr, LEVEL level){
     unsigned int i = 0, min_metric = 0xFFFFFFFF;
     edge_end_t *edge_end = NULL, *min_edge_oif = NULL;
     edge_t *edge = NULL;
-    
+   
     for(; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
         if(!edge_end || (edge_end->dirn != OUTGOING))   

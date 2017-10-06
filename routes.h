@@ -40,7 +40,7 @@ typedef enum RTE_INSTALL_STATUS{
 
     RTE_STALE,
     RTE_ADDED,
-    RTE_UPDATED,
+    RTE_UPDATED, /*Updated route means, route has been re-calculated in subsequent spf run, but may or may not be changed*/
     RTE_CHANGED,
     RTE_NO_CHANGE
 } route_intall_status; 
@@ -91,6 +91,9 @@ free_route(routes_t *route);
 #define ROUTE_ADD(spfinfo_ptr, routeptr)    \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
     singly_ll_add_node_by_val(spfinfo_ptr->priority_routes_list, routeptr)
+
+#define ROUTE_GET_PR_NH_CNT(routeptr)   \
+    GET_NODE_COUNT_SINGLY_LL(routeptr->primary_nh_list)
 
 
 void

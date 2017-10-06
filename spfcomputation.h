@@ -37,6 +37,7 @@
  *  Do not #include graph.h in this file, as it will create circular dependency.
  *  Keep this file independant of graph.h using forward declaration
  *-----------------------------------------------------------------------------*/
+typedef struct _node_t node_t;
 
 typedef struct spf_result_{
 
@@ -49,6 +50,7 @@ typedef struct spf_result_{
 
 typedef struct spf_level_info_{
 
+    node_t *node;
     unsigned int version; /* Version of spf run on this level*/
 } spf_level_info_t;
 
@@ -68,7 +70,6 @@ typedef struct spf_info_{
 
     /*Routing table*/
     rttable *rttable;
-    node_t *node;
 } spf_info_t;
 
 typedef struct _node_t node_t;
@@ -76,8 +77,8 @@ typedef struct _node_t node_t;
 
 typedef enum {
 
-    SKELETON_RUN,
-    FULL_RUN
+    SKELETON_RUN,/*To compute LFA and RLFAs*/
+    FULL_RUN     /*To compute Main routes*/
 } spf_type_t;
 
 
@@ -88,4 +89,5 @@ spf_computation(node_t *spf_root,
 
 int
 route_search_comparison_fn(void * route, void *key);
+
 #endif /* __SPFCOMPUTATION__ */

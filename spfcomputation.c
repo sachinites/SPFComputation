@@ -305,6 +305,21 @@ spf_init(candidate_tree_t *ctree,
        ITERATE_NODE_NBRS_END;
 }
 
+static void
+spf_clear_result(node_t *spf_root, LEVEL level){
+
+   singly_ll_node_t *list_node = NULL;
+   spf_result_t *result = NULL;
+
+   ITERATE_LIST(spf_root->spf_run_result[level], list_node){
+
+       result = list_node->data;
+       free(result);
+       result = NULL;    
+   }
+   delete_singly_ll(spf_root->spf_run_result[level]);
+}
+
 void
 spf_computation(node_t *spf_root, 
                 spf_info_t *spf_info, 
@@ -312,13 +327,13 @@ spf_computation(node_t *spf_root,
 
     RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
-    /*Drain off results list for level */
     if(level != LEVEL1 && level != LEVEL2){
         printf("%s() : Error : invalid level specified\n", __FUNCTION__);
         return;
     }
 
-    delete_singly_ll(spf_root->spf_run_result[level]); 
+    /*Drain off results list for level */
+    spf_clear_result(spf_root, level);
 
     spf_init(&instance->ctree, spf_root, level);
 
@@ -326,8 +341,6 @@ spf_computation(node_t *spf_root,
         spf_info->spf_level_info[level].version++;
 
     run_dijkastra(spf_root, level, &instance->ctree);
-
-    //FREE_CANDIDATE_TREE_INTERNALS(&spf_info->ctree);
 
     /* Route Building After SPF computation*/
     /*We dont buiuld routing table for reverse spf run*/

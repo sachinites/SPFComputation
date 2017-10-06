@@ -93,15 +93,8 @@ rt_route_lookup(rttable *rttable, char *prefix, char mask){
 int
 rt_route_install(rttable *rttable, rttable_entry_t *rt_entry){
 
-    //apply_mask(rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->dest.prefix);
-
-    /*
-    if(rt_route_lookup(rttable, rt_entry->dest.prefix, rt_entry->dest.mask)){
-        printf("%s() : Error : Attempt to add Duplicate route : %s/%d", __FUNCTION__, rt_entry->dest.prefix, rt_entry->dest.mask);
-        return -1;
-    }
-    */
-    sprintf(LOG, "Added route %s/%d to Routing table, nh_name = %s", rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->primary_nh[0].nh_name); TRACE();
+    sprintf(LOG, "Added route %s/%d to Routing table for level%d, nh_name = %s", 
+        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level, rt_entry->primary_nh[0].nh_name); TRACE();
     singly_ll_add_node_by_val(GET_RT_TABLE(rttable), rt_entry);
     return 1;
 }
@@ -146,6 +139,7 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
     rt_entry1->dest.mask   = rt_entry->dest.mask;
     rt_entry1->version     = rt_entry->version;
     rt_entry1->cost        = rt_entry->cost;
+    rt_entry1->level       = rt_entry->level;
     rt_entry1->primary_nh_count = rt_entry->primary_nh_count;
     
     for(; i < MAX_NXT_HOPS; i++){
@@ -208,17 +202,17 @@ show_routing_table(rttable *rttable){
     char subnet[PREFIX_LEN_WITH_MASK + 1];
 
     printf("Table %s\n", rttable->table_name);
-    printf("Destination           Version        Cost         Gateway             Nxt-Hop        OIF      Backup\n");
+    printf("Destination           Version        Cost       Lvl      Gateway             Nxt-Hop        OIF      Backup\n");
 
     ITERATE_LIST(GET_RT_TABLE(rttable), list_node){
 
         rt_entry = (rttable_entry_t *)list_node->data;
         memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
         sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
-        printf("%-20s      %-4d        %-6d     %-20s    %-8s   %-22s      %s\n",
-                subnet, rt_entry->version,  rt_entry->cost,
-                rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name, rt_entry->primary_nh[0].oif, 
-                rt_entry->backup_nh.nh_name);
+        printf("%-20s      %-4d        %-6d     %-4d    %-20s    %-8s   %-22s      %s\n",
+                subnet, rt_entry->version, rt_entry->cost,
+                rt_entry->level, rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name, 
+                rt_entry->primary_nh[0].oif, rt_entry->backup_nh.nh_name);
     }
 }
 
@@ -288,15 +282,19 @@ prepare_new_nxt_hop_template(node_t *computing_node,
                *remote_end = NULL;
 
     nh_template->nh_type = IPNH; /*We have not implemented yet LSP NH functionality*/
-    oif = get_min_oif(computing_node, nxt_hop_node, level);
 
-    assert(oif);
-
-    strncpy(nh_template->oif, oif->intf_name, IF_NAME_SIZE);
-    nh_template->oif[IF_NAME_SIZE] = '\0';
     strncpy(nh_template->nh_name, nxt_hop_node->node_name, NODE_NAME_SIZE);
-    nh_template->nh_name[NODE_NAME_SIZE] = '\0';
-
+    nh_template->nh_name[NODE_NAME_SIZE - 1] = '\0';
+    
+    /*oif can be NULL if computing_node == nxt_hop_node*/
+    oif = get_min_oif(computing_node, nxt_hop_node, level);
+    if(!oif){
+        strncpy(nh_template->gwip, "Direct" , PREFIX_LEN + 1);
+        return;
+    }
+    
+    strncpy(nh_template->oif, oif->intf_name, IF_NAME_SIZE);
+    nh_template->oif[IF_NAME_SIZE -1] = '\0';
     edge = GET_EGDE_PTR_FROM_EDGE_END(oif);
     remote_end = &edge->to;
     strncpy(nh_template->gwip, remote_end->prefix[level]->prefix, PREFIX_LEN + 1);

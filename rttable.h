@@ -51,6 +51,7 @@ typedef struct rttable_entry_{
     } dest;
 
     int version; 
+    LEVEL level;
     int cost; 
     int primary_nh_count; 
     nh_t primary_nh[MAX_NXT_HOPS];
