@@ -337,16 +337,27 @@ static int
 instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     int cmd_code = -1;
+    int mask = 0;
     node_t *node = NULL;
     tlv_struct_t *tlv = NULL;
     unsigned int i = 0;
     char *node_name = NULL;
-        
+    LEVEL level = MAX_LEVEL;
+    char *prefix = NULL;
+    
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
     
     TLV_LOOP(tlv_buf, tlv, i){
-        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) == 0)
             node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "prefix", strlen("prefix")) == 0)
+            prefix = tlv->value;
+        else if(strncmp(tlv->leaf_id, "mask", strlen("mask")) == 0)
+            mask = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) == 0)
+            level = atoi(tlv->value);
+        else
+            assert(0);
     }
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
@@ -354,15 +365,20 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     switch(cmd_code){
         case CMDCODE_INSTANCE_IGNOREBIT_ENABLE:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->instance_flags, IGNOREATTACHED) :
-                    UNSET_BIT(node->instance_flags, IGNOREATTACHED);
-        break;
+                UNSET_BIT(node->instance_flags, IGNOREATTACHED);
+            break;
         case CMDCODE_INSTANCE_ATTACHBIT_ENABLE:
             node->attached = (enable_or_disable == CONFIG_ENABLE) ? 1 : 0;
-            break; 
+            break;
+        case CMDCODE_NODE_ATTACH_PREFIX:
+            if(enable_or_disable == CONFIG_ENABLE)
+                attach_prefix_on_node(node, prefix, (unsigned char)mask, level, 0);
+            else
+                deattach_prefix_on_node(node, prefix, (unsigned char)mask, level, 0);
+            break;       
         default:
             printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, cmd_code);
             break;
-      
     }
     return 0;
 }
@@ -758,6 +774,34 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name_ignorebit, &config_node_node_name_ignorebit_enable);
     set_param_cmd_code(&config_node_node_name_ignorebit_enable, CMDCODE_INSTANCE_IGNOREBIT_ENABLE);
 
+    /*config node <node name> attach prefix <prefix> <mask> level <level no>*/
+    static param_t config_node_node_name_attach;
+    init_param(&config_node_node_name_attach, CMD, "attach", 0, 0, INVALID, 0, "'attach' the prefix");
+    libcli_register_param(&config_node_node_name, &config_node_node_name_attach);
+
+    static param_t config_node_node_name_attach_prefix;
+    init_param(&config_node_node_name_attach_prefix, CMD, "prefix", 0, 0, INVALID, 0, "prefix");
+    libcli_register_param(&config_node_node_name_attach, &config_node_node_name_attach_prefix);
+
+    static param_t config_node_node_name_attach_prefix_prefix;
+    init_param(&config_node_node_name_attach_prefix_prefix, LEAF, 0, 0, 0, IPV4, "prefix", "Ipv4 prefix without mask");
+    libcli_register_param(&config_node_node_name_attach_prefix, &config_node_node_name_attach_prefix_prefix);
+
+    static param_t config_node_node_name_attach_prefix_prefix_mask;
+    init_param(&config_node_node_name_attach_prefix_prefix_mask, LEAF, 0, 0, validate_ipv4_mask, INT, "mask", "mask (0-32)");
+    libcli_register_param(&config_node_node_name_attach_prefix_prefix, &config_node_node_name_attach_prefix_prefix_mask);
+
+    static param_t config_node_node_name_attach_prefix_prefix_mask_level;
+    init_param(&config_node_node_name_attach_prefix_prefix_mask_level, CMD, "level", 0, 0, INVALID, 0, "level");
+    libcli_register_param(&config_node_node_name_attach_prefix_prefix_mask, &config_node_node_name_attach_prefix_prefix_mask_level);
+
+    static param_t config_node_node_name_attach_prefix_prefix_mask_level_level;
+    init_param(&config_node_node_name_attach_prefix_prefix_mask_level_level, LEAF, 0, 
+                    instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
+    libcli_register_param(&config_node_node_name_attach_prefix_prefix_mask_level,
+                    &config_node_node_name_attach_prefix_prefix_mask_level_level);
+    set_param_cmd_code(&config_node_node_name_attach_prefix_prefix_mask_level_level, CMDCODE_NODE_ATTACH_PREFIX);
+    
     /* config node <node-name> [no] attachbit enable*/    
     static param_t config_node_node_name_attachbit;
     init_param(&config_node_node_name_attachbit, CMD, "attachbit", 0, 0, INVALID, 0, "Set / Unset Attach bit");

@@ -150,9 +150,16 @@ traverse_instance(instance_t *instance, void *(*processing_fn_ptr)(node_t *), LE
 edge_t *
 get_my_pseudonode_nbr(node_t *node, LEVEL level);
 
-/*Fn to attach non interface specific prefix on the router*/
+/*Fn to attach/dettach non interface specific prefix on the router*/
 void
 attach_prefix_on_node(node_t *node, 
+                      char *prefix, 
+                      unsigned char mask,
+                      LEVEL level,
+                      unsigned int metric);
+
+void
+deattach_prefix_on_node(node_t *node, 
                       char *prefix, 
                       unsigned char mask,
                       LEVEL level,

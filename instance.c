@@ -394,8 +394,33 @@ attach_prefix_on_node(node_t *node,
 
     _prefix = create_new_prefix(prefix, mask);
     _prefix->metric = metric;
-    singly_ll_add_node_by_val(node->local_prefix_list[level], (void *)_prefix);
+    
+    singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level), (void *)_prefix);
     _prefix->hosting_node = node;
+}
+
+void
+deattach_prefix_on_node(node_t *node,
+        char *prefix,
+        unsigned char mask,
+        LEVEL level,
+        unsigned int metric){
+
+    assert(prefix);
+    assert(level == LEVEL1 || level == LEVEL2);
+
+    common_pfx_key_t key;
+    memset(&key, 0, sizeof(common_pfx_key_t));
+    strncpy(key.prefix, prefix, strlen(prefix));
+    key.mask = mask;
+    
+    prefix_t *_prefix = singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, level), &key);
+    if(!_prefix)
+        return;
+
+    singly_ll_remove_node_by_dataptr(GET_NODE_PREFIX_LIST(node, level), _prefix);
+    free(_prefix);
+    _prefix = NULL;
 }
 
 prefix_t *

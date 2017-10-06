@@ -471,6 +471,8 @@ start_route_installation(spf_info_t *spf_info,
     delete_stale_routes(spf_info, level);
     sprintf(LOG, "SPF Stats : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
             rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
+    printf("SPF Stats : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
+            rt_added, rt_removed, rt_updated, rt_no_change);
 }
 
 void
@@ -575,8 +577,8 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
         spf_determine_multi_area_attachment(spf_info, spf_root);  
         /*Schedule level 1 spf run, just to make sure L1 routes are up
          *      * to date before building L2 routes*/
-        sprintf(LOG, "L2 spf run, triggering L1 SPF run first before building L2 routes"); TRACE();
-        spf_computation(spf_root, spf_info, LEVEL1, FULL_RUN);
+        //sprintf(LOG, "L2 spf run, triggering L1 SPF run first before building L2 routes"); TRACE();
+        //spf_computation(spf_root, spf_info, LEVEL1, FULL_RUN);
     }
 
     build_routing_table(spf_info, spf_root, level);

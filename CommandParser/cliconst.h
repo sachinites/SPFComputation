@@ -27,6 +27,7 @@
 #define CONS_INPUT_BUFFER_SIZE  2048
 #define TERMINAL_NAME_SIZE      CONS_INPUT_BUFFER_SIZE
 #define TLV_MAX_BUFFER_SIZE     1024
+#define POSSIBILITY_ARRAY_SIZE  5
 
 #define DEFAULT_DEVICE_NAME     "root@juniper"
 #define MODE_CHARACTER          "/"
