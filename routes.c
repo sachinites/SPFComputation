@@ -91,6 +91,55 @@ free_route(routes_t *route){
     route->like_prefix_list = NULL;
 }
 
+/* Store only prefix related info in rttable_entry_t*/
+void
+prepare_new_rt_entry_template(rttable_entry_t *rt_entry_template,
+        routes_t *route, unsigned int version){
+
+    strncpy(rt_entry_template->dest.prefix, route->rt_key.prefix, PREFIX_LEN + 1);
+    rt_entry_template->dest.prefix[PREFIX_LEN] = '\0';
+    rt_entry_template->dest.mask = route->rt_key.mask;
+    rt_entry_template->version = version;
+    rt_entry_template->cost = route->spf_metric;
+    rt_entry_template->level = route->level;
+    rt_entry_template->primary_nh_count =
+        next_hop_count(route->hosting_node->next_hop[route->level]);
+}
+
+void
+prepare_new_nxt_hop_template(node_t *computing_node,
+        node_t *nxt_hop_node,
+        nh_t *nh_template,
+        LEVEL level){
+
+    assert(nh_template);
+    assert(nxt_hop_node);
+    assert(computing_node);
+
+    edge_t *edge = NULL;
+    edge_end_t *oif = NULL,
+               *remote_end = NULL;
+
+    nh_template->nh_type = IPNH; /*We have not implemented yet LSP NH functionality*/
+
+    strncpy(nh_template->nh_name, nxt_hop_node->node_name, NODE_NAME_SIZE);
+    nh_template->nh_name[NODE_NAME_SIZE - 1] = '\0';
+
+    /*oif can be NULL if computing_node == nxt_hop_node*/
+    oif = get_min_oif(computing_node, nxt_hop_node, level);
+    if(!oif){
+        strncpy(nh_template->gwip, "Direct" , PREFIX_LEN + 1);
+        return;
+    }
+
+    strncpy(nh_template->oif, oif->intf_name, IF_NAME_SIZE);
+    nh_template->oif[IF_NAME_SIZE -1] = '\0';
+    edge = GET_EGDE_PTR_FROM_EDGE_END(oif);
+    remote_end = &edge->to;
+    strncpy(nh_template->gwip, remote_end->prefix[level]->prefix, PREFIX_LEN + 1);
+    nh_template->gwip[PREFIX_LEN] = '\0';
+}
+
 static inline routes_t *
 search_prefix_in_spf_route_list(spf_info_t *spf_info, 
                                 prefix_t *prefix, LEVEL level){
@@ -177,7 +226,7 @@ is_changed_route(spf_info_t *spf_info,
      *
      * If spf_type == SKELETON_RUN, it means, we are in second phase, that we are 
      * done with computing our main routes and now comuting backups only. Whatever 
-     * backup we have at this point, we will install back only against the corresponging
+     * backup we have at this point, we will install backups only against the corresponging
      * route. 
      */
    
@@ -389,25 +438,18 @@ start_route_installation(spf_info_t *spf_info,
         
         route = list_node->data;
 
+        if(route->level != level)
+            continue;
+             
         if(route->install_state == RTE_NO_CHANGE){
             rt_no_change++;
             continue;   
         }
 
-        if(route->level != level)
-            continue;
-             
         rt_entry_template = GET_NEW_RT_ENTRY();
 
-        prepare_new_rt_entry_template(rt_entry_template, 
-                        route->rt_key.prefix, route->rt_key.mask);
-
-        /*This route is computed in this spf version run*/
-        rt_entry_template->version = spf_info->spf_level_info[level].version; 
-        rt_entry_template->cost = route->spf_metric;
-        rt_entry_template->level = route->level;
-        rt_entry_template->primary_nh_count = 
-                    next_hop_count(route->hosting_node->next_hop[level]);
+        prepare_new_rt_entry_template(rt_entry_template, route,
+                                spf_info->spf_level_info[level].version); 
 
         sprintf(LOG, "route : %s/%u, rt_entry_template->primary_nh_count = %u", 
                 rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
@@ -454,6 +496,7 @@ start_route_installation(spf_info_t *spf_info,
                                     route->rt_key.prefix, route->rt_key.mask, route->level);
                     free(rt_entry_template);
                     rt_entry_template = NULL;
+                    break;
                 }
                 rt_added++;
                 break;
@@ -466,6 +509,8 @@ start_route_installation(spf_info_t *spf_info,
             case RTE_NO_CHANGE:
                 assert(0); /*You cant reach here for unchanged routes*/
                 break;
+            default:
+                assert(0);
         }
     }
     delete_stale_routes(spf_info, level);

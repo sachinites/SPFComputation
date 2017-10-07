@@ -384,7 +384,9 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
 }
 
 static int
-config_static_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+config_static_route_handler(param_t *param, 
+                            ser_buff_t *tlv_buf, 
+                            op_mode enable_or_disable){
 
     node_t *host_node = NULL;
     tlv_struct_t *tlv = NULL;
@@ -909,11 +911,15 @@ dump_node_info(node_t *node){
         if(!edge_end)
             break;
 
-        printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, local edge-end connected node : %s", i, edge_end->intf_name, STR_PREFIX(edge_end->prefix[LEVEL1]), PREFIX_MASK(edge_end->prefix[LEVEL1]), 
-                STR_PREFIX(edge_end->prefix[LEVEL2]), PREFIX_MASK(edge_end->prefix[LEVEL2]), (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
+        printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, local edge-end connected node : %s", 
+            i, edge_end->intf_name, STR_PREFIX(edge_end->prefix[LEVEL1]), PREFIX_MASK(edge_end->prefix[LEVEL1]), 
+            STR_PREFIX(edge_end->prefix[LEVEL2]), PREFIX_MASK(edge_end->prefix[LEVEL2]), 
+            (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
 
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-        printf(", L1 metric = %u, L2 metric = %u, edge level = %s, edge_status = %s\n", edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level), edge->status ? "UP" : "DOWN");
+
+        printf(", L1 metric = %u, L2 metric = %u, edge level = %s, edge_status = %s\n", 
+        edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level), edge->status ? "UP" : "DOWN");
     }
 
     printf("\n");

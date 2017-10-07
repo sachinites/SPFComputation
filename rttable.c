@@ -38,6 +38,8 @@
 #include "bitsop.h"
 #include "logging.h"
 #include "spfutil.h"
+#include "LinkedListApi.h"
+
 
 extern instance_t *instance;
 
@@ -254,49 +256,3 @@ show_traceroute(char *node_name, char *dst_prefix){
     while(1);
 }
 
-/* Store only prefix related info in rttable_entry_t*/
-void
-prepare_new_rt_entry_template(rttable_entry_t *rt_entry, 
-                               char *prefix, char mask){
-
-    strncpy(rt_entry->dest.prefix, prefix, PREFIX_LEN + 1);
-    rt_entry->dest.prefix[PREFIX_LEN] = '\0';
-    rt_entry->dest.mask = mask;
-    
-    /*Rest of the members of rt_entry will be filled in update_route*/
-}
-
-
-void
-prepare_new_nxt_hop_template(node_t *computing_node, 
-                             node_t *nxt_hop_node, 
-                             nh_t *nh_template,
-                             LEVEL level){
-
-    assert(nh_template);
-    assert(nxt_hop_node);
-    assert(computing_node);
-
-    edge_t *edge = NULL;
-    edge_end_t *oif = NULL, 
-               *remote_end = NULL;
-
-    nh_template->nh_type = IPNH; /*We have not implemented yet LSP NH functionality*/
-
-    strncpy(nh_template->nh_name, nxt_hop_node->node_name, NODE_NAME_SIZE);
-    nh_template->nh_name[NODE_NAME_SIZE - 1] = '\0';
-    
-    /*oif can be NULL if computing_node == nxt_hop_node*/
-    oif = get_min_oif(computing_node, nxt_hop_node, level);
-    if(!oif){
-        strncpy(nh_template->gwip, "Direct" , PREFIX_LEN + 1);
-        return;
-    }
-    
-    strncpy(nh_template->oif, oif->intf_name, IF_NAME_SIZE);
-    nh_template->oif[IF_NAME_SIZE -1] = '\0';
-    edge = GET_EGDE_PTR_FROM_EDGE_END(oif);
-    remote_end = &edge->to;
-    strncpy(nh_template->gwip, remote_end->prefix[level]->prefix, PREFIX_LEN + 1);
-    nh_template->gwip[PREFIX_LEN] = '\0';
-}

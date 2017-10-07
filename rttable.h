@@ -34,7 +34,8 @@
 #define __RTTABLE__
 
 #include "instanceconst.h"
-#include "instance.h"
+
+typedef struct LL ll_t;
 
 typedef struct nh_t_{
     nh_type_t nh_type;
@@ -123,18 +124,6 @@ show_routing_table(rttable *rttable);
 
 void
 show_traceroute(char *node_name, char *dst_prefix);
-
-typedef struct prefix_ prefix_t;
-typedef struct _node_t node_t;
-
-void
-prepare_new_rt_entry_template(rttable_entry_t *rt_entry,
-                               char *prefix, char mask);
-void
-prepare_new_nxt_hop_template(node_t *computing_node, /*Computing node running SPF*/
-                             node_t *nxt_hop_node,   /*Nbr node*/
-                             nh_t *nh_template,
-                             LEVEL level);           /*SPF run level*/  
 
 #endif /* __RTTABLE__ */
 

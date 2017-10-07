@@ -112,4 +112,18 @@ start_route_installation(spf_info_t *spf_info,
 int
 route_search_comparison_fn(void * route, void *key);
 
+typedef struct rttable_entry_ rttable_entry_t;
+
+void
+prepare_new_rt_entry_template(rttable_entry_t *rt_entry_template,
+                               routes_t *route, unsigned int version);
+
+typedef struct nh_t_ nh_t;
+
+void
+prepare_new_nxt_hop_template(node_t *computing_node, /*Computing node running SPF*/
+        node_t *nxt_hop_node,   /*Nbr node*/
+        nh_t *nh_template,
+        LEVEL level);           /*SPF run level*/
+
 #endif /* __ROUTES__ */
