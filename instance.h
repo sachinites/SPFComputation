@@ -144,9 +144,6 @@ mark_node_pseudonode(node_t *node, LEVEL level);
 int
 is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level);
 
-void
-traverse_instance(instance_t *instance, void *(*processing_fn_ptr)(node_t *), LEVEL level);
-
 edge_t *
 get_my_pseudonode_nbr(node_t *node, LEVEL level);
 

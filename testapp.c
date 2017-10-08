@@ -33,7 +33,6 @@
 #include "instance.h"
 #include <stdio.h>
 #include "libcli.h"
-#include "spfcomputation.h"
 
 /*import from spfdcm.c*/
 extern void

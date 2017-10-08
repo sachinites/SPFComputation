@@ -90,4 +90,7 @@ spf_computation(node_t *spf_root,
 int
 route_search_comparison_fn(void * route, void *key);
 
+int
+spf_run_result_comparison_fn(void *spf_result_ptr, void *node_ptr);
+
 #endif /* __SPFCOMPUTATION__ */

@@ -57,12 +57,12 @@ typedef struct routes_{
 
     /* NH lists*/
     ll_t *primary_nh_list;/*Taking it as a list to accomodate ECMP*/
-    ll_t *backup_nh_list;
+    ll_t *backup_nh_list; /*List of node_t pointers*/
 
     /*same subnet prefix lists*/
-    ll_t *like_prefix_list;
-   
+    ll_t *like_prefix_list; 
     route_intall_status install_state; 
+
 } routes_t;
 
 routes_t *route_malloc();
@@ -80,7 +80,7 @@ free_route(routes_t *route);
     delete_singly_ll(routeptr->primary_nh_list)
 
 #define ROUTE_ADD_BACKUP_NH(routeptr, nodeptr)      \
-    singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr);
+    singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr)
 
 #define ROUTE_FLUSH_BACKUP_NH_LIST(routeptr)   \
     delete_singly_ll(routeptr->backup_nh_list)
@@ -91,6 +91,10 @@ free_route(routes_t *route);
 #define ROUTE_ADD(spfinfo_ptr, routeptr)    \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
     singly_ll_add_node_by_val(spfinfo_ptr->priority_routes_list, routeptr)
+
+#define ROUTE_DEL(spfinfo_ptr, routeptr)    \
+    singly_ll_delete_node_by_data_ptr(spfinfo_ptr->routes_list, routeptr);  \
+    singly_ll_delete_node_by_data_ptr(spfinfo_ptr->priority_routes_list, routeptr)
 
 #define ROUTE_GET_PR_NH_CNT(routeptr)   \
     GET_NODE_COUNT_SINGLY_LL(routeptr->primary_nh_list)
@@ -125,5 +129,20 @@ prepare_new_nxt_hop_template(node_t *computing_node, /*Computing node running SP
         node_t *nxt_hop_node,   /*Nbr node*/
         nh_t *nh_template,
         LEVEL level);           /*SPF run level*/
+
+void
+add_route(node_t *lsp_reciever, 
+        node_t *lsp_generator,
+        LEVEL info_dist_level,
+        char *prefix, char mask,
+        LEVEL level, unsigned int metric);
+
+void
+delete_route(node_t *lsp_reciever,
+        node_t *lsp_generator,
+        LEVEL info_dist_level,
+        char *prefix, char mask,
+        LEVEL level, unsigned int metric);
+
 
 #endif /* __ROUTES__ */

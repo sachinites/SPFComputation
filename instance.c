@@ -63,11 +63,14 @@ create_new_node(instance_t *instance, char *node_name, AREA area){
                 get_prefix_comparison_fn());
 
         node->spf_run_result[level] = init_singly_ll();
+        singly_ll_set_comparison_fn(node->spf_run_result[level], spf_run_result_comparison_fn);
+
         node->spf_info.spf_level_info[level].version = 0;
         node->spf_info.spf_level_info[level].node = node; /*back ptr*/
     }
 
     node->spf_result = NULL;
+
     node->spf_info.routes_list = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
     singly_ll_set_comparison_fn(node->spf_info.routes_list, route_search_comparison_fn);
 
@@ -311,55 +314,6 @@ is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level){
     return 0;
 }
 
-/* Fn to traverse the Graph in DFS order. processing_fn_ptr is the
- * ptr to the fn used to perform the required processing on current node
- * while traversing the instance*/
-
-static void
-init_instance_traversal(instance_t * instance){
-
-   singly_ll_node_t *list_node = NULL;
-   node_t *node = NULL;
-
-   ITERATE_LIST(instance->instance_node_list, list_node){
-        node = (node_t *)list_node->data;
-        node->traversing_bit = 0;
-   }  
-}
-
-static void
-_traverse_instance(node_t *instance_root, 
-               void *(*processing_fn_ptr)(node_t *), LEVEL level){
-
-    if(!instance_root) 
-        return;
-
-    if(instance_root->traversing_bit == 1)
-        return;
-
-    edge_t *edge = NULL;
-    node_t *nbr_node = NULL;
-
-    processing_fn_ptr(instance_root);
-
-    instance_root->traversing_bit = 1;
-
-    ITERATE_NODE_NBRS_BEGIN(instance_root, nbr_node, edge, level){
-        _traverse_instance(nbr_node, processing_fn_ptr, level);
-    }
-    ITERATE_NODE_NBRS_END;
-}
-
-/*This is the fn to traverse the instance from root. This fn would
- * simulate the flooding behavior*/
-void
-traverse_instance(instance_t *instance, 
-                void *(*processing_fn_ptr)(node_t *), LEVEL level){
-
-    init_instance_traversal(instance); 
-    _traverse_instance(instance->instance_root, processing_fn_ptr, level);
-}
-
 edge_t *
 get_my_pseudonode_nbr(node_t *node, LEVEL level){
 
@@ -394,9 +348,8 @@ attach_prefix_on_node(node_t *node,
 
     _prefix = create_new_prefix(prefix, mask);
     _prefix->metric = metric;
-    
-    singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level), (void *)_prefix);
     _prefix->hosting_node = node;
+    singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level), (void *)_prefix);
 }
 
 void

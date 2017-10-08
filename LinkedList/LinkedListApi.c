@@ -304,3 +304,20 @@ singly_ll_search_by_key(ll_t *ll, void *key){
     }
     return NULL;
 }
+
+void
+singly_ll_delete_node_by_data_ptr(ll_t *ll, void *data){
+
+    if(!data)
+        return;
+
+    singly_ll_node_t *list_node = 
+                singly_ll_get_node_by_data_ptr(ll, data);
+
+    if(!list_node) 
+        return;
+    
+    singly_ll_remove_node(ll, list_node);
+    free(list_node);
+    list_node = NULL;
+}

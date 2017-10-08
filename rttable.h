@@ -125,5 +125,8 @@ show_routing_table(rttable *rttable);
 void
 show_traceroute(char *node_name, char *dst_prefix);
 
+void
+rt_route_remove_backup_nh(rttable *rttable, char *prefix, char mask);
+
 #endif /* __RTTABLE__ */
 

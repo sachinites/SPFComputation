@@ -42,6 +42,8 @@
 #include "spfcmdcodes.h"
 #include "spfclihandler.h"
 #include "rttable.h"
+#include "routes.h"
+#include "advert.h"
 
 extern
 instance_t *instance;
@@ -345,6 +347,8 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     LEVEL level = MAX_LEVEL;
     char *prefix = NULL;
     
+    dist_info_hdr_t dist_info_hdr;
+    memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
     
     TLV_LOOP(tlv_buf, tlv, i){
@@ -370,11 +374,28 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
         case CMDCODE_INSTANCE_ATTACHBIT_ENABLE:
             node->attached = (enable_or_disable == CONFIG_ENABLE) ? 1 : 0;
             break;
-        case CMDCODE_NODE_ATTACH_PREFIX:
+        case CMDCODE_NODE_ADD_PREFIX:
+        {
+            prefix_add_del_advert_t ad_msg;
             if(enable_or_disable == CONFIG_ENABLE)
                 attach_prefix_on_node(node, prefix, (unsigned char)mask, level, 0);
             else
                 deattach_prefix_on_node(node, prefix, (unsigned char)mask, level, 0);
+            
+            memset(&ad_msg, 0, sizeof(prefix_add_del_advert_t));
+            ad_msg.prefix = prefix,
+            ad_msg.mask = mask;
+            ad_msg.metric = 0;
+            ad_msg.prefix_level = level;
+
+            dist_info_hdr.lsp_generator = node;
+            dist_info_hdr.info_dist_level = level;
+            dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
+            dist_info_hdr.advert_id = PREFIX_ADD_DELETE_ADVERT;
+            dist_info_hdr.info_data = (char *)&ad_msg;
+
+            traverse_instance(instance, node, prefix_distribution_routine, &dist_info_hdr);
+        }
             break;       
         default:
             printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, cmd_code);
@@ -768,7 +789,7 @@ spf_init_dcm(){
 
     /* config node <node-name> [no] ignorebit enable*/
     static param_t config_node_node_name_ignorebit;
-    init_param(&config_node_node_name_ignorebit, CMD, "ignorebit", 0, 0, INVALID, 0, "ignore L1 LSPs from Attached router when set");
+    init_param(&config_node_node_name_ignorebit, CMD, "ignorebit", 0, 0, INVALID, 0, "ignore L1 LSPs from added router when set");
     libcli_register_param(&config_node_node_name, &config_node_node_name_ignorebit);
 
     static param_t config_node_node_name_ignorebit_enable;
@@ -776,33 +797,33 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name_ignorebit, &config_node_node_name_ignorebit_enable);
     set_param_cmd_code(&config_node_node_name_ignorebit_enable, CMDCODE_INSTANCE_IGNOREBIT_ENABLE);
 
-    /*config node <node name> attach prefix <prefix> <mask> level <level no>*/
-    static param_t config_node_node_name_attach;
-    init_param(&config_node_node_name_attach, CMD, "attach", 0, 0, INVALID, 0, "'attach' the prefix");
-    libcli_register_param(&config_node_node_name, &config_node_node_name_attach);
+    /*config node <node name> add prefix <prefix> <mask> level <level no>*/
+    static param_t config_node_node_name_add;
+    init_param(&config_node_node_name_add, CMD, "add", 0, 0, INVALID, 0, "'add' the prefix");
+    libcli_register_param(&config_node_node_name, &config_node_node_name_add);
 
-    static param_t config_node_node_name_attach_prefix;
-    init_param(&config_node_node_name_attach_prefix, CMD, "prefix", 0, 0, INVALID, 0, "prefix");
-    libcli_register_param(&config_node_node_name_attach, &config_node_node_name_attach_prefix);
+    static param_t config_node_node_name_add_prefix;
+    init_param(&config_node_node_name_add_prefix, CMD, "prefix", 0, 0, INVALID, 0, "prefix");
+    libcli_register_param(&config_node_node_name_add, &config_node_node_name_add_prefix);
 
-    static param_t config_node_node_name_attach_prefix_prefix;
-    init_param(&config_node_node_name_attach_prefix_prefix, LEAF, 0, 0, 0, IPV4, "prefix", "Ipv4 prefix without mask");
-    libcli_register_param(&config_node_node_name_attach_prefix, &config_node_node_name_attach_prefix_prefix);
+    static param_t config_node_node_name_add_prefix_prefix;
+    init_param(&config_node_node_name_add_prefix_prefix, LEAF, 0, 0, 0, IPV4, "prefix", "Ipv4 prefix without mask");
+    libcli_register_param(&config_node_node_name_add_prefix, &config_node_node_name_add_prefix_prefix);
 
-    static param_t config_node_node_name_attach_prefix_prefix_mask;
-    init_param(&config_node_node_name_attach_prefix_prefix_mask, LEAF, 0, 0, validate_ipv4_mask, INT, "mask", "mask (0-32)");
-    libcli_register_param(&config_node_node_name_attach_prefix_prefix, &config_node_node_name_attach_prefix_prefix_mask);
+    static param_t config_node_node_name_add_prefix_prefix_mask;
+    init_param(&config_node_node_name_add_prefix_prefix_mask, LEAF, 0, 0, validate_ipv4_mask, INT, "mask", "mask (0-32)");
+    libcli_register_param(&config_node_node_name_add_prefix_prefix, &config_node_node_name_add_prefix_prefix_mask);
 
-    static param_t config_node_node_name_attach_prefix_prefix_mask_level;
-    init_param(&config_node_node_name_attach_prefix_prefix_mask_level, CMD, "level", 0, 0, INVALID, 0, "level");
-    libcli_register_param(&config_node_node_name_attach_prefix_prefix_mask, &config_node_node_name_attach_prefix_prefix_mask_level);
+    static param_t config_node_node_name_add_prefix_prefix_mask_level;
+    init_param(&config_node_node_name_add_prefix_prefix_mask_level, CMD, "level", 0, 0, INVALID, 0, "level");
+    libcli_register_param(&config_node_node_name_add_prefix_prefix_mask, &config_node_node_name_add_prefix_prefix_mask_level);
 
-    static param_t config_node_node_name_attach_prefix_prefix_mask_level_level;
-    init_param(&config_node_node_name_attach_prefix_prefix_mask_level_level, LEAF, 0, 
+    static param_t config_node_node_name_add_prefix_prefix_mask_level_level;
+    init_param(&config_node_node_name_add_prefix_prefix_mask_level_level, LEAF, 0, 
                     instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
-    libcli_register_param(&config_node_node_name_attach_prefix_prefix_mask_level,
-                    &config_node_node_name_attach_prefix_prefix_mask_level_level);
-    set_param_cmd_code(&config_node_node_name_attach_prefix_prefix_mask_level_level, CMDCODE_NODE_ATTACH_PREFIX);
+    libcli_register_param(&config_node_node_name_add_prefix_prefix_mask_level,
+                    &config_node_node_name_add_prefix_prefix_mask_level_level);
+    set_param_cmd_code(&config_node_node_name_add_prefix_prefix_mask_level_level, CMDCODE_NODE_ADD_PREFIX);
     
     /* config node <node-name> [no] attachbit enable*/    
     static param_t config_node_node_name_attachbit;

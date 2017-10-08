@@ -41,6 +41,16 @@
 
 extern instance_t *instance;
 
+int
+spf_run_result_comparison_fn(void *spf_result_ptr, void *node_ptr){
+
+    if(((spf_result_t *)spf_result_ptr)->node == (node_t *)node_ptr)
+        return 1;
+    return 0;
+}
+
+
+
 /*Comparison function for routes searching in spf_info lists*/
 /*return 0 or failure, 1 on success*/
 
@@ -231,6 +241,22 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
  *  Fn to initialize the Necessary Data structure prior to run SPF computation.
  *  level can be LEVEL1 Or LEVEL2 Or BOTH
  *-----------------------------------------------------------------------------*/
+
+static void
+spf_clear_result(node_t *spf_root, LEVEL level){
+
+   singly_ll_node_t *list_node = NULL;
+   spf_result_t *result = NULL;
+
+   ITERATE_LIST(spf_root->spf_run_result[level], list_node){
+
+       result = list_node->data;
+       free(result);
+       result = NULL;    
+   }
+   delete_singly_ll(spf_root->spf_run_result[level]);
+}
+
 static void
 spf_init(candidate_tree_t *ctree, 
          node_t *spf_root, 
@@ -242,6 +268,9 @@ spf_init(candidate_tree_t *ctree,
     node_t *node = NULL, *pn_nbr = NULL;
     edge_t *edge = NULL, *pn_edge = NULL;
     singly_ll_node_t *list_node = NULL;
+
+    /*Drain off results list for level */
+    spf_clear_result(spf_root, level);
 
     ITERATE_LIST(instance->instance_node_list, list_node){    
         node = (node_t *)list_node->data;
@@ -305,35 +334,22 @@ spf_init(candidate_tree_t *ctree,
        ITERATE_NODE_NBRS_END;
 }
 
-static void
-spf_clear_result(node_t *spf_root, LEVEL level){
-
-   singly_ll_node_t *list_node = NULL;
-   spf_result_t *result = NULL;
-
-   ITERATE_LIST(spf_root->spf_run_result[level], list_node){
-
-       result = list_node->data;
-       free(result);
-       result = NULL;    
-   }
-   delete_singly_ll(spf_root->spf_run_result[level]);
-}
 
 void
 spf_computation(node_t *spf_root, 
                 spf_info_t *spf_info, 
                 LEVEL level, spf_type_t spf_type){
 
+    sprintf(LOG, "Node : %s, Triggered SPF run : %s, Level%d", 
+                spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "SKELETON_RUN",
+                level); TRACE();
+                 
     RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
     if(level != LEVEL1 && level != LEVEL2){
         printf("%s() : Error : invalid level specified\n", __FUNCTION__);
         return;
     }
-
-    /*Drain off results list for level */
-    spf_clear_result(spf_root, level);
 
     spf_init(&instance->ctree, spf_root, level);
 

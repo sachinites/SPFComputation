@@ -47,5 +47,5 @@
 #define CMDCODE_SHOW_INSTANCE_NODE_PQSPACE  10  /*show instance node <node-name> level <level-no> pqspace [slot-no]*/
 #define CMDCODE_SHOW_INSTANCE_LEVEL         11  /*show instance level <level-no>*/
 #define CMDCODE_SHOW_INSTANCE_NODE_LEVEL    12  /*show instance node <node-name> level <level-no>*/
-#define CMDCODE_NODE_ATTACH_PREFIX          13  /*show instance node <node-name> attach prefix <prefix> <mask> level <level-no>*/
+#define CMDCODE_NODE_ADD_PREFIX             13  /*show instance node <node-name> add prefix <prefix> <mask> level <level-no>*/
 #endif /* __SPFCMDCODES__H */

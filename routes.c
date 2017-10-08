@@ -258,11 +258,10 @@ is_changed_route(spf_info_t *spf_info,
 static unsigned int 
 delete_stale_routes(spf_info_t *spf_info, LEVEL level){
 
-   singly_ll_node_t* list_node = NULL,
-                   * list_node_temp = NULL;
-                   
+   singly_ll_node_t* list_node = NULL;
    routes_t *route = NULL;
    unsigned int i = 0;
+
    ITERATE_LIST(spf_info->routes_list, list_node){
            
        route = list_node->data;
@@ -270,9 +269,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
         sprintf(LOG, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.prefix, 
                         route->rt_key.mask, level); TRACE();
         i++;
-        list_node_temp = list_node->next;
-        singly_ll_remove_node(spf_info->routes_list, list_node);
-        if(list_node_temp) free(list_node_temp);
+        ROUTE_DEL(spf_info, route);
         free_route(route);
         route = NULL;
        }
@@ -418,6 +415,113 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
     }
 }
 
+/* Routine to add one single route to RIB*/
+
+void
+install_one_route(spf_info_t *spf_info, 
+        LEVEL level, routes_t *route){
+
+    rttable_entry_t *rt_entry_template = NULL;
+    unsigned int i = 0,
+                 rt_added = 0,
+                 rt_removed = 0, 
+                 rt_updated = 0, 
+                 rt_no_change = 0;
+
+    assert(route->level == level);
+
+    /* Note : For unchanged routes, we need to send notification to RIB 
+     * to simply remove the LFA/RLFA for unchanged routes present at this point, t
+     * hese are stale LFA/RLFA and can cause Microloops*/
+
+    if(route->install_state == RTE_NO_CHANGE){
+
+        rt_no_change++;
+        if(!is_singly_ll_empty(route->backup_nh_list))
+            rt_route_remove_backup_nh(spf_info->rttable, 
+                    route->rt_key.prefix, route->rt_key.mask);
+        return;  
+    }
+
+    rt_entry_template = GET_NEW_RT_ENTRY();
+
+    prepare_new_rt_entry_template(rt_entry_template, route,
+            spf_info->spf_level_info[level].version); 
+
+    sprintf(LOG, "route : %s/%u, rt_entry_template->primary_nh_count = %u", 
+            rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
+            rt_entry_template->primary_nh_count); TRACE();
+
+    for(i = 0; i < rt_entry_template->primary_nh_count; i++){
+        prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node, 
+                route->hosting_node->next_hop[level][i], 
+                &rt_entry_template->primary_nh[i],
+                level);
+    }
+
+    /*if rt_entry_template->primary_nh_count is zero, it means, it is a local prefix*/
+    if(rt_entry_template->primary_nh_count == 0)
+        prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node,
+                spf_info->spf_level_info[level].node,
+                &rt_entry_template->primary_nh[i],
+                level);
+
+    /*Back up Next hop funtionality is not implemented yet*/
+    memset(&rt_entry_template->backup_nh, 0, sizeof(nh_t));
+
+    /*rt_entry_template is now ready to be installed in RIB*/
+
+    sprintf(LOG, "RIB modification : route : %s/%u, Level%u, Action : %s", 
+            route->rt_key.prefix, route->rt_key.mask, 
+            route->level, route_intall_status_str(route->install_state)); TRACE();
+
+    switch(route->install_state){
+
+        case RTE_STALE:
+            if(rt_route_delete(spf_info->rttable, route->rt_key.prefix, route->rt_key.mask) < 0){
+                printf("%s() : Error : Could not delete route : %s/%u, Level%u\n", __FUNCTION__, 
+                        route->rt_key.prefix, route->rt_key.mask, route->level);
+                break;
+            }
+            rt_removed++;
+            break;
+        case RTE_UPDATED:
+            assert(0);
+        case RTE_ADDED:
+            if(rt_route_install(spf_info->rttable, rt_entry_template) < 0){
+                printf("%s() : Error : Could not Add route : %s/%u, Level%u\n", __FUNCTION__,
+                        route->rt_key.prefix, route->rt_key.mask, route->level);
+                free(rt_entry_template);
+                rt_entry_template = NULL;
+                break;
+            }
+            rt_added++;
+            break;
+        case RTE_CHANGED:
+            rt_route_update(spf_info->rttable, rt_entry_template);
+            free(rt_entry_template);
+            rt_entry_template = NULL;
+            rt_updated++;
+            break;
+        case RTE_NO_CHANGE:
+            assert(0); /*You cant reach here for unchanged routes*/
+            break;
+        default:
+            assert(0);
+    }
+
+    delete_stale_routes(spf_info, level);
+    sprintf(LOG, "Result for Route : %s/%u, L%d : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
+            route->rt_key.prefix, route->rt_key.mask, route->level, 
+            rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
+    printf("Node %s : Result for Route : %s/%u, L%d : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
+            spf_info->spf_level_info[level].node->node_name, route->rt_key.prefix, route->rt_key.mask, route->level, 
+            rt_added, rt_removed, rt_updated, rt_no_change);
+
+}
+
+
+
 /*Routine to build the routing table*/
 
 void
@@ -440,12 +544,20 @@ start_route_installation(spf_info_t *spf_info,
 
         if(route->level != level)
             continue;
-             
+
+        /* Note : For unchanged routes, we need to send notification to RIB 
+         * to simply remove the LFA/RLFA for unchanged routes present at this point, t
+         * hese are stale LFA/RLFA and can cause Microloops*/
+
         if(route->install_state == RTE_NO_CHANGE){
+
             rt_no_change++;
+            if(!is_singly_ll_empty(route->backup_nh_list))
+                rt_route_remove_backup_nh(spf_info->rttable, 
+                                route->rt_key.prefix, route->rt_key.mask);
             continue;   
         }
-
+        
         rt_entry_template = GET_NEW_RT_ENTRY();
 
         prepare_new_rt_entry_template(rt_entry_template, route,
@@ -630,3 +742,86 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
     start_route_installation(spf_info, level);
 }
 
+/* Single Route add/delete routine*/
+void
+add_route(node_t *lsp_reciever, 
+        node_t *lsp_generator,
+        LEVEL info_dist_level,
+        char *prefix, char mask,
+        LEVEL level, unsigned int metric){
+  
+    unsigned int i = 0; 
+    prefix_t *_prefix = create_new_prefix(prefix, mask);
+    _prefix->metric = metric;
+    _prefix->prefix_flags = 0; /*not advertised*/
+    _prefix->hosting_node = lsp_generator;
+    char flag_skip_spf_run = 0; 
+    spf_info_t *spf_info = &lsp_reciever->spf_info;
+        
+    sprintf(LOG, "node %s, prefix add : %s/%u, L%d", lsp_reciever->node_name, prefix, mask, level); TRACE();
+
+    routes_t *route = search_prefix_in_spf_route_list( spf_info, _prefix, info_dist_level);
+
+    if(!route){
+       sprintf(LOG, "node %s, route %s/%u not found Routing tree", lsp_reciever->node_name, prefix, mask);TRACE(); 
+       if(spf_info->spf_level_info[info_dist_level].version == 0){
+            sprintf(LOG, "node %s, SPF run at %s has not been run", lsp_reciever->node_name, get_str_level(info_dist_level));
+            TRACE();
+            spf_computation(lsp_reciever, spf_info, info_dist_level, FULL_RUN);
+            flag_skip_spf_run = 1;
+       }
+
+        /*We need skeleton run because, thr lsp_reciever must have spf result to know
+         * how far the prefix advertiser is and what is the Next hop to advertiser. In production code
+         * you must not see the below spf_computation() call because each node is a diferent machine */
+       if(flag_skip_spf_run == 0)
+           spf_computation(lsp_reciever, spf_info, info_dist_level, SKELETON_RUN);
+
+       route = route_malloc();
+       route_set_key(route, prefix, mask); 
+
+       /*Apply latest spf version we have*/
+       route->version = spf_info->spf_level_info[level].version;
+       route->flags = _prefix->prefix_flags; /*We have not distributed/configured flags*/
+
+       route->level = level;
+       route->hosting_node = lsp_generator; /*This route was originally advertised by this node*/ 
+
+       spf_result_t *result = 
+                    (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], lsp_generator);
+
+       assert(result);
+
+       sprintf(LOG, "LSP generator(%s) distance from LSP receiver(%s) = %u at L%d", 
+            lsp_generator->node_name, lsp_reciever->node_name, result->spf_metric, info_dist_level);  TRACE();
+
+       route->spf_metric = result->spf_metric + metric;
+       route->lsp_metric = 0; /*Not supported*/
+
+       for(; i < MAX_NXT_HOPS; i++){
+           if(result->node->next_hop[info_dist_level][i])
+               ROUTE_ADD_PRIMARY_NH(route, result->node->next_hop[level][i]);   
+           else
+               break;
+       }
+
+       ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix);
+       ROUTE_ADD(spf_info, route);
+       route->install_state = RTE_ADDED;
+       sprintf(LOG, "At node %s, route : %s/%u added to main route list for level%u, metric : %u",  
+               lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, route->level, route->spf_metric); TRACE();
+
+       install_one_route(spf_info, info_dist_level, route);        
+       }
+    }
+
+
+void
+delete_route(node_t *lsp_reciever,
+        node_t *lsp_generator,
+        LEVEL info_dist_level,
+        char *prefix, char mask,
+        LEVEL level, unsigned int metric){
+
+    deattach_prefix_on_node(lsp_reciever, prefix, (unsigned char)mask, level, metric);
+}

@@ -256,3 +256,13 @@ show_traceroute(char *node_name, char *dst_prefix){
     while(1);
 }
 
+void
+rt_route_remove_backup_nh(rttable *rttable, char *prefix, char mask){
+
+   rttable_entry_t *rt_entry = NULL; 
+   
+   rt_entry = rt_route_lookup(rttable, prefix, mask);
+   assert(rt_entry);
+
+   memset(&rt_entry->backup_nh, 0, sizeof(nh_t)); 
+}

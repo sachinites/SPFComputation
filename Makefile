@@ -1,11 +1,11 @@
 CC=gcc
 CFLAGS=-g -Wall
-INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./BitOp -I ./logging
+INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./BitOp -I ./logging
 USECLILIB=-lcli
 TARGET:exe
 TARGET_NAME=exe
-DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o
-OBJ=rttable.o instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
+DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
+OBJ=advert.c rttable.o instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -17,6 +17,9 @@ testapp.o:testapp.c
 instance.o:instance.c
 	@echo "Building instance.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} instance.c -o instance.o
+advert.o:advert.c
+	@echo "Building advert.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} advert.c -o advert.o
 lfa.o:lfa.c
 	@echo "Building lfa.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} lfa.c -o lfa.o
@@ -52,16 +55,19 @@ logging.o:./logging/logging.c
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./logging/logging.c -o ./logging/logging.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
+	(cd Queue; make)
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 clean:
 	rm exe
 	rm *.o
 all:
 	(cd LinkedList; make)
+	(cd Queue; make)
 	(cd CommandParser; make)
 	make
 cleanall:
 	(cd LinkedList; make clean)
+	(cd Queue; make) clean
 	(cd CommandParser; make clean)
 	rm Heap/*.o
 	rm logging/*.o
