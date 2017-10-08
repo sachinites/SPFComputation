@@ -65,7 +65,7 @@ typedef struct dist_info_hdr_t_{
 typedef void (*info_dist_fn_ptr)(node_t *, node_t *, dist_info_hdr_t *);
 
 void
-traverse_instance(instance_t *instance, 
+generate_lsp(instance_t *instance, 
                   node_t *lsp_generator, 
                   info_dist_fn_ptr fn_ptr, dist_info_hdr_t *dist_info);
                   

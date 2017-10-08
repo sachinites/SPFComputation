@@ -89,7 +89,7 @@ build_linear_topo(){
     insert_edge_between_2_nodes(R0_R1_edge, R0, R1, BIDIRECTIONAL);
     insert_edge_between_2_nodes(R1_R2_edge, R1, R2, BIDIRECTIONAL);
 
-    //mark_node_pseudonode(R1, LEVEL1);
+    mark_node_pseudonode(R1, LEVEL1);
     //mark_node_pseudonode(R1, LEVEL2);
     set_instance_root(instance, R0);
 #if 0
@@ -278,9 +278,9 @@ build_cisco_example_topo(){
 #if 0
 
 
-                         0/0+-------+0/9
+                         0/0+-------+0/9 50.1.1.1
                    +--------+ R1    +-----+
-                   |        |       |     |
+                   |10.1.1.1|       |     |
                    |        +-------+     |
                    |                      |
                    |                      |
@@ -288,12 +288,12 @@ build_cisco_example_topo(){
                    |                      |
                    |                      |
                    |                      |
-                   |0/1                   |0/8
-               +---+-+                +---+--+                      +-------+
+           10.1.1.2|0/1                   |0/8
+               +---+-+                +---+--+              50.1.1.2+-------+
                |R2   +                +      +----------------------+       |
                |     |                | R5   |0/10              0/11| R6    |
-               +--+--+                |      |                      |       |
-                  |0/2                +---+--+                      +-------+
+               +--+--+                | PN   |                      |       |
+          20.1.1.1|0/2                +---+--+                      +-------+
                   |                       |0/7
                   |                       |
                   |                       |
@@ -301,12 +301,12 @@ build_cisco_example_topo(){
                   |                       |
                   |                       |
                   |                       |
-                  |0/3                    |0/6
+          20.1.1.2|0/3                    |0/6 50.1.1.3
               +---+--+                +---+---+
               |      |0/4         0/5 |       |
               | R3   +----------------+ R4    |
-              |      |                |       |
-              +------+                +-------+
+              |      |30.1.1.1        |       |
+              +------+        30.1.1.2+-------+
 #endif
               
     instance_t *instance = get_new_instance();
@@ -331,17 +331,18 @@ build_cisco_example_topo(){
                                 R3, R4, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("40.1.1.1", 30), create_new_prefix("40.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("50.1.1.3", 24), 0, LEVEL1)),
                                 R4, R5, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("50.1.1.1", 30), create_new_prefix("50.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, 0, create_new_prefix("50.1.1.1", 24), LEVEL1)),
                                 R5, R1, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, create_new_prefix("60.1.1.1", 30), create_new_prefix("60.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, 0, create_new_prefix("50.1.1.2", 24), LEVEL1)),
                                 R5, R6, BIDIRECTIONAL);
 
+    mark_node_pseudonode(R5, LEVEL1);
     set_instance_root(instance, R1);
     return instance;
 }

@@ -70,7 +70,7 @@ create_new_prefix(const char *prefix, unsigned char mask);
 
 #define BIND_PREFIX(target_ptr, prefix_ptr) \
     target_ptr = prefix_ptr;                \
-    prefix_ptr->ref_count++;
+    if(target_ptr) prefix_ptr->ref_count++;
 
 #define UNBIND_PREFIX(target_ptr)                   \
     if(target_ptr){                                 \

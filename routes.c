@@ -116,27 +116,26 @@ prepare_new_nxt_hop_template(node_t *computing_node,
     assert(nxt_hop_node);
     assert(computing_node);
 
-    edge_t *edge = NULL;
-    edge_end_t *oif = NULL,
-               *remote_end = NULL;
+    edge_end_t *oif = NULL;
+    char gw_prefix[PREFIX_LEN + 1];
 
     nh_template->nh_type = IPNH; /*We have not implemented yet LSP NH functionality*/
 
     strncpy(nh_template->nh_name, nxt_hop_node->node_name, NODE_NAME_SIZE);
     nh_template->nh_name[NODE_NAME_SIZE - 1] = '\0';
 
-    /*oif can be NULL if computing_node == nxt_hop_node*/
-    oif = get_min_oif(computing_node, nxt_hop_node, level);
+    /*oif can be NULL if computing_node == nxt_hop_node. It will happen
+     * for local prefixes */
+    oif = get_min_oif(computing_node, nxt_hop_node, level, gw_prefix);
     if(!oif){
         strncpy(nh_template->gwip, "Direct" , PREFIX_LEN + 1);
+        nh_template->gwip[PREFIX_LEN] = '\0';
         return;
     }
 
     strncpy(nh_template->oif, oif->intf_name, IF_NAME_SIZE);
     nh_template->oif[IF_NAME_SIZE -1] = '\0';
-    edge = GET_EGDE_PTR_FROM_EDGE_END(oif);
-    remote_end = &edge->to;
-    strncpy(nh_template->gwip, remote_end->prefix[level]->prefix, PREFIX_LEN + 1);
+    strncpy(nh_template->gwip, gw_prefix, PREFIX_LEN + 1);
     nh_template->gwip[PREFIX_LEN] = '\0';
 }
 
@@ -418,7 +417,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 /* Routine to add one single route to RIB*/
 
 void
-install_one_route(spf_info_t *spf_info, 
+install_route_in_rib(spf_info_t *spf_info, 
         LEVEL level, routes_t *route){
 
     rttable_entry_t *rt_entry_template = NULL;
@@ -578,7 +577,7 @@ start_route_installation(spf_info_t *spf_info,
         if(rt_entry_template->primary_nh_count == 0)
             prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node,
                                          spf_info->spf_level_info[level].node,
-                                         &rt_entry_template->primary_nh[i],
+                                         &rt_entry_template->primary_nh[0],
                                          level);
         
         /*Back up Next hop funtionality is not implemented yet*/
@@ -756,6 +755,7 @@ add_route(node_t *lsp_reciever,
     _prefix->prefix_flags = 0; /*not advertised*/
     _prefix->hosting_node = lsp_generator;
     char flag_skip_spf_run = 0; 
+    spf_result_t *result = NULL;
     spf_info_t *spf_info = &lsp_reciever->spf_info;
         
     sprintf(LOG, "node %s, prefix add : %s/%u, L%d", lsp_reciever->node_name, prefix, mask, level); TRACE();
@@ -787,8 +787,10 @@ add_route(node_t *lsp_reciever,
        route->level = level;
        route->hosting_node = lsp_generator; /*This route was originally advertised by this node*/ 
 
-       spf_result_t *result = 
-                    (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], lsp_generator);
+       if(lsp_generator != lsp_reciever) 
+            result = (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], lsp_generator);
+        else
+            result = lsp_generator->spf_result[info_dist_level];/*Lets save a search operation in case of local processing*/
 
        assert(result);
 
@@ -811,7 +813,7 @@ add_route(node_t *lsp_reciever,
        sprintf(LOG, "At node %s, route : %s/%u added to main route list for level%u, metric : %u",  
                lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, route->level, route->spf_metric); TRACE();
 
-       install_one_route(spf_info, info_dist_level, route);        
+       install_route_in_rib(spf_info, info_dist_level, route);        
        }
     }
 
@@ -823,5 +825,4 @@ delete_route(node_t *lsp_reciever,
         char *prefix, char mask,
         LEVEL level, unsigned int metric){
 
-    deattach_prefix_on_node(lsp_reciever, prefix, (unsigned char)mask, level, metric);
 }

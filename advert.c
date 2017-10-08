@@ -3,7 +3,7 @@
  *
  *       Filename:  advert.c
  *
- *    Description:  This fn implements the routing to distribute node's config/info to other nodes in the network
+ *    Description:  This file implements the routing to distribute node's config/info to other nodes in the network
  *
  *        Version:  1.0
  *        Created:  Sunday 08 October 2017 01:37:36  IST
@@ -138,9 +138,9 @@ init_instance_traversal(instance_t * instance){
                                  node->traversing_bit = 0;
                                     }  
 }
-
+/*fn to simulate LSP generation and distribution at its simplest.*/
 void
-traverse_instance(instance_t *instance, 
+generate_lsp(instance_t *instance, 
                   node_t *lsp_generator,
                   info_dist_fn_ptr fn_ptr, dist_info_hdr_t *dist_info){
 
@@ -175,6 +175,5 @@ traverse_instance(instance_t *instance,
      assert(is_queue_empty(q));
      free(q);
      q = NULL;
-
 }
 

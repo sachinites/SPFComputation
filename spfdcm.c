@@ -67,7 +67,8 @@ show_spf_results(node_t *spf_root, LEVEL level){
             if(res->node->next_hop[level][i] == NULL)
                 break;
         
-            printf("%-10s       OIF : %-7s\n", res->node->next_hop[level][i]->node_name, (get_min_oif(spf_root, res->node->next_hop[level][i], level))->intf_name);
+            printf("%-10s       OIF : %-7s\n", res->node->next_hop[level][i]->node_name, 
+                    (get_min_oif(spf_root, res->node->next_hop[level][i], level, NULL))->intf_name);
 
         }
     }
@@ -394,7 +395,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             dist_info_hdr.advert_id = PREFIX_ADD_DELETE_ADVERT;
             dist_info_hdr.info_data = (char *)&ad_msg;
 
-            traverse_instance(instance, node, prefix_distribution_routine, &dist_info_hdr);
+            generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
         }
             break;       
         default:

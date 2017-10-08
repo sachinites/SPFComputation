@@ -5,7 +5,7 @@ USECLILIB=-lcli
 TARGET:exe
 TARGET_NAME=exe
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
-OBJ=advert.c rttable.o instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -55,20 +55,18 @@ logging.o:./logging/logging.c
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./logging/logging.c -o ./logging/logging.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
-	(cd Queue; make)
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} Queue/Queue.c -o Queue/Queue.o
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 clean:
 	rm exe
 	rm *.o
 all:
-	(cd LinkedList; make)
-	(cd Queue; make)
 	(cd CommandParser; make)
 	make
 cleanall:
 	(cd LinkedList; make clean)
-	(cd Queue; make) clean
 	(cd CommandParser; make clean)
 	rm Heap/*.o
+	rm Queue/*.o
 	rm logging/*.o
 	make clean
