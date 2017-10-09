@@ -150,7 +150,7 @@ attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
             continue;
 
         if(node_local_prefix_search(node, level_it, prefix->prefix, prefix->mask))
-            return;
+            continue;
 
         singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level_it), prefix);
         prefix->hosting_node = node;
@@ -178,7 +178,7 @@ dettach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
         prefix_list_node = singly_ll_get_node_by_data_ptr(GET_NODE_PREFIX_LIST(node, level), 
                 edge_end->prefix[level]);
         if(!prefix_list_node)
-            return;
+            continue;
 
         prefix = (prefix_t *)prefix_list_node->data;
         prefix->ref_count--;
@@ -267,8 +267,20 @@ mark_node_pseudonode(node_t *node, LEVEL level){
       
         UNBIND_PREFIX(edge_end->prefix[level]);
 
-        if(get_edge_direction(node, edge) == OUTGOING)
+        /* remove the prefix from the node prefix lists if this is 
+         * outgoing edge*/
+        if(get_edge_direction(node, edge) == OUTGOING){
             edge->metric[level] = 0;
+            if(edge_end->prefix[level]){
+                singly_ll_delete_node_by_data_ptr(GET_NODE_PREFIX_LIST(node, level), edge_end->prefix[level]);
+                edge_end->prefix[level]->ref_count--;
+            }
+            if(edge_end->prefix[level] &&
+                    edge_end->prefix[level]->ref_count == 0){
+                free(edge_end->prefix[level]);
+                edge_end->prefix[level] = NULL;
+            }
+        }
     }
 }
 
@@ -293,7 +305,7 @@ get_new_instance(){
     return instance;
 }
 
-int
+boolean
 is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level){
 
     edge_t *edge = NULL;
@@ -310,12 +322,12 @@ is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level){
             if(temp_nbr_node2 != node)
                 continue;
 
-            return 1;
+            return TRUE;
         }
         ITERATE_NODE_NBRS_END;
     }
     ITERATE_NODE_NBRS_END;
-    return 0;
+    return FALSE;
 }
 
 edge_t *

@@ -268,7 +268,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
         sprintf(LOG, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.prefix, 
                         route->rt_key.mask, level); TRACE();
         i++;
-        ROUTE_DEL(spf_info, route);
+        ROUTE_DEL_FROM_ROUTE_LIST(spf_info, route);
         free_route(route);
         route = NULL;
        }
@@ -367,7 +367,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         /* route->backup_nh_list Not supported yet */
 
         ROUTE_ADD_LIKE_PREFIX_LIST(route, prefix);
-        ROUTE_ADD(spf_info, route);
+        ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
         route->install_state = RTE_ADDED;
         sprintf(LOG, "route : %s/%u added to main route list for level%u",  
             route->rt_key.prefix, route->rt_key.mask, route->level); TRACE();
@@ -808,14 +808,14 @@ add_route(node_t *lsp_reciever,
        }
 
        ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix);
-       ROUTE_ADD(spf_info, route);
+       ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
        route->install_state = RTE_ADDED;
        sprintf(LOG, "At node %s, route : %s/%u added to main route list for level%u, metric : %u",  
                lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, route->level, route->spf_metric); TRACE();
 
        install_route_in_rib(spf_info, info_dist_level, route);        
        }
-    }
+}
 
 
 void

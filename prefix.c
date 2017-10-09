@@ -68,9 +68,9 @@ prefix_comparison_fn(void *_prefix, void *_key){
     if(strncmp(prefix->prefix, key->prefix, strlen(prefix->prefix)) == 0 &&
             strlen(prefix->prefix) == strlen(key->prefix) &&
             prefix->mask == key->mask)
-        return 1;
+        return TRUE;
 
-    return 0;
+    return FALSE;
 }
 
 comparison_fn

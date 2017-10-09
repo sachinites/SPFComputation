@@ -88,11 +88,11 @@ free_route(routes_t *route);
 #define ROUTE_ADD_LIKE_PREFIX_LIST(routeptr, prefixptr) \
     singly_ll_add_node_by_val(routeptr->like_prefix_list, prefixptr)
 
-#define ROUTE_ADD(spfinfo_ptr, routeptr)    \
+#define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr)    \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
     singly_ll_add_node_by_val(spfinfo_ptr->priority_routes_list, routeptr)
 
-#define ROUTE_DEL(spfinfo_ptr, routeptr)    \
+#define ROUTE_DEL_FROM_ROUTE_LIST(spfinfo_ptr, routeptr)    \
     singly_ll_delete_node_by_data_ptr(spfinfo_ptr->routes_list, routeptr);  \
     singly_ll_delete_node_by_data_ptr(spfinfo_ptr->priority_routes_list, routeptr)
 

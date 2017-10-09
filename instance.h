@@ -141,7 +141,7 @@ dump_edge_info(edge_t *edge);
 void
 mark_node_pseudonode(node_t *node, LEVEL level);
 
-int
+boolean
 is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level);
 
 edge_t *
