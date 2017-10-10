@@ -264,23 +264,16 @@ mark_node_pseudonode(node_t *node, LEVEL level){
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
         if(!IS_LEVEL_SET(edge->level, level))
             continue;
-      
-        UNBIND_PREFIX(edge_end->prefix[level]);
-
-        /* remove the prefix from the node prefix lists if this is 
-         * outgoing edge*/
-        if(get_edge_direction(node, edge) == OUTGOING){
+     
+        if(get_edge_direction(node, edge) == OUTGOING){ 
             edge->metric[level] = 0;
             if(edge_end->prefix[level]){
-                singly_ll_delete_node_by_data_ptr(GET_NODE_PREFIX_LIST(node, level), edge_end->prefix[level]);
+                singly_ll_delete_node_by_data_ptr(GET_NODE_PREFIX_LIST(node, level), 
+                        edge_end->prefix[level]);
                 edge_end->prefix[level]->ref_count--;
             }
-            if(edge_end->prefix[level] &&
-                    edge_end->prefix[level]->ref_count == 0){
-                free(edge_end->prefix[level]);
-                edge_end->prefix[level] = NULL;
-            }
         }
+        UNBIND_PREFIX(edge_end->prefix[level]);
     }
 }
 

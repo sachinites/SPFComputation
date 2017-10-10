@@ -67,7 +67,7 @@ typedef struct rttable_{
 } rttable;
 
 #define RT_ENTRY_MATCH(rtptr, _prefix, _mask) \
-    (strncmp(rtptr->dest.prefix, _prefix, 16) == 0 && rtptr->dest.mask == _mask)
+    (strncmp(rtptr->dest.prefix, _prefix, PREFIX_LEN + 1) == 0 && rtptr->dest.mask == _mask)
 
 #define GET_NEW_RT_ENTRY()                  (calloc(1, sizeof(rttable_entry_t)));
 #define FLUSH_RT_ENTRY(rtptr)               (memset(rtptr, 0, sizeof(rttable_entry_t)));
