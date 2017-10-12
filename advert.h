@@ -78,6 +78,7 @@ typedef struct prefix_add_del_advert_{
     char mask;
     unsigned int metric;
     LEVEL prefix_level;
+    char up_down_bit;
 } prefix_add_del_advert_t;
 
 void

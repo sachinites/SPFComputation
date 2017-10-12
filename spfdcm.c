@@ -345,7 +345,9 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     tlv_struct_t *tlv = NULL;
     unsigned int i = 0;
     char *node_name = NULL;
-    LEVEL level = MAX_LEVEL;
+    LEVEL level         = MAX_LEVEL,
+          from_level_no = MAX_LEVEL,
+          to_level_no   = MAX_LEVEL;
     char *prefix = NULL;
     
     dist_info_hdr_t dist_info_hdr;
@@ -361,6 +363,10 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             mask = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) == 0)
             level = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "from-level-no", strlen("from-level-no")) == 0)
+            from_level_no = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "to-level-no", strlen("to-level-no")) == 0)
+            to_level_no = atoi(tlv->value);
         else
             assert(0);
     }
@@ -394,10 +400,28 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
             dist_info_hdr.advert_id = PREFIX_ADD_DELETE_ADVERT;
             dist_info_hdr.info_data = (char *)&ad_msg;
-
             generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
         }
-            break;       
+            break;     
+        case CMDCODE_NODE_LEAK_PREFIX:
+        {
+            leak_prefix(node_name, prefix, mask, from_level_no, to_level_no); 
+            prefix_add_del_advert_t ad_msg;
+            memset(&ad_msg, 0, sizeof(prefix_add_del_advert_t));
+            ad_msg.prefix = prefix,
+            ad_msg.mask = mask;
+            ad_msg.metric = 0;
+            ad_msg.prefix_level = to_level_no;
+            ad_msg.up_down_bit = 1;
+
+            dist_info_hdr.lsp_generator = node;
+            dist_info_hdr.info_dist_level = to_level_no;
+            dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
+            dist_info_hdr.advert_id = PREFIX_LEAK_ADVERT;
+            dist_info_hdr.info_data = (char *)&ad_msg;
+            generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
+        }
+            break;  
         default:
             printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, cmd_code);
             break;
@@ -861,6 +885,39 @@ spf_init_dcm(){
     static param_t config_node_node_name_static_route_dest_mask_nhip_nhname_slotno;
     init_param(&config_node_node_name_static_route_dest_mask_nhip_nhname_slotno, LEAF, 0, config_static_route_handler, 0, STRING, "slot-no", "interface name ethx/y format");
     libcli_register_param(&config_node_node_name_static_route_dest_mask_nhip_nhname, &config_node_node_name_static_route_dest_mask_nhip_nhname_slotno); 
+
+    /*config node <node-name> leak prefix <prefix> mask <mask> from level <level-no> to <level-no>*/
+
+    {
+        static param_t leak;
+        init_param(&leak, CMD, "leak", 0, 0, INVALID, 0, "'leak' the prefix");
+        libcli_register_param(&config_node_node_name, &leak);
+
+        static param_t prefix;
+        init_param(&prefix, CMD, "prefix", 0, 0, INVALID, 0, "prefix");
+        libcli_register_param(&leak, &prefix);
+
+        static param_t ipv4;
+        init_param(&ipv4, LEAF, 0, 0, 0, IPV4, "prefix", "Ipv4 prefix without mask");
+        libcli_register_param(&prefix, &ipv4);
+
+        static param_t mask;
+        init_param(&mask, LEAF, 0, 0, validate_ipv4_mask, INT, "mask", "mask (0-32)");
+        libcli_register_param(&ipv4, &mask);
+
+        static param_t level;
+        init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
+        libcli_register_param(&mask, &level);
+
+        static param_t from_level_no;
+        init_param(&from_level_no, LEAF, 0, 0, validate_level_no, INT, "from-level-no", "From level : 1 | 2");
+        libcli_register_param(&level, &from_level_no);
+
+        static param_t to_level_no;
+        init_param(&to_level_no, LEAF, 0, instance_node_config_handler, validate_level_no, INT, "to-level-no", "To level : 1 | 2");
+        libcli_register_param(&from_level_no, &to_level_no);
+        set_param_cmd_code(&to_level_no, CMDCODE_NODE_LEAK_PREFIX);
+    }
 
     /*Debug commands*/
 

@@ -95,6 +95,7 @@ prefix_distribution_routine(node_t *lsp_generator,
 
     switch(dist_info->advert_id){
         case PREFIX_ADD_DELETE_ADVERT:
+        case PREFIX_LEAK_ADVERT:
             switch(dist_info->add_or_remove){
                 case AD_CONFIG_ADDED:
                     {
@@ -117,8 +118,6 @@ prefix_distribution_routine(node_t *lsp_generator,
                 default:
                     assert(0);
             }
-            break;
-        case PREFIX_LEAK_ADVERT:
             break;
         case LINK_METRIC_CHANGE_ADVERT:
             break;

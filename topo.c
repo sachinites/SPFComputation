@@ -32,30 +32,6 @@
 
 #include "instance.h"
 
-void
-reconcile_global_topology(instance_t *instance){
-
-    
-}
-
-
-/*-----------------------------------------------------------------------------
- *  This fn takes care to modify other dependant parameters in the network graph 
- *  as a result of local change in a specific node.
- *-----------------------------------------------------------------------------*/
-void
-reconcile_node(node_t *node){
-
-    /* case 1: As soon as node detects that it is connected L1 router in its local area
-     * AND 
-     * (connected to L2 router of the non-local area, router should set Attached bit)
-     * AND
-     * inform all L1-only routers in the area of its presence.
-     * This fn should be called after topology construction for each node in the
-     * topology as well as whenever relevant link propoerties changes through CLI*/
-}
-
-
 instance_t *
 build_linear_topo(){
 
@@ -92,11 +68,6 @@ build_linear_topo(){
     mark_node_pseudonode(R1, LEVEL1);
     //mark_node_pseudonode(R1, LEVEL2);
     set_instance_root(instance, R0);
-#if 0
-    reconcile_node(R0);
-    reconcile_node(R1);
-    reconcile_node(R2);
-#endif
     return instance;
 }
 
@@ -209,15 +180,6 @@ build_multi_area_topo(){
     //leak_prefix(R3->node_name, "100.1.1.1", 24, LEVEL2, LEVEL1);
 
     set_instance_root(instance, R0);
-#if 0
-    reconcile_node(R0);
-    reconcile_node(R1);
-    reconcile_node(R2);
-    reconcile_node(R3);
-    reconcile_node(R4);
-    reconcile_node(R5);
-    reconcile_node(R6);
-#endif
     return instance;
 }
 
@@ -343,6 +305,7 @@ build_cisco_example_topo(){
                                 R5, R6, BIDIRECTIONAL);
 
     mark_node_pseudonode(R5, LEVEL1);
+    //mark_node_pseudonode(R2, LEVEL1);
     set_instance_root(instance, R1);
     return instance;
 }
