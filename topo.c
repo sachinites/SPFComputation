@@ -53,14 +53,14 @@ build_linear_topo(){
 
     prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24);
     prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24);
-    prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24);
-    prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24);
+    //prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24);
+    //prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24);
 
     edge_t *R0_R1_edge = create_new_edge("eth0/0", "eth0/1", 10,
-            prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL12);
+            prefix_10_1_1_1_24, 0, LEVEL12);
 
     edge_t *R1_R2_edge = create_new_edge("eth0/2", "eth0/3", 10,
-            prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL12);
+            0, prefix_10_1_1_2_24, LEVEL12);
 
     insert_edge_between_2_nodes(R0_R1_edge, R0, R1, BIDIRECTIONAL);
     insert_edge_between_2_nodes(R1_R2_edge, R1, R2, BIDIRECTIONAL);

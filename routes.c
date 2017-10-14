@@ -754,7 +754,6 @@ add_route(node_t *lsp_reciever,
     _prefix->metric = metric;
     _prefix->prefix_flags = 0; /*not advertised*/
     _prefix->hosting_node = lsp_generator;
-    char flag_skip_spf_run = 0; 
     spf_result_t *result = NULL;
     spf_info_t *spf_info = &lsp_reciever->spf_info;
         
@@ -764,18 +763,16 @@ add_route(node_t *lsp_reciever,
 
     if(!route){
        sprintf(LOG, "node %s, route %s/%u not found Routing tree", lsp_reciever->node_name, prefix, mask);TRACE(); 
+
+        /*We need skeleton run because, the lsp_reciever must have spf result to know
+         * how far the prefix advertiser is and what is the Next hop to advertiser. In production code
+         * you must not see the below spf_computation() call because each node is a diferent machine */
+
        if(spf_info->spf_level_info[info_dist_level].version == 0){
             sprintf(LOG, "node %s, SPF run at %s has not been run", lsp_reciever->node_name, get_str_level(info_dist_level));
             TRACE();
             spf_computation(lsp_reciever, spf_info, info_dist_level, FULL_RUN);
-            flag_skip_spf_run = 1;
        }
-
-        /*We need skeleton run because, thr lsp_reciever must have spf result to know
-         * how far the prefix advertiser is and what is the Next hop to advertiser. In production code
-         * you must not see the below spf_computation() call because each node is a diferent machine */
-       if(flag_skip_spf_run == 0)
-           spf_computation(lsp_reciever, spf_info, info_dist_level, SKELETON_RUN);
 
        route = route_malloc();
        route_set_key(route, prefix, mask); 

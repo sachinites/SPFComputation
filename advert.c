@@ -129,14 +129,15 @@ prefix_distribution_routine(node_t *lsp_generator,
 static void
 init_instance_traversal(instance_t * instance){
 
-       singly_ll_node_t *list_node = NULL;
-          node_t *node = NULL;
+    singly_ll_node_t *list_node = NULL;
+    node_t *node = NULL;
 
-             ITERATE_LIST(instance->instance_node_list, list_node){
-                         node = (node_t *)list_node->data;
-                                 node->traversing_bit = 0;
-                                    }  
+    ITERATE_LIST(instance->instance_node_list, list_node){
+        node = (node_t *)list_node->data;
+        node->traversing_bit = 0;
+    }  
 }
+
 /*fn to simulate LSP generation and distribution at its simplest.*/
 void
 generate_lsp(instance_t *instance, 
@@ -146,7 +147,8 @@ generate_lsp(instance_t *instance,
     node_t  *curr_node = NULL,
             *nbr_node = NULL;
 
-    edge_t *edge = NULL;
+    edge_t *edge1 = NULL,  /*Edge connecting curr node with PN*/
+            *edge2 = NULL; /*Edge connecting PN to its nbr*/
     LEVEL level_of_info_dist = dist_info->info_dist_level;
      
      /*distribute the info to self*/
@@ -160,9 +162,8 @@ generate_lsp(instance_t *instance,
      enqueue(q, lsp_generator);
      while(!is_queue_empty(q)){
          curr_node = deque(q);
-         ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge, level_of_info_dist){
-             if(nbr_node->node_type[level_of_info_dist] == PSEUDONODE)
-                continue;
+         ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge1, 
+                                         edge2, level_of_info_dist){
              if(nbr_node->traversing_bit)
                  continue;
              fn_ptr(lsp_generator, nbr_node, dist_info);
