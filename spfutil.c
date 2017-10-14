@@ -128,7 +128,7 @@ apply_mask(char *prefix, char mask, char *str_prefix){
     for(; i < (32 - mask); i++)
         UNSET_BIT(binary_prefix, i);
     binary_prefix = htonl(binary_prefix);
-    inet_ntop(AF_INET, &binary_prefix, str_prefix, 16);
-    str_prefix[15] = '\0';
+    inet_ntop(AF_INET, &binary_prefix, str_prefix, PREFIX_LEN + 1);
+    str_prefix[PREFIX_LEN] = '\0';
 }
 

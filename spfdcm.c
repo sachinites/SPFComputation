@@ -394,6 +394,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             ad_msg.mask = mask;
             ad_msg.metric = 0;
             ad_msg.prefix_level = level;
+            ad_msg.up_down_bit = 0;
 
             dist_info_hdr.lsp_generator = node;
             dist_info_hdr.info_dist_level = level;
@@ -1019,5 +1020,3 @@ dump_node_info(node_t *node){
     printf("    ATTACHED       : %s\n", (node->attached) ? "SET" : "UNSET");
     printf("    MULTIAREA      : %s\n", node->spf_info.spff_multi_area ? "SET" : "UNSET");
 }
-    
-

@@ -227,6 +227,8 @@ get_min_oif(node_t *node, node_t *node_nbr,
             LEVEL level, char *input_gw_ip_buffer);
 
 
+/*This Macro iterates over all logical nbrs of a node. Logical nbrs includes
+ * pseudonodes as well. Nbrs of directly connected PN do not count*/
 #define ITERATE_NODE_NBRS_BEGIN(_node, _nbr_node, _edge, _level)  \
     _nbr_node = NULL;                                             \
     _edge = NULL;                                                 \
@@ -244,8 +246,50 @@ get_min_oif(node_t *node, node_t *node_nbr,
                 continue;                                         \
             _nbr_node = _edge->to.node;
              
-#define ITERATE_NODE_NBRS_END   }}while(0)      
-   
+#define ITERATE_NODE_NBRS_END   }}while(0)
+             
+/*This macro iterates over all physical nbrs of a node. Physical nbrs includes
+ * P2P nbrs and nbrs of directly connected PN. PN itself do not count as a nbr
+ * of a _node */
+#define ITERATE_NODE_PHYSICAL_NBRS_BEGIN(_node, _nbr_node, _edge, _level)  \
+    _nbr_node = NULL;                                                      \
+    _edge = NULL;                                                          \
+    do{                                                                    \
+        unsigned int _i = 0;                                               \
+        node_t *__nbr_node = 0;                                            \
+        edge_t *__edge = 0;                                                \
+        edge_end_t *_edge_end = 0;                                         \
+        for(;_i < MAX_NODE_INTF_SLOTS; _i++){                              \
+            _edge_end = _node->edges[_i];                                  \
+            if(!_edge_end) break;                                          \
+            if(_edge_end->dirn != OUTGOING)                                \
+                continue;                                                  \
+            __edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);           \
+            if(!__edge->status) continue;                                  \
+            if(!IS_LEVEL_SET(__edge->level, _level))                       \
+                continue;                                                  \
+            __nbr_node = __edge->to.node;                                  \
+            _nbr_node = __nbr_node;                                        \
+            _edge = __edge;                                                \
+            if(__nbr_node->node_type[_level] == PSEUDONODE){               \
+                unsigned int _j = 0;                                       \
+                for(;_j < MAX_NODE_INTF_SLOTS; _j++){                      \
+                    _edge_end = __nbr_node->edges[_j];                     \
+                    if(!_edge_end) break;                                  \
+                    if(_edge_end->dirn != OUTGOING)                        \
+                        continue;                                          \
+                    _edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);    \
+                    if(!_edge->status) continue;                           \
+                    if(!IS_LEVEL_SET(_edge->level, _level))                \
+                        continue;                                          \
+                    _nbr_node = _edge->to.node;                            \
+                    if(_nbr_node == _node)                                 \
+                        continue;
+            
+             
+#define ITERATE_NODE_PHYSICAL_NBRS_END   }}}}while(0)
+
+              
 void
 attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end);
 

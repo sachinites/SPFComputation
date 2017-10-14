@@ -69,6 +69,9 @@ route_search_comparison_fn(void * route, void *key){
 
 
 /* Inverse the topology wrt to level*/
+/* ToDo : To inverse the topo, explore the nbrs of nbr recursively instead
+ * of iterating the global list of nodes*/
+
 void
 inverse_topology(instance_t *instance, LEVEL level){
 
@@ -132,7 +135,10 @@ inverse_topology(instance_t *instance, LEVEL level){
                 continue;
 
             edge->inv_edge->inv_edge = edge;
-
+            /* restore the swapped edge metrics*/
+            edge_metric = edge->metric[level];
+            edge->metric[level] = edge->inv_edge->metric[level];
+            edge->inv_edge->metric[level] = edge_metric;
         }
     }
 }

@@ -160,7 +160,7 @@ generate_lsp(instance_t *instance,
      enqueue(q, lsp_generator);
      while(!is_queue_empty(q)){
          curr_node = deque(q);
-         ITERATE_NODE_NBRS_BEGIN(curr_node, nbr_node, edge, level_of_info_dist){
+         ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge, level_of_info_dist){
              if(nbr_node->node_type[level_of_info_dist] == PSEUDONODE)
                 continue;
              if(nbr_node->traversing_bit)
@@ -169,7 +169,7 @@ generate_lsp(instance_t *instance,
              nbr_node->traversing_bit = 1;
              enqueue(q, nbr_node);
          }
-         ITERATE_NODE_NBRS_END;
+         ITERATE_NODE_PHYSICAL_NBRS_END;
      }
      assert(is_queue_empty(q));
      free(q);
