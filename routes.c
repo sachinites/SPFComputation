@@ -625,10 +625,10 @@ start_route_installation(spf_info_t *spf_info,
         }
     }
     delete_stale_routes(spf_info, level);
-    sprintf(LOG, "SPF Stats : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
-            rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
-    printf("SPF Stats : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
-            rt_added, rt_removed, rt_updated, rt_no_change);
+    sprintf(LOG, "SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
+            level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
+    printf("SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
+            level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change);
 }
 
 void
@@ -764,15 +764,18 @@ add_route(node_t *lsp_reciever,
     if(!route){
        sprintf(LOG, "node %s, route %s/%u not found Routing tree", lsp_reciever->node_name, prefix, mask);TRACE(); 
 
-        /*We need skeleton run because, the lsp_reciever must have spf result to know
-         * how far the prefix advertiser is and what is the Next hop to advertiser. In production code
-         * you must not see the below spf_computation() call because each node is a diferent machine */
-
        if(spf_info->spf_level_info[info_dist_level].version == 0){
             sprintf(LOG, "node %s, SPF run at %s has not been run", lsp_reciever->node_name, get_str_level(info_dist_level));
             TRACE();
             spf_computation(lsp_reciever, spf_info, info_dist_level, FULL_RUN);
+            return;
        }
+
+       /* We need skeleton run because, the lsp_reciever must have spf result to know
+        * how far the prefix advertiser is and what is the Next hop to advertiser. In production code
+        * you must not see the below spf_computation() call because each node is a diferent machine */
+
+       spf_computation(lsp_reciever, spf_info, info_dist_level, SKELETON_RUN);
 
        route = route_malloc();
        route_set_key(route, prefix, mask); 

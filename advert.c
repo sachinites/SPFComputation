@@ -166,6 +166,8 @@ generate_lsp(instance_t *instance,
                                          edge2, level_of_info_dist){
              if(nbr_node->traversing_bit)
                  continue;
+              sprintf(LOG, "LSP Distribution Src : %s, Des Node : %s", 
+                    lsp_generator->node_name, nbr_node->node_name); TRACE();
              fn_ptr(lsp_generator, nbr_node, dist_info);
              nbr_node->traversing_bit = 1;
              enqueue(q, nbr_node);
