@@ -39,11 +39,23 @@
  *-----------------------------------------------------------------------------*/
 typedef struct _node_t node_t;
 
+/*We need to enhance this structure more to persistently store all spf result run
+  for each node in the network at spf_root only*/
+
 typedef struct spf_result_{
 
     struct _node_t *node; /* Next hop details are stored in the node itself*/
     unsigned int spf_metric;
+    struct _node_t *next_hop[MAX_NXT_HOPS];
 } spf_result_t;
+
+/* spf result of a node wrt to spf_root */
+typedef struct self_spf_result_{
+
+    spf_result_t *res;
+    struct _node_t *spf_root;
+
+} self_spf_result_t ;
 
 /*A DS to hold level independant SPF configuration
  * and results*/
@@ -92,5 +104,8 @@ route_search_comparison_fn(void * route, void *key);
 
 int
 spf_run_result_comparison_fn(void *spf_result_ptr, void *node_ptr);
+
+int
+self_spf_run_result_comparison_fn(void *self_spf_result_ptr, void *node_ptr);
 
 #endif /* __SPFCOMPUTATION__ */

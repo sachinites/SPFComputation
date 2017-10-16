@@ -55,7 +55,7 @@ typedef struct _node_t{
     edge_end_t *pn_intf[MAX_LEVEL];
 
     ll_t *local_prefix_list[MAX_LEVEL];
-    spf_result_t *spf_result[MAX_LEVEL];                               /* use not known : back pointer to spf_result_t node which is created during spf run*/ 
+    ll_t *self_spf_result[MAX_LEVEL];                       /*Used for LFA and RLFA computation*/ 
     /*For SPF computation only*/ 
     ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of instance which contain result of SPF skeleton run*/
     char attached;                                          /*Set if the router is L1L2 router. Admin responsibility to configure it as per the topology*/

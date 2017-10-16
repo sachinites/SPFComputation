@@ -61,14 +61,14 @@ show_spf_results(node_t *spf_root, LEVEL level){
 
     ITERATE_LIST(spf_root->spf_run_result[level], list_node){
         res = (spf_result_t *)list_node->data;
-        printf("DEST : %-10s spf_metric : %-6u", res->node->node_name, res->node->spf_metric[level]);
+        printf("DEST : %-10s spf_metric : %-6u", res->node->node_name, res->spf_metric);
         printf(" Nxt Hop : ");
         for( i = 0; i < MAX_NXT_HOPS; i++){
-            if(res->node->next_hop[level][i] == NULL)
+            if(res->next_hop[i] == NULL)
                 break;
         
-            printf("%-10s       OIF : %-7s\n", res->node->next_hop[level][i]->node_name, 
-                    (get_min_oif(spf_root, res->node->next_hop[level][i], level, NULL))->intf_name);
+            printf("%-10s       OIF : %-7s\n", res->next_hop[i]->node_name, 
+                    (get_min_oif(spf_root, res->next_hop[i], level, NULL))->intf_name);
 
         }
     }

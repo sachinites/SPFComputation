@@ -49,6 +49,13 @@ spf_run_result_comparison_fn(void *spf_result_ptr, void *node_ptr){
     return 0;
 }
 
+int
+self_spf_run_result_comparison_fn(void *self_spf_result_ptr, void *node_ptr){
+
+    if(((self_spf_result_t *)self_spf_result_ptr)->spf_root == (node_t *)node_ptr)
+        return 1;
+    return 0;
+}
 
 
 /*Comparison function for routes searching in spf_info lists*/
@@ -150,6 +157,8 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
     node_t *candidate_node = NULL,
            *nbr_node = NULL;
     edge_t *edge = NULL;
+    unsigned int i = 0;
+    self_spf_result_t *self_res = NULL;
 
     /*Process untill candidate tree is not empty*/
     sprintf(LOG, "Running Dijkastra with root node = %s, Level = %u", 
@@ -170,9 +179,32 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
             spf_result_t *res = calloc(1, sizeof(spf_result_t));
             res->node = candidate_node;
-            candidate_node->spf_result[level] = res; /*back pointer from node to result node*/
             res->spf_metric = candidate_node->spf_metric[level];
+            for(i = 0 ; i < MAX_NXT_HOPS; i++){
+                if(candidate_node->next_hop[level][i])
+                    res->next_hop[i] = candidate_node->next_hop[level][i];
+                else
+                    break;
+            }
+
             singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
+            self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
+
+            if(self_res){
+                sprintf(LOG, "Curr node : %s, Overwriting self spf result with spf root %s", 
+                            candidate_node->node_name, spf_root->node_name); TRACE();
+                self_res->spf_root = spf_root;
+                self_res->res = res;
+            }
+            else{
+                 sprintf(LOG, "Curr node : %s, Creating New self spf result with spf root %s",
+                            candidate_node->node_name, spf_root->node_name); TRACE();
+                 self_res = calloc(1, sizeof(self_spf_result_t));
+                 self_res->spf_root = spf_root;
+                 self_res->res = res;
+                 singly_ll_add_node_by_val(candidate_node->self_spf_result[level], self_res);
+            }
+
         }
 
         /*Iterare over all the nbrs of Candidate node*/

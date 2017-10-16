@@ -100,7 +100,7 @@ compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
         res = (spf_result_t *)list_node->data;
 
         /*Skip all nodes in the nw which are reachable through S--E*/
-         if(res->node->next_hop[level][0] == failed_edge->to.node)
+         if(res->next_hop[0] == failed_edge->to.node)
             continue;
         /*Do not add computing node itself*/
         if(res->node == node)

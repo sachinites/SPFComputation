@@ -68,7 +68,9 @@ create_new_node(instance_t *instance, char *node_name, AREA area){
         node->spf_info.spf_level_info[level].version = 0;
         node->spf_info.spf_level_info[level].node = node; /*back ptr*/
 
-        node->spf_result[level] = NULL;
+        node->self_spf_result[level] = init_singly_ll();
+        singly_ll_set_comparison_fn(node->self_spf_result[level], 
+                        self_spf_run_result_comparison_fn);
     }
 
 

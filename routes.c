@@ -318,8 +318,8 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         ROUTE_FLUSH_PRIMARY_NH_LIST(route);
 
         for(; i < MAX_NXT_HOPS; i++){
-            if(result->node->next_hop[level][i])
-                ROUTE_ADD_PRIMARY_NH(route, result->node->next_hop[level][i]);   
+            if(result->next_hop[i])
+                ROUTE_ADD_PRIMARY_NH(route, result->next_hop[i]);   
             else
                 break;
         }
@@ -359,8 +359,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         route->lsp_metric = 0; /*Not supported*/
 
         for(; i < MAX_NXT_HOPS; i++){
-            if(result->node->next_hop[level][i])
-                ROUTE_ADD_PRIMARY_NH(route, result->node->next_hop[level][i]);   
+            if(result->next_hop[i])
+                ROUTE_ADD_PRIMARY_NH(route, result->next_hop[i]);   
             else
                 break;
         }
@@ -771,12 +771,15 @@ add_route(node_t *lsp_reciever,
             return;
        }
 
+        /* Now, we dont need to run spf_computation now, since nexthop results are now persistenly stored in
+         * spf_result_t DS*/
+#if 0
        /* We need skeleton run because, the lsp_reciever must have spf result to know
         * how far the prefix advertiser is and what is the Next hop to advertiser. In production code
         * you must not see the below spf_computation() call because each node is a diferent machine */
 
        spf_computation(lsp_reciever, spf_info, info_dist_level, SKELETON_RUN);
-
+#endif
        route = route_malloc();
        route_set_key(route, prefix, mask); 
 
@@ -787,10 +790,7 @@ add_route(node_t *lsp_reciever,
        route->level = level;
        route->hosting_node = lsp_generator; /*This route was originally advertised by this node*/ 
 
-       if(lsp_generator != lsp_reciever) 
-            result = (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], lsp_generator);
-        else
-            result = lsp_generator->spf_result[info_dist_level];/*Lets save a search operation in case of local processing*/
+       result = (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], lsp_generator);
 
        assert(result);
 
@@ -801,8 +801,8 @@ add_route(node_t *lsp_reciever,
        route->lsp_metric = 0; /*Not supported*/
 
        for(; i < MAX_NXT_HOPS; i++){
-           if(result->node->next_hop[info_dist_level][i])
-               ROUTE_ADD_PRIMARY_NH(route, result->node->next_hop[level][i]);   
+           if(result->next_hop[i])
+               ROUTE_ADD_PRIMARY_NH(route, result->next_hop[i]);   
            else
                break;
        }
