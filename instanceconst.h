@@ -62,10 +62,9 @@ typedef enum{
     LEVEL_UNKNOWN,
     LEVEL1,
     LEVEL2,
-    MAX_LEVEL
+    MAX_LEVEL,
+    LEVEL12 = LEVEL1 | LEVEL2
 } LEVEL;
-
-#define LEVEL12 (LEVEL1 | LEVEL2)
 
 typedef enum{
     NON_PSEUDONODE,

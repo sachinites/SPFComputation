@@ -139,7 +139,7 @@ prepare_new_nxt_hop_template(node_t *computing_node,
     nh_template->gwip[PREFIX_LEN] = '\0';
 }
 
-static inline routes_t *
+routes_t *
 search_prefix_in_spf_route_list(spf_info_t *spf_info, 
                                 prefix_t *prefix, LEVEL level){
 
@@ -152,8 +152,8 @@ search_prefix_in_spf_route_list(spf_info_t *spf_info,
     if(!route)
         return NULL;
 
-    if(level == route->level)
-        return route;
+    if(IS_LEVEL_SET(level, route->level))
+       return route;
     
     return NULL;
 }
@@ -354,7 +354,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         
         route->level = level;
         route->hosting_node = prefix->hosting_node;
-
+        
+        /* Update route metric */
         route->spf_metric = result->spf_metric + prefix->metric;
         route->lsp_metric = 0; /*Not supported*/
 
@@ -427,11 +428,11 @@ install_route_in_rib(spf_info_t *spf_info,
                  rt_updated = 0, 
                  rt_no_change = 0;
 
-    assert(route->level == level);
+    assert(IS_LEVEL_SET(route->level, level));
 
     /* Note : For unchanged routes, we need to send notification to RIB 
-     * to simply remove the LFA/RLFA for unchanged routes present at this point, t
-     * hese are stale LFA/RLFA and can cause Microloops*/
+     * to simply remove the LFA/RLFA for unchanged routes present at this point, 
+     * these are stale LFA/RLFA and can cause Microloops*/
 
     if(route->install_state == RTE_NO_CHANGE){
 
@@ -562,9 +563,9 @@ start_route_installation(spf_info_t *spf_info,
         prepare_new_rt_entry_template(rt_entry_template, route,
                                 spf_info->spf_level_info[level].version); 
 
-        sprintf(LOG, "route : %s/%u, rt_entry_template->primary_nh_count = %u", 
+        sprintf(LOG, "Template for route : %s/%u, rt_entry_template->primary_nh_count = %u, cost = %u", 
                 rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
-                rt_entry_template->primary_nh_count); TRACE();
+                rt_entry_template->primary_nh_count, rt_entry_template->cost); TRACE();
 
         for(i = 0; i < rt_entry_template->primary_nh_count; i++){
             prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node, 
@@ -585,9 +586,9 @@ start_route_installation(spf_info_t *spf_info,
 
         /*rt_entry_template is now ready to be installed in RIB*/
 
-        sprintf(LOG, "RIB modification : route : %s/%u, Level%u, Action : %s", 
+        sprintf(LOG, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
-                route->level, route_intall_status_str(route->install_state)); TRACE();
+                route->level, route->spf_metric, route_intall_status_str(route->install_state)); TRACE();
 
         switch(route->install_state){
             
@@ -741,25 +742,63 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
     start_route_installation(spf_info, level);
 }
 
+
 /* Single Route add/delete routine*/
 void
 add_route(node_t *lsp_reciever, 
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric){
+        LEVEL level, unsigned int metric,
+        node_t *hosting_node){
   
     unsigned int i = 0; 
-    prefix_t *_prefix = create_new_prefix(prefix, mask);
-    _prefix->metric = metric;
-    _prefix->prefix_flags = 0; /*not advertised*/
-    _prefix->hosting_node = lsp_generator;
     spf_result_t *result = NULL;
+    routes_t *route = NULL;
     spf_info_t *spf_info = &lsp_reciever->spf_info;
+    prefix_t *_prefix = NULL, _prefix2;
         
-    sprintf(LOG, "node %s, prefix add : %s/%u, L%d", lsp_reciever->node_name, prefix, mask, level); TRACE();
+    sprintf(LOG, "node %s, prefix add recvd : %s/%u, L%d, metric = %u", 
+            lsp_reciever->node_name, prefix, mask, level, metric); TRACE();
 
-    routes_t *route = search_prefix_in_spf_route_list( spf_info, _prefix, info_dist_level);
+    if(hosting_node == lsp_generator){ /*TThe node is leaking a local prefix*/
+        
+        _prefix = node_local_prefix_search(lsp_reciever, info_dist_level, prefix, mask);
+
+        if(_prefix){
+            sprintf("Node : %s : INFO : prefix %s/%u already present at %s", 
+                    lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE();
+            return;
+        }
+        else{
+            sprintf(LOG, "Node : %s : INFO : prefix %s/%u added to prefix list at %s",
+                    lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE();
+
+            _prefix = attach_prefix_on_node(lsp_reciever, prefix, mask, info_dist_level, metric);
+            _prefix->prefix_flags = 0; /*not advertised*/ 
+            _prefix->hosting_node = hosting_node;
+        }
+    }else{
+
+        init_prefix_key(&_prefix2, prefix, mask);
+        _prefix = &_prefix2;
+    }
+
+    /*Checking for route Leak from L2 to L1*/
+    
+    route = search_prefix_in_spf_route_list(spf_info, _prefix, LEVEL2);
+    if(route){
+        if(info_dist_level == LEVEL1){
+            route->level |= LEVEL1;
+            SET_BIT(route->flags, PREFIX_DOWNBIT_FLAG);
+            sprintf(LOG, "node %s, route %s/%u L2 version is installed in RIB already, will not install L1 version",
+                lsp_reciever->node_name, prefix, mask); TRACE();
+                return;
+        }
+    }
+
+    if(info_dist_level != LEVEL2)/*save redundant search*/
+        route = search_prefix_in_spf_route_list(spf_info, _prefix, info_dist_level);
 
     if(!route){
        sprintf(LOG, "node %s, route %s/%u not found Routing tree", lsp_reciever->node_name, prefix, mask);TRACE(); 
@@ -771,15 +810,6 @@ add_route(node_t *lsp_reciever,
             return;
        }
 
-        /* Now, we dont need to run spf_computation now, since nexthop results are now persistenly stored in
-         * spf_result_t DS*/
-#if 0
-       /* We need skeleton run because, the lsp_reciever must have spf result to know
-        * how far the prefix advertiser is and what is the Next hop to advertiser. In production code
-        * you must not see the below spf_computation() call because each node is a diferent machine */
-
-       spf_computation(lsp_reciever, spf_info, info_dist_level, SKELETON_RUN);
-#endif
        route = route_malloc();
        route_set_key(route, prefix, mask); 
 
@@ -788,7 +818,7 @@ add_route(node_t *lsp_reciever,
        route->flags = _prefix->prefix_flags; /*We have not distributed/configured flags*/
 
        route->level = level;
-       route->hosting_node = lsp_generator; /*This route was originally advertised by this node*/ 
+       route->hosting_node = _prefix->hosting_node; /*This route was originally advertised by this node*/ 
 
        result = (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], lsp_generator);
 

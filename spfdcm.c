@@ -383,35 +383,33 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             break;
         case CMDCODE_NODE_ADD_PREFIX:
         {
-            prefix_add_del_advert_t ad_msg;
-            if(enable_or_disable == CONFIG_ENABLE)
-                attach_prefix_on_node(node, prefix, (unsigned char)mask, level, 0);
-            else
-                deattach_prefix_on_node(node, prefix, (unsigned char)mask, level, 0);
-            
-            memset(&ad_msg, 0, sizeof(prefix_add_del_advert_t));
+            tlv128_ip_reach_t ad_msg;
+            memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
             ad_msg.prefix = prefix,
             ad_msg.mask = mask;
             ad_msg.metric = 0;
             ad_msg.prefix_level = level;
             ad_msg.up_down_bit = 0;
+            ad_msg.hosting_node = node;
 
             dist_info_hdr.lsp_generator = node;
             dist_info_hdr.info_dist_level = level;
             dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
-            dist_info_hdr.advert_id = PREFIX_ADD_DELETE_ADVERT;
+            dist_info_hdr.advert_id = TLV128;
             dist_info_hdr.info_data = (char *)&ad_msg;
             generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
         }
             break;     
         case CMDCODE_NODE_LEAK_PREFIX:
         {
-            leak_prefix(node_name, prefix, mask, from_level_no, to_level_no); 
-            prefix_add_del_advert_t ad_msg;
-            memset(&ad_msg, 0, sizeof(prefix_add_del_advert_t));
+            int prefix_metric = 0;
+            if((prefix_metric = leak_prefix(node_name, prefix, mask, from_level_no, to_level_no)) < 0)
+                break;
+            tlv128_ip_reach_t ad_msg;
+            memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
             ad_msg.prefix = prefix,
             ad_msg.mask = mask;
-            ad_msg.metric = 0;
+            ad_msg.metric = prefix_metric;
             ad_msg.prefix_level = to_level_no;
             ad_msg.up_down_bit = 1;
 
@@ -562,7 +560,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     switch(CMDCODE){
         case CMDCODE_SHOW_SPF_RUN:
             spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);
-            show_spf_results(spf_root, level);
+            //show_spf_results(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_STATS:
             show_spf_run_stats(spf_root, level);

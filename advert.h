@@ -48,7 +48,7 @@ typedef enum{
 
 typedef enum{
 
-   PREFIX_ADD_DELETE_ADVERT,
+   TLV128,
    PREFIX_LEAK_ADVERT,
    LINK_METRIC_CHANGE_ADVERT
 } ADVERT_ID_T;
@@ -71,15 +71,16 @@ generate_lsp(instance_t *instance,
                   
 /* Information advertising structures*/
 
-/* PREFIX_ADD_DELETE_ADVERT*/
-typedef struct prefix_add_del_advert_{
+/* TLV128*/
+typedef struct tlv128_ip_reach_{
 
     char *prefix;
     char mask;
     unsigned int metric;
     LEVEL prefix_level;
     char up_down_bit;
-} prefix_add_del_advert_t;
+    node_t *hosting_node;
+} tlv128_ip_reach_t;
 
 void
 prefix_distribution_routine(node_t *lsp_generator,

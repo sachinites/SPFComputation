@@ -148,7 +148,7 @@ edge_t *
 get_my_pseudonode_nbr(node_t *node, LEVEL level);
 
 /*Fn to attach/dettach non interface specific prefix on the router*/
-void
+prefix_t *
 attach_prefix_on_node(node_t *node, 
                       char *prefix, 
                       unsigned char mask,

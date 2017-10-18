@@ -345,7 +345,7 @@ get_my_pseudonode_nbr(node_t *node, LEVEL level){
     return NULL;
 }
 
-void
+prefix_t *
 attach_prefix_on_node(node_t *node,
         char *prefix,
         unsigned char mask,
@@ -361,6 +361,7 @@ attach_prefix_on_node(node_t *node,
     _prefix->metric = metric;
     _prefix->hosting_node = node;
     singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level), (void *)_prefix);
+    return _prefix;
 }
 
 void

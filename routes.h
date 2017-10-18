@@ -67,6 +67,10 @@ typedef struct routes_{
 
 routes_t *route_malloc();
 
+routes_t *
+search_prefix_in_spf_route_list(spf_info_t *spf_info,
+                                prefix_t *prefix, LEVEL level);
+
 void
 route_set_key(routes_t *route, char *ipv4_addr, char mask);
 
@@ -135,7 +139,8 @@ add_route(node_t *lsp_reciever,
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric);
+        LEVEL level, unsigned int metric,
+        node_t *hosting_node);
 
 void
 delete_route(node_t *lsp_reciever,

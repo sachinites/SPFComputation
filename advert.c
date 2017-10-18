@@ -42,7 +42,8 @@ add_route(node_t *lsp_reciever,
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric);
+        LEVEL level, unsigned int metric,
+        node_t *hosting_node);
 
 extern void
 delete_route(node_t *lsp_reciever,
@@ -56,8 +57,8 @@ advert_id_str(ADVERT_ID_T advert_id){
 
     switch(advert_id)
     {
-        case PREFIX_ADD_DELETE_ADVERT:
-            return "PREFIX_ADD_DELETE_ADVERT";
+        case TLV128:
+            return "TLV128";
         case PREFIX_LEAK_ADVERT:
             return "PREFIX_LEAK_ADVERT";
         case LINK_METRIC_CHANGE_ADVERT:
@@ -94,21 +95,21 @@ prefix_distribution_routine(node_t *lsp_generator,
                 get_str_level(dist_info->info_dist_level)); TRACE(); 
 
     switch(dist_info->advert_id){
-        case PREFIX_ADD_DELETE_ADVERT:
+        case TLV128:
         case PREFIX_LEAK_ADVERT:
             switch(dist_info->add_or_remove){
                 case AD_CONFIG_ADDED:
                     {
-                        prefix_add_del_advert_t *ad_msg = 
-                                (prefix_add_del_advert_t *)dist_info->info_data;
+                        tlv128_ip_reach_t *ad_msg = 
+                                (tlv128_ip_reach_t *)dist_info->info_data;
                         add_route(lsp_receiver, lsp_generator, dist_info->info_dist_level, ad_msg->prefix, 
-                                  ad_msg->mask, ad_msg->prefix_level, ad_msg->metric);  
+                                  ad_msg->mask, ad_msg->prefix_level, ad_msg->metric, ad_msg->hosting_node);  
                     }
                 break;
                 case AD_CONFIG_REMOVED:
                     {
-                        prefix_add_del_advert_t *ad_msg = 
-                                (prefix_add_del_advert_t *)dist_info->info_data;
+                        tlv128_ip_reach_t *ad_msg = 
+                                (tlv128_ip_reach_t *)dist_info->info_data;
                         delete_route(lsp_receiver, lsp_generator, dist_info->info_dist_level, ad_msg->prefix, 
                                   ad_msg->mask, ad_msg->prefix_level, ad_msg->metric);  
                     }

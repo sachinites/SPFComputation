@@ -84,6 +84,8 @@ create_new_prefix(const char *prefix, unsigned char mask);
 void
 set_prefix_property_metric(prefix_t *prefix, 
                            unsigned int metric);
+void
+init_prefix_key(prefix_t *prefix, char *_prefix, char mask);
 
 void
 set_prefix_flag(unsigned int flag);
@@ -94,7 +96,7 @@ comparison_fn
 get_prefix_comparison_fn();
 
 /*This fn leak the prefix from L2 to L1*/
-void
+int
 leak_prefix(char *node_name, char *prefix, char mask, 
             LEVEL from_level, LEVEL to_level);
 

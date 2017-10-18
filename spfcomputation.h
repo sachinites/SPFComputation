@@ -84,6 +84,9 @@ typedef struct spf_info_{
     rttable *rttable;
 } spf_info_t;
 
+#define GET_SPF_INFO_NODE(spf_info_ptr, _level)  \
+    (spf_info_ptr->spf_level_info[_level]->node)
+
 typedef struct _node_t node_t;
 
 
