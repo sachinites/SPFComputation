@@ -435,6 +435,8 @@ install_route_in_rib(spf_info_t *spf_info,
                  rt_updated = 0, 
                  rt_no_change = 0;
 
+    rttable_entry_t *existing_rt_route = NULL;
+
     assert(IS_LEVEL_SET(route->level, level));
 
     /* Note : For unchanged routes, we need to send notification to RIB 
@@ -498,7 +500,7 @@ install_route_in_rib(spf_info_t *spf_info,
         /*It might be the case that the route already installed in RIB belong to other level, 
          * we need to check if the route we are installing has better cost or not*/
         {
-            rttable_entry_t * existing_rt_route = rt_route_lookup(spf_info->rttable, 
+            existing_rt_route = rt_route_lookup(spf_info->rttable, 
                                 route->rt_key.prefix, route->rt_key.mask);
             if(existing_rt_route){
                 if(existing_rt_route->level != route->level){
@@ -533,6 +535,30 @@ install_route_in_rib(spf_info_t *spf_info,
         }
             break;
         case RTE_CHANGED:
+            existing_rt_route = rt_route_lookup(spf_info->rttable, 
+                                route->rt_key.prefix, route->rt_key.mask);
+            if(existing_rt_route){
+                if(existing_rt_route->level != route->level){
+                    if(existing_rt_route->cost > rt_entry_template->cost){
+                        sprintf(LOG, "Node %s: RIB Route %s/%u, %s, cost = %d updated with route %s/%u, %s, cost = %d",
+                                    GET_SPF_INFO_NODE(spf_info, level)->node_name, existing_rt_route->dest.prefix, existing_rt_route->dest.mask,
+                                    get_str_level(existing_rt_route->level), existing_rt_route->cost,
+                                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, get_str_level(rt_entry_template->level),
+                                    rt_entry_template->cost); TRACE();
+                        rt_route_update(spf_info->rttable, rt_entry_template);
+                        free(rt_entry_template);
+                        rt_entry_template = NULL;
+                        rt_updated++;
+                        break;
+                    }
+                    else{
+                        rt_no_change++;
+                        break;
+                    }
+                }
+                else
+                    assert(0); /* Impossible case*/
+            }
             rt_route_update(spf_info->rttable, rt_entry_template);
             free(rt_entry_template);
             rt_entry_template = NULL;
@@ -567,6 +593,7 @@ start_route_installation(spf_info_t *spf_info,
     singly_ll_node_t* list_node = NULL;
     routes_t *route = NULL;
     rttable_entry_t *rt_entry_template = NULL;
+    rttable_entry_t *existing_rt_route = NULL;
     unsigned int i = 0,
                  rt_added = 0,
                  rt_removed = 0, 
@@ -641,7 +668,7 @@ start_route_installation(spf_info_t *spf_info,
                 /*It might be the case that the route already installed in RIB belong to other level, 
                  * we need to check if the route we are installing has better cost or not*/
                 {
-                    rttable_entry_t * existing_rt_route = rt_route_lookup(spf_info->rttable, 
+                    existing_rt_route = rt_route_lookup(spf_info->rttable, 
                             route->rt_key.prefix, route->rt_key.mask);
                     if(existing_rt_route){
                         if(existing_rt_route->level != route->level){
@@ -676,6 +703,30 @@ start_route_installation(spf_info_t *spf_info,
                 }
                 break;
             case RTE_CHANGED:
+                existing_rt_route = rt_route_lookup(spf_info->rttable, 
+                        route->rt_key.prefix, route->rt_key.mask);
+                if(existing_rt_route){
+                    if(existing_rt_route->level != route->level){
+                        if(existing_rt_route->cost > rt_entry_template->cost){
+                            sprintf(LOG, "Node %s: RIB Route %s/%u, %s, cost = %d updated with route %s/%u, %s, cost = %d",
+                                    GET_SPF_INFO_NODE(spf_info, level)->node_name, existing_rt_route->dest.prefix, existing_rt_route->dest.mask,
+                                    get_str_level(existing_rt_route->level), existing_rt_route->cost,
+                                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, get_str_level(rt_entry_template->level),
+                                    rt_entry_template->cost); TRACE();
+                            rt_route_update(spf_info->rttable, rt_entry_template);
+                            free(rt_entry_template);
+                            rt_entry_template = NULL;
+                            rt_updated++;
+                            break;
+                        }
+                        else{
+                            rt_no_change++;
+                            break;
+                        }
+                    }
+                    else
+                        assert(0); /* Impossible case*/
+                }
                 rt_route_update(spf_info->rttable, rt_entry_template);
                 free(rt_entry_template);
                 rt_entry_template = NULL;
