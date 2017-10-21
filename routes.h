@@ -61,14 +61,14 @@ typedef struct routes_{
 
     /*same subnet prefix lists*/
     ll_t *like_prefix_list; 
-    route_intall_status install_state[MAX_LEVEL]; 
+    route_intall_status install_state; 
 
 } routes_t;
 
 routes_t *route_malloc();
 
 routes_t *
-search_prefix_in_spf_route_list(spf_info_t *spf_info,
+search_route_in_spf_route_list(spf_info_t *spf_info,
                                 prefix_t *prefix, LEVEL level);
 
 void

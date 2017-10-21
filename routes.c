@@ -59,8 +59,7 @@ route_malloc(){
     singly_ll_set_comparison_fn(route->backup_nh_list, instance_node_comparison_fn);
     route->like_prefix_list = init_singly_ll();
     singly_ll_set_comparison_fn(route->like_prefix_list, get_prefix_comparison_fn());
-    route->install_state[LEVEL1] = RTE_ADDED;
-    route->install_state[LEVEL2] = RTE_ADDED;
+    route->install_state = RTE_ADDED;
     return route;
 }
 
@@ -141,7 +140,7 @@ prepare_new_nxt_hop_template(node_t *computing_node,
 }
 
 routes_t *
-search_prefix_in_spf_route_list(spf_info_t *spf_info, 
+search_route_in_spf_route_list(spf_info_t *spf_info, 
                                 prefix_t *prefix, LEVEL level){
 
     common_pfx_key_t rt_key;
@@ -234,7 +233,7 @@ is_changed_route(spf_info_t *spf_info,
     * routes which were present in prev spf runs, and in current spf runs as well, and we
     * are not sure yet whether they are same or something changed*/
 
-   assert(route->install_state[level] == RTE_UPDATED);
+   assert(route->install_state == RTE_UPDATED);
    
    switch(spf_type){
 
@@ -265,7 +264,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
    ITERATE_LIST(spf_info->routes_list, list_node){
            
        route = list_node->data;
-       if(route->install_state[level] == RTE_STALE && IS_LEVEL_SET(route->level, level)){
+       if(route->install_state == RTE_STALE && IS_LEVEL_SET(route->level, level)){
         sprintf(LOG, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.prefix, 
                         route->rt_key.mask, level); TRACE();
         i++;
@@ -289,7 +288,7 @@ mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
        route = list_node->data;
        if(!IS_LEVEL_SET(route->level, level))
            continue;
-       route->install_state[level] = RTE_STALE;
+       route->install_state = RTE_STALE;
        delete_singly_ll(route->like_prefix_list);
    }
 }
@@ -344,7 +343,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         return;
     }
     
-    route = search_prefix_in_spf_route_list(spf_info, prefix, level);
+    route = search_route_in_spf_route_list(spf_info, prefix, level);
 
     if(!route){
         sprintf(LOG, "prefix : %s/%u is a New route", 
@@ -373,7 +372,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         ROUTE_ADD_LIKE_PREFIX_LIST(route, prefix);
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
-        route->install_state[level] = RTE_ADDED;
+        route->install_state = RTE_ADDED;
         sprintf(LOG, "Node : %s : route : %s/%u, spf_metric = %u,  added to main route list for level%u",  
             GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
             route->spf_metric, route->level); TRACE();
@@ -384,7 +383,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->prefix, prefix->mask, route->version, 
                     spf_info->spf_level_info[level].version, get_str_level(route->level), get_str_level(level)); TRACE();
 
-        if(route->install_state[level] == RTE_ADDED){
+        if(route->install_state == RTE_ADDED){
             if(result->spf_metric + prefix->metric < route->spf_metric){
                 sprintf(LOG, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u", 
                         GET_SPF_INFO_NODE(spf_info, level)->node_name, 
@@ -412,7 +411,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             /*route is from prev run and exists. This code hits only once per given route*/
             sprintf(LOG, "route : %s/%u, updated route(?)", 
                     route->rt_key.prefix, route->rt_key.mask); TRACE();
-            route->install_state[level] = RTE_UPDATED;
+            route->install_state = RTE_UPDATED;
             if(result->spf_metric + prefix->metric < route->spf_metric){ 
                 sprintf(LOG, "route : %s/%u is over-written", 
                         route->rt_key.prefix, route->rt_key.mask); TRACE();
@@ -442,7 +441,7 @@ install_route_in_rib(spf_info_t *spf_info,
      * to simply remove the LFA/RLFA for unchanged routes present at this point, 
      * these are stale LFA/RLFA and can cause Microloops*/
 
-    if(route->install_state[level] == RTE_NO_CHANGE){
+    if(route->install_state == RTE_NO_CHANGE){
 
         rt_no_change++;
         if(!is_singly_ll_empty(route->backup_nh_list))
@@ -481,9 +480,9 @@ install_route_in_rib(spf_info_t *spf_info,
 
     sprintf(LOG, "RIB modification : route : %s/%u, Level%u, Action : %s", 
             route->rt_key.prefix, route->rt_key.mask, 
-            route->level, route_intall_status_str(route->install_state[level])); TRACE();
+            route->level, route_intall_status_str(route->install_state)); TRACE();
 
-    switch(route->install_state[level]){
+    switch(route->install_state){
 
         case RTE_STALE:
             if(rt_route_delete(spf_info->rttable, route->rt_key.prefix, route->rt_key.mask) < 0){
@@ -496,6 +495,33 @@ install_route_in_rib(spf_info_t *spf_info,
         case RTE_UPDATED:
             assert(0);
         case RTE_ADDED:
+        /*It might be the case that the route already installed in RIB belong to other level, 
+         * we need to check if the route we are installing has better cost or not*/
+        {
+            rttable_entry_t * existing_rt_route = rt_route_lookup(spf_info->rttable, 
+                                route->rt_key.prefix, route->rt_key.mask);
+            if(existing_rt_route){
+                if(existing_rt_route->level != route->level){
+                    if(existing_rt_route->cost > rt_entry_template->cost){
+                        sprintf(LOG, "Node %s: RIB Route %s/%u, %s, cost = %d updated with route %s/%u, %s, cost = %d",
+                                    GET_SPF_INFO_NODE(spf_info, level)->node_name, existing_rt_route->dest.prefix, existing_rt_route->dest.mask,
+                                    get_str_level(existing_rt_route->level), existing_rt_route->cost,
+                                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, get_str_level(rt_entry_template->level),
+                                    rt_entry_template->cost); TRACE();
+                        rt_route_update(spf_info->rttable, rt_entry_template);
+                        free(rt_entry_template);
+                        rt_entry_template = NULL;
+                        rt_updated++;
+                        break;
+                    }
+                    else{
+                        rt_no_change++;
+                        break;
+                    }
+                }
+                else
+                    assert(0); /* Impossible case*/
+            }
             if(rt_route_install(spf_info->rttable, rt_entry_template) < 0){
                 printf("%s() : Error : Could not Add route : %s/%u, Level%u\n", __FUNCTION__,
                         route->rt_key.prefix, route->rt_key.mask, route->level);
@@ -504,6 +530,7 @@ install_route_in_rib(spf_info_t *spf_info,
                 break;
             }
             rt_added++;
+        }
             break;
         case RTE_CHANGED:
             rt_route_update(spf_info->rttable, rt_entry_template);
@@ -557,7 +584,7 @@ start_route_installation(spf_info_t *spf_info,
          * to simply remove the LFA/RLFA for unchanged routes present at this point, t
          * hese are stale LFA/RLFA and can cause Microloops*/
 
-        if(route->install_state[level] == RTE_NO_CHANGE){
+        if(route->install_state == RTE_NO_CHANGE){
 
             rt_no_change++;
             if(!is_singly_ll_empty(route->backup_nh_list))
@@ -596,9 +623,9 @@ start_route_installation(spf_info_t *spf_info,
 
         sprintf(LOG, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
-                route->level, route->spf_metric, route_intall_status_str(route->install_state[level])); TRACE();
+                route->level, route->spf_metric, route_intall_status_str(route->install_state)); TRACE();
 
-        switch(route->install_state[level]){
+        switch(route->install_state){
             
             case RTE_STALE:
                 if(rt_route_delete(spf_info->rttable, route->rt_key.prefix, route->rt_key.mask) < 0){
@@ -611,14 +638,42 @@ start_route_installation(spf_info_t *spf_info,
             case RTE_UPDATED:
                 assert(0);
             case RTE_ADDED:
-                if(rt_route_install(spf_info->rttable, rt_entry_template) < 0){
-                    printf("%s() : Error : Could not Add route : %s/%u, Level%u\n", __FUNCTION__,
-                                    route->rt_key.prefix, route->rt_key.mask, route->level);
-                    free(rt_entry_template);
-                    rt_entry_template = NULL;
-                    break;
+                /*It might be the case that the route already installed in RIB belong to other level, 
+                 * we need to check if the route we are installing has better cost or not*/
+                {
+                    rttable_entry_t * existing_rt_route = rt_route_lookup(spf_info->rttable, 
+                            route->rt_key.prefix, route->rt_key.mask);
+                    if(existing_rt_route){
+                        if(existing_rt_route->level != route->level){
+                            if(existing_rt_route->cost > rt_entry_template->cost){
+                                sprintf(LOG, "Node %s: RIB Route %s/%u, %s, cost = %d updated with route %s/%u, %s, cost = %d",
+                                        GET_SPF_INFO_NODE(spf_info, level)->node_name, existing_rt_route->dest.prefix, existing_rt_route->dest.mask,
+                                        get_str_level(existing_rt_route->level), existing_rt_route->cost,
+                                        rt_entry_template->dest.prefix, rt_entry_template->dest.mask, get_str_level(rt_entry_template->level),
+                                        rt_entry_template->cost); TRACE();
+                                rt_route_update(spf_info->rttable, rt_entry_template);
+                                free(rt_entry_template);
+                                rt_entry_template = NULL;
+                                rt_updated++;
+                                break;
+                            }
+                            else{
+                                rt_no_change++;
+                                break;    
+                            }
+                        }
+                        else
+                            assert(0); /* Impossible case*/
+                    }
+                    if(rt_route_install(spf_info->rttable, rt_entry_template) < 0){
+                        printf("%s() : Error : Could not Add route : %s/%u, Level%u\n", __FUNCTION__,
+                                route->rt_key.prefix, route->rt_key.mask, route->level);
+                        free(rt_entry_template);
+                        rt_entry_template = NULL;
+                        break;
+                    }
+                    rt_added++;
                 }
-                rt_added++;
                 break;
             case RTE_CHANGED:
                 rt_route_update(spf_info->rttable, rt_entry_template);
@@ -708,7 +763,7 @@ build_routing_table(spf_info_t *spf_info,
     ITERATE_LIST(spf_info->routes_list, list_node){
 
         route = list_node->data;
-        if(route->install_state[level] != RTE_UPDATED)
+        if(route->install_state != RTE_UPDATED)
             continue;
 
         if(!IS_LEVEL_SET(route->level, level))
@@ -718,9 +773,9 @@ build_routing_table(spf_info_t *spf_info,
         assert(rt_entry); /*This entry MUST exist in RIB*/
 
         if(is_changed_route(spf_info, rt_entry, route, FULL_RUN, level) == TRUE)
-            route->install_state[level] = RTE_CHANGED;
+            route->install_state = RTE_CHANGED;
         else
-            route->install_state[level] = RTE_NO_CHANGE;
+            route->install_state = RTE_NO_CHANGE;
     }
 }
 
@@ -773,12 +828,7 @@ add_route(node_t *lsp_reciever,
 
         _prefix = node_local_prefix_search(lsp_reciever, info_dist_level, prefix, mask);
 
-        if(_prefix){
-            sprintf(LOG, "Node : %s : INFO : prefix %s/%u already present at %s", 
-                    lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE();
-            return;
-        }
-        else{
+        if(!_prefix){
             sprintf(LOG, "Node : %s : INFO : prefix %s/%u added to prefix list at %s",
                     lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE();
 
@@ -792,72 +842,7 @@ add_route(node_t *lsp_reciever,
         _prefix = &_prefix2;
     }
 
-    #if 0
-    /*Checking for route Leak from L2 to L1*/
-
-    route = search_prefix_in_spf_route_list(spf_info, _prefix, get_other_level(info_dist_level));
-    if(route){
-        if(info_dist_level == LEVEL1){
-            route->level |= LEVEL1;
-            SET_BIT(route->flags, PREFIX_DOWNBIT_FLAG);
-            sprintf(LOG, "node %s, route %s/%u L2 version is installed in RIB already",
-                    lsp_reciever->node_name, prefix, mask); TRACE();
-
-            /* Now compare if the L2 version of the route installed in RIB has better metric
-             * then L1 version of the prefix advertised, overwrite if L1 path is better*/
-
-            result = (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], 
-                    hosting_node);
-            if(!result){
-                sprintf(LOG, "Node %s do not have LEVEL1 result for remote node %s, SPF Full run required", 
-                        lsp_reciever->node_name, hosting_node->node_name); TRACE();
-                spf_computation(lsp_reciever, spf_info, info_dist_level, FULL_RUN);
-                return;
-            }
-
-            sprintf(LOG, "Node : %s, route %s/%u L2 metric : %u, L1 metric : %u", 
-                    lsp_reciever->node_name, prefix, mask, route->spf_metric, metric + result->spf_metric); TRACE();
-
-            if(route->spf_metric > metric + result->spf_metric){
-
-                sprintf(LOG, "Node : %s, route %s/%u will be updated by L1 version in RIB", lsp_reciever->node_name, prefix, mask);
-                TRACE();
-
-                //overwrite_route(spf_info, route, prefix, result, LEVEL1);
-
-                assert(route->hosting_node == hosting_node);
-                route->spf_metric = metric + result->spf_metric;
-                route->lsp_metric = 0;
-
-                ROUTE_FLUSH_PRIMARY_NH_LIST(route);
-                ROUTE_FLUSH_BACKUP_NH_LIST(route);
-
-                for(; i < MAX_NXT_HOPS; i++){
-                    if(result->next_hop[i]){
-                        ROUTE_ADD_PRIMARY_NH(route, result->next_hop[i]);
-                    }
-                    else
-                        break;
-                }
-
-                /* Update back up here, not supported as of now*/
-
-                route->install_state[info_dist_level] = RTE_CHANGED; 
-                install_route_in_rib(spf_info, info_dist_level, route);
-                return;
-            }
-            else{
-                sprintf(LOG, "Node : %s, route %s/%u L2 version is better in RIB, will not be updated", lsp_reciever->node_name, prefix, mask);
-                TRACE();
-                return;
-            }
-
-        }
-    }
-
-    if(info_dist_level != LEVEL2)/*save redundant search*/
-#endif
-    route = search_prefix_in_spf_route_list(spf_info, _prefix, info_dist_level);
+    route = search_route_in_spf_route_list(spf_info, _prefix, info_dist_level);
 
     if(!route){
         sprintf(LOG, "node %s, route %s/%u not found Routing tree", lsp_reciever->node_name, prefix, mask);TRACE(); 
@@ -898,7 +883,7 @@ add_route(node_t *lsp_reciever,
 
         ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix);
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
-        route->install_state[level] = RTE_ADDED;
+        route->install_state = RTE_ADDED;
         sprintf(LOG, "At node %s, route : %s/%u added to main route list for level%u, metric : %u",  
                 lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, route->level, route->spf_metric); TRACE();
 

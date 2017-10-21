@@ -94,25 +94,22 @@ THREAD_NODE_TO_STRUCT(prefix_t,
                       like_prefix_thread, 
                       get_prefix_from_like_prefix_thread);
 
-/* Returns the metric of the prefix being leaked from L2 to L1. If such a prefix,
- * do not exist, return NULL*/
+/* Returns the metric of the prefix being leaked from L2 to L1 (Or otherwise). If such a prefix,
+ * do not exist, return -1. This fn simply add the new prefix to new prefix list.*/
 int
 leak_prefix(char *node_name, char *_prefix, char mask, 
                 LEVEL from_level, LEVEL to_level){
 
     node_t *node = NULL;
-    prefix_t *prefix = NULL;
+    prefix_t *prefix = NULL, *leaked_prefix = NULL,
+              prefix_key;
+    routes_t *route_to_be_leaked = NULL;
 
     if(!instance){
         printf("%s() : Network Graph is NULL\n", __FUNCTION__);
         return -1;
     }
 
-    if(from_level != LEVEL2){
-
-        printf("%s() : Error : Prefix leaking is allowed only from Level 2 to Level 1\n", __FUNCTION__);
-        return -1;
-    }
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
 
     common_pfx_key_t pfx_key;
@@ -121,7 +118,8 @@ leak_prefix(char *node_name, char *_prefix, char mask,
     pfx_key.mask = mask;
 
     prefix = (prefix_t *)singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, from_level), (void *)&pfx_key);
-    
+   
+    /* Case 1 : leaking prefix on a local hosting node */ 
     if(prefix){
         /*Now add this prefix to L1 prefix list of node*/
         if(singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, to_level), (void *)&pfx_key)){
@@ -129,41 +127,27 @@ leak_prefix(char *node_name, char *_prefix, char mask,
             return -1;
         }
 
-        prefix_t *leaked_prefix = calloc(1, sizeof(prefix_t));
-
-        strncpy(leaked_prefix->prefix, prefix->prefix, strlen(prefix->prefix));
-        leaked_prefix->mask = prefix->mask;
-        leaked_prefix->metric = prefix->metric;
-        leaked_prefix->prefix_flags = prefix->prefix_flags;/*Abhishek : Not sure if flags needs to be copied as it is, will revisit later if it creates some problem*/
-        leaked_prefix->ref_count = 0; /*This is relevant only to interface prefixes*/
+        leaked_prefix = attach_prefix_on_node (node, prefix->prefix, prefix->mask, to_level, prefix->metric);
+        leaked_prefix->prefix_flags = prefix->prefix_flags;
+        leaked_prefix->ref_count = 0;
         SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
         leaked_prefix->hosting_node = prefix->hosting_node;
-        singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, to_level), leaked_prefix);
+
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, STR_PREFIX(prefix), PREFIX_MASK(prefix), get_str_level(from_level), get_str_level(to_level));
                 TRACE();
 
-#if 0
-        /* Update corresponding route */
-        common_pfx_key_t rt_key;
-        apply_mask(_prefix, mask, rt_key.prefix);
-        rt_key.prefix[PREFIX_LEN] = '\0';
-        rt_key.mask = mask;
-        routes_t *route_to_be_leaked = singly_ll_search_by_key(node->spf_info.routes_list, &rt_key);
-        assert(route_to_be_leaked);
-        SET_BIT(route_to_be_leaked->flags, PREFIX_DOWNBIT_FLAG);
-        route_to_be_leaked->level |= to_level; /*This route is present in both levels now*/
-#endif
         return leaked_prefix->metric;
     }
 
+    /* case 2 : Leaking prefix on a remote node*/
     if(!prefix){
         /*if prefix do not exist, means, we are leaking remote prefix on a node*/
-        common_pfx_key_t rt_key;
-        apply_mask(_prefix, mask, rt_key.prefix);
-        rt_key.prefix[PREFIX_LEN] = '\0';
-        rt_key.mask = mask;
-        routes_t *route_to_be_leaked = singly_ll_search_by_key(node->spf_info.routes_list, &rt_key);
+
+        init_prefix_key(&prefix_key, _prefix, mask);
+        route_to_be_leaked = search_route_in_spf_route_list(&node->spf_info, &prefix_key, from_level);
+        
+        /*Route must exist on remote node*/
         if(!route_to_be_leaked){
             printf("%s() : Node : %s : Error : route %s/%u do not exist in %s\n", 
                     __FUNCTION__, node->node_name, 
@@ -180,23 +164,16 @@ leak_prefix(char *node_name, char *_prefix, char mask,
             return -1;
         }
 
-        SET_BIT(route_to_be_leaked->flags, PREFIX_DOWNBIT_FLAG);
-        route_to_be_leaked->level |= to_level; /*This route is present in both levels now*/
-        
         /*We need to add this remote route which is leaked from L2 to L1 in native L1 prefix list
          * so that L1 router can compute route to this leaked prefix by running full spf run */
 
-        prefix_t *leaked_prefix = calloc(1, sizeof(prefix_t));
-        strncpy(leaked_prefix->prefix, route_to_be_leaked->rt_key.prefix, PREFIX_LEN);
-        leaked_prefix->prefix[PREFIX_LEN] = '\0';
-        leaked_prefix->mask = route_to_be_leaked->rt_key.mask;
-        leaked_prefix->metric = route_to_be_leaked->spf_metric;
-        leaked_prefix->prefix_flags = route_to_be_leaked->flags;/*Abhishek : Not sure if flags needs to be copied as it is, will revisit later if it creates some problem*/
-        leaked_prefix->ref_count = 0; /*This is relevant only to interface prefixes*/
+        leaked_prefix = attach_prefix_on_node (node, route_to_be_leaked->rt_key.prefix, 
+                            route_to_be_leaked->rt_key.mask, to_level, route_to_be_leaked->spf_metric);
+        leaked_prefix->prefix_flags = route_to_be_leaked->flags;
+        leaked_prefix->ref_count = 0;
         SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
-        leaked_prefix->hosting_node = node;
+        leaked_prefix->hosting_node = node; /*The node which leaks the prefix to other level should become hosting node for the prefix*/
 
-        singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, to_level), leaked_prefix);
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, STR_PREFIX(leaked_prefix), PREFIX_MASK(leaked_prefix), 
                 get_str_level(from_level), get_str_level(to_level));     TRACE();
