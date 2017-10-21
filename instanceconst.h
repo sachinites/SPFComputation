@@ -33,6 +33,8 @@
 #ifndef __GRAPHCONST__
 #define __GRAPHCONST__
 
+#include <assert.h>
+
 #define IF_NAME_SIZE            16
 #define NODE_NAME_SIZE          16
 #define MAX_NODE_INTF_SLOTS     10
@@ -65,6 +67,15 @@ typedef enum{
     MAX_LEVEL,
     LEVEL12 = LEVEL1 | LEVEL2
 } LEVEL;
+
+static inline LEVEL 
+get_other_level(LEVEL level){
+
+    LEVEL l;
+    assert(level == LEVEL1 || level == LEVEL2);
+    l = (level == LEVEL1) ? LEVEL2 : LEVEL1;
+    return l;
+}
 
 typedef enum{
     NON_PSEUDONODE,

@@ -137,7 +137,7 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
         return -1;
     }
 
-    memcpy(rt_entry1->dest.prefix, rt_entry->dest.prefix, 16); 
+    memcpy(rt_entry1->dest.prefix, rt_entry->dest.prefix, PREFIX_LEN + 1); 
     rt_entry1->dest.mask   = rt_entry->dest.mask;
     rt_entry1->version     = rt_entry->version;
     rt_entry1->cost        = rt_entry->cost;

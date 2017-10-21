@@ -10,10 +10,10 @@ extern char enable_log;
 extern char LOG[LOG_BUFFER_SIZE];
 
 
-#define TRACE()                                     \
-    if(enable_log){                                 \
-        printf("%s(): %s\n", __FUNCTION__, LOG);    \
-        memset(LOG, 0, LOG_BUFFER_SIZE);            \
+#define TRACE()                                                 \
+    if(enable_log){                                             \
+        printf("%s(%d): %s\n", __FUNCTION__, __LINE__, LOG);    \
+        memset(LOG, 0, LOG_BUFFER_SIZE);                        \
 }
 
 void

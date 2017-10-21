@@ -123,3 +123,9 @@ validate_ipv4_mask(char *mask){
     return VALIDATION_FAILED;
 }
 
+int
+show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+
+    return 0;
+}

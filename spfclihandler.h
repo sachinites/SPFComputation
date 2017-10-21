@@ -49,4 +49,6 @@ display_instance_node_interfaces(param_t *param, ser_buff_t *tlv_buf);
 int
 validate_ipv4_mask(char *mask);
 
+int
+show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 #endif /* __SPFCLIHANDLER__ */

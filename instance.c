@@ -30,12 +30,13 @@
  * =====================================================================================
  */
 
-#include "instance.h"
-#include "spfutil.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <logging.h>
+#include "instance.h"
+#include "spfutil.h"
 #include "rttable.h"
 
 static void
@@ -360,6 +361,8 @@ attach_prefix_on_node(node_t *node,
     _prefix = create_new_prefix(prefix, mask);
     _prefix->metric = metric;
     _prefix->hosting_node = node;
+    sprintf(LOG, "Node : %s, prefix attached : %s/%u, prefix metric : %u",
+        node->node_name, prefix, mask, metric); TRACE();
     singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level), (void *)_prefix);
     return _prefix;
 }
@@ -383,6 +386,8 @@ deattach_prefix_on_node(node_t *node,
     if(!_prefix)
         return;
 
+    sprintf(LOG, "Node : %s, prefix deattached : %s/%u, prefix metric : %u",
+        node->node_name, prefix, mask, metric); TRACE();
     singly_ll_remove_node_by_dataptr(GET_NODE_PREFIX_LIST(node, level), _prefix);
     free(_prefix);
     _prefix = NULL;

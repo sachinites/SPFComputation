@@ -97,7 +97,8 @@ THREAD_NODE_TO_STRUCT(prefix_t,
 /* Returns the metric of the prefix being leaked from L2 to L1. If such a prefix,
  * do not exist, return NULL*/
 int
-leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL to_level){
+leak_prefix(char *node_name, char *_prefix, char mask, 
+                LEVEL from_level, LEVEL to_level){
 
     node_t *node = NULL;
     prefix_t *prefix = NULL;
@@ -141,6 +142,18 @@ leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL t
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, STR_PREFIX(prefix), PREFIX_MASK(prefix), get_str_level(from_level), get_str_level(to_level));
                 TRACE();
+
+#if 0
+        /* Update corresponding route */
+        common_pfx_key_t rt_key;
+        apply_mask(_prefix, mask, rt_key.prefix);
+        rt_key.prefix[PREFIX_LEN] = '\0';
+        rt_key.mask = mask;
+        routes_t *route_to_be_leaked = singly_ll_search_by_key(node->spf_info.routes_list, &rt_key);
+        assert(route_to_be_leaked);
+        SET_BIT(route_to_be_leaked->flags, PREFIX_DOWNBIT_FLAG);
+        route_to_be_leaked->level |= to_level; /*This route is present in both levels now*/
+#endif
         return leaked_prefix->metric;
     }
 
@@ -181,16 +194,16 @@ leak_prefix(char *node_name, char *_prefix, char mask, LEVEL from_level, LEVEL t
         leaked_prefix->prefix_flags = route_to_be_leaked->flags;/*Abhishek : Not sure if flags needs to be copied as it is, will revisit later if it creates some problem*/
         leaked_prefix->ref_count = 0; /*This is relevant only to interface prefixes*/
         SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
-        leaked_prefix->hosting_node = route_to_be_leaked->hosting_node;
+        leaked_prefix->hosting_node = node;
+
         singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, to_level), leaked_prefix);
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
-                node->node_name, STR_PREFIX(prefix), PREFIX_MASK(prefix), get_str_level(from_level), get_str_level(to_level));
-                TRACE();
+                node->node_name, STR_PREFIX(leaked_prefix), PREFIX_MASK(leaked_prefix), 
+                get_str_level(from_level), get_str_level(to_level));     TRACE();
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, route_to_be_leaked->rt_key.prefix, 
                 route_to_be_leaked->rt_key.mask, get_str_level(from_level), 
-                get_str_level(to_level));
-                TRACE();
+                get_str_level(to_level));  TRACE();
         return route_to_be_leaked->spf_metric;
     }
     return -1;

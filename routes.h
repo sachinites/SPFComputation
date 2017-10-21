@@ -61,7 +61,7 @@ typedef struct routes_{
 
     /*same subnet prefix lists*/
     ll_t *like_prefix_list; 
-    route_intall_status install_state; 
+    route_intall_status install_state[MAX_LEVEL]; 
 
 } routes_t;
 
@@ -103,6 +103,14 @@ free_route(routes_t *route);
 #define ROUTE_GET_PR_NH_CNT(routeptr)   \
     GET_NODE_COUNT_SINGLY_LL(routeptr->primary_nh_list)
 
+#define IS_ROUTE_L1_ONLY(routeptr)      \
+    (IS_LEVEL_SET(routeptr->level, LEVEL1) && !IS_LEVEL_SET(routeptr->level, LEVEL2))
+    
+#define IS_ROUTE_L2_ONLY(routeptr)      \
+    (IS_LEVEL_SET(routeptr->level, LEVEL2) && !IS_LEVEL_SET(routeptr->level, LEVEL1))
+
+#define IS_ROUTE_L1L2(routeptr)         \
+    (IS_LEVEL_SET(routeptr->level, LEVEL1) && IS_LEVEL_SET(routeptr->level, LEVEL2))
 
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/

@@ -412,6 +412,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             ad_msg.metric = prefix_metric;
             ad_msg.prefix_level = to_level_no;
             ad_msg.up_down_bit = 1;
+            ad_msg.hosting_node = node;
 
             dist_info_hdr.lsp_generator = node;
             dist_info_hdr.info_dist_level = to_level_no;
@@ -930,7 +931,26 @@ spf_init_dcm(){
     init_param(&debug_log_enable_disable, LEAF, 0, debug_log_enable_disable_handler, validate_debug_log_enable_disable, STRING, "log-status", "enable | disable"); 
     libcli_register_param(&debug_log, &debug_log_enable_disable);
 
+    /* debug instance node <node-name> route-tree*/
+    {
+        static param_t instance;
+        init_param(&instance, CMD, "instance", 0, 0, INVALID, 0, "Network graph");
+        libcli_register_param(debug, &instance);
 
+        static param_t instance_node;
+        init_param(&instance_node, CMD, "node", 0, 0, INVALID, 0, "node");
+        libcli_register_param(&instance, &instance_node);
+        libcli_register_display_callback(&instance_node, display_instance_nodes);
+
+        static param_t instance_node_name;
+        init_param(&instance_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
+        libcli_register_param(&instance_node, &instance_node_name);
+
+        static param_t route_tree;
+        init_param(&route_tree, CMD, "route-tree", show_route_tree_handler, 0, INVALID, "route-tree", "node's route tree");
+        libcli_register_param(&instance_node_name, &route_tree);
+    }
+    
     /* Added Negation support to appropriate command, post this
      * do not extend any negation supported commands*/
 
