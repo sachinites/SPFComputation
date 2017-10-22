@@ -30,9 +30,12 @@
  * =====================================================================================
  */
 
-#include "spfclihandler.h"
 #include <stdio.h>
+#include "spfclihandler.h"
 #include "cmdtlv.h"
+#include "routes.h"
+#include "bitsop.h"
+#include "spfutil.h"
 
 extern instance_t * instance;
 
@@ -123,9 +126,48 @@ validate_ipv4_mask(char *mask){
     return VALIDATION_FAILED;
 }
 
+static void
+dump_route_info(routes_t *route){
+
+    singly_ll_node_t *list_node = NULL;
+    node_t *node = NULL;
+
+    printf("Route : %s/%u, %s\n", route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level));
+    printf("Version : %d, spf_metric = %u, lsp_metric = %u\n", route->version, route->spf_metric, route->lsp_metric);
+    printf("flags : %s\n", IS_BIT_SET(route->flags, PREFIX_DOWNBIT_FLAG) ? "PREFIX_DOWNBIT_FLAG" : "");
+    printf("hosting_node = %s\n", route->hosting_node->node_name);
+    printf("Primary Nxt Hops : ");
+    ITERATE_LIST(route->primary_nh_list, list_node){
+        node = (node_t *)list_node->data;
+        printf("%s ", node->node_name);
+    }
+    printf("\nInstall state : %s\n\n", route_intall_status_str(route->install_state));
+}
+
 int
 show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
+    tlv_struct_t *tlv = NULL;
+    unsigned int i = 0;
+    char *node_name = NULL;
+    node_t *node = NULL;
+    routes_t *route = NULL;
+    singly_ll_node_t *list_node = NULL;
+
+
+    TLV_LOOP(tlv_buf, tlv, i){
+
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+    }
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+    
+    ITERATE_LIST(node->spf_info.routes_list, list_node){
+
+        route = (routes_t *)list_node->data;
+        dump_route_info(route);
+    }
 
     return 0;
 }

@@ -131,7 +131,7 @@ route_search_comparison_fn(void * route, void *key);
 typedef struct rttable_entry_ rttable_entry_t;
 
 void
-prepare_new_rt_entry_template(rttable_entry_t *rt_entry_template,
+prepare_new_rt_entry_template(spf_info_t *spf_info, rttable_entry_t *rt_entry_template,
                                routes_t *route, unsigned int version);
 
 typedef struct nh_t_ nh_t;
@@ -157,5 +157,7 @@ delete_route(node_t *lsp_reciever,
         char *prefix, char mask,
         LEVEL level, unsigned int metric);
 
+char *
+route_intall_status_str(route_intall_status install_status);
 
 #endif /* __ROUTES__ */

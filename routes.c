@@ -93,17 +93,24 @@ free_route(routes_t *route){
 
 /* Store only prefix related info in rttable_entry_t*/
 void
-prepare_new_rt_entry_template(rttable_entry_t *rt_entry_template,
+prepare_new_rt_entry_template(spf_info_t *spf_info, rttable_entry_t *rt_entry_template,
         routes_t *route, unsigned int version){
 
+    self_spf_result_t *self_res = NULL;
     strncpy(rt_entry_template->dest.prefix, route->rt_key.prefix, PREFIX_LEN + 1);
     rt_entry_template->dest.prefix[PREFIX_LEN] = '\0';
     rt_entry_template->dest.mask = route->rt_key.mask;
     rt_entry_template->version = version;
     rt_entry_template->cost = route->spf_metric;
     rt_entry_template->level = route->level;
+
+    /*Find the spf result to reach route->hosting_node when spf_root is current node.*/
+    self_res = singly_ll_search_by_key(route->hosting_node->self_spf_result[route->level], 
+                            GET_SPF_INFO_NODE(spf_info, route->level));
+    assert(self_res);
+
     rt_entry_template->primary_nh_count =
-        next_hop_count(route->hosting_node->next_hop[route->level]);
+        next_hop_count(&self_res->res->next_hop[0]);
 }
 
 void
@@ -143,22 +150,21 @@ routes_t *
 search_route_in_spf_route_list(spf_info_t *spf_info, 
                                 prefix_t *prefix, LEVEL level){
 
-    common_pfx_key_t rt_key;
-    apply_mask(prefix->prefix, prefix->mask, rt_key.prefix);
-    rt_key.prefix[PREFIX_LEN] = '\0';
-    rt_key.mask = prefix->mask;
-    routes_t *route = singly_ll_search_by_key(spf_info->routes_list, &rt_key);
-
-    if(!route)
-        return NULL;
-
-    if(IS_LEVEL_SET(level, route->level))
-       return route;
-    
+    routes_t *route = NULL;
+    singly_ll_node_t* list_node = NULL;
+    char prefix_with_mask[PREFIX_LEN + 1];
+    apply_mask(prefix->prefix, prefix->mask, prefix_with_mask);
+    prefix_with_mask[PREFIX_LEN] = '\0';
+    ITERATE_LIST(spf_info->routes_list, list_node){
+        route = list_node->data;
+        if(strncmp(route->rt_key.prefix, prefix_with_mask, PREFIX_LEN) == 0 &&
+                (route->rt_key.mask == prefix->mask) && route->level == level)
+            return route;    
+    }
     return NULL;
 }
 
-static char * 
+char * 
 route_intall_status_str(route_intall_status install_status){
 
     switch(install_status){
@@ -454,16 +460,24 @@ install_route_in_rib(spf_info_t *spf_info,
 
     rt_entry_template = GET_NEW_RT_ENTRY();
 
-    prepare_new_rt_entry_template(rt_entry_template, route,
+    prepare_new_rt_entry_template(spf_info, rt_entry_template, route,
             spf_info->spf_level_info[level].version); 
 
     sprintf(LOG, "route : %s/%u, rt_entry_template->primary_nh_count = %u", 
             rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
             rt_entry_template->primary_nh_count); TRACE();
 
+    self_spf_result_t *self_res = NULL;
+    
+    /*Find the spf result to reach route->hosting_node when spf_root is current node.*/
+    self_res = singly_ll_search_by_key(route->hosting_node->self_spf_result[route->level],
+            GET_SPF_INFO_NODE(spf_info, route->level));
+
+    assert(self_res);
+
     for(i = 0; i < rt_entry_template->primary_nh_count; i++){
         prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node, 
-                route->hosting_node->next_hop[level][i], 
+                self_res->res->next_hop[i], 
                 &rt_entry_template->primary_nh[i],
                 level);
     }
@@ -604,7 +618,7 @@ start_route_installation(spf_info_t *spf_info,
         
         route = list_node->data;
 
-        if(!IS_LEVEL_SET(route->level, level))
+        if(route->level != level)
             continue;
 
         /* Note : For unchanged routes, we need to send notification to RIB 
@@ -622,7 +636,7 @@ start_route_installation(spf_info_t *spf_info,
         
         rt_entry_template = GET_NEW_RT_ENTRY();
 
-        prepare_new_rt_entry_template(rt_entry_template, route,
+        prepare_new_rt_entry_template(spf_info, rt_entry_template, route,
                                 spf_info->spf_level_info[level].version); 
 
         sprintf(LOG, "Template for route : %s/%u, rt_entry_template->primary_nh_count = %u, cost = %u", 
@@ -884,7 +898,7 @@ add_route(node_t *lsp_reciever,
                     lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE();
 
             _prefix = attach_prefix_on_node(lsp_reciever, prefix, mask, info_dist_level, metric);
-            _prefix->prefix_flags = 0; /*not advertised*/ 
+            SET_BIT(_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG); /*not advertised*/ 
             _prefix->hosting_node = hosting_node;
         }
     }else{
@@ -913,11 +927,16 @@ add_route(node_t *lsp_reciever,
         route->flags = _prefix->prefix_flags; /*We have not distributed/configured flags*/
 
         SET_LEVEL(route->level, level);
-        route->hosting_node = _prefix->hosting_node; /*This route was originally advertised by this node*/ 
+        route->hosting_node = hosting_node; /*This route was originally advertised by this node or leaked by this node*/ 
 
         result = (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], lsp_generator);
 
-        assert(result);
+        
+        /*This is possible that a node may not have a result at all. Example is node R5 
+         * in build_multi_area_topo(). When node R5 leak a prefix hosted on node R1 
+         * from level 2 to level 1, R5 will not have level 1 spf result for node 1*/
+
+        //assert(result);
 
         sprintf(LOG, "LSP generator(%s) distance from LSP receiver(%s) = %u at L%d", 
                 lsp_generator->node_name, lsp_reciever->node_name, result->spf_metric, info_dist_level);  TRACE();

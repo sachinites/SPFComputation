@@ -118,9 +118,19 @@ leak_prefix(char *node_name, char *_prefix, char mask,
     pfx_key.mask = mask;
 
     prefix = (prefix_t *)singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, from_level), (void *)&pfx_key);
-   
+
+       
     /* Case 1 : leaking prefix on a local hosting node */ 
     if(prefix){
+   
+        #if 0 
+        /*Check for double leak*/
+        if(IS_BIT_SET(prefix->prefix_flags, PREFIX_DOWNBIT_FLAG)){
+            printf("%s(): Error : Cannot leak already leaked prefix\n", __FUNCTION__);
+            return -1;
+        }
+        #endif
+
         /*Now add this prefix to L1 prefix list of node*/
         if(singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, to_level), (void *)&pfx_key)){
             printf("%s () : Error : Node : %s, prefix : %s already leaked\n", __FUNCTION__, node->node_name, STR_PREFIX(prefix));
@@ -156,7 +166,7 @@ leak_prefix(char *node_name, char *_prefix, char mask,
             return -1;
         }
 
-         if(IS_LEVEL_SET(to_level, route_to_be_leaked->level)){
+         if(search_route_in_spf_route_list(&node->spf_info, &prefix_key, to_level)){
             printf("%s() : Node : %s : INFO : route %s/%u already present in %s\n", 
                     __FUNCTION__, node->node_name,  
                     _prefix, mask, 
@@ -167,8 +177,9 @@ leak_prefix(char *node_name, char *_prefix, char mask,
         /*We need to add this remote route which is leaked from L2 to L1 in native L1 prefix list
          * so that L1 router can compute route to this leaked prefix by running full spf run */
 
-        leaked_prefix = attach_prefix_on_node (node, route_to_be_leaked->rt_key.prefix, 
-                            route_to_be_leaked->rt_key.mask, to_level, route_to_be_leaked->spf_metric);
+        leaked_prefix = attach_prefix_on_node (node, _prefix, mask, 
+                        to_level, route_to_be_leaked->spf_metric);
+
         leaked_prefix->prefix_flags = route_to_be_leaked->flags;
         leaked_prefix->ref_count = 0;
         SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
