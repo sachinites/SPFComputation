@@ -46,6 +46,7 @@
 
 #define IGNOREATTACHED  1   /*If this bit is set, then L1-only router will not install default gateway to L1L2 router of the local Area*/
 
+typedef char FLAG;
 
 /*Edge properties*/
 typedef enum{

@@ -159,8 +159,7 @@ void
 deattach_prefix_on_node(node_t *node, 
                       char *prefix, 
                       unsigned char mask,
-                      LEVEL level,
-                      unsigned int metric);
+                      LEVEL level);
 
 prefix_t *
 node_local_prefix_search(node_t *node, LEVEL level, 

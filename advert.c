@@ -37,6 +37,27 @@
 #include "spfutil.h"
 #include "Queue.h"
 
+static FLAG flood = 1;
+
+void
+abort_flooding(void){
+
+    flood = 0;
+}
+
+void
+init_flooding(void){
+
+    flood = 1;
+}
+
+FLAG
+get_flooding_status(void){
+
+    return flood;
+}
+
+
 extern void
 add_route(node_t *lsp_reciever,
         node_t *lsp_generator,
@@ -151,9 +172,13 @@ generate_lsp(instance_t *instance,
     edge_t *edge1 = NULL,  /*Edge connecting curr node with PN*/
             *edge2 = NULL; /*Edge connecting PN to its nbr*/
     LEVEL level_of_info_dist = dist_info->info_dist_level;
-     
+    
+     init_flooding(); 
      /*distribute the info to self*/
      fn_ptr(lsp_generator, lsp_generator, dist_info);
+
+    if(get_flooding_status() == 0)
+        return;
 
     /*distribute info in the network at a given level*/
      Queue_t* q = initQ();

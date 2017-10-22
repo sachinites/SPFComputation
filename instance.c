@@ -371,8 +371,7 @@ void
 deattach_prefix_on_node(node_t *node,
         char *prefix,
         unsigned char mask,
-        LEVEL level,
-        unsigned int metric){
+        LEVEL level){
 
     assert(prefix);
     assert(level == LEVEL1 || level == LEVEL2);
@@ -387,7 +386,7 @@ deattach_prefix_on_node(node_t *node,
         return;
 
     sprintf(LOG, "Node : %s, prefix deattached : %s/%u, prefix metric : %u",
-        node->node_name, prefix, mask, metric); TRACE();
+        node->node_name, prefix, mask, _prefix->metric); TRACE();
     singly_ll_remove_node_by_dataptr(GET_NODE_PREFIX_LIST(node, level), _prefix);
     free(_prefix);
     _prefix = NULL;
