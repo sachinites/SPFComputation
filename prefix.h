@@ -54,8 +54,6 @@ typedef struct prefix_{
     unsigned char mask;/*Numeric value [0-32]*/
     unsigned int metric;/*Prefix metric, zero for local prefix, non-zeroi for leaked or external prefixes*/
     unsigned int prefix_flags;
-    //unsigned int version;/*spf level version in which this route is computed*/
-    singly_ll_node_t like_prefix_thread;/*glue for like prefixe*/
     node_t *hosting_node;   /*back pointer to hosting node*/
     /*Extras*/
     unsigned char ref_count; /*For internal use*/

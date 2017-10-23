@@ -46,10 +46,11 @@ spf_computation(node_t *spf_root,
 extern int
 instance_node_comparison_fn(void *_node, void *input_node_name);
 
+#if 0
 THREAD_NODE_TO_STRUCT(prefix_t,
         like_prefix_thread,
         get_prefix_from_like_prefix_thread);
-
+#endif
 
 routes_t *
 route_malloc(){
@@ -88,9 +89,11 @@ free_route(routes_t *route){
     free(route->backup_nh_list);
     route->backup_nh_list = 0;
 
+    /* delete list nodes, but do not free the list data*/
     delete_singly_ll(route->like_prefix_list);
     free(route->like_prefix_list);
     route->like_prefix_list = NULL;
+    free(route);
 }
 
 /* Store only prefix related info in rttable_entry_t*/
@@ -344,7 +347,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
     routes_t *route = NULL;
     unsigned int i = 0;
 
-    sprintf(LOG, "Called on Node %s, result node %s, prefix %s, level %s, prefix metric : %u",
+    sprintf(LOG, "Node %s, result node %s, prefix %s, level %s, prefix metric : %u",
              GET_SPF_INFO_NODE(spf_info, level)->node_name, result->node->node_name, 
              prefix->prefix, get_str_level(level), prefix->metric); TRACE();
     if(prefix->metric > INFINITE_METRIC){
@@ -355,8 +358,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
     route = search_route_in_spf_route_list(spf_info, prefix, level);
 
     if(!route){
-        sprintf(LOG, "prefix : %s/%u is a New route", 
-                prefix->prefix, prefix->mask); TRACE();
+        sprintf(LOG, "prefix : %s/%u is a New route in %s, hosting_node %s", 
+                prefix->prefix, prefix->mask, get_str_level(level), prefix->hosting_node->node_name); TRACE();
 
         route = route_malloc();
         route_set_key(route, prefix->prefix, prefix->mask); 
@@ -894,7 +897,7 @@ add_route(node_t *lsp_reciever,
     sprintf(LOG, "node %s, prefix add recvd : %s/%u, L%d, metric = %u", 
             lsp_reciever->node_name, prefix, mask, level, metric); TRACE();
 
-    if(hosting_node == lsp_reciever){ /*The node is leaking a local prefix*/
+    if(hosting_node == lsp_reciever){ /*The node is adding a new local prefix*/
 
         _prefix = node_local_prefix_search(lsp_reciever, info_dist_level, prefix, mask);
 
@@ -964,7 +967,7 @@ add_route(node_t *lsp_reciever,
     }
     else{
         
-        sprintf(LOG, "At Node %s, route %s/%u, %s found Routing tree with cost = %u", 
+        sprintf(LOG, "At Node %s, route %s/%u, %s found in Routing tree with cost = %u", 
             lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, 
             get_str_level(info_dist_level), route->spf_metric); TRACE(); 
 
@@ -992,7 +995,7 @@ add_route(node_t *lsp_reciever,
          assert(hosting_node_self_result);
          
          if(route->spf_metric < hosting_node_self_result->res->spf_metric + metric){
-             sprintf(LOG, "At node %s, Installed route %s/%u, %s is better than advertised, route metric = %u, advertised metric = %u", 
+             sprintf(LOG, "At node %s, Existing route %s/%u, %s is better than advertised, route metric = %u, advertised metric = %u", 
                      lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level), route->spf_metric,
                      hosting_node_self_result->res->spf_metric + metric); TRACE();
 
@@ -1009,17 +1012,17 @@ add_route(node_t *lsp_reciever,
              return;
          }
          else if(route->spf_metric == hosting_node_self_result->res->spf_metric + metric){
-             sprintf(LOG, "At node %s, Installed route %s/%u, %s is equal to advertised, route metric = %u, advertised metric = %u", 
+             sprintf(LOG, "At node %s, Existing route %s/%u, %s is equal to advertised, route metric = %u, advertised metric = %u", 
                      lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level), route->spf_metric,
                      hosting_node_self_result->res->spf_metric + metric); TRACE();
             return;
          }
          else{
-             sprintf(LOG, "At node %s, Installed route %s/%u, %s is no better than advertised, route metric = %u, advertised metric = %u", 
+             sprintf(LOG, "At node %s, Existing route %s/%u, %s is no better than advertised, route metric = %u, advertised metric = %u", 
                      lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level), route->spf_metric,
                      hosting_node_self_result->res->spf_metric + metric); TRACE();
              overwrite_route(spf_info, route, _prefix, hosting_node_self_result->res, info_dist_level);
-             //ROUTE_ADD_LIKE_PREFIX_LIST()
+             ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix);
              route->install_state = RTE_CHANGED;
              install_route_in_rib(spf_info, info_dist_level, route);
              

@@ -374,6 +374,11 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
     switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_OVERLOAD:
+            (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->attributes[level], OVERLOAD_BIT) :
+                UNSET_BIT(node->attributes[level], OVERLOAD_BIT);
+                /*Now distribute Overload TLV in the network at this level*/
+            break;
         case CMDCODE_INSTANCE_IGNOREBIT_ENABLE:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->instance_flags, IGNOREATTACHED) :
                 UNSET_BIT(node->instance_flags, IGNOREATTACHED);
@@ -812,6 +817,22 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
     set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_NODE_SLOT_ENABLE);
 
+    /*config node <node-name> overload level <level-no>*/
+    {
+        static param_t overload;
+        init_param(&overload, CMD, "overload", 0, 0, INVALID, 0, "overload the router");
+        libcli_register_param(&config_node_node_name, &overload);
+
+        static param_t level;
+        init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
+        libcli_register_param(&overload, &level);
+
+        static param_t level_no;
+        init_param(&level_no, LEAF, 0, instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
+        libcli_register_param(&level, &level_no);
+        set_param_cmd_code(&level_no, CMDCODE_CONFIG_NODE_OVERLOAD);
+    }
+
     /* config node <node-name> [no] ignorebit enable*/
     static param_t config_node_node_name_ignorebit;
     init_param(&config_node_node_name_ignorebit, CMD, "ignorebit", 0, 0, INVALID, 0, "ignore L1 LSPs from added router when set");
@@ -946,9 +967,19 @@ spf_init_dcm(){
         init_param(&instance_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
         libcli_register_param(&instance_node, &instance_node_name);
 
-        static param_t route_tree;
-        init_param(&route_tree, CMD, "route-tree", show_route_tree_handler, 0, INVALID, "route-tree", "node's route tree");
-        libcli_register_param(&instance_node_name, &route_tree);
+        static param_t route;
+        init_param(&route, CMD, "route", show_route_tree_handler, 0, INVALID, "route", "route on a node");
+        libcli_register_param(&instance_node_name, &route);
+        set_param_cmd_code(&route, CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES);
+
+        static param_t prefix;
+        init_param(&prefix, LEAF, 0, 0, 0, IPV4, "prefix", "ipv4 prefix");
+        libcli_register_param(&route, &prefix);
+
+        static param_t mask;
+        init_param(&mask, LEAF, 0, show_route_tree_handler, validate_ipv4_mask, INT, "mask", "mask (0-32)");
+        libcli_register_param(&prefix, &mask);
+        set_param_cmd_code(&mask, CMDCODE_DEBUG_INSTANCE_NODE_ROUTE);
     }
     
     /* Added Negation support to appropriate command, post this
@@ -967,6 +998,7 @@ dump_nbrs(node_t *node, LEVEL level){
     edge_t *edge = NULL;
     printf("Node : %s (%s : %s)\n", node->node_name, get_str_level(level), 
                 (node->node_type[level] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
+    printf("Overloaded ? %s\n", IS_BIT_SET(node->attributes[level], OVERLOAD_BIT) ? "Yes" : "No");
 
     ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge, level){
         printf("    Neighbor : %s, Area = %s\n", nbr_node->node_name, get_str_node_area(nbr_node->area));

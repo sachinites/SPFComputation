@@ -186,6 +186,10 @@ dettach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
         prefix = (prefix_t *)prefix_list_node->data;
         prefix->ref_count--;
         singly_ll_delete_node(GET_NODE_PREFIX_LIST(node, level), prefix_list_node);
+        if(prefix->ref_count == 0){
+            free(prefix);
+            prefix = NULL;
+        }
     }
 }
 

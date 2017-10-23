@@ -90,10 +90,11 @@ get_prefix_comparison_fn(){
     return prefix_comparison_fn;
 }
 
+#if 0
 THREAD_NODE_TO_STRUCT(prefix_t,     
                       like_prefix_thread, 
                       get_prefix_from_like_prefix_thread);
-
+#endif
 /* Returns the metric of the prefix being leaked from L2 to L1 (Or otherwise). If such a prefix,
  * do not exist, return -1. This fn simply add the new prefix to new prefix list.*/
 int
@@ -131,7 +132,7 @@ leak_prefix(char *node_name, char *_prefix, char mask,
         }
 
         leaked_prefix = attach_prefix_on_node (node, prefix->prefix, prefix->mask, to_level, prefix->metric);
-        leaked_prefix->prefix_flags = prefix->prefix_flags;
+        //leaked_prefix->prefix_flags = prefix->prefix_flags;
         leaked_prefix->ref_count = 0;
         SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
         leaked_prefix->hosting_node = prefix->hosting_node;
@@ -196,18 +197,5 @@ leak_prefix(char *node_name, char *_prefix, char mask,
         return route_to_be_leaked->spf_metric;
     }
     return -1;
-}
-
-/*We assume the caller has zeroes out the memory of the prefix*/
-void
-fill_prefix(prefix_t *prefix, common_pfx_key_t *common_prefix,
-        unsigned int metric, boolean downbit){
-
-    strncpy(prefix->prefix, common_prefix->prefix, PREFIX_LEN);
-    prefix->prefix[PREFIX_LEN] = '\0';
-    prefix->mask = common_prefix->mask;
-    prefix->metric = metric;
-    if(downbit)
-        SET_BIT(prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 }
 

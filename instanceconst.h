@@ -45,6 +45,7 @@
 /* instance global flags */
 
 #define IGNOREATTACHED  1   /*If this bit is set, then L1-only router will not install default gateway to L1L2 router of the local Area*/
+#define OVERLOAD_BIT    3   /*the 3rd least significant bit represents the status of router wrt to overload in node_t->attributes*/
 
 typedef char FLAG;
 

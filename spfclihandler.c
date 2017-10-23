@@ -36,6 +36,7 @@
 #include "routes.h"
 #include "bitsop.h"
 #include "spfutil.h"
+#include "spfcmdcodes.h"
 
 extern instance_t * instance;
 
@@ -131,15 +132,22 @@ dump_route_info(routes_t *route){
 
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
+    prefix_t *prefix = NULL;
 
     printf("Route : %s/%u, %s\n", route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level));
     printf("Version : %d, spf_metric = %u, lsp_metric = %u\n", route->version, route->spf_metric, route->lsp_metric);
     printf("flags : %s\n", IS_BIT_SET(route->flags, PREFIX_DOWNBIT_FLAG) ? "PREFIX_DOWNBIT_FLAG" : "");
     printf("hosting_node = %s\n", route->hosting_node->node_name);
-    printf("Primary Nxt Hops : ");
+    printf("Like prefix list count : %u\n", GET_NODE_COUNT_SINGLY_LL(route->like_prefix_list));
+    ITERATE_LIST(route->like_prefix_list, list_node){
+        prefix = list_node->data;
+        printf("%s/%u, hosting_node : %s, metric : %u\n", 
+            prefix->prefix, prefix->mask, prefix->hosting_node->node_name, prefix->metric);
+    }
+    printf("Primary Nxt Hops count : %u\n", GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list));
     ITERATE_LIST(route->primary_nh_list, list_node){
         node = (node_t *)list_node->data;
-        printf("%s ", node->node_name);
+        printf(" %s ", node->node_name);
     }
     printf("\nInstall state : %s\n\n", route_intall_status_str(route->install_state));
 }
@@ -152,22 +160,50 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     char *node_name = NULL;
     node_t *node = NULL;
     routes_t *route = NULL;
+    char *prefix = NULL;
+    char mask = 0;
     singly_ll_node_t *list_node = NULL;
+    int cmd_code = -1;
+    char masked_prefix[PREFIX_LEN + 1];
 
-
+    cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+      
     TLV_LOOP(tlv_buf, tlv, i){
 
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "prefix", strlen("prefix")) ==0)
+            prefix = tlv->value;
+        else if(strncmp(tlv->leaf_id, "mask", strlen("mask")) ==0)
+            mask = atoi(tlv->value);
+        else
+            assert(0);
     }
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
-    ITERATE_LIST(node->spf_info.routes_list, list_node){
+    switch(cmd_code){
+        case CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES:
+            ITERATE_LIST(node->spf_info.routes_list, list_node){
 
-        route = (routes_t *)list_node->data;
-        dump_route_info(route);
+                route = (routes_t *)list_node->data;
+                dump_route_info(route);
+            }
+        break;
+        case CMDCODE_DEBUG_INSTANCE_NODE_ROUTE:
+            apply_mask(prefix, mask, masked_prefix);
+            masked_prefix[PREFIX_LEN] = '\0';
+            ITERATE_LIST(node->spf_info.routes_list, list_node){
+                
+                route = (routes_t *)list_node->data;
+                if(strncmp(route->rt_key.prefix, masked_prefix, PREFIX_LEN) != 0)
+                    continue;
+                dump_route_info(route);
+            }
+
+        break;
+        default:
+            assert(0);
     }
-
     return 0;
 }

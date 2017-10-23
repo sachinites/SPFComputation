@@ -30,9 +30,9 @@
  * =====================================================================================
  */
 
+#include <assert.h>
 #include "advert.h"
 #include "instance.h"
-#include <assert.h>
 #include "logging.h"
 #include "spfutil.h"
 #include "Queue.h"
@@ -42,6 +42,7 @@ static FLAG flood = 1;
 void
 abort_flooding(void){
 
+    sprintf(LOG, "Flooding aborted"); TRACE();
     flood = 0;
 }
 

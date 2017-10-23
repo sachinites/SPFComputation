@@ -71,6 +71,7 @@ singly_ll_add_node(ll_t* ll, singly_ll_node_t *node){
     return 0;
 }
 
+/* Duplicates will not be added*/
 int 
 singly_ll_add_node_by_val(ll_t *ll, void* data){
 

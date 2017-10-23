@@ -103,15 +103,6 @@ free_route(routes_t *route);
 #define ROUTE_GET_PR_NH_CNT(routeptr)   \
     GET_NODE_COUNT_SINGLY_LL(routeptr->primary_nh_list)
 
-#define IS_ROUTE_L1_ONLY(routeptr)      \
-    (IS_LEVEL_SET(routeptr->level, LEVEL1) && !IS_LEVEL_SET(routeptr->level, LEVEL2))
-    
-#define IS_ROUTE_L2_ONLY(routeptr)      \
-    (IS_LEVEL_SET(routeptr->level, LEVEL2) && !IS_LEVEL_SET(routeptr->level, LEVEL1))
-
-#define IS_ROUTE_L1L2(routeptr)         \
-    (IS_LEVEL_SET(routeptr->level, LEVEL1) && IS_LEVEL_SET(routeptr->level, LEVEL2))
-
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
                    node_t *spf_root,          /* computing node which stores the result of spf run*/
