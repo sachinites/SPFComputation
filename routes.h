@@ -121,7 +121,7 @@ route_search_comparison_fn(void * route, void *key);
 
 typedef struct rttable_entry_ rttable_entry_t;
 
-void
+spf_result_t *
 prepare_new_rt_entry_template(spf_info_t *spf_info, rttable_entry_t *rt_entry_template,
                                routes_t *route, unsigned int version);
 

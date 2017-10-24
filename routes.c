@@ -97,7 +97,7 @@ free_route(routes_t *route){
 }
 
 /* Store only prefix related info in rttable_entry_t*/
-void
+spf_result_t *
 prepare_new_rt_entry_template(spf_info_t *spf_info, rttable_entry_t *rt_entry_template,
         routes_t *route, unsigned int version){
 
@@ -116,6 +116,8 @@ prepare_new_rt_entry_template(spf_info_t *spf_info, rttable_entry_t *rt_entry_te
 
     rt_entry_template->primary_nh_count =
         next_hop_count(&self_res->res->next_hop[0]);
+
+    return self_res->res; /* To be used for next hop template preparation*/
 }
 
 void
@@ -272,18 +274,19 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
    routes_t *route = NULL;
    unsigned int i = 0;
 
-   ITERATE_LIST(spf_info->routes_list, list_node){
+   ITERATE_LIST_DEL_SAFE_BEGIN(spf_info->routes_list, list_node){
            
        route = list_node->data;
        if(route->install_state == RTE_STALE && IS_LEVEL_SET(route->level, level)){
         sprintf(LOG, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.prefix, 
                         route->rt_key.mask, level); TRACE();
         i++;
+        /* To Do : Memory leak prefix, pls delete all liked prefix list routes also*/
         ROUTE_DEL_FROM_ROUTE_LIST(spf_info, route);
         free_route(route);
         route = NULL;
        }
-   }
+   }ITERATE_LIST_DEL_SAFE_END;
    return i;
 }
 
@@ -358,7 +361,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
     route = search_route_in_spf_route_list(spf_info, prefix, level);
 
     if(!route){
-        sprintf(LOG, "prefix : %s/%u is a New route in %s, hosting_node %s", 
+        sprintf(LOG, "prefix : %s/%u is a New route (malloc'd) in %s, hosting_node %s", 
                 prefix->prefix, prefix->mask, get_str_level(level), prefix->hosting_node->node_name); TRACE();
 
         route = route_malloc();
@@ -385,7 +388,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         ROUTE_ADD_LIKE_PREFIX_LIST(route, prefix);
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
         route->install_state = RTE_ADDED;
-        sprintf(LOG, "Node : %s : route : %s/%u, spf_metric = %u,  added to main route list for level%u",  
+        sprintf(LOG, "Node : %s : route : %s/%u, spf_metric = %u,  marked RTE_ADDED for level%u",  
             GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
             route->spf_metric, route->level); TRACE();
     }
@@ -424,6 +427,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             sprintf(LOG, "route : %s/%u, updated route(?)", 
                     route->rt_key.prefix, route->rt_key.mask); TRACE();
             route->install_state = RTE_UPDATED;
+
+            sprintf(LOG, "Node : %s : route : %s/%u, spf_metric = %u,  marked RTE_UPDATED for level%u",  
+                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
+                route->spf_metric, route->level); TRACE();
+
             if(result->spf_metric + prefix->metric < route->spf_metric){ 
                 sprintf(LOG, "route : %s/%u is over-written", 
                         route->rt_key.prefix, route->rt_key.mask); TRACE();
@@ -616,6 +624,8 @@ start_route_installation(spf_info_t *spf_info,
     routes_t *route = NULL;
     rttable_entry_t *rt_entry_template = NULL;
     rttable_entry_t *existing_rt_route = NULL;
+    spf_result_t *spf_res = NULL;
+
     unsigned int i = 0,
                  rt_added = 0,
                  rt_removed = 0, 
@@ -644,16 +654,17 @@ start_route_installation(spf_info_t *spf_info,
         
         rt_entry_template = GET_NEW_RT_ENTRY();
 
-        prepare_new_rt_entry_template(spf_info, rt_entry_template, route,
+        spf_res = prepare_new_rt_entry_template(spf_info, rt_entry_template, route,
                                 spf_info->spf_level_info[level].version); 
 
         sprintf(LOG, "Template for route : %s/%u, rt_entry_template->primary_nh_count = %u, cost = %u", 
                 rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
                 rt_entry_template->primary_nh_count, rt_entry_template->cost); TRACE();
 
+        /* use the spf_res return by above fn here to save a search*/
         for(i = 0; i < rt_entry_template->primary_nh_count; i++){
             prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node, 
-                                        route->hosting_node->next_hop[level][i], 
+                                        spf_res->next_hop[i], 
                                         &rt_entry_template->primary_nh[i],
                                         level);
         }

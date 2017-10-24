@@ -44,9 +44,18 @@ void * singly_ll_search_by_key(ll_t *ll, void *key);
 void copy_singly_ll(ll_t *src, ll_t *dst);
 ll_t * union_singly_ll(ll_t *list1, ll_t *list2);
 
-
-#define ITERATE_LIST(list_ptr, node_ptr)                           \
-    node_ptr = GET_HEAD_SINGLY_LL(list_ptr);                       \
-    for(; node_ptr!= NULL; node_ptr = GET_NEXT_NODE_SINGLY_LL(node_ptr))\
+/* delete safe loop*/
+#define ITERATE_LIST(list_ptr, node_ptr)                                    \
+    node_ptr = GET_HEAD_SINGLY_LL(list_ptr);                                \
+    for(; node_ptr!= NULL; node_ptr = GET_NEXT_NODE_SINGLY_LL(node_ptr))    
         
+#define ITERATE_LIST_DEL_SAFE_BEGIN(list_ptr, node_ptr)                     \
+    {                                                                       \
+    singly_ll_node_t *_node_ptr = NULL;                                     \
+    node_ptr = GET_HEAD_SINGLY_LL(list_ptr);                                \
+    for(; node_ptr!= NULL; node_ptr = _node_ptr)      {                     \
+        _node_ptr = node_ptr->next; 
+
+#define ITERATE_LIST_DEL_SAFE_END  }} 
+
 #endif

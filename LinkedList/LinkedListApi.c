@@ -147,7 +147,6 @@ singly_ll_remove_node(ll_t *ll, singly_ll_node_t *node){
 		GET_NEXT_NODE_SINGLY_LL(prev) = GET_NEXT_NODE_SINGLY_LL(head);
 		GET_NEXT_NODE_SINGLY_LL(head) = NULL;
 		DEC_NODE_COUNT_SINGLY_LL(ll);
-		node->next = NULL;
 		return 0;	
 	}	
 	printf("%s(%d) : Error : node not found\n", __FUNCTION__, __LINE__);
