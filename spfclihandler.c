@@ -82,11 +82,11 @@ display_instance_nodes(param_t *param, ser_buff_t *tlv_buf){
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
 
-    ITERATE_LIST(instance->instance_node_list, list_node){
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
 
         node = (node_t *)list_node->data;
         printf("    %s\n", node->node_name);
-    }
+    }ITERATE_LIST_END;
 }
 
 void
@@ -139,16 +139,16 @@ dump_route_info(routes_t *route){
     printf("flags : %s\n", IS_BIT_SET(route->flags, PREFIX_DOWNBIT_FLAG) ? "PREFIX_DOWNBIT_FLAG" : "");
     printf("hosting_node = %s\n", route->hosting_node->node_name);
     printf("Like prefix list count : %u\n", GET_NODE_COUNT_SINGLY_LL(route->like_prefix_list));
-    ITERATE_LIST(route->like_prefix_list, list_node){
+    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
         prefix = list_node->data;
         printf("%s/%u, hosting_node : %s, metric : %u\n", 
             prefix->prefix, prefix->mask, prefix->hosting_node->node_name, prefix->metric);
-    }
+    }ITERATE_LIST_END;
     printf("Primary Nxt Hops count : %u\n", GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list));
-    ITERATE_LIST(route->primary_nh_list, list_node){
+    ITERATE_LIST_BEGIN(route->primary_nh_list, list_node){
         node = (node_t *)list_node->data;
         printf(" %s ", node->node_name);
-    }
+    }ITERATE_LIST_END;
     printf("\nInstall state : %s\n\n", route_intall_status_str(route->install_state));
 }
 
@@ -184,22 +184,22 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     
     switch(cmd_code){
         case CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES:
-            ITERATE_LIST(node->spf_info.routes_list, list_node){
+            ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
 
                 route = (routes_t *)list_node->data;
                 dump_route_info(route);
-            }
+            }ITERATE_LIST_END;
         break;
         case CMDCODE_DEBUG_INSTANCE_NODE_ROUTE:
             apply_mask(prefix, mask, masked_prefix);
             masked_prefix[PREFIX_LEN] = '\0';
-            ITERATE_LIST(node->spf_info.routes_list, list_node){
+            ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
                 
                 route = (routes_t *)list_node->data;
                 if(strncmp(route->rt_key.prefix, masked_prefix, PREFIX_LEN) != 0)
                     continue;
                 dump_route_info(route);
-            }
+            }ITERATE_LIST_END;
 
         break;
         default:

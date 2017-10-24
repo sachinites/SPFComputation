@@ -81,13 +81,13 @@ rt_route_lookup(rttable *rttable, char *prefix, char mask){
    singly_ll_node_t *list_node = NULL;
    rttable_entry_t *rt_entry = NULL;
 
-   ITERATE_LIST(GET_RT_TABLE(rttable), list_node){
+   ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
        
         rt_entry = (rttable_entry_t *)list_node->data;   
         if(!RT_ENTRY_MATCH(rt_entry, prefix, mask))
             continue;
         return rt_entry;
-   }
+   }ITERATE_LIST_END;
 
    return NULL;
 }
@@ -114,12 +114,12 @@ rt_route_delete(rttable *rttable, char *prefix, char mask){
         return -1;
     }
 
-    ITERATE_LIST(GET_RT_TABLE(rttable), list_node){
+    ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
     
         temp = (rttable_entry_t *)list_node->data;
         if(temp == rt_entry)
             break;
-    }
+    }ITERATE_LIST_END;
      
     singly_ll_delete_node(GET_RT_TABLE(rttable), list_node);
     return 1;
@@ -161,7 +161,7 @@ get_longest_prefix_match(rttable *rttable, char *prefix){
     char subnet[PREFIX_LEN_WITH_MASK + 1];
     char longest_mask = 0;
 
-    ITERATE_LIST(GET_RT_TABLE(rttable), list_node){
+    ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
         rt_entry = (rttable_entry_t *)list_node->data;
         memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
@@ -172,7 +172,7 @@ get_longest_prefix_match(rttable *rttable, char *prefix){
                 lpm_rt_entry = rt_entry;
             }
         }
-    }
+    }ITERATE_LIST_END;
     return lpm_rt_entry;
 }
 
@@ -206,7 +206,7 @@ show_routing_table(rttable *rttable){
     printf("Table %s\n", rttable->table_name);
     printf("Destination           Version        Cost       Lvl      Gateway             Nxt-Hop        OIF      Backup\n");
 
-    ITERATE_LIST(GET_RT_TABLE(rttable), list_node){
+    ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
         rt_entry = (rttable_entry_t *)list_node->data;
         memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
@@ -215,7 +215,7 @@ show_routing_table(rttable *rttable){
                 subnet, rt_entry->version, rt_entry->cost,
                 rt_entry->level, rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name, 
                 rt_entry->primary_nh[0].oif, rt_entry->backup_nh.nh_name);
-    }
+    }ITERATE_LIST_END;
 }
 
 

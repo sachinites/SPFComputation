@@ -102,7 +102,7 @@ spf_determine_multi_area_attachment(spf_info_t *spf_info,
     
     spf_info->spff_multi_area = 0;
        
-    ITERATE_LIST(spf_root->spf_run_result[LEVEL2], list_node){
+    ITERATE_LIST_BEGIN(spf_root->spf_run_result[LEVEL2], list_node){
         
         res = (spf_result_t *)list_node->data;
         if(res->node->area != myarea && 
@@ -112,7 +112,7 @@ spf_determine_multi_area_attachment(spf_info_t *spf_info,
                             spf_root->node_name, res->node->node_name); TRACE();
             break;   
         }
-    }
+    }ITERATE_LIST_END;
 
     if(spf_info->spff_multi_area == 0){
         sprintf(LOG, "spf_root : %s is not L2 Attached with remote Area", spf_root->node_name); TRACE();

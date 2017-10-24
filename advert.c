@@ -155,10 +155,10 @@ init_instance_traversal(instance_t * instance){
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
 
-    ITERATE_LIST(instance->instance_node_list, list_node){
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
         node = (node_t *)list_node->data;
         node->traversing_bit = 0;
-    }  
+    }ITERATE_LIST_END;  
 }
 
 /*fn to simulate LSP generation and distribution at its simplest.*/

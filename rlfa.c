@@ -95,7 +95,7 @@ compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
     /*Iterate over spf_result and filter out all those nodes whose next hop is 
      * failed_edge->to.node */
 
-    ITERATE_LIST( spf_result, list_node){
+    ITERATE_LIST_BEGIN( spf_result, list_node){
         
         res = (spf_result_t *)list_node->data;
 
@@ -107,7 +107,7 @@ compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
             continue;
 
         singly_ll_add_node_by_val(p_space, res->node);
-    }
+    }ITERATE_LIST_END;
     
     return p_space;
 }   
@@ -148,7 +148,7 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
      * carries all nodes of the network reachable from source at level l.
      * We deem this list as the "entire network"*/ 
 
-    ITERATE_LIST(node->spf_run_result[level], list_node1){
+    ITERATE_LIST_BEGIN(node->spf_run_result[level], list_node1){
 
         spf_result_y = (spf_result_t *)list_node1->data;
 
@@ -160,7 +160,7 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
             if(edge == failed_edge)
                 continue;
             //d_nbr_to_y
-            ITERATE_LIST(nbr_node->spf_run_result[level], list_node2){
+            ITERATE_LIST_BEGIN(nbr_node->spf_run_result[level], list_node2){
 
                 spf_result_nbr = (spf_result_t *)list_node2->data;
 
@@ -169,7 +169,7 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
                 if(spf_result_nbr->node == spf_result_y->node)
                     d_nbr_to_y = spf_result_nbr->spf_metric;
-            }
+            }ITERATE_LIST_END;
 
             /*Apply RFC 5286 Inequality 1*/
             if(d_nbr_to_y < (d_nbr_to_self + d_self_to_y)){
@@ -185,7 +185,7 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
         }
         ITERATE_NODE_NBRS_END;
         d_self_to_y = 0;
-    }
+    }ITERATE_LIST_END;
     return ex_p_space;
 }   
 
@@ -215,18 +215,18 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
     Compute_and_Store_Forward_SPF(E, &E->spf_info, level);
     inverse_topology(instance, level);
 
-    ITERATE_LIST(E->spf_run_result[level], list_node1){
+    ITERATE_LIST_BEGIN(E->spf_run_result[level], list_node1){
 
         spf_result_e = (spf_result_t *)list_node1->data;
         if(spf_result_e->node == S){
             d_S_to_E = spf_result_e->spf_metric;
             break;
         }
-    }
+    }ITERATE_LIST_END;
 
     /*Iterare over all nodes of the network*/
 
-    ITERATE_LIST(S->spf_run_result[level], list_node1){
+    ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node1){
 
         spf_result_y = (spf_result_t *)list_node1->data;
         
@@ -234,14 +234,14 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
         d_S_to_y = spf_result_y->spf_metric;
 
         /*Now find d_E_to_y */
-        ITERATE_LIST(E->spf_run_result[level], list_node2){
+        ITERATE_LIST_BEGIN(E->spf_run_result[level], list_node2){
 
             spf_result_e = (spf_result_t *)list_node2->data;
             if(spf_result_e->node == spf_result_y->node){
                 d_E_to_y = spf_result_e->spf_metric;
                 break;
             }
-        }
+        }ITERATE_LIST_END;
 
         if(d_E_to_y < (d_S_to_y + d_S_to_E)){
             /*I think check for duplicates is not required
@@ -258,7 +258,7 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
         d_S_to_y = 0;
         d_E_to_y = 0;
-    }
+    }ITERATE_LIST_END;
     return q_space;
 }
 
@@ -270,11 +270,11 @@ Intersect_Extended_P_and_Q_Space(p_space_set_t p_space, q_space_set_t q_space){
 
     pq_space_set_t pq_space = init_singly_ll();
     
-    ITERATE_LIST(p_space, p_list_node){
+    ITERATE_LIST_BEGIN(p_space, p_list_node){
         p_node = (node_t*)p_list_node->data;
         if(singly_ll_search_by_key(q_space, p_node->node_name)) 
             singly_ll_add_node_by_val(pq_space, p_node);
-    }
+    }ITERATE_LIST_END;
 
     /* we dont need p_space and q_space anymore*/
 
@@ -338,7 +338,7 @@ compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
      * p-space(S) guarantees that P nodes in p-space(S) are downstream nodes to S, but same is not true for extended-p-space(S).
      *
      * */
-    ITERATE_LIST(pq_space, list_node){
+    ITERATE_LIST_BEGIN(pq_space, list_node){
 
         pq_node = (node_t *)list_node->data;
 
@@ -348,7 +348,7 @@ compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
         d_pq_node_to_dest = 0;
         d_S_node_to_dest = 0;
 
-        ITERATE_LIST(pq_node->spf_run_result[level], list_node2){
+        ITERATE_LIST_BEGIN(pq_node->spf_run_result[level], list_node2){
 
             spf_result = (spf_result_t *)list_node2->data;
             if(spf_result->node != dest)
@@ -356,10 +356,10 @@ compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
 
             d_pq_node_to_dest = spf_result->spf_metric;
             break;
-        }
+        }ITERATE_LIST_END;
 
         /*We had run run the SPF for computing node also.*/
-        ITERATE_LIST(node->spf_run_result[level], list_node2){
+        ITERATE_LIST_BEGIN(node->spf_run_result[level], list_node2){
 
             spf_result = (spf_result_t *)list_node2->data;
             if(spf_result->node != dest)
@@ -367,12 +367,12 @@ compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
 
             d_S_node_to_dest = spf_result->spf_metric;
             break;
-        }
+        }ITERATE_LIST_END;
 
         if(d_pq_node_to_dest < d_S_node_to_dest){
 
             printf("PQ node : %s\n", pq_node->node_name);
         }
-    }
+    }ITERATE_LIST_END;
 }
 

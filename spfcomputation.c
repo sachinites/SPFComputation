@@ -89,7 +89,7 @@ inverse_topology(instance_t *instance, LEVEL level){
     
     edge_t *edge = NULL;;
 
-    ITERATE_LIST(instance->instance_node_list, list_node){
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
         node = (node_t *)list_node->data;
     
         for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
@@ -118,10 +118,10 @@ inverse_topology(instance_t *instance, LEVEL level){
             edge->inv_edge->metric[level] = edge_metric;
             edge->inv_edge->inv_edge = NULL;
         }
-    }
+    }ITERATE_LIST_END;
 
     /*repair*/
-    ITERATE_LIST(instance->instance_node_list, list_node){
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
         
         node = (node_t *)list_node->data;
         for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
@@ -147,7 +147,7 @@ inverse_topology(instance_t *instance, LEVEL level){
             edge->metric[level] = edge->inv_edge->metric[level];
             edge->inv_edge->metric[level] = edge_metric;
         }
-    }
+    }ITERATE_LIST_END;
 }
 
 
@@ -291,12 +291,12 @@ spf_clear_result(node_t *spf_root, LEVEL level){
    singly_ll_node_t *list_node = NULL;
    spf_result_t *result = NULL;
 
-   ITERATE_LIST(spf_root->spf_run_result[level], list_node){
+   ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
 
        result = list_node->data;
        free(result);
        result = NULL;    
-   }
+   }ITERATE_LIST_END;
    delete_singly_ll(spf_root->spf_run_result[level]);
 }
 
@@ -318,19 +318,19 @@ spf_init(candidate_tree_t *ctree,
     /* You should intialize the nxthops and firect nxthops only for 
      * reachable routers to spf root in the same level, not the entire
      * graph. This is to DO work.*/
-    ITERATE_LIST(instance->instance_node_list, list_node){    
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){    
         node = (node_t *)list_node->data;
         for(i = 0; i < MAX_NXT_HOPS; i++){
             node->next_hop[level][i] = 0;
             node->direct_next_hop[level][i] = 0;   
         }
-    }
+    }ITERATE_LIST_END;
 
     /*step 2 : Metric intialization*/
-    ITERATE_LIST(instance->instance_node_list, list_node){
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
         node = (node_t *)list_node->data;
         node->spf_metric[level] = INFINITE_METRIC;
-    }
+    }ITERATE_LIST_END;
 
     spf_root->spf_metric[level] = 0;
 

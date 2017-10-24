@@ -162,12 +162,12 @@ search_route_in_spf_route_list(spf_info_t *spf_info,
     char prefix_with_mask[PREFIX_LEN + 1];
     apply_mask(prefix->prefix, prefix->mask, prefix_with_mask);
     prefix_with_mask[PREFIX_LEN] = '\0';
-    ITERATE_LIST(spf_info->routes_list, list_node){
+    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
         route = list_node->data;
         if(strncmp(route->rt_key.prefix, prefix_with_mask, PREFIX_LEN) == 0 &&
                 (route->rt_key.mask == prefix->mask) && route->level == level)
             return route;    
-    }
+    }ITERATE_LIST_END;
     return NULL;
 }
 
@@ -215,11 +215,11 @@ route_rib_same_next_hops(spf_info_t *spf_info,
     node_t *computing_node = spf_info->spf_level_info[level].node;
     node_t *nbr_node = NULL;
 
-    ITERATE_LIST(route->primary_nh_list, list_node){
+    ITERATE_LIST_BEGIN(route->primary_nh_list, list_node){
         nbr_node = list_node->data; /*This is nbr node of computing node*/
         if(is_same_next_hop(computing_node, nbr_node, &rt_entry->primary_nh[i], level) == FALSE)
             return FALSE;
-    }
+    }ITERATE_LIST_END;
     return TRUE;
 }
 
@@ -274,7 +274,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
    routes_t *route = NULL;
    unsigned int i = 0;
 
-   ITERATE_LIST_DEL_SAFE_BEGIN(spf_info->routes_list, list_node){
+   ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
            
        route = list_node->data;
        if(route->install_state == RTE_STALE && IS_LEVEL_SET(route->level, level)){
@@ -286,7 +286,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
         free_route(route);
         route = NULL;
        }
-   }ITERATE_LIST_DEL_SAFE_END;
+   }ITERATE_LIST_END;
    return i;
 }
 
@@ -297,14 +297,14 @@ mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
    singly_ll_node_t* list_node = NULL;
    routes_t *route = NULL;
    
-   ITERATE_LIST(spf_info->routes_list, list_node){
+   ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
            
        route = list_node->data;
        if(!IS_LEVEL_SET(route->level, level))
            continue;
        route->install_state = RTE_STALE;
        delete_singly_ll(route->like_prefix_list);
-   }
+   }ITERATE_LIST_END;
 }
 
 static void 
@@ -632,7 +632,7 @@ start_route_installation(spf_info_t *spf_info,
                  rt_updated = 0, 
                  rt_no_change = 0;
 
-    ITERATE_LIST(spf_info->routes_list, list_node){
+    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
         
         route = list_node->data;
 
@@ -773,7 +773,7 @@ start_route_installation(spf_info_t *spf_info,
             default:
                 assert(0);
         }
-    }
+    }ITERATE_LIST_END;
     delete_stale_routes(spf_info, level);
     sprintf(LOG, "SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
             level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
@@ -802,7 +802,7 @@ build_routing_table(spf_info_t *spf_info,
      * most distant router from spf root is first*/
 
 
-    ITERATE_LIST(spf_root->spf_run_result[level], list_node){
+    ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
         
          result = (spf_result_t *)list_node->data;
        
@@ -836,17 +836,17 @@ build_routing_table(spf_info_t *spf_info,
         /*Iterate over all the prefixes of result->node for level 'level'*/
         
         prefix = NULL;    
-        ITERATE_LIST(GET_NODE_PREFIX_LIST(result->node, level), prefix_list_node){
+        ITERATE_LIST_BEGIN(GET_NODE_PREFIX_LIST(result->node, level), prefix_list_node){
         
             prefix = (prefix_t *)prefix_list_node->data;  
             update_route(spf_info, result, prefix, level, TRUE);
-        }
-    } /*ITERATE_LIST ENDS*/
+        }ITERATE_LIST_END;
+    } ITERATE_LIST_END;
 
 
     /*Iterate over all UPDATED routes and figured out which one needs to be updated
      * in RIB*/
-    ITERATE_LIST(spf_info->routes_list, list_node){
+    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
 
         route = list_node->data;
         if(route->install_state != RTE_UPDATED)
@@ -862,7 +862,7 @@ build_routing_table(spf_info_t *spf_info,
             route->install_state = RTE_CHANGED;
         else
             route->install_state = RTE_NO_CHANGE;
-    }
+    }ITERATE_LIST_END;
 }
 
 void

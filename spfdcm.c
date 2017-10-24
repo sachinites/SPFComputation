@@ -59,7 +59,7 @@ show_spf_results(node_t *spf_root, LEVEL level){
 
     printf("\nSPF run results for LEVEL%u, ROOT = %s\n", level, spf_root->node_name);
 
-    ITERATE_LIST(spf_root->spf_run_result[level], list_node){
+    ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
         res = (spf_result_t *)list_node->data;
         printf("DEST : %-10s spf_metric : %-6u", res->node->node_name, res->spf_metric);
         printf(" Nxt Hop : ");
@@ -71,7 +71,7 @@ show_spf_results(node_t *spf_root, LEVEL level){
                     (get_min_oif(spf_root, res->next_hop[i], level, NULL))->intf_name);
 
         }
-    }
+    }ITERATE_LIST_END;
 }
 
 static int
@@ -234,11 +234,11 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                    else
                         printf("Node %s Extended p-space : ", node->node_name);
 
-                   ITERATE_LIST(p_space, list_node){
+                   ITERATE_LIST_BEGIN(p_space, list_node){
 
                        p_node = (node_t *) list_node->data;
                        printf("%s ", p_node->node_name);   
-                   }
+                   }ITERATE_LIST_END;
 
                    /*free p-space*/
                    delete_singly_ll(p_space);
@@ -267,11 +267,11 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
                    q_space_set_t q_space = compute_q_space(node, edge, level);
                    printf("Node %s q-space : ", node->node_name);
-                   ITERATE_LIST(q_space, list_node){
+                   ITERATE_LIST_BEGIN(q_space, list_node){
 
                        q_node = (node_t *) list_node->data;
                        printf("%s ", q_node->node_name);   
-                   }
+                   }ITERATE_LIST_END;
 
                    /*free q-space*/
                    delete_singly_ll(q_space);
@@ -318,11 +318,11 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                q_space = NULL;
 
                printf("Node %s pq-space : ", node->node_name);
-               ITERATE_LIST(pq_space, list_node){
+               ITERATE_LIST_BEGIN(pq_space, list_node){
 
                    pq_node = (node_t *) list_node->data;
                    printf("%s ", pq_node->node_name);   
-               }
+               }ITERATE_LIST_END;
 
                delete_singly_ll(pq_space);
                free(pq_space);
@@ -609,9 +609,9 @@ show_instance_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_dis
         
         case CMDCODE_SHOW_INSTANCE_LEVEL:
             printf("Graph root : %s\n", instance->instance_root->node_name);
-            ITERATE_LIST(instance->instance_node_list, list_node){
+            ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
                 dump_nbrs(list_node->data, level);
-            }
+            }ITERATE_LIST_END;
             break;
         case CMDCODE_SHOW_INSTANCE_NODE_LEVEL:
             node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
@@ -1056,12 +1056,12 @@ dump_node_info(node_t *node){
     for(level = LEVEL2; level >= LEVEL1; level--){
 
         printf("%s prefixes:\n", get_str_level(level));
-        ITERATE_LIST(GET_NODE_PREFIX_LIST(node, level), list_node){
+        ITERATE_LIST_BEGIN(GET_NODE_PREFIX_LIST(node, level), list_node){
             count++;
             prefix = (prefix_t *)list_node->data;        
             printf("%s/%u%s(%s)     ", prefix->prefix, prefix->mask, IS_BIT_SET(prefix->prefix_flags, PREFIX_DOWNBIT_FLAG) ? "*": "", prefix->hosting_node->node_name);
             if(count % 5 == 0) printf("\n");
-        }
+        }ITERATE_LIST_END;
         printf("\n"); 
     }
 

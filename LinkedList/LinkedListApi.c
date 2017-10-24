@@ -24,11 +24,11 @@ copy_singly_ll(ll_t *src, ll_t *dst){
         return;
 
     delete_singly_ll(dst);
-    ITERATE_LIST(src, node){
+    ITERATE_LIST_BEGIN(src, node){
         if(!node->data) 
             continue;
         singly_ll_add_node_by_val(dst, node->data);
-    }
+    }ITERATE_LIST_END;
     singly_ll_set_comparison_fn(dst, src->comparison_fn);
 }
 
@@ -46,12 +46,12 @@ union_singly_ll(ll_t *list1, ll_t *list2){
     ll_t *res = init_singly_ll();
     singly_ll_set_comparison_fn(res, list1->comparison_fn ? list1->comparison_fn : list2->comparison_fn);
 
-    ITERATE_LIST(list1, node){
+    ITERATE_LIST_BEGIN(list1, node){
         singly_ll_add_node_by_val(res, node->data);
-    }
-    ITERATE_LIST(list2, node){
+    }ITERATE_LIST_END;
+    ITERATE_LIST_BEGIN(list2, node){
         singly_ll_add_node_by_val(res, node->data);
-    }
+    }ITERATE_LIST_END;
     return res;
 }
 
@@ -301,10 +301,10 @@ singly_ll_search_by_key(ll_t *ll, void *key){
         return NULL;
 
     singly_ll_node_t *list_node = NULL;
-    ITERATE_LIST(ll, list_node){
+    ITERATE_LIST_BEGIN(ll, list_node){
         if(ll->comparison_fn(list_node->data, key))
             return list_node->data;
-    }
+    }ITERATE_LIST_END;
     return NULL;
 }
 
