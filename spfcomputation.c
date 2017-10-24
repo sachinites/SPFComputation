@@ -30,14 +30,14 @@
  * =====================================================================================
  */
 
+#include <stdio.h>
 #include "instance.h"
 #include "heap_interface.h"
 #include "spfutil.h"
 #include "spfcomputation.h"
-#include <stdio.h>
 #include "logging.h"
 #include "routes.h"
-
+#include "bitsop.h"
 
 extern instance_t *instance;
 
@@ -204,7 +204,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                  self_res->res = res;
                  singly_ll_add_node_by_val(candidate_node->self_spf_result[level], self_res);
             }
-
         }
 
         /*Iterare over all the nbrs of Candidate node*/
@@ -222,6 +221,12 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             }
             
             sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
+
+            if(nbr_node->node_type[level] != PSEUDONODE && IS_OVERLOADED(nbr_node, level)){
+                sprintf(LOG, "Nbr node : %s is overloaded in %s, will not process in SPF computation", 
+                        nbr_node->node_name, get_str_level(level)); TRACE();
+                continue;
+            }
 
             if(candidate_node->spf_metric[level] + edge->metric[level] < nbr_node->spf_metric[level]){
                 
@@ -310,6 +315,9 @@ spf_init(candidate_tree_t *ctree,
     /*Drain off results list for level */
     spf_clear_result(spf_root, level);
 
+    /* You should intialize the nxthops and firect nxthops only for 
+     * reachable routers to spf root in the same level, not the entire
+     * graph. This is to DO work.*/
     ITERATE_LIST(instance->instance_node_list, list_node){    
         node = (node_t *)list_node->data;
         for(i = 0; i < MAX_NXT_HOPS; i++){
@@ -378,11 +386,17 @@ spf_computation(node_t *spf_root,
                 spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "SKELETON_RUN",
                 level); TRACE();
                  
-#if 1
+#if 0
 
    if(spf_root->node_type[level] == PSEUDONODE) 
        assert(0); /*SPF computation never starts with PN*/
 #endif
+
+    if(IS_OVERLOADED(spf_root, level)){
+        printf("%s(): INFO : Node %s is overloaded, SPF cannot be run\n", 
+            __FUNCTION__, spf_root->node_name);
+        return;
+    }
 
     RE_INIT_CANDIDATE_TREE(&instance->ctree);
 

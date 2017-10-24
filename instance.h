@@ -187,6 +187,10 @@ inverse_topology(instance_t *instance, LEVEL level);
 #define GET_EGDE_PTR_FROM_TO_EDGE_END(edge_end_ptr)     \
     (edge_t *)((char *)edge_end_ptr - (unsigned int)&(((edge_t *)0)->to))
 
+#define IS_OVERLOADED(nodeptr, level)                   \
+    IS_BIT_SET(nodeptr->attributes[level], OVERLOAD_BIT)
+
+
 static inline edge_t *
 GET_EGDE_PTR_FROM_EDGE_END(edge_end_t *edge_end){
     
@@ -259,6 +263,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
     _nbr_node = NULL;                                                      \
     _edge1 = NULL; _edge2 = NULL;                                          \
     do{                                                                    \
+        __label__ NONPN;                                                   \
         unsigned int _i = 0;                                               \
         node_t *__nbr_node = 0;                                            \
         edge_t *__edge = 0;                                                \

@@ -746,8 +746,10 @@ start_route_installation(spf_info_t *spf_info,
                             break;
                         }
                     }
+#if 0
                     else
                         assert(0); /* Impossible case*/
+#endif
                 }
                 rt_route_update(spf_info->rttable, rt_entry_template);
                 free(rt_entry_template);
