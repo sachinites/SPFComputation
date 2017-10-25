@@ -274,6 +274,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
    routes_t *route = NULL;
    unsigned int i = 0;
 
+   sprintf(LOG, "Deleting Stale Routes"); TRACE();
    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
            
        route = list_node->data;
@@ -433,10 +434,14 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 route->spf_metric, route->level); TRACE();
 
             if(result->spf_metric + prefix->metric < route->spf_metric){ 
-                sprintf(LOG, "route : %s/%u is over-written", 
-                        route->rt_key.prefix, route->rt_key.mask); TRACE();
+                sprintf(LOG, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u", 
+                        GET_SPF_INFO_NODE(spf_info, level)->node_name, 
+                        route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                        result->spf_metric + prefix->metric); TRACE();
                 overwrite_route(spf_info, route, prefix, result, level);
-            }
+            }else
+               route->version = spf_info->spf_level_info[level].version; 
+            
             ROUTE_ADD_LIKE_PREFIX_LIST(route, prefix);
         }
     }
@@ -601,7 +606,7 @@ install_route_in_rib(spf_info_t *spf_info,
             assert(0);
     }
 
-    delete_stale_routes(spf_info, level);
+    //delete_stale_routes(spf_info, level);
     sprintf(LOG, "Result for Route : %s/%u, L%d : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
             route->rt_key.prefix, route->rt_key.mask, route->level, 
             rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
@@ -639,48 +644,36 @@ start_route_installation(spf_info_t *spf_info,
         if(route->level != level)
             continue;
 
-        /* Note : For unchanged routes, we need to send notification to RIB 
-         * to simply remove the LFA/RLFA for unchanged routes present at this point, t
-         * hese are stale LFA/RLFA and can cause Microloops*/
+        if(route->install_state != RTE_NO_CHANGE){ 
+            rt_entry_template = GET_NEW_RT_ENTRY();
 
-        if(route->install_state == RTE_NO_CHANGE){
+            spf_res = prepare_new_rt_entry_template(spf_info, rt_entry_template, route,
+                    spf_info->spf_level_info[level].version); 
 
-            rt_no_change++;
-            if(!is_singly_ll_empty(route->backup_nh_list))
-                rt_route_remove_backup_nh(spf_info->rttable, 
-                                route->rt_key.prefix, route->rt_key.mask);
-            continue;   
+            sprintf(LOG, "Template for route : %s/%u, rt_entry_template->primary_nh_count = %u, cost = %u", 
+                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
+                    rt_entry_template->primary_nh_count, rt_entry_template->cost); TRACE();
+
+            /* use the spf_res return by above fn here to save a search*/
+            for(i = 0; i < rt_entry_template->primary_nh_count; i++){
+                prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node, 
+                        spf_res->next_hop[i], 
+                        &rt_entry_template->primary_nh[i],
+                        level);
+            }
+
+            /*if rt_entry_template->primary_nh_count is zero, it means, it is a local prefix or leaked prefix*/
+            if(rt_entry_template->primary_nh_count == 0)
+                prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node,
+                        spf_info->spf_level_info[level].node,
+                        &rt_entry_template->primary_nh[0],
+                        level);
+
+            /*Back up Next hop funtionality is not implemented yet*/
+            memset(&rt_entry_template->backup_nh, 0, sizeof(nh_t));
+
+            /*rt_entry_template is now ready to be installed in RIB*/
         }
-        
-        rt_entry_template = GET_NEW_RT_ENTRY();
-
-        spf_res = prepare_new_rt_entry_template(spf_info, rt_entry_template, route,
-                                spf_info->spf_level_info[level].version); 
-
-        sprintf(LOG, "Template for route : %s/%u, rt_entry_template->primary_nh_count = %u, cost = %u", 
-                rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
-                rt_entry_template->primary_nh_count, rt_entry_template->cost); TRACE();
-
-        /* use the spf_res return by above fn here to save a search*/
-        for(i = 0; i < rt_entry_template->primary_nh_count; i++){
-            prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node, 
-                                        spf_res->next_hop[i], 
-                                        &rt_entry_template->primary_nh[i],
-                                        level);
-        }
-       
-        /*if rt_entry_template->primary_nh_count is zero, it means, it is a local prefix or leaked prefix*/
-        if(rt_entry_template->primary_nh_count == 0)
-            prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node,
-                                         spf_info->spf_level_info[level].node,
-                                         &rt_entry_template->primary_nh[0],
-                                         level);
-        
-        /*Back up Next hop funtionality is not implemented yet*/
-        memset(&rt_entry_template->backup_nh, 0, sizeof(nh_t));
-
-        /*rt_entry_template is now ready to be installed in RIB*/
-
         sprintf(LOG, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
                 route->level, route->spf_metric, route_intall_status_str(route->install_state)); TRACE();
@@ -768,7 +761,24 @@ start_route_installation(spf_info_t *spf_info,
                 rt_updated++;
                 break;
             case RTE_NO_CHANGE:
-                assert(0); /*You cant reach here for unchanged routes*/
+                
+                /* Note : For unchanged routes, we need to send notification to RIB 
+                 * to simply remove the LFA/RLFA for unchanged routes present at this point,
+                 * these are stale LFA/RLFA and can cause Microloops*/
+
+                    rt_no_change++;
+                    if(!is_singly_ll_empty(route->backup_nh_list))
+                        rt_route_remove_backup_nh(spf_info->rttable, 
+                                route->rt_key.prefix, route->rt_key.mask);
+                    /*Update thge version no in RIB*/
+                    existing_rt_route = rt_route_lookup(spf_info->rttable,
+                        route->rt_key.prefix, route->rt_key.mask);
+                    assert(existing_rt_route);
+                    
+                    if(existing_rt_route->level != route->level)
+                        break;
+                    
+                    existing_rt_route->version = spf_info->spf_level_info[level].version;
                 break;
             default:
                 assert(0);
