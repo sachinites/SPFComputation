@@ -37,7 +37,8 @@
 #include "LinkedListApi.h"
 
 #define DEFAULT_PREFIX_METRIC   0
-#define PREFIX_DOWNBIT_FLAG     1 
+#define PREFIX_DOWNBIT_FLAG     1
+#define STUBBED_PREFIX          2 
          
 /* Key structure for a prefix*/
 typedef struct common_pfx_{

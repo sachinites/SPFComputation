@@ -46,6 +46,7 @@
 
 #define IGNOREATTACHED  1   /*If this bit is set, then L1-only router will not install default gateway to L1L2 router of the local Area*/
 #define OVERLOAD_BIT    2   /*the 2nd least significant bit represents the status of router wrt to overload in node_t->attributes (count from zero)*/
+#define STUB_ROUTER_FLAG     0
 
 typedef char FLAG;
 

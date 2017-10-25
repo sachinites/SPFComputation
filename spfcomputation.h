@@ -64,6 +64,7 @@ typedef struct spf_level_info_{
 
     node_t *node;
     unsigned int version; /* Version of spf run on this level*/
+    unsigned int node_level_flags;
 } spf_level_info_t;
 
 

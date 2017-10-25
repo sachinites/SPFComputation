@@ -345,6 +345,8 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     tlv_struct_t *tlv = NULL;
     unsigned int i = 0;
     char *node_name = NULL;
+    char *intf_name = NULL;
+
     LEVEL level         = MAX_LEVEL,
           from_level_no = MAX_LEVEL,
           to_level_no   = MAX_LEVEL;
@@ -367,6 +369,8 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             from_level_no = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "to-level-no", strlen("to-level-no")) == 0)
             to_level_no = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
+            intf_name =  tlv->value;
         else
             assert(0);
     }
@@ -374,6 +378,51 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
     switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_STUBROUTER:
+            {
+                FLAG is_any_intf_prefix_stubbed = 0;
+                edge_end_t *edge_end = NULL;
+
+                for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
+                    edge_end = node->edges[i];
+
+                   if(IS_BIT_SET(edge_end->prefix[level]->prefix_flags, STUBBED_PREFIX))
+                       is_any_intf_prefix_stubbed++;
+
+                   if(edge_end == NULL){
+                       printf("Error : slot-no %s do not exist\n", intf_name);
+                       return 0;
+                   }
+                    
+                    if(strncmp(intf_name, edge_end->intf_name, strlen(edge_end->intf_name)))
+                        continue;
+
+                    if(edge_end->dirn != OUTGOING)
+                        continue;
+
+                    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+
+                    if(!IS_LEVEL_SET(edge->level, level)){
+                        printf("Error : slot-no %s is not operating in level %s\n", intf_name, get_str_level(level));
+                        return 0;
+                    }
+                    
+                    prefix_t *prefix = edge_end->prefix[level];
+                    (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(prefix->prefix_flags, STUBBED_PREFIX) : 
+                        UNSET_BIT(prefix->prefix_flags, STUBBED_PREFIX);   
+            
+                    if(enable_or_disable == CONFIG_ENABLE){
+                        SET_BIT(node->spf_info.spf_level_info[level].node_level_flags, STUB_ROUTER_FLAG);
+                        return 0;
+                    }
+                }
+
+                /* Means : enable_or_disable = CONFIG_DISABLE. IF there is no subnet which is being stubbed
+                 * then remove the global node level flag*/
+                if(is_any_intf_prefix_stubbed == 1)
+                    UNSET_BIT(node->spf_info.spf_level_info[level].node_level_flags, STUB_ROUTER_FLAG);
+            }
+             break;
         case CMDCODE_CONFIG_NODE_OVERLOAD:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->attributes[level], OVERLOAD_BIT) :
                 UNSET_BIT(node->attributes[level], OVERLOAD_BIT);
@@ -939,6 +988,34 @@ spf_init_dcm(){
         libcli_register_param(&from_level_no, &to_level_no);
         set_param_cmd_code(&to_level_no, CMDCODE_NODE_LEAK_PREFIX);
     }
+
+    /*config node <node-name> stub-network interface <slot-no> level <level-no>*/
+    /* Production code ISIS CLI : set protocol isis stub-network interface <if-name> [ipv4-unicast | ipv6-univast] level <level-no>*/
+
+    {
+        static param_t stub_network;
+        init_param(&stub_network, CMD, "stub-network", 0, 0, INVALID, 0, "configure stub-network");
+        libcli_register_param(&config_node_node_name, &stub_network);
+
+        static param_t interface;
+        init_param(&interface, CMD, "interface", 0, 0, INVALID, 0, "interface");
+        libcli_register_param(&stub_network, &interface);
+
+        static param_t slotno;
+        init_param(&slotno, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
+        libcli_register_param(&interface, &slotno);
+
+        static param_t level;
+        init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
+        libcli_register_param(&slotno, &level);
+
+        static param_t level_no;
+        init_param(&level_no, LEAF, 0, instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
+        libcli_register_param(&level, &level_no);
+        set_param_cmd_code(&level_no, CMDCODE_CONFIG_NODE_STUBROUTER);
+    } 
+
+
 
     /*Debug commands*/
 

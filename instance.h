@@ -33,10 +33,10 @@
 #ifndef __INSTANCE__
 #define __INSTANCE__
 
-#include "instanceconst.h"
-#include "LinkedListApi.h"
 #include <stdlib.h>
 #include <assert.h>
+#include "instanceconst.h"
+#include "LinkedListApi.h"
 #include "spfcomputation.h"
 #include "prefix.h"
 #include "heap_interface.h"
@@ -63,7 +63,7 @@ typedef struct _node_t{
     /*Every node in production has its own spf_info and 
      * instance flags*/
     spf_info_t spf_info;
-    unsigned int instance_flags;/*Hope instance flags are notr level specific, is there any ? If we come across later, we will have level specific flags*/
+    unsigned int instance_flags;                            /*Hope instance flags are not level specific, is there any ? If we come across later, we will have level specific flags*/
 
     /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
@@ -190,6 +190,8 @@ inverse_topology(instance_t *instance, LEVEL level);
 #define IS_OVERLOADED(nodeptr, level)                   \
     IS_BIT_SET(nodeptr->attributes[level], OVERLOAD_BIT)
 
+#define IS_ROUTER_STUB_RTR(nodeptr, _level)             \
+    IS_BIT_SET(nodeptr->spf_info.spf_level_info[_level].node_level_flags, STUB_ROUTER_FLAG)
 
 static inline edge_t *
 GET_EGDE_PTR_FROM_EDGE_END(edge_end_t *edge_end){
