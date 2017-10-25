@@ -354,7 +354,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
     sprintf(LOG, "Node %s, result node %s, prefix %s, level %s, prefix metric : %u",
              GET_SPF_INFO_NODE(spf_info, level)->node_name, result->node->node_name, 
              prefix->prefix, get_str_level(level), prefix->metric); TRACE();
-    if(prefix->metric > INFINITE_METRIC){
+    if(prefix->metric == INFINITE_METRIC){
         sprintf(LOG, "prefix : %s/%u discarded because of infinite metric", prefix->prefix, prefix->mask); TRACE();
         return;
     }
@@ -375,7 +375,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         route->hosting_node = prefix->hosting_node;
         
         /* Update route metric */
-        route->spf_metric = result->spf_metric + prefix->metric;
+        route->spf_metric =  result->spf_metric + prefix->metric;
         route->lsp_metric = 0; /*Not supported*/
 
         for(; i < MAX_NXT_HOPS; i++){
@@ -953,6 +953,13 @@ add_route(node_t *lsp_reciever,
             return;
         }
 
+        /* Dont create route DS for prefixes with INFINITE_METRIC locally or remotely*/
+        if(_prefix->metric == INFINITE_METRIC){
+
+            sprintf(LOG, "node %s, route %s/%u %s advertised with infinite metric, will not create route",
+                    lsp_reciever->node_name, _prefix->prefix, _prefix->mask, get_str_level(info_dist_level)); 
+            return;
+        }
         route = route_malloc();
         route_set_key(route, prefix, mask); 
 
@@ -989,7 +996,6 @@ add_route(node_t *lsp_reciever,
         install_route_in_rib(spf_info, info_dist_level, route);        
     }
     else{
-        
         sprintf(LOG, "At Node %s, route %s/%u, %s found in Routing tree with cost = %u", 
             lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, 
             get_str_level(info_dist_level), route->spf_metric); TRACE(); 
@@ -1017,13 +1023,56 @@ add_route(node_t *lsp_reciever,
          hosting_node_self_result =  singly_ll_search_by_key(hosting_node->self_spf_result[info_dist_level], lsp_reciever);
          assert(hosting_node_self_result);
          
-         if(route->spf_metric < hosting_node_self_result->res->spf_metric + metric){
+         if((unsigned long long)route->spf_metric < (unsigned long long)hosting_node_self_result->res->spf_metric + (unsigned long long)metric){
              sprintf(LOG, "At node %s, Existing route %s/%u, %s is better than advertised, route metric = %u, advertised metric = %u", 
                      lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level), route->spf_metric,
                      hosting_node_self_result->res->spf_metric + metric); TRACE();
 
+                #if 0
+             /*ToDO : If the route currently installed and the prefix advertised belong to same remote hosting node, then overwrite the route
+              * with second best prefix present in route->prefix list. We will cover this scenario when we will be fixing route->prefix_list
+              * Management. For now let us just owerrite the route*/
+
+                 overwrite_route(spf_info, route, _prefix, hosting_node_self_result->res, info_dist_level);
+                 prefix_t *old_prefix = singly_ll_search_by_key(route->like_prefix_list, _prefix);
+                 assert(old_prefix);
+                 memcpy(old_prefix, _prefix, sizeof(prefix_t));
+                 //ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix);
+                 route->install_state = RTE_CHANGED;
+                 install_route_in_rib(spf_info, info_dist_level, route);
+                 
+                 /*Since the route had been updated, if this route is leaked into other level, communicate the
+                  * update to other level as well*/
+
+                 LEVEL other_level = get_other_level(info_dist_level);
+                 _prefix = node_local_prefix_search(lsp_reciever, other_level, prefix, mask);
+                 if(!_prefix) return;
+                 if(!IS_BIT_SET(_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG)) return;
+
+                 _prefix->metric = route->spf_metric;
+                 sprintf(LOG, "At node %s, re-flooding the prefix %s/%u with improved metric %u in %s", 
+                         lsp_reciever->node_name, _prefix->prefix, _prefix->mask, _prefix->metric, get_str_level(other_level)); TRACE();
+
+                 tlv128_ip_reach_t ad_msg;
+                 memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
+                 dist_info_hdr_t dist_info_hdr;
+                 memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
+                 ad_msg.prefix = _prefix->prefix;
+                 ad_msg.mask = _prefix->mask;
+                 ad_msg.metric = _prefix->metric;
+                 ad_msg.prefix_level = other_level;
+                 ad_msg.up_down_bit = 1;
+                 ad_msg.hosting_node = _prefix->hosting_node;
+                 dist_info_hdr.lsp_generator = lsp_reciever;
+                 dist_info_hdr.info_dist_level = other_level;
+                 dist_info_hdr.add_or_remove = AD_CONFIG_ADDED;
+                 dist_info_hdr.advert_id = TLV128;
+                 dist_info_hdr.info_data = (char *)&ad_msg;
+                 generate_lsp(instance, lsp_reciever, prefix_distribution_routine, &dist_info_hdr);
+            #endif
+
              if(hosting_node == lsp_reciever){
-                 sprintf(LOG, "At node %s, local route %s/%u leakage to %s rollback", 
+                 sprintf(LOG, "At node %s, local route %s/%u leakage to %s rollback", /* Its a leakage because route DS exist in this level already on hosting node*/
                          lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask,  get_str_level(info_dist_level)); TRACE(); 
                  deattach_prefix_on_node(hosting_node, route->rt_key.prefix, route->rt_key.mask, info_dist_level);
                  abort_flooding(); /* No need to distribute this prefix leakage into network*/
@@ -1034,7 +1083,7 @@ add_route(node_t *lsp_reciever,
              }
              return;
          }
-         else if(route->spf_metric == hosting_node_self_result->res->spf_metric + metric){
+         else if((unsigned long long)route->spf_metric == (unsigned long long)hosting_node_self_result->res->spf_metric + (unsigned long long)metric){
              sprintf(LOG, "At node %s, Existing route %s/%u, %s is equal to advertised, route metric = %u, advertised metric = %u", 
                      lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level), route->spf_metric,
                      hosting_node_self_result->res->spf_metric + metric); TRACE();

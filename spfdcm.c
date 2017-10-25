@@ -378,16 +378,25 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
     switch(cmd_code){
-        case CMDCODE_CONFIG_NODE_STUBROUTER:
+        case CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW:
             {
-                FLAG is_any_intf_prefix_stubbed = 0;
                 edge_end_t *edge_end = NULL;
+
+                switch(enable_or_disable){
+                    case CONFIG_ENABLE:
+                        if(!IS_OVERLOADED(node, level)){
+                            printf("Error : Router not overloaded\n");
+                            return 0;
+                        }
+                        break;
+                    case CONFIG_DISABLE:
+                        break;
+                    default:
+                        assert(0);
+                }
 
                 for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
                     edge_end = node->edges[i];
-
-                   if(IS_BIT_SET(edge_end->prefix[level]->prefix_flags, STUBBED_PREFIX))
-                       is_any_intf_prefix_stubbed++;
 
                    if(edge_end == NULL){
                        printf("Error : slot-no %s do not exist\n", intf_name);
@@ -408,25 +417,33 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                     }
                     
                     prefix_t *prefix = edge_end->prefix[level];
-                    (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(prefix->prefix_flags, STUBBED_PREFIX) : 
-                        UNSET_BIT(prefix->prefix_flags, STUBBED_PREFIX);   
-            
-                    if(enable_or_disable == CONFIG_ENABLE){
-                        SET_BIT(node->spf_info.spf_level_info[level].node_level_flags, STUB_ROUTER_FLAG);
-                        return 0;
-                    }
-                }
+                    if(enable_or_disable == CONFIG_ENABLE)
+                        prefix->metric = INFINITE_METRIC;
+                    else
+                        prefix->metric = DEFAULT_PREFIX_METRIC; 
+                        
+                    tlv128_ip_reach_t ad_msg;
+                    memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
+                    ad_msg.prefix = prefix->prefix,
+                    ad_msg.mask = prefix->mask;
+                    ad_msg.metric = prefix->metric;
+                    ad_msg.prefix_level = level;
+                    ad_msg.up_down_bit = 0; /*Interface attached prefixes have up_down_bit = 0*/
+                    ad_msg.hosting_node = node;
 
-                /* Means : enable_or_disable = CONFIG_DISABLE. IF there is no subnet which is being stubbed
-                 * then remove the global node level flag*/
-                if(is_any_intf_prefix_stubbed == 1)
-                    UNSET_BIT(node->spf_info.spf_level_info[level].node_level_flags, STUB_ROUTER_FLAG);
+                    dist_info_hdr.lsp_generator = node;
+                    dist_info_hdr.info_dist_level = level;
+                    dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
+                    dist_info_hdr.advert_id = TLV128;
+                    dist_info_hdr.info_data = (char *)&ad_msg;
+                    generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
+                    return 0;
+                }
             }
              break;
         case CMDCODE_CONFIG_NODE_OVERLOAD:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->attributes[level], OVERLOAD_BIT) :
                 UNSET_BIT(node->attributes[level], OVERLOAD_BIT);
-                /*Now distribute Overload TLV in the network at this level*/
             break;
         case CMDCODE_INSTANCE_IGNOREBIT_ENABLE:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->instance_flags, IGNOREATTACHED) :
@@ -880,6 +897,17 @@ spf_init_dcm(){
         init_param(&level_no, LEAF, 0, instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
         libcli_register_param(&level, &level_no);
         set_param_cmd_code(&level_no, CMDCODE_CONFIG_NODE_OVERLOAD);
+
+        /* Production code ISIS CLI : set protocol isis stub-network interface <if-name> [ipv4-unicast | ipv6-univast] level <level-no>*/
+        /* Overloading the stub network : config node <node-name> overload level <level-no> interface <slot-no>*/
+        static param_t interface;
+        init_param(&interface, CMD, "interface", 0, 0, INVALID, 0, "interface");
+        libcli_register_param(&level_no, &interface);
+            
+        static param_t slotno;
+        init_param(&slotno, LEAF, 0, instance_node_config_handler, 0, STRING, "slot-no", "interface name ethx/y format");
+        libcli_register_param(&interface, &slotno);
+        set_param_cmd_code(&slotno, CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW);
     }
 
     /* config node <node-name> [no] ignorebit enable*/
@@ -988,34 +1016,6 @@ spf_init_dcm(){
         libcli_register_param(&from_level_no, &to_level_no);
         set_param_cmd_code(&to_level_no, CMDCODE_NODE_LEAK_PREFIX);
     }
-
-    /*config node <node-name> stub-network interface <slot-no> level <level-no>*/
-    /* Production code ISIS CLI : set protocol isis stub-network interface <if-name> [ipv4-unicast | ipv6-univast] level <level-no>*/
-
-    {
-        static param_t stub_network;
-        init_param(&stub_network, CMD, "stub-network", 0, 0, INVALID, 0, "configure stub-network");
-        libcli_register_param(&config_node_node_name, &stub_network);
-
-        static param_t interface;
-        init_param(&interface, CMD, "interface", 0, 0, INVALID, 0, "interface");
-        libcli_register_param(&stub_network, &interface);
-
-        static param_t slotno;
-        init_param(&slotno, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
-        libcli_register_param(&interface, &slotno);
-
-        static param_t level;
-        init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
-        libcli_register_param(&slotno, &level);
-
-        static param_t level_no;
-        init_param(&level_no, LEAF, 0, instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
-        libcli_register_param(&level, &level_no);
-        set_param_cmd_code(&level_no, CMDCODE_CONFIG_NODE_STUBROUTER);
-    } 
-
-
 
     /*Debug commands*/
 
@@ -1146,4 +1146,22 @@ dump_node_info(node_t *node){
     printf("    IGNOREATTACHED : %s\n", IS_BIT_SET(node->instance_flags, IGNOREATTACHED) ? "SET" : "UNSET");
     printf("    ATTACHED       : %s\n", (node->attached) ? "SET" : "UNSET");
     printf("    MULTIAREA      : %s\n", node->spf_info.spff_multi_area ? "SET" : "UNSET");
+    printf("    Overload       : L1 : %s, L2 : %s\n", IS_OVERLOADED(node, LEVEL1) ? "yes" : "No", 
+                                                      IS_OVERLOADED(node, LEVEL2) ? "yes" : "No");
+    printf("    Stub network interfaces : \n");
+    for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+        edge_end = node->edges[i];
+        
+        if(!edge_end)
+            break;
+        
+        if(edge_end->dirn != OUTGOING)
+            continue;
+
+        for(level = LEVEL1; level <= LEVEL2; level++){
+            
+        if(edge_end->prefix[level] && edge_end->prefix[level]->metric == INFINITE_METRIC)
+            printf("%s(%s)\n", edge_end->intf_name, get_str_level(level));
+        }
+    }
 }

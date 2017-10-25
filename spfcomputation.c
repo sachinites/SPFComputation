@@ -222,16 +222,12 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             
             sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
 
-            if(nbr_node->node_type[level] != PSEUDONODE && IS_OVERLOADED(nbr_node, level)){
-                sprintf(LOG, "Nbr node : %s is overloaded in %s, will not process in SPF computation", 
-                        nbr_node->node_name, get_str_level(level)); TRACE();
-                continue;
-            }
-
-            if(candidate_node->spf_metric[level] + edge->metric[level] < nbr_node->spf_metric[level]){
+            if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
+                ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) < (unsigned long long)nbr_node->spf_metric[level]){
                 
                 sprintf(LOG, "Old Metric : %u, New Metric : %u, Better Next Hop", 
-                        nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
+                        nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
+                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
                 TRACE();
                 
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
@@ -258,20 +254,24 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     copy_nh_list(&candidate_node->next_hop[level][0], &nbr_node->next_hop[level][0]);
                 }
 
-                nbr_node->spf_metric[level] =  candidate_node->spf_metric[level] + edge->metric[level]; 
+                nbr_node->spf_metric[level] =  IS_OVERLOADED(candidate_node, level) ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
                 INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
                 sprintf(LOG, "%s's spf_metric has been updated to %u, and inserted into candidate list", 
                         nbr_node->node_name, nbr_node->spf_metric[level]); 
                 TRACE();
             }
 
-            else if(candidate_node->spf_metric[level] + edge->metric[level] == nbr_node->spf_metric[level]){
+            else if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
+                ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) == (unsigned long long)nbr_node->spf_metric[level]){
+
                 sprintf(LOG, "Old Metric : %u, New Metric : %u, ECMP path",
-                        nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]); TRACE();
+                        nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
+                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]); TRACE();
             }
             else{
                 sprintf(LOG, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
-                        nbr_node->spf_metric[level], candidate_node->spf_metric[level] + edge->metric[level]);
+                        nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
+                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
                 TRACE();
             }
         }

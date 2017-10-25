@@ -52,7 +52,7 @@
 #define CMDCODE_CONFIG_NODE_OVERLOAD        15  /*config node <node-name> overload level <level-no>*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES  16  /*debug instance node <node-name> route*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ROUTE   17  /* debug instance node <node-name> route <prefix> <mask>*/
-#define CMDCODE_CONFIG_NODE_STUBROUTER      18  /* config node <node-name> stub-network interface <slot-no> level <level-no> */
+#define CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW 18  /* config node <node-name> overload level <level-no> interface <slot-no> */
 
 
 #endif /* __SPFCMDCODES__H */
