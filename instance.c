@@ -62,6 +62,9 @@ create_new_node(instance_t *instance, char *node_name, AREA area){
         node->local_prefix_list[level] = init_singly_ll();
         singly_ll_set_comparison_fn(node->local_prefix_list[level] , 
                 get_prefix_comparison_fn());
+        
+        singly_ll_set_order_comparison_fn(node->local_prefix_list[level] , 
+                get_prefix_order_comparison_fn());
 
         node->spf_run_result[level] = init_singly_ll();
         singly_ll_set_comparison_fn(node->spf_run_result[level], spf_run_result_comparison_fn);
@@ -155,7 +158,7 @@ attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
         if(node_local_prefix_search(node, level_it, prefix->prefix, prefix->mask))
             continue;
 
-        singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level_it), prefix);
+        add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level_it), prefix);
         prefix->hosting_node = node;
         prefix->ref_count++;
     }
@@ -367,7 +370,7 @@ attach_prefix_on_node(node_t *node,
     _prefix->hosting_node = node;
     sprintf(LOG, "Node : %s, prefix attached : %s/%u, prefix metric : %u",
         node->node_name, prefix, mask, metric); TRACE();
-    singly_ll_add_node_by_val(GET_NODE_PREFIX_LIST(node, level), (void *)_prefix);
+    add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level), _prefix);
     return _prefix;
 }
 

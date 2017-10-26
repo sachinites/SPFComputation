@@ -90,9 +90,13 @@ void
 set_prefix_flag(unsigned int flag);
 
 typedef int (*comparison_fn)(void *, void *);
+typedef int (*order_comparison_fn)(void *, void *);
 
 comparison_fn
 get_prefix_comparison_fn();
+
+order_comparison_fn
+get_prefix_order_comparison_fn();
 
 /*This fn leak the prefix from L2 to L1*/
 int
@@ -102,6 +106,17 @@ leak_prefix(char *node_name, char *prefix, char mask,
 void
 fill_prefix(prefix_t *prefix, common_pfx_key_t *common_prefix,
             unsigned int metric, boolean downbit);
+
+/*We need prefix list management routines for route_t->like_prefix_list
+ * and node_t->local_prefix_list*/
+
+typedef struct routes_ routes_t;
+
+void
+add_prefix_to_prefix_list(ll_t *prefix_list, prefix_t *prefix);
+
+void
+delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask);
 
 #endif /* __ROUTES__ */
 

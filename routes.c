@@ -62,6 +62,7 @@ route_malloc(){
     singly_ll_set_comparison_fn(route->backup_nh_list, instance_node_comparison_fn);
     route->like_prefix_list = init_singly_ll();
     singly_ll_set_comparison_fn(route->like_prefix_list, get_prefix_comparison_fn());
+    singly_ll_set_order_comparison_fn(route->like_prefix_list, get_prefix_order_comparison_fn());
     route->install_state = RTE_ADDED;
     return route;
 }

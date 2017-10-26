@@ -90,7 +90,7 @@ free_route(routes_t *route);
     delete_singly_ll(routeptr->backup_nh_list)
 
 #define ROUTE_ADD_LIKE_PREFIX_LIST(routeptr, prefixptr) \
-    singly_ll_add_node_by_val(routeptr->like_prefix_list, prefixptr)
+    add_prefix_to_prefix_list(routeptr->like_prefix_list, prefixptr)
 
 #define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr)    \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \

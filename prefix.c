@@ -75,6 +75,24 @@ prefix_comparison_fn(void *_prefix, void *_key){
     return FALSE;
 }
 
+/*Currently it decides based only on metric, in future we will
+ * enhance this fn with other parameters such as external/internal routes
+ * inter area/intra area routes etc*/
+static int
+prefix_order_comparison_fn(void *_prefix1, void *_prefix2){
+
+    prefix_t *prefix1 = _prefix1;
+    prefix_t *prefix2 = _prefix2;
+
+    if(prefix1->metric < prefix2->metric)
+        return -1;
+    if(prefix1->metric == prefix2->metric)
+        return 0;
+    if(prefix1->metric > prefix2->metric)
+        return 1;
+    return 0;
+}
+
 void
 init_prefix_key(prefix_t *prefix, char *_prefix, char mask){
 
@@ -88,6 +106,12 @@ init_prefix_key(prefix_t *prefix, char *_prefix, char mask){
 comparison_fn
 get_prefix_comparison_fn(){
     return prefix_comparison_fn;
+}
+
+
+order_comparison_fn
+get_prefix_order_comparison_fn(){
+    return prefix_order_comparison_fn;
 }
 
 #if 0
@@ -198,4 +222,94 @@ leak_prefix(char *node_name, char *_prefix, char mask,
     }
     return -1;
 }
+
+static void
+add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix){
+
+    singly_ll_node_t *list_node_prev = NULL, 
+                     *list_node_next = NULL;
+
+    prefix_t *list_prefix = NULL;
+
+    /* empty list*/
+    if(is_singly_ll_empty(prefix_list)){
+        singly_ll_add_node_by_val(prefix_list, prefix);
+        return;
+    }
+
+    /* Only one node*/
+    if(GET_NODE_COUNT_SINGLY_LL(prefix_list) == 1){
+        if(LL_LESS_THAN(prefix_list, prefix, prefix_list->head->data)){
+            singly_ll_add_node_by_val(prefix_list, prefix);
+        }
+        else{
+            singly_ll_node_t *new_node = singly_ll_init_node(prefix);
+            prefix_list->head->next = new_node;
+            INC_NODE_COUNT_SINGLY_LL(prefix_list);
+        }
+        return;
+    }
+
+    ITERATE_LIST_BEGIN(prefix_list, list_node_next){
+
+        list_prefix = list_node_next->data;
+        
+        if(!LL_LESS_THAN(prefix_list, prefix, list_prefix)){
+
+            list_node_prev = list_node_next;
+            continue;
+        }
+
+        singly_ll_node_t *new_node = singly_ll_init_node(prefix);
+        new_node->next = list_node_next;
+        list_node_prev->next = new_node;
+        INC_NODE_COUNT_SINGLY_LL(prefix_list);
+        return;
+
+    }ITERATE_LIST_END;
+
+    /*Add in the end*/
+    singly_ll_node_t *new_node = singly_ll_init_node(prefix);
+    list_node_prev->next = new_node;
+}
+
+void
+add_prefix_to_prefix_list(ll_t *prefix_list, prefix_t *prefix){
+
+    /*Handle duplicate*/
+    common_pfx_key_t key;
+    strncpy(key.prefix, prefix->prefix, PREFIX_LEN);
+    key.prefix[PREFIX_LEN] = '\0'; 
+    key.mask = prefix->mask;
+    prefix_t *old_prefix = NULL;
+
+    old_prefix = singly_ll_search_by_key(prefix_list, &key);
+
+    if(old_prefix != NULL){
+        /* prefix is already present*/
+        singly_ll_delete_node_by_data_ptr(prefix_list, old_prefix);
+        free(old_prefix);
+        old_prefix = NULL;
+        add_new_prefix_in_list(prefix_list, prefix);
+        return;
+    }
+
+    add_new_prefix_in_list(prefix_list, prefix);
+}
+
+void
+delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask){
+
+    prefix_t *old_prefix = NULL;
+    common_pfx_key_t key;
+    strncpy(key.prefix, prefix, PREFIX_LEN);
+    key.prefix[PREFIX_LEN] = '\0';
+    key.mask = mask;
+    old_prefix = singly_ll_search_by_key(prefix_list, &key);
+    assert(old_prefix);
+    singly_ll_delete_node_by_data_ptr(prefix_list, old_prefix);
+    free(old_prefix);
+    old_prefix = NULL;
+}
+
 

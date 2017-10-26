@@ -22,6 +22,7 @@ typedef struct LL{
     unsigned int node_count;
     singly_ll_node_t *head;
     int (*comparison_fn)(void*, void *);
+    int (*order_comparison_fn)(void *, void *);
 } ll_t;
 
 ll_t* init_singly_ll();
@@ -40,6 +41,7 @@ singly_ll_node_t *singly_ll_get_node_by_data_ptr(ll_t *ll, void *data);
 void singly_ll_delete_node_by_data_ptr(ll_t *ll, void *data);
 unsigned int singly_ll_remove_node_by_dataptr(ll_t *ll, void *data);
 void singly_ll_set_comparison_fn(ll_t *ll, int (*comparison_fn)(void *, void *));
+void singly_ll_set_order_comparison_fn(ll_t *ll, int (*order_comparison_fn)(void *, void *));
 void * singly_ll_search_by_key(ll_t *ll, void *key);
 void copy_singly_ll(ll_t *src, ll_t *dst);
 ll_t * union_singly_ll(ll_t *list1, ll_t *list2);
@@ -53,5 +55,14 @@ ll_t * union_singly_ll(ll_t *list1, ll_t *list2);
         _node_ptr = node_ptr->next; 
 
 #define ITERATE_LIST_END  }} 
+
+#define LL_LESS_THAN(listptr, data1ptr, data2ptr)      \
+    (listptr->order_comparison_fn(data1ptr, data2ptr) == -1)
+
+#define LL_GREATER_THAN(listptr, data1ptr, data2ptr)   \
+    (listptr->order_comparison_fn(data1ptr, data2ptr) == 1)
+
+#define LL_EQUAL(listptr, data1ptr, data2ptr)          \
+    (listptr->order_comparison_fn(data1ptr, data2ptr) == 0)
 
 #endif

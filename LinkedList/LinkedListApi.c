@@ -293,6 +293,12 @@ void singly_ll_set_comparison_fn(ll_t *ll, int (*comparison_fn)(void *, void *))
     ll->comparison_fn = comparison_fn;
 }
 
+void singly_ll_set_order_comparison_fn(ll_t *ll, int (*order_comparison_fn)(void *, void *)){
+
+    if(!ll) assert(0) ;
+    ll->order_comparison_fn = order_comparison_fn;
+}
+
 void * 
 singly_ll_search_by_key(ll_t *ll, void *key){
 
