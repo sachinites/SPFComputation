@@ -159,7 +159,7 @@ attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
             continue;
 
         prefix->hosting_node = node;
-        add_prefix_to_prefix_list(node, level_it, GET_NODE_PREFIX_LIST(node, level_it), prefix);
+        add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level_it), prefix, 0);
         prefix->ref_count++;
     }
 }
@@ -372,7 +372,7 @@ attach_prefix_on_node(node_t *node,
     _prefix->prefix_flags = prefix_flags;
     sprintf(LOG, "Node : %s, prefix attached : %s/%u, prefix metric : %u",
         node->node_name, prefix, mask, metric); TRACE();
-    if(add_prefix_to_prefix_list(node, level, GET_NODE_PREFIX_LIST(node, level), _prefix))
+    if(add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level), _prefix, 0))
         return _prefix;
     free(_prefix);
     _prefix = NULL;

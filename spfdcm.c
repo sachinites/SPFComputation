@@ -421,7 +421,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                         prefix->metric = INFINITE_METRIC;
                     else
                         prefix->metric = DEFAULT_PREFIX_METRIC; 
-                        
+                    #if 0    
                     tlv128_ip_reach_t ad_msg;
                     memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
                     ad_msg.prefix = prefix->prefix,
@@ -436,6 +436,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                     dist_info_hdr.advert_id = TLV128;
                     dist_info_hdr.info_data = (char *)&ad_msg;
                     generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
+#endif
                     return 0;
                 }
             }
@@ -443,6 +444,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
         case CMDCODE_CONFIG_NODE_OVERLOAD:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->attributes[level], OVERLOAD_BIT) :
                 UNSET_BIT(node->attributes[level], OVERLOAD_BIT);
+                //delete_all_routes(node, level);
             break;
         case CMDCODE_INSTANCE_IGNOREBIT_ENABLE:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->instance_flags, IGNOREATTACHED) :

@@ -89,8 +89,8 @@ free_route(routes_t *route);
 #define ROUTE_FLUSH_BACKUP_NH_LIST(routeptr)   \
     delete_singly_ll(routeptr->backup_nh_list)
 
-#define ROUTE_ADD_LIKE_PREFIX_LIST(spfrootptr, _level, routeptr, prefixptr)     \
-    add_prefix_to_prefix_list(spfrootptr, _level, routeptr->like_prefix_list, prefixptr)
+#define ROUTE_ADD_LIKE_PREFIX_LIST(routeptr, prefixptr, _hosting_node_metric)     \
+    add_prefix_to_prefix_list(routeptr->like_prefix_list, prefixptr, _hosting_node_metric)
 
 #define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr)    \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
@@ -114,6 +114,9 @@ spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
 void
 build_routing_table(spf_info_t *spf_info,
                     node_t *spf_root, LEVEL level);
+
+void
+delete_all_routes(node_t *node, LEVEL level);
 
 void
 start_route_installation(spf_info_t *spf_info, 

@@ -46,6 +46,10 @@ spf_computation(node_t *spf_root,
 extern int
 instance_node_comparison_fn(void *_node, void *input_node_name);
 
+void
+install_route_in_rib(spf_info_t *spf_info,
+        LEVEL level, routes_t *route);
+
 #if 0
 THREAD_NODE_TO_STRUCT(prefix_t,
         like_prefix_thread,
@@ -80,6 +84,7 @@ free_route(routes_t *route){
 
     if(!route)  return;
     
+    singly_ll_node_t* list_node = NULL; 
     route->hosting_node = 0;
     
     ROUTE_FLUSH_PRIMARY_NH_LIST(route);
@@ -90,7 +95,13 @@ free_route(routes_t *route){
     free(route->backup_nh_list);
     route->backup_nh_list = 0;
 
-    /* delete list nodes, but do not free the list data*/
+
+    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
+        
+        free(list_node->data);
+        list_node->data = NULL;
+    } ITERATE_LIST_END;
+    
     delete_singly_ll(route->like_prefix_list);
     free(route->like_prefix_list);
     route->like_prefix_list = NULL;
@@ -294,19 +305,92 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
 
 
 static void
+mark_all_routes_stale_except_direct_routes(spf_info_t *spf_info, LEVEL level){
+
+   singly_ll_node_t* list_node = NULL,
+                     *list_node1 = NULL;
+   routes_t *route = NULL;
+   prefix_t *prefix = NULL;
+   
+   ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
+           
+       route = list_node->data;
+       
+       if(!IS_LEVEL_SET(route->level, level))
+           continue;
+      
+       /*Do not stale direct or leaked routes*/ 
+       if(route->hosting_node != GET_SPF_INFO_NODE(spf_info, level))
+           route->install_state = RTE_STALE; /**/
+       else
+           route->install_state = RTE_NO_CHANGE;
+
+           /*Delete all prefixes except the local prefixes*/
+           ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
+             
+             prefix = list_node1->data;
+             
+             if(prefix->hosting_node != GET_SPF_INFO_NODE(spf_info, level)){
+                free(list_node1->data);
+                free(list_node1);
+             }
+
+           } ITERATE_LIST_END;
+
+           //delete_singly_ll(route->like_prefix_list);
+
+   }ITERATE_LIST_END;
+}
+
+
+static void
 mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
 
-   singly_ll_node_t* list_node = NULL;
+   singly_ll_node_t* list_node = NULL,
+                     *list_node1 = NULL;
    routes_t *route = NULL;
    
    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
            
        route = list_node->data;
+       
        if(!IS_LEVEL_SET(route->level, level))
            continue;
-       route->install_state = RTE_STALE;
-       delete_singly_ll(route->like_prefix_list);
+      
+           route->install_state = RTE_STALE;
+
+           ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
+
+             free(list_node1->data);
+           } ITERATE_LIST_END;
+
+           delete_singly_ll(route->like_prefix_list);
+
    }ITERATE_LIST_END;
+}
+
+/* This routine delete all routes from protocol as well as RIB
+ * except DIRECT routes*/
+void
+delete_all_routes(node_t *node, LEVEL level){
+
+    singly_ll_node_t* list_node = NULL;
+    routes_t *route = NULL;
+
+    mark_all_routes_stale_except_direct_routes(&node->spf_info, level);
+
+    ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
+
+        route = list_node->data;
+        if(route->install_state != RTE_STALE || 
+            route->level != level)
+            continue;
+        
+        install_route_in_rib(&node->spf_info, level, route);
+
+    }ITERATE_LIST_END; 
+
+    delete_stale_routes(&node->spf_info, level);    
 }
 
 static void 
@@ -340,9 +424,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
             else
                 break;
         }
-        //prefix->metric = route->spf_metric;
         /* route->backup_nh_list Not supported yet */
-        //route->install_state = RTE_UPDATED;
 }
 
 static void
@@ -393,7 +475,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         route_prefix = calloc(1, sizeof(prefix_t));
         memcpy(route_prefix, prefix, sizeof(prefix_t));
-        ROUTE_ADD_LIKE_PREFIX_LIST(GET_SPF_INFO_NODE(spf_info, level), level, route, route_prefix);
+        ROUTE_ADD_LIKE_PREFIX_LIST(route, route_prefix, result->spf_metric);
+        route_prefix->metric = route->spf_metric;
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
         route->install_state = RTE_ADDED;
         sprintf(LOG, "Node : %s : route : %s/%u, spf_metric = %u,  marked RTE_ADDED for level%u",  
@@ -416,7 +499,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             }
             route_prefix = calloc(1, sizeof(prefix_t));
             memcpy(route_prefix, prefix, sizeof(prefix_t));
-            ROUTE_ADD_LIKE_PREFIX_LIST(GET_SPF_INFO_NODE(spf_info, level), level, route, route_prefix);
+            ROUTE_ADD_LIKE_PREFIX_LIST(route, route_prefix, result->spf_metric);
+            route_prefix->metric = route->spf_metric;
             return;
         }
         
@@ -431,7 +515,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             }
             route_prefix = calloc(1, sizeof(prefix_t));
             memcpy(route_prefix, prefix, sizeof(prefix_t));
-            ROUTE_ADD_LIKE_PREFIX_LIST(GET_SPF_INFO_NODE(spf_info, level), level, route, route_prefix);
+            ROUTE_ADD_LIKE_PREFIX_LIST(route, route_prefix, result->spf_metric);
+            route_prefix->metric = route->spf_metric;
         }
         else
         {
@@ -455,7 +540,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             
             route_prefix = calloc(1, sizeof(prefix_t));
             memcpy(route_prefix, prefix, sizeof(prefix_t));
-            ROUTE_ADD_LIKE_PREFIX_LIST(GET_SPF_INFO_NODE(spf_info, level), level, route, route_prefix);
+            ROUTE_ADD_LIKE_PREFIX_LIST(route, route_prefix, result->spf_metric);
+            route_prefix->metric = route->spf_metric;
         }
     }
 }
@@ -490,6 +576,9 @@ install_route_in_rib(spf_info_t *spf_info,
                     route->rt_key.prefix, route->rt_key.mask);
         return;  
     }
+
+    if(route->install_state == RTE_STALE)
+        goto STALE;
 
     rt_entry_template = GET_NEW_RT_ENTRY();
 
@@ -527,6 +616,7 @@ install_route_in_rib(spf_info_t *spf_info,
 
     /*rt_entry_template is now ready to be installed in RIB*/
 
+    STALE:
     sprintf(LOG, "RIB modification : route : %s/%u, Level%u, Action : %s", 
             route->rt_key.prefix, route->rt_key.mask, 
             route->level, route_intall_status_str(route->install_state)); TRACE();
@@ -658,7 +748,9 @@ start_route_installation(spf_info_t *spf_info,
         if(route->level != level)
             continue;
 
-        if(route->install_state != RTE_NO_CHANGE){ 
+        if(route->install_state != RTE_NO_CHANGE ||
+            route->install_state != RTE_STALE){
+             
             rt_entry_template = GET_NEW_RT_ENTRY();
 
             spf_res = prepare_new_rt_entry_template(spf_info, rt_entry_template, route,
@@ -729,8 +821,6 @@ start_route_installation(spf_info_t *spf_info,
                                 break;    
                             }
                         }
-                        else
-                            assert(0); /* Impossible case*/
                     }
                     if(rt_route_install(spf_info->rttable, rt_entry_template) < 0){
                         printf("%s() : Error : Could not Add route : %s/%u, Level%u\n", __FUNCTION__,
@@ -764,10 +854,6 @@ start_route_installation(spf_info_t *spf_info,
                             break;
                         }
                     }
-#if 0
-                    else
-                        assert(0); /* Impossible case*/
-#endif
                 }
                 rt_route_update(spf_info->rttable, rt_entry_template);
                 free(rt_entry_template);
@@ -1005,7 +1091,6 @@ add_route(node_t *lsp_reciever,
 
         route->spf_metric = result->spf_metric + metric;
         route->lsp_metric = 0; /*Not supported*/
-        //_prefix->metric = route->spf_metric;
 
         for(; i < MAX_NXT_HOPS; i++){
             if(result->next_hop[i])
@@ -1014,7 +1099,8 @@ add_route(node_t *lsp_reciever,
                 break;
         }
 
-        assert(ROUTE_ADD_LIKE_PREFIX_LIST(lsp_reciever, info_dist_level, route, _prefix));
+        assert(ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix, result->spf_metric ));
+        _prefix->metric = route->spf_metric;
 
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
 
@@ -1052,8 +1138,10 @@ add_route(node_t *lsp_reciever,
         prefix_t *best_prefix = ROUTE_GET_BEST_PREFIX(route);
         assert(best_prefix);
         prefix_t *leaked_prefix = NULL;
+        hosting_node_result = singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], hosting_node);
+        assert(hosting_node_result);
 
-        is_prefix_added = ROUTE_ADD_LIKE_PREFIX_LIST(lsp_reciever, info_dist_level, route, _prefix);
+        is_prefix_added = ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix, hosting_node_result->spf_metric);
 
         if(is_prefix_added){
 
@@ -1066,13 +1154,21 @@ add_route(node_t *lsp_reciever,
                 sprintf(LOG, "Node %s, prefix %s/%u added is best prefix at %s",  lsp_reciever->node_name, 
                             prefix, mask, get_str_level(info_dist_level)); TRACE(); 
 
-                hosting_node_result = singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], hosting_node);
-                assert(hosting_node_result);
                 overwrite_route(spf_info, route, _prefix, hosting_node_result, info_dist_level);
-                //_prefix->metric = route->spf_metric;
+                sprintf(LOG, "Node %s, prefix %s/%u %s old metric : %u, updated new metric : %u", lsp_reciever->node_name,
+                        prefix, mask, get_str_level(info_dist_level), _prefix->metric, _prefix->metric + hosting_node_result->spf_metric); TRACE();
+                _prefix->metric = route->spf_metric;
                 route->install_state = RTE_CHANGED;
                 install_route_in_rib(spf_info, info_dist_level, route); 
             }
+            else{
+                sprintf(LOG, "Node %s, prefix %s/%u added is Inferior prefix at %s",  lsp_reciever->node_name,
+                        prefix, mask, get_str_level(info_dist_level)); TRACE();
+                sprintf(LOG, "Node %s, prefix %s/%u %s old metric : %u, updated new metric : %u", lsp_reciever->node_name,
+                        prefix, mask, get_str_level(info_dist_level), _prefix->metric, _prefix->metric + hosting_node_result->spf_metric); TRACE();
+                _prefix->metric += hosting_node_result->spf_metric;
+            }
+
             /*Or may be inferior prefix, even if it is inferior we should
              * promote the leaked prefix to leaked level*/
 
@@ -1090,14 +1186,17 @@ add_route(node_t *lsp_reciever,
             }
             /*So we need to promote the prefix to other level, other level will update
              * accordingly*/
+            sprintf(LOG, "Node %s, prefix %s/%u being promoted to leaked level %s", 
+                        lsp_reciever->node_name, prefix, mask, get_str_level(other_level)); TRACE();
+
             leaked_prefix = create_new_prefix(prefix, mask);
             leaked_prefix->metric = route->spf_metric;
             leaked_prefix->prefix_flags = _prefix->prefix_flags;
             leaked_prefix->hosting_node = lsp_reciever;
             SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
             SET_BIT(leaked_prefix->prefix_flags, PREFIX_EXTERNABITL_FLAG);
-            is_prefix_added = add_prefix_to_prefix_list(lsp_reciever, other_level, GET_NODE_PREFIX_LIST(lsp_reciever, other_level), 
-                    leaked_prefix);
+            is_prefix_added = add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(lsp_reciever, other_level), 
+                    leaked_prefix, 0);
 
             if(is_prefix_added){
 
@@ -1118,7 +1217,6 @@ add_route(node_t *lsp_reciever,
 
                     overwrite_route(spf_info, route, leaked_prefix, hosting_node_result, other_level);
                     //leaked_prefix->metric = route->spf_metric;
-                    //assert(leaked_prefix->metric == route->spf_metric);
                     route->install_state = RTE_CHANGED;
                     install_route_in_rib(spf_info, other_level, route);
                 }

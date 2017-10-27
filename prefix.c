@@ -229,7 +229,8 @@ leak_prefix(char *node_name, char *_prefix, char mask,
 }
 
 static void
-add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix){
+add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix, 
+                unsigned int prefix_hosting_node_metric){
 
     singly_ll_node_t *list_node_prev = NULL, 
                      *list_node_next = NULL;
@@ -244,7 +245,7 @@ add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix){
 
     /* Only one node*/
     if(GET_NODE_COUNT_SINGLY_LL(prefix_list) == 1){
-        if(LL_LESS_THAN(prefix_list, prefix, prefix_list->head->data)){
+        if(prefix->metric + prefix_hosting_node_metric < ((prefix_t *)(prefix_list->head->data))->metric){
             singly_ll_add_node_by_val(prefix_list, prefix);
         }
         else{
@@ -258,8 +259,7 @@ add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix){
     ITERATE_LIST_BEGIN(prefix_list, list_node_next){
 
         list_prefix = list_node_next->data;
-        
-        if(!LL_LESS_THAN(prefix_list, prefix, list_prefix)){
+        if(!(prefix->metric + prefix_hosting_node_metric < list_prefix->metric)){ 
 
             list_node_prev = list_node_next;
             continue;
@@ -279,11 +279,12 @@ add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix){
 }
 
 FLAG
-is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2){
+is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2, 
+                    unsigned int prefix2_hosting_node_metric){
 
     if(strncmp(prefix1->prefix, prefix2->prefix, PREFIX_LEN) == 0   &&
         prefix1->mask == prefix2->mask                              &&
-        prefix1->metric == prefix2->metric                          &&
+        prefix1->metric == prefix2->metric + prefix2_hosting_node_metric                         &&
         prefix1->hosting_node == prefix2->hosting_node)
             return 1;
     return 0;
@@ -293,32 +294,24 @@ is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2){
 /* Let us delegate all add logic to this fn*/
 /* Returns 1 if prefix added, 0 if rejected*/
 FLAG
-add_prefix_to_prefix_list(node_t *spf_root, LEVEL level, ll_t *prefix_list, prefix_t *prefix){
+add_prefix_to_prefix_list(ll_t *prefix_list, prefix_t *prefix, unsigned int hosting_node_metric){
 
     common_pfx_key_t key;
     strncpy(key.prefix, prefix->prefix, PREFIX_LEN);
     key.prefix[PREFIX_LEN] = '\0'; 
     key.mask = prefix->mask;
     prefix_t *old_prefix = NULL;
-    spf_result_t *res = NULL;
-
-    res = singly_ll_search_by_key(spf_root->spf_run_result[level], prefix->hosting_node);
 
     /*Update the prefix metric to absolute metric. During initialization
      * of graph, res may not exist for edge end prefixes*/
-#if 1
-    if(res)
-        prefix->metric += res->spf_metric;
-#endif
+    
     old_prefix = singly_ll_search_by_key(prefix_list, &key);
 
     if(old_prefix){        
-       if(is_prefix_byte_equal(old_prefix, prefix))
+       if(is_prefix_byte_equal(old_prefix, prefix, hosting_node_metric))
            return 0; 
     }
-    add_new_prefix_in_list(prefix_list, prefix);
-    if(res)
-        prefix->metric -= res->spf_metric;
+    add_new_prefix_in_list(prefix_list, prefix, hosting_node_metric);
     return 1;
 }
 

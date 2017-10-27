@@ -63,7 +63,7 @@ typedef struct prefix_{
 } prefix_t;
 
 FLAG
-is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2);
+is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2, unsigned int prefix2_hosting_node_metric);
 
 prefix_t *
 create_new_prefix(const char *prefix, unsigned char mask);
@@ -107,17 +107,13 @@ prefix_t *
 leak_prefix(char *node_name, char *prefix, char mask, 
             LEVEL from_level, LEVEL to_level);
 
-void
-fill_prefix(prefix_t *prefix, common_pfx_key_t *common_prefix,
-            unsigned int metric, boolean downbit);
-
 /*We need prefix list management routines for route_t->like_prefix_list
  * and node_t->local_prefix_list*/
 
 typedef struct routes_ routes_t;
 
 FLAG
-add_prefix_to_prefix_list(node_t *spf_root, LEVEL level, ll_t *prefix_list, prefix_t *prefix);
+add_prefix_to_prefix_list(ll_t *prefix_list, prefix_t *prefix, unsigned int hosting_node_metric);
 
 void
 delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask);

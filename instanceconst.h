@@ -110,4 +110,5 @@ typedef enum{
     FALSE,
     TRUE
 } boolean;
+
 #endif /* __GRAPHCONST__ */

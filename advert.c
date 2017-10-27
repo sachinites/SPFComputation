@@ -126,9 +126,9 @@ prefix_distribution_routine(node_t *lsp_generator,
                 case AD_CONFIG_ADDED:
                     {
                         tlv128_ip_reach_t *ad_msg = 
-                                (tlv128_ip_reach_t *)dist_info->info_data;
+                                (tlv128_ip_reach_t *)(dist_info->info_data);
                         add_route(lsp_receiver, lsp_generator, dist_info->info_dist_level, ad_msg->prefix, 
-                                  ad_msg->mask, ad_msg->prefix_flags, ad_msg->metric, ad_msg->hosting_node);  
+                                  ad_msg->mask, ad_msg->metric, ad_msg->prefix_flags, ad_msg->hosting_node);  
                     }
                 break;
                 case AD_CONFIG_REMOVED:
@@ -136,7 +136,7 @@ prefix_distribution_routine(node_t *lsp_generator,
                         tlv128_ip_reach_t *ad_msg = 
                                 (tlv128_ip_reach_t *)dist_info->info_data;
                         delete_route(lsp_receiver, lsp_generator, dist_info->info_dist_level, ad_msg->prefix, 
-                                  ad_msg->mask, ad_msg->prefix_flags, ad_msg->metric, ad_msg->hosting_node);  
+                                  ad_msg->mask, ad_msg->metric, ad_msg->prefix_flags, ad_msg->hosting_node);  
                     }
                 break;
                 case AD_CONFIG_UPDATED:
