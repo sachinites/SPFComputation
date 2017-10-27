@@ -80,15 +80,15 @@ generate_lsp(instance_t *instance,
                   
 /* Information advertising structures*/
 
-/* TLV128*/
+/* TLV128. This is not as per RFC, but logically
+ * equivalent to it*/
 typedef struct tlv128_ip_reach_{
-
-    char *prefix;
+    char *prefix; /*TODO : to be changed to char prefix[PREFIX_LEN + 1];*/
     char mask;
     unsigned int metric;
-    LEVEL prefix_level;
-    char up_down_bit;
-    node_t *hosting_node;
+    //LEVEL prefix_level;
+    FLAG prefix_flags; /*Up Down bit/Internal External Metric*/
+    node_t *hosting_node; /*This info is present in LSP common hdr*/
 } tlv128_ip_reach_t;
 
 void

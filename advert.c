@@ -58,13 +58,13 @@ get_flooding_status(void){
     return flood;
 }
 
-
 extern void
 add_route(node_t *lsp_reciever,
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric,
+        unsigned int metric,
+        FLAG prefix_flags,
         node_t *hosting_node);
 
 extern void
@@ -72,7 +72,10 @@ delete_route(node_t *lsp_reciever,
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric);
+        FLAG prefix_flags,
+        unsigned int metric,
+        node_t *hosting_node);
+
 
 static char *
 advert_id_str(ADVERT_ID_T advert_id){
@@ -125,7 +128,7 @@ prefix_distribution_routine(node_t *lsp_generator,
                         tlv128_ip_reach_t *ad_msg = 
                                 (tlv128_ip_reach_t *)dist_info->info_data;
                         add_route(lsp_receiver, lsp_generator, dist_info->info_dist_level, ad_msg->prefix, 
-                                  ad_msg->mask, ad_msg->prefix_level, ad_msg->metric, ad_msg->hosting_node);  
+                                  ad_msg->mask, ad_msg->prefix_flags, ad_msg->metric, ad_msg->hosting_node);  
                     }
                 break;
                 case AD_CONFIG_REMOVED:
@@ -133,7 +136,7 @@ prefix_distribution_routine(node_t *lsp_generator,
                         tlv128_ip_reach_t *ad_msg = 
                                 (tlv128_ip_reach_t *)dist_info->info_data;
                         delete_route(lsp_receiver, lsp_generator, dist_info->info_dist_level, ad_msg->prefix, 
-                                  ad_msg->mask, ad_msg->prefix_level, ad_msg->metric);  
+                                  ad_msg->mask, ad_msg->prefix_flags, ad_msg->metric, ad_msg->hosting_node);  
                     }
                 break;
                 case AD_CONFIG_UPDATED:

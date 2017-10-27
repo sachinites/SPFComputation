@@ -89,8 +89,8 @@ free_route(routes_t *route);
 #define ROUTE_FLUSH_BACKUP_NH_LIST(routeptr)   \
     delete_singly_ll(routeptr->backup_nh_list)
 
-#define ROUTE_ADD_LIKE_PREFIX_LIST(routeptr, prefixptr) \
-    add_prefix_to_prefix_list(routeptr->like_prefix_list, prefixptr)
+#define ROUTE_ADD_LIKE_PREFIX_LIST(spfrootptr, _level, routeptr, prefixptr)     \
+    add_prefix_to_prefix_list(spfrootptr, _level, routeptr->like_prefix_list, prefixptr)
 
 #define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr)    \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
@@ -102,6 +102,9 @@ free_route(routes_t *route);
 
 #define ROUTE_GET_PR_NH_CNT(routeptr)   \
     GET_NODE_COUNT_SINGLY_LL(routeptr->primary_nh_list)
+
+#define ROUTE_GET_BEST_PREFIX(routeptr)   \
+    ((GET_HEAD_SINGLY_LL(routeptr->like_prefix_list))->data)
 
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
@@ -138,7 +141,8 @@ add_route(node_t *lsp_reciever,
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric,
+        unsigned int metric,
+        FLAG prefix_flags,
         node_t *hosting_node);
 
 void
@@ -146,7 +150,9 @@ delete_route(node_t *lsp_reciever,
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric);
+        FLAG prefix_flags,
+        unsigned int metric,
+        node_t *hosting_node);
 
 char *
 route_intall_status_str(route_intall_status install_status);

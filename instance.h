@@ -153,7 +153,8 @@ attach_prefix_on_node(node_t *node,
                       char *prefix, 
                       unsigned char mask,
                       LEVEL level,
-                      unsigned int metric);
+                      unsigned int metric,
+                      FLAG prefix_flags);
 
 void
 deattach_prefix_on_node(node_t *node, 

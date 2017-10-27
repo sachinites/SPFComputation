@@ -340,7 +340,9 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
             else
                 break;
         }
+        //prefix->metric = route->spf_metric;
         /* route->backup_nh_list Not supported yet */
+        //route->install_state = RTE_UPDATED;
 }
 
 static void
@@ -351,6 +353,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
     routes_t *route = NULL;
     unsigned int i = 0;
+    prefix_t *route_prefix = NULL;
 
     sprintf(LOG, "Node %s, result node %s, prefix %s, level %s, prefix metric : %u",
              GET_SPF_INFO_NODE(spf_info, level)->node_name, result->node->node_name, 
@@ -378,6 +381,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         /* Update route metric */
         route->spf_metric =  result->spf_metric + prefix->metric;
         route->lsp_metric = 0; /*Not supported*/
+        //prefix->metric = route->spf_metric;
 
         for(; i < MAX_NXT_HOPS; i++){
             if(result->next_hop[i])
@@ -387,7 +391,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         }
         /* route->backup_nh_list Not supported yet */
 
-        ROUTE_ADD_LIKE_PREFIX_LIST(route, prefix);
+        route_prefix = calloc(1, sizeof(prefix_t));
+        memcpy(route_prefix, prefix, sizeof(prefix_t));
+        ROUTE_ADD_LIKE_PREFIX_LIST(GET_SPF_INFO_NODE(spf_info, level), level, route, route_prefix);
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
         route->install_state = RTE_ADDED;
         sprintf(LOG, "Node : %s : route : %s/%u, spf_metric = %u,  marked RTE_ADDED for level%u",  
@@ -408,7 +414,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         result->spf_metric + prefix->metric); TRACE();
                 overwrite_route(spf_info, route, prefix, result, level);
             }
-            ROUTE_ADD_LIKE_PREFIX_LIST(route, prefix);
+            route_prefix = calloc(1, sizeof(prefix_t));
+            memcpy(route_prefix, prefix, sizeof(prefix_t));
+            ROUTE_ADD_LIKE_PREFIX_LIST(GET_SPF_INFO_NODE(spf_info, level), level, route, route_prefix);
             return;
         }
         
@@ -421,7 +429,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         result->spf_metric + prefix->metric); TRACE();
                 overwrite_route(spf_info, route, prefix, result, level);
             }
-            ROUTE_ADD_LIKE_PREFIX_LIST(route, prefix);
+            route_prefix = calloc(1, sizeof(prefix_t));
+            memcpy(route_prefix, prefix, sizeof(prefix_t));
+            ROUTE_ADD_LIKE_PREFIX_LIST(GET_SPF_INFO_NODE(spf_info, level), level, route, route_prefix);
         }
         else
         {
@@ -443,7 +453,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             }else
                route->version = spf_info->spf_level_info[level].version; 
             
-            ROUTE_ADD_LIKE_PREFIX_LIST(route, prefix);
+            route_prefix = calloc(1, sizeof(prefix_t));
+            memcpy(route_prefix, prefix, sizeof(prefix_t));
+            ROUTE_ADD_LIKE_PREFIX_LIST(GET_SPF_INFO_NODE(spf_info, level), level, route, route_prefix);
         }
     }
 }
@@ -463,7 +475,8 @@ install_route_in_rib(spf_info_t *spf_info,
 
     rttable_entry_t *existing_rt_route = NULL;
 
-    assert(IS_LEVEL_SET(route->level, level));
+    assert(route->level == level);
+    assert(route->spf_metric != INFINITE_METRIC);
 
     /* Note : For unchanged routes, we need to send notification to RIB 
      * to simply remove the LFA/RLFA for unchanged routes present at this point, 
@@ -903,49 +916,53 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
 }
 
 
-/* Single Route add/delete routine*/
+/* Single Route add/delete routine. This routine takes case
+ * for adding a local prefix and remote prefix routes*/
+
 void
 add_route(node_t *lsp_reciever, 
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric,
-        node_t *hosting_node){
+        unsigned int metric,
+        FLAG prefix_flags,
+        node_t *hosting_node){ /*Hosting node of the prefix, in case is the prefix is leaked, this is the node on which leak was done*/
 
     unsigned int i = 0; 
     spf_result_t *result = NULL;
     routes_t *route = NULL;
     spf_info_t *spf_info = &lsp_reciever->spf_info;
-    prefix_t *_prefix = NULL, _prefix2;
+    prefix_t *_prefix = NULL;
+    FLAG is_prefix_added = 0;
 
     sprintf(LOG, "node %s, prefix add recvd : %s/%u, L%d, metric = %u", 
-            lsp_reciever->node_name, prefix, mask, level, metric); TRACE();
+            lsp_reciever->node_name, prefix, mask, info_dist_level, metric); TRACE();
 
     if(hosting_node == lsp_reciever){ /*The node is adding a new local prefix*/
 
         _prefix = node_local_prefix_search(lsp_reciever, info_dist_level, prefix, mask);
 
         if(!_prefix){
-            sprintf(LOG, "Node : %s : INFO : prefix %s/%u added to prefix list at %s",
+            sprintf(LOG, "Node : %s : prefix %s/%u added to local prefix list at %s",
                     lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE();
 
-            _prefix = attach_prefix_on_node(lsp_reciever, prefix, mask, info_dist_level, metric);
-            //SET_BIT(_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG); /*not advertised*/ 
-            _prefix->hosting_node = hosting_node;
+            _prefix = attach_prefix_on_node(lsp_reciever, prefix, mask, info_dist_level, metric, prefix_flags);
         }
-    }else{
+    }
+    else{
 
-        init_prefix_key(&_prefix2, prefix, mask);
-        _prefix = &_prefix2;
+        _prefix = create_new_prefix(prefix, mask);
+        init_prefix_key(_prefix, prefix, mask);
         _prefix->hosting_node = hosting_node;
         _prefix->metric = metric;
+        _prefix->prefix_flags = prefix_flags;
     }
-    
+
     route = search_route_in_spf_route_list(spf_info, _prefix, info_dist_level);
 
     if(!route){
         sprintf(LOG, "node %s, route %s/%u %s not found Routing tree", 
-            lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE(); 
+                lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE(); 
 
         if(spf_info->spf_level_info[info_dist_level].version == 0){
             sprintf(LOG, "node %s, SPF run at %s has not been run", lsp_reciever->node_name, get_str_level(info_dist_level));
@@ -954,32 +971,41 @@ add_route(node_t *lsp_reciever,
             return;
         }
 
-        /* Dont create route DS for prefixes with INFINITE_METRIC locally or remotely*/
+        /* Dont create route DS for prefixes with INFINITE_METRIC locally or remotely, 
+         * but continue to flood in network*/
         if(_prefix->metric == INFINITE_METRIC){
 
-            sprintf(LOG, "node %s, route %s/%u %s advertised with infinite metric, will not create route",
-                    lsp_reciever->node_name, _prefix->prefix, _prefix->mask, get_str_level(info_dist_level)); 
+            sprintf(LOG, "node %s, route %s/%u %s has infinite metric, route creation aborted",
+                    lsp_reciever->node_name, _prefix->prefix, _prefix->mask, get_str_level(info_dist_level));
+            /* Free the prefix if it is a remote node. 
+             * It simply means, No router in the network computes path to any prefix with infinite metric*/
+            if(lsp_reciever != lsp_generator){
+                free(_prefix);
+                _prefix = NULL;   
+            }
             return;
         }
         route = route_malloc();
         route_set_key(route, prefix, mask); 
 
         /*Apply latest spf version we have*/
-        route->version = spf_info->spf_level_info[level].version;
-        route->flags = _prefix->prefix_flags; /*We have not distributed/configured flags*/
+        route->version = spf_info->spf_level_info[info_dist_level].version;
+        route->flags = prefix_flags; 
 
-        SET_LEVEL(route->level, level);
+        route->level = info_dist_level;
         route->hosting_node = hosting_node; /*This route was originally advertised by this node or leaked by this node*/ 
 
-        result = (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], lsp_generator);
+        result = (spf_result_t *)singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], 
+                hosting_node);
 
         assert(result);
 
-        sprintf(LOG, "LSP generator(%s) distance from LSP receiver(%s) = %u at L%d", 
+        sprintf(LOG, "prefix hosting node (%s) distance from LSP receiver(%s) = %u at L%d", 
                 lsp_generator->node_name, lsp_reciever->node_name, result->spf_metric, info_dist_level);  TRACE();
 
         route->spf_metric = result->spf_metric + metric;
         route->lsp_metric = 0; /*Not supported*/
+        //_prefix->metric = route->spf_metric;
 
         for(; i < MAX_NXT_HOPS; i++){
             if(result->next_hop[i])
@@ -988,18 +1014,20 @@ add_route(node_t *lsp_reciever,
                 break;
         }
 
-        ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix);
+        assert(ROUTE_ADD_LIKE_PREFIX_LIST(lsp_reciever, info_dist_level, route, _prefix));
+
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
-        route->install_state = RTE_ADDED;
+
         sprintf(LOG, "At node %s, route : %s/%u added to main route list for level%u, metric : %u",  
                 lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, route->level, route->spf_metric); TRACE();
 
         install_route_in_rib(spf_info, info_dist_level, route);        
     }
+    /*We have recieved a prefix whose route already exists, it can be local or remote node wrt to prefix*/
     else{
         sprintf(LOG, "At Node %s, route %s/%u, %s found in Routing tree with cost = %u", 
-            lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, 
-            get_str_level(info_dist_level), route->spf_metric); TRACE(); 
+                lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, 
+                get_str_level(info_dist_level), route->spf_metric); TRACE(); 
 
         /* We wil check if the existing route is better than leaked route, then no action.
          * If leaked route is better than existing route, then overwrite the existing route 
@@ -1020,114 +1048,113 @@ add_route(node_t *lsp_reciever,
          * Thus, wrong prefix leaking could do wonders !! So, it is administrative mis-configuration if the admin leak
          * the prefix unappropriately.*/
 
-         self_spf_result_t *hosting_node_self_result = NULL;
-         hosting_node_self_result =  singly_ll_search_by_key(hosting_node->self_spf_result[info_dist_level], lsp_reciever);
-         assert(hosting_node_self_result);
-         
-         if((unsigned long long)route->spf_metric < (unsigned long long)hosting_node_self_result->res->spf_metric + (unsigned long long)metric){
-             sprintf(LOG, "At node %s, Existing route %s/%u, %s is better than advertised, route metric = %u, advertised metric = %u", 
-                     lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level), route->spf_metric,
-                     hosting_node_self_result->res->spf_metric + metric); TRACE();
+        spf_result_t *hosting_node_result = NULL;
+        prefix_t *best_prefix = ROUTE_GET_BEST_PREFIX(route);
+        assert(best_prefix);
+        prefix_t *leaked_prefix = NULL;
 
-                #if 0
-             /*ToDO : If the route currently installed and the prefix advertised belong to same remote hosting node, then overwrite the route
-              * with second best prefix present in route->prefix list. We will cover this scenario when we will be fixing route->prefix_list
-              * Management. For now let us just owerrite the route*/
+        is_prefix_added = ROUTE_ADD_LIKE_PREFIX_LIST(lsp_reciever, info_dist_level, route, _prefix);
 
-                 overwrite_route(spf_info, route, _prefix, hosting_node_self_result->res, info_dist_level);
-                 prefix_t *old_prefix = singly_ll_search_by_key(route->like_prefix_list, _prefix);
-                 assert(old_prefix);
-                 memcpy(old_prefix, _prefix, sizeof(prefix_t));
-                 //ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix);
-                 route->install_state = RTE_CHANGED;
-                 install_route_in_rib(spf_info, info_dist_level, route);
-                 
-                 /*Since the route had been updated, if this route is leaked into other level, communicate the
-                  * update to other level as well*/
+        if(is_prefix_added){
 
-                 LEVEL other_level = get_other_level(info_dist_level);
-                 _prefix = node_local_prefix_search(lsp_reciever, other_level, prefix, mask);
-                 if(!_prefix) return;
-                 if(!IS_BIT_SET(_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG)) return;
+            sprintf(LOG, "Node %s, prefix %s/%u with hosting node %s added to route prefix list at %s", lsp_reciever->node_name, 
+                            prefix, mask, hosting_node->node_name, get_str_level(info_dist_level)); TRACE();
 
-                 _prefix->metric = route->spf_metric;
-                 sprintf(LOG, "At node %s, re-flooding the prefix %s/%u with improved metric %u in %s", 
-                         lsp_reciever->node_name, _prefix->prefix, _prefix->mask, _prefix->metric, get_str_level(other_level)); TRACE();
+            /*Prefix has been added, it could be the first prefix*/
+            if(ROUTE_GET_BEST_PREFIX(route) == _prefix){
 
-                 tlv128_ip_reach_t ad_msg;
-                 memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
-                 dist_info_hdr_t dist_info_hdr;
-                 memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
-                 ad_msg.prefix = _prefix->prefix;
-                 ad_msg.mask = _prefix->mask;
-                 ad_msg.metric = _prefix->metric;
-                 ad_msg.prefix_level = other_level;
-                 ad_msg.up_down_bit = 1;
-                 ad_msg.hosting_node = _prefix->hosting_node;
-                 dist_info_hdr.lsp_generator = lsp_reciever;
-                 dist_info_hdr.info_dist_level = other_level;
-                 dist_info_hdr.add_or_remove = AD_CONFIG_ADDED;
-                 dist_info_hdr.advert_id = TLV128;
-                 dist_info_hdr.info_data = (char *)&ad_msg;
-                 generate_lsp(instance, lsp_reciever, prefix_distribution_routine, &dist_info_hdr);
-            #endif
+                sprintf(LOG, "Node %s, prefix %s/%u added is best prefix at %s",  lsp_reciever->node_name, 
+                            prefix, mask, get_str_level(info_dist_level)); TRACE(); 
 
-             if(hosting_node == lsp_reciever){
-                 sprintf(LOG, "At node %s, local route %s/%u leakage to %s rollback", /* Its a leakage because route DS exist in this level already on hosting node*/
-                         lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask,  get_str_level(info_dist_level)); TRACE(); 
-                 deattach_prefix_on_node(hosting_node, route->rt_key.prefix, route->rt_key.mask, info_dist_level);
-                 abort_flooding(); /* No need to distribute this prefix leakage into network*/
-                 sprintf(LOG, "At node %s, Flooding has been aborted for route %s/%u distribution in %s", 
-                    lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level)); TRACE();
-                 printf("%s() : Error : At node %s, local route %s/%u leakage to %s rollback", __FUNCTION__, lsp_reciever->node_name,
-                            route->rt_key.prefix, route->rt_key.mask,  get_str_level(info_dist_level));
-             }
-             return;
-         }
-         else if((unsigned long long)route->spf_metric == (unsigned long long)hosting_node_self_result->res->spf_metric + (unsigned long long)metric){
-             sprintf(LOG, "At node %s, Existing route %s/%u, %s is equal to advertised, route metric = %u, advertised metric = %u", 
-                     lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level), route->spf_metric,
-                     hosting_node_self_result->res->spf_metric + metric); TRACE();
-            return;
-         }
-         else{
-             sprintf(LOG, "At node %s, Existing route %s/%u, %s is no better than advertised, route metric = %u, advertised metric = %u", 
-                     lsp_reciever->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(info_dist_level), route->spf_metric,
-                     hosting_node_self_result->res->spf_metric + metric); TRACE();
-             overwrite_route(spf_info, route, _prefix, hosting_node_self_result->res, info_dist_level);
-             ROUTE_ADD_LIKE_PREFIX_LIST(route, _prefix);
-             route->install_state = RTE_CHANGED;
-             install_route_in_rib(spf_info, info_dist_level, route);
-             
-             /* since the route has been improved, now if this route is leaked on lsp_reciever in other level
-              * then we should update prefix metric and flood the prefix with new metric*/
+                hosting_node_result = singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], hosting_node);
+                assert(hosting_node_result);
+                overwrite_route(spf_info, route, _prefix, hosting_node_result, info_dist_level);
+                //_prefix->metric = route->spf_metric;
+                route->install_state = RTE_CHANGED;
+                install_route_in_rib(spf_info, info_dist_level, route); 
+            }
+            /*Or may be inferior prefix, even if it is inferior we should
+             * promote the leaked prefix to leaked level*/
 
-             LEVEL other_level = get_other_level(info_dist_level);
-             _prefix = node_local_prefix_search(lsp_reciever, other_level, prefix, mask);
-             if(!_prefix) return;
-             if(!IS_BIT_SET(_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG)) return;
+            LEVEL other_level = get_other_level(info_dist_level);
+            leaked_prefix =  node_local_prefix_search(lsp_reciever, other_level, prefix, mask);
+            if(!leaked_prefix) {
+                sprintf(LOG, "Node %s, prefix %s/%u added is not leaked to level %s. Processing done", lsp_reciever->node_name,
+                        prefix, mask, get_str_level(other_level)); TRACE();   
+                return;
+            }
+            if(!IS_BIT_SET(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG)) {
+                sprintf(LOG, "Node %s, prefix %s/%u added is present in level %s, but leak flag not set. Processing done", 
+                    lsp_reciever->node_name, prefix, mask, get_str_level(other_level)); TRACE();   
+                return;
+            }
+            /*So we need to promote the prefix to other level, other level will update
+             * accordingly*/
+            leaked_prefix = create_new_prefix(prefix, mask);
+            leaked_prefix->metric = route->spf_metric;
+            leaked_prefix->prefix_flags = _prefix->prefix_flags;
+            leaked_prefix->hosting_node = lsp_reciever;
+            SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
+            SET_BIT(leaked_prefix->prefix_flags, PREFIX_EXTERNABITL_FLAG);
+            is_prefix_added = add_prefix_to_prefix_list(lsp_reciever, other_level, GET_NODE_PREFIX_LIST(lsp_reciever, other_level), 
+                    leaked_prefix);
 
-             _prefix->metric = route->spf_metric;
-             sprintf(LOG, "At node %s, re-flooding the prefix %s/%u with improved metric %u in %s", 
-                    lsp_reciever->node_name, _prefix->prefix, _prefix->mask, _prefix->metric, get_str_level(other_level)); TRACE();
+            if(is_prefix_added){
 
-             tlv128_ip_reach_t ad_msg;
-             memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
-             dist_info_hdr_t dist_info_hdr;
-             memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
-             ad_msg.prefix = _prefix->prefix;
-             ad_msg.mask = _prefix->mask;
-             ad_msg.metric = _prefix->metric;
-             ad_msg.prefix_level = other_level;
-             ad_msg.up_down_bit = 1;
-             ad_msg.hosting_node = _prefix->hosting_node;
-             dist_info_hdr.lsp_generator = lsp_reciever;
-             dist_info_hdr.info_dist_level = other_level;
-             dist_info_hdr.add_or_remove = AD_CONFIG_ADDED;
-             dist_info_hdr.advert_id = TLV128;
-             dist_info_hdr.info_data = (char *)&ad_msg;
-             generate_lsp(instance, lsp_reciever, prefix_distribution_routine, &dist_info_hdr);
-         }
+                sprintf(LOG, "Node %s, prefix %s/%u with hosting node %s added to node prefix list at leaked level %s", 
+                    lsp_reciever->node_name, prefix, mask, leaked_prefix->hosting_node->node_name, get_str_level(other_level)); TRACE();
+                    
+                route = search_route_in_spf_route_list(spf_info, leaked_prefix, other_level); 
+                assert(route);
+
+                if(ROUTE_GET_BEST_PREFIX(route) == leaked_prefix){
+                    /*The prefix added is the best prefix, we should update the route*/
+
+                    sprintf(LOG, "Node %s, prefix %s/%u added is best prefix at %s",  lsp_reciever->node_name, 
+                            prefix, mask, get_str_level(other_level)); TRACE(); 
+
+                    hosting_node_result = singly_ll_search_by_key(lsp_reciever->spf_run_result[info_dist_level], 
+                            lsp_reciever);
+
+                    overwrite_route(spf_info, route, leaked_prefix, hosting_node_result, other_level);
+                    //leaked_prefix->metric = route->spf_metric;
+                    //assert(leaked_prefix->metric == route->spf_metric);
+                    route->install_state = RTE_CHANGED;
+                    install_route_in_rib(spf_info, other_level, route);
+                }
+                /*Advertise this prefix*/
+                 sprintf(LOG, "Node %s, re-distributing leaked prefix %s/%u at level %s", lsp_reciever->node_name,
+                    prefix, mask, get_str_level(other_level)); TRACE();
+
+                tlv128_ip_reach_t ad_msg;
+                memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
+                dist_info_hdr_t dist_info_hdr;
+                memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
+                ad_msg.prefix = leaked_prefix->prefix;
+                ad_msg.mask = leaked_prefix->mask;
+                ad_msg.metric = route->spf_metric;
+                ad_msg.prefix_flags = leaked_prefix->prefix_flags;
+                ad_msg.hosting_node = leaked_prefix->hosting_node;
+                dist_info_hdr.lsp_generator = lsp_reciever;
+                dist_info_hdr.info_dist_level = other_level;
+                dist_info_hdr.add_or_remove = AD_CONFIG_ADDED;
+                dist_info_hdr.advert_id = TLV128;
+                dist_info_hdr.info_data = (char *)&ad_msg;
+                generate_lsp(instance, lsp_reciever, prefix_distribution_routine, &dist_info_hdr);
+            }
+            else{
+                sprintf(LOG, "Node %s, clone prefix %s/%u is already present in leaked level %s. Processing done",
+                    lsp_reciever->node_name, prefix, mask, get_str_level(other_level)); TRACE(); 
+                free(leaked_prefix);
+                leaked_prefix = NULL;
+            }
+        }
+        else{
+            sprintf(LOG, "Node %s, clone prefix %s/%u is already present in level %s. Processing done",
+                    lsp_reciever->node_name, prefix, mask, get_str_level(info_dist_level)); TRACE(); 
+            free(leaked_prefix);
+            leaked_prefix = NULL;
+        }
     }
 }
 
@@ -1137,6 +1164,8 @@ delete_route(node_t *lsp_reciever,
         node_t *lsp_generator,
         LEVEL info_dist_level,
         char *prefix, char mask,
-        LEVEL level, unsigned int metric){
+        FLAG prefix_flags,
+        unsigned int metric,
+        node_t *hosting_node){
 
 }

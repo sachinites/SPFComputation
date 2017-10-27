@@ -37,8 +37,10 @@
 #include "LinkedListApi.h"
 
 #define DEFAULT_PREFIX_METRIC   0
-#define PREFIX_DOWNBIT_FLAG     1
-#define STUBBED_PREFIX          2 
+
+/* Prefix flags*/
+#define PREFIX_DOWNBIT_FLAG         0/*0th bit*/
+#define PREFIX_EXTERNABITL_FLAG     1/*Ist bit*/
          
 /* Key structure for a prefix*/
 typedef struct common_pfx_{
@@ -54,12 +56,14 @@ typedef struct prefix_{
     char prefix[PREFIX_LEN + 1];
     unsigned char mask;/*Numeric value [0-32]*/
     unsigned int metric;/*Prefix metric, zero for local prefix, non-zeroi for leaked or external prefixes*/
-    unsigned int prefix_flags;
+    FLAG prefix_flags;
     node_t *hosting_node;   /*back pointer to hosting node*/
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;
 
+FLAG
+is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2);
 
 prefix_t *
 create_new_prefix(const char *prefix, unsigned char mask);
@@ -99,7 +103,7 @@ order_comparison_fn
 get_prefix_order_comparison_fn();
 
 /*This fn leak the prefix from L2 to L1*/
-int
+prefix_t *
 leak_prefix(char *node_name, char *prefix, char mask, 
             LEVEL from_level, LEVEL to_level);
 
@@ -112,8 +116,8 @@ fill_prefix(prefix_t *prefix, common_pfx_key_t *common_prefix,
 
 typedef struct routes_ routes_t;
 
-void
-add_prefix_to_prefix_list(ll_t *prefix_list, prefix_t *prefix);
+FLAG
+add_prefix_to_prefix_list(node_t *spf_root, LEVEL level, ll_t *prefix_list, prefix_t *prefix);
 
 void
 delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask);

@@ -172,9 +172,9 @@ build_multi_area_topo(){
                                 R2, R5, BIDIRECTIONAL);
 
     /*Attach local aditional prefixes on nodes*/
-    attach_prefix_on_node(R1, "100.1.1.1", 24, LEVEL1, 0);
-    attach_prefix_on_node(R3, "101.1.1.1", 24, LEVEL2, 0);
-    attach_prefix_on_node(R3, "102.1.1.1", 24, LEVEL2, 10);
+    attach_prefix_on_node(R1, "100.1.1.1", 24, LEVEL1, 0, 0);
+    attach_prefix_on_node(R3, "101.1.1.1", 24, LEVEL2, 0, 0);
+    attach_prefix_on_node(R3, "102.1.1.1", 24, LEVEL2, 10,0);
 
     /*prefix leaking*/
     //leak_prefix(R3->node_name, "100.1.1.1", 24, LEVEL2, LEVEL1);

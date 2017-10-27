@@ -49,6 +49,7 @@
 #define STUB_ROUTER_FLAG     0
 
 typedef char FLAG;
+typedef char BYTE;
 
 /*Edge properties*/
 typedef enum{

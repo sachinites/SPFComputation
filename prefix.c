@@ -119,9 +119,10 @@ THREAD_NODE_TO_STRUCT(prefix_t,
                       like_prefix_thread, 
                       get_prefix_from_like_prefix_thread);
 #endif
-/* Returns the metric of the prefix being leaked from L2 to L1 (Or otherwise). If such a prefix,
- * do not exist, return -1. This fn simply add the new prefix to new prefix list.*/
-int
+/* Returns the prefix being leaked from L2 to L1 (Or otherwise). If the prefix is already
+ * leaked, return NULL. This fn simply add the new prefix to new prefix list.*/
+
+prefix_t *
 leak_prefix(char *node_name, char *_prefix, char mask, 
                 LEVEL from_level, LEVEL to_level){
 
@@ -132,40 +133,38 @@ leak_prefix(char *node_name, char *_prefix, char mask,
 
     if(!instance){
         printf("%s() : Network Graph is NULL\n", __FUNCTION__);
-        return -1;
+        return NULL;
     }
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
 
-    common_pfx_key_t pfx_key;
-    memset(&pfx_key, 0, sizeof(common_pfx_key_t));
-    strncpy((char *)&pfx_key.prefix, _prefix, strlen(_prefix));
-    pfx_key.mask = mask;
-
-    prefix = (prefix_t *)singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, from_level), (void *)&pfx_key);
-
+    prefix = node_local_prefix_search(node, from_level, _prefix, mask);
        
     /* Case 1 : leaking prefix on a local hosting node */ 
     if(prefix){
    
         /*Now add this prefix to L1 prefix list of node*/
-        if(singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, to_level), (void *)&pfx_key)){
+        if(node_local_prefix_search(node, to_level, _prefix, mask)){
             printf("%s () : Error : Node : %s, prefix : %s already leaked/present in %s\n", 
             __FUNCTION__, node->node_name, STR_PREFIX(prefix), get_str_level(to_level));
-            return -1;
+            return NULL;
         }
 
-        leaked_prefix = attach_prefix_on_node (node, prefix->prefix, prefix->mask, to_level, prefix->metric);
-        //leaked_prefix->prefix_flags = prefix->prefix_flags;
+        leaked_prefix = attach_prefix_on_node (node, prefix->prefix, prefix->mask, to_level, prefix->metric, prefix->prefix_flags);
+        if(!leaked_prefix){
+            sprintf("Node : %s, equal best prefix : %s already leaked/present in %s\n",
+                node->node_name, STR_PREFIX(prefix), get_str_level(to_level)); TRACE();
+            return NULL;
+        }
         leaked_prefix->ref_count = 0;
         SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
-        leaked_prefix->hosting_node = prefix->hosting_node;
+        SET_BIT(leaked_prefix->prefix_flags, PREFIX_EXTERNABITL_FLAG);
 
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, STR_PREFIX(prefix), PREFIX_MASK(prefix), get_str_level(from_level), get_str_level(to_level));
                 TRACE();
 
-        return leaked_prefix->metric;
+        return leaked_prefix;
     }
 
     /* case 2 : Leaking prefix on a remote node*/
@@ -181,7 +180,7 @@ leak_prefix(char *node_name, char *_prefix, char mask,
                     __FUNCTION__, node->node_name, 
                     _prefix, mask, 
                     get_str_level(from_level));
-            return -1;
+            return NULL;
         }
 
         /* Even though the route for a prefix being leaked is already present in leaking level(destination level),
@@ -207,20 +206,26 @@ leak_prefix(char *node_name, char *_prefix, char mask,
          * so that L1 router can compute route to this leaked prefix by running full spf run */
 
         leaked_prefix = attach_prefix_on_node (node, _prefix, mask, 
-                        to_level, route_to_be_leaked->spf_metric);
+                        to_level, route_to_be_leaked->spf_metric, 0);
+
+        if(!leaked_prefix){
+            sprintf("Node : %s, equal best prefix : %s already leaked/present in %s\n",
+                node->node_name, STR_PREFIX(prefix), get_str_level(to_level)); TRACE();
+            return NULL;
+        }
 
         leaked_prefix->prefix_flags = route_to_be_leaked->flags;
         leaked_prefix->ref_count = 0;
+        SET_BIT(leaked_prefix->prefix_flags, PREFIX_EXTERNABITL_FLAG);
         SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
-        leaked_prefix->hosting_node = node; /*The node which leaks the prefix to other level should become hosting node for the prefix*/
 
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, route_to_be_leaked->rt_key.prefix, 
                 route_to_be_leaked->rt_key.mask, get_str_level(from_level), 
                 get_str_level(to_level));  TRACE();
-        return route_to_be_leaked->spf_metric;
+        return leaked_prefix;
     }
-    return -1;
+    return NULL;
 }
 
 static void
@@ -273,28 +278,48 @@ add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix){
     list_node_prev->next = new_node;
 }
 
-void
-add_prefix_to_prefix_list(ll_t *prefix_list, prefix_t *prefix){
+FLAG
+is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2){
 
-    /*Handle duplicate*/
+    if(strncmp(prefix1->prefix, prefix2->prefix, PREFIX_LEN) == 0   &&
+        prefix1->mask == prefix2->mask                              &&
+        prefix1->metric == prefix2->metric                          &&
+        prefix1->hosting_node == prefix2->hosting_node)
+            return 1;
+    return 0;
+}
+
+
+/* Let us delegate all add logic to this fn*/
+/* Returns 1 if prefix added, 0 if rejected*/
+FLAG
+add_prefix_to_prefix_list(node_t *spf_root, LEVEL level, ll_t *prefix_list, prefix_t *prefix){
+
     common_pfx_key_t key;
     strncpy(key.prefix, prefix->prefix, PREFIX_LEN);
     key.prefix[PREFIX_LEN] = '\0'; 
     key.mask = prefix->mask;
     prefix_t *old_prefix = NULL;
+    spf_result_t *res = NULL;
 
+    res = singly_ll_search_by_key(spf_root->spf_run_result[level], prefix->hosting_node);
+
+    /*Update the prefix metric to absolute metric. During initialization
+     * of graph, res may not exist for edge end prefixes*/
+#if 1
+    if(res)
+        prefix->metric += res->spf_metric;
+#endif
     old_prefix = singly_ll_search_by_key(prefix_list, &key);
 
-    if(old_prefix != NULL){
-        /* prefix is already present*/
-        singly_ll_delete_node_by_data_ptr(prefix_list, old_prefix);
-        free(old_prefix);
-        old_prefix = NULL;
-        add_new_prefix_in_list(prefix_list, prefix);
-        return;
+    if(old_prefix){        
+       if(is_prefix_byte_equal(old_prefix, prefix))
+           return 0; 
     }
-
     add_new_prefix_in_list(prefix_list, prefix);
+    if(res)
+        prefix->metric -= res->spf_metric;
+    return 1;
 }
 
 void

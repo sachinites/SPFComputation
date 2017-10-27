@@ -427,8 +427,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                     ad_msg.prefix = prefix->prefix,
                     ad_msg.mask = prefix->mask;
                     ad_msg.metric = prefix->metric;
-                    ad_msg.prefix_level = level;
-                    ad_msg.up_down_bit = 0; /*Interface attached prefixes have up_down_bit = 0*/
+                    ad_msg.prefix_flags = 0; /*Interface attached prefixes have up_down_bit = 0*/
                     ad_msg.hosting_node = node;
 
                     dist_info_hdr.lsp_generator = node;
@@ -454,13 +453,20 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             break;
         case CMDCODE_NODE_ADD_PREFIX:
         {
+
+            prefix_t *pfx = node_local_prefix_search(node, 
+                    level, prefix, mask);
+            if(pfx){
+                printf("Error : Attempt to add duplicate prefix %s/%u in %s",
+                        prefix, mask, get_str_level(level));
+                return 0;
+            }
             tlv128_ip_reach_t ad_msg;
             memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
             ad_msg.prefix = prefix,
             ad_msg.mask = mask;
             ad_msg.metric = 0;
-            ad_msg.prefix_level = level;
-            ad_msg.up_down_bit = 0;
+            ad_msg.prefix_flags = 0;
             ad_msg.hosting_node = node;
 
             dist_info_hdr.lsp_generator = node;
@@ -473,16 +479,15 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             break;     
         case CMDCODE_NODE_LEAK_PREFIX:
         {
-            int prefix_metric = 0;
-            if((prefix_metric = leak_prefix(node_name, prefix, mask, from_level_no, to_level_no)) < 0)
+            prefix_t *leaked_prefix = NULL;
+            if((leaked_prefix = leak_prefix(node_name, prefix, mask, from_level_no, to_level_no)) == NULL)
                 break;
             tlv128_ip_reach_t ad_msg;
             memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
             ad_msg.prefix = prefix,
             ad_msg.mask = mask;
-            ad_msg.metric = prefix_metric;
-            ad_msg.prefix_level = to_level_no;
-            ad_msg.up_down_bit = 1;
+            ad_msg.metric = leaked_prefix->metric;
+            ad_msg.prefix_flags = leaked_prefix->prefix_flags;
             ad_msg.hosting_node = node;
 
             dist_info_hdr.lsp_generator = node;
