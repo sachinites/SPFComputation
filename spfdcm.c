@@ -421,7 +421,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                         prefix->metric = INFINITE_METRIC;
                     else
                         prefix->metric = DEFAULT_PREFIX_METRIC; 
-                    #if 0    
+                    #if 1    
                     tlv128_ip_reach_t ad_msg;
                     memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));
                     ad_msg.prefix = prefix->prefix,
@@ -435,8 +435,9 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                     dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
                     dist_info_hdr.advert_id = TLV128;
                     dist_info_hdr.info_data = (char *)&ad_msg;
-                    generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
-#endif
+                    //generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
+                    #endif
+                    generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
                     return 0;
                 }
             }
@@ -445,6 +446,21 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->attributes[level], OVERLOAD_BIT) :
                 UNSET_BIT(node->attributes[level], OVERLOAD_BIT);
                 //delete_all_routes(node, level);
+            {
+                lsp_hdr_t lsp_hdr;
+                if(enable_or_disable == CONFIG_ENABLE)
+                    lsp_hdr.overload = 1;
+                else
+                    lsp_hdr.overload = 0;
+                    
+                dist_info_hdr.lsp_generator = node;
+                dist_info_hdr.info_dist_level = level;
+                dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
+                dist_info_hdr.advert_id = OVERLOAD;
+                dist_info_hdr.info_data = (char *)&lsp_hdr;
+                generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
+                return 0;
+            }
             break;
         case CMDCODE_INSTANCE_IGNOREBIT_ENABLE:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->instance_flags, IGNOREATTACHED) :
@@ -476,7 +492,11 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
             dist_info_hdr.advert_id = TLV128;
             dist_info_hdr.info_data = (char *)&ad_msg;
-            generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
+            //generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
+
+            /*Adopting to PRC behavior*/
+            pfx = attach_prefix_on_node (node, prefix, mask, level, 0, 0);
+            generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
         }
             break;     
         case CMDCODE_NODE_LEAK_PREFIX:
@@ -495,9 +515,10 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             dist_info_hdr.lsp_generator = node;
             dist_info_hdr.info_dist_level = to_level_no;
             dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
-            dist_info_hdr.advert_id = PREFIX_LEAK_ADVERT;
+            dist_info_hdr.advert_id = TLV128;
             dist_info_hdr.info_data = (char *)&ad_msg;
-            generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
+            //generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
+            generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
         }
             break;  
         default:

@@ -84,10 +84,6 @@ advert_id_str(ADVERT_ID_T advert_id){
     {
         case TLV128:
             return "TLV128";
-        case PREFIX_LEAK_ADVERT:
-            return "PREFIX_LEAK_ADVERT";
-        case LINK_METRIC_CHANGE_ADVERT:
-            return "LINK_METRIC_CHANGE_ADVERT";
         default:
                 assert(0);
     }       
@@ -109,6 +105,39 @@ add_or_remove_t_str(ADD_OR_REMOVE_T add_or_remove){
 }
 
 void
+lsp_distribution_routine(node_t *lsp_generator,
+                node_t *lsp_receiver,
+                dist_info_hdr_t *dist_info){
+    
+     switch(dist_info->advert_id){
+        case TLV128:
+            switch(dist_info->add_or_remove){
+                case AD_CONFIG_ADDED:
+                case AD_CONFIG_REMOVED:
+                case AD_CONFIG_UPDATED:
+                    partial_spf_run(lsp_receiver, dist_info->info_dist_level);
+                break;
+            default:
+                break;   
+            }
+        break;
+
+        case OVERLOAD:
+            switch(dist_info->add_or_remove){
+                case AD_CONFIG_ADDED:
+                case AD_CONFIG_REMOVED:
+                case AD_CONFIG_UPDATED:
+                    /*Trigger full spf run if router overloads/or unoverloads*/
+                    spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN);
+                break;
+            default:
+                break;   
+            }
+        break;
+     }
+}
+
+void
 prefix_distribution_routine(node_t *lsp_generator, 
                             node_t *lsp_receiver, 
                             dist_info_hdr_t *dist_info){
@@ -121,7 +150,6 @@ prefix_distribution_routine(node_t *lsp_generator,
 
     switch(dist_info->advert_id){
         case TLV128:
-        case PREFIX_LEAK_ADVERT:
             switch(dist_info->add_or_remove){
                 case AD_CONFIG_ADDED:
                     {
@@ -144,8 +172,6 @@ prefix_distribution_routine(node_t *lsp_generator,
                 default:
                     assert(0);
             }
-            break;
-        case LINK_METRIC_CHANGE_ADVERT:
             break;
             default:
             assert(0);

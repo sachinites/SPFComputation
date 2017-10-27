@@ -420,3 +420,31 @@ spf_computation(node_t *spf_root,
     }
 }
 
+static void
+init_prc_run(node_t *spf_root, LEVEL level){
+
+    mark_all_routes_stale(&spf_root->spf_info, level);
+    spf_root->spf_info.spf_level_info[level].spf_type = PRC_RUN;
+}
+
+
+void
+partial_spf_run(node_t *spf_root, LEVEL level){
+
+    sprintf(LOG, "Root : %s, %s", spf_root->node_name, get_str_level(level)); TRACE();
+    
+    if(spf_root->spf_info.spf_level_info[level].version == 0){
+        sprintf(LOG, "Root : %s, %s. No full SPF run till now. Runnig ...", spf_root->node_name, get_str_level(level)); TRACE();
+        
+        spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);      
+        return;
+    }
+
+    init_prc_run(spf_root, level);
+    spf_postprocessing(&spf_root->spf_info, spf_root, level);
+    spf_root->spf_info.spf_level_info[level].spf_type = FULL_RUN;
+}
+
+
+
+

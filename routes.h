@@ -160,4 +160,7 @@ delete_route(node_t *lsp_reciever,
 char *
 route_intall_status_str(route_intall_status install_status);
 
+void
+mark_all_routes_stale(spf_info_t *spf_info, LEVEL level);
+
 #endif /* __ROUTES__ */

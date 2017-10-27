@@ -49,8 +49,7 @@ typedef enum{
 typedef enum{
 
    TLV128,
-   PREFIX_LEAK_ADVERT,
-   LINK_METRIC_CHANGE_ADVERT
+   OVERLOAD
 } ADVERT_ID_T;
 
 typedef struct dist_info_hdr_t_{
@@ -91,8 +90,18 @@ typedef struct tlv128_ip_reach_{
     node_t *hosting_node; /*This info is present in LSP common hdr*/
 } tlv128_ip_reach_t;
 
+typedef struct LSPHDR_{
+
+    FLAG overload;
+} lsp_hdr_t;
+
 void
 prefix_distribution_routine(node_t *lsp_generator,
+                            node_t *lsp_receiver,
+                            dist_info_hdr_t *dist_info);
+
+void
+lsp_distribution_routine(node_t *lsp_generator,
                             node_t *lsp_receiver,
                             dist_info_hdr_t *dist_info);
 

@@ -60,11 +60,19 @@ typedef struct self_spf_result_{
 /*A DS to hold level independant SPF configuration
  * and results*/
 
+typedef enum {
+
+    SKELETON_RUN,/*To compute LFA and RLFAs*/
+    FULL_RUN,     /*To compute Main routes*/
+    PRC_RUN
+} spf_type_t;
+
 typedef struct spf_level_info_{
 
     node_t *node;
     unsigned int version; /* Version of spf run on this level*/
     unsigned int node_level_flags;
+    spf_type_t spf_type;
 } spf_level_info_t;
 
 
@@ -88,15 +96,11 @@ typedef struct spf_info_{
 #define GET_SPF_INFO_NODE(spf_info_ptr, _level)  \
     (spf_info_ptr->spf_level_info[_level].node)
 
+#define SPF_RUN_TYPE(spfrootptr, _level)    \
+    (spfrootptr->spf_info.spf_level_info[_level].spf_type)
+
+
 typedef struct _node_t node_t;
-
-
-typedef enum {
-
-    SKELETON_RUN,/*To compute LFA and RLFAs*/
-    FULL_RUN     /*To compute Main routes*/
-} spf_type_t;
-
 
 void
 spf_computation(node_t *spf_root,
@@ -111,5 +115,8 @@ spf_run_result_comparison_fn(void *spf_result_ptr, void *node_ptr);
 
 int
 self_spf_run_result_comparison_fn(void *self_spf_result_ptr, void *node_ptr);
+
+void
+partial_spf_run(node_t *spf_root, LEVEL level);
 
 #endif /* __SPFCOMPUTATION__ */

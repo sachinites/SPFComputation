@@ -343,7 +343,7 @@ mark_all_routes_stale_except_direct_routes(spf_info_t *spf_info, LEVEL level){
 }
 
 
-static void
+void
 mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
 
    singly_ll_node_t* list_node = NULL,
@@ -440,6 +440,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
     sprintf(LOG, "Node %s, result node %s, prefix %s, level %s, prefix metric : %u",
              GET_SPF_INFO_NODE(spf_info, level)->node_name, result->node->node_name, 
              prefix->prefix, get_str_level(level), prefix->metric); TRACE();
+    
     if(prefix->metric == INFINITE_METRIC){
         sprintf(LOG, "prefix : %s/%u discarded because of infinite metric", prefix->prefix, prefix->mask); TRACE();
         return;
@@ -512,13 +513,29 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
                         result->spf_metric + prefix->metric); TRACE();
                 overwrite_route(spf_info, route, prefix, result, level);
+                /* if prc run then route->install_state = RTE_CHANGED*/
+                
+                if(SPF_RUN_TYPE(GET_SPF_INFO_NODE(spf_info, level), level) == PRC_RUN){
+                    route->install_state = RTE_CHANGED;
+                    sprintf(LOG, "Node : %s : PRC route : %s/%u %s STATE set to %s", (GET_SPF_INFO_NODE(spf_info, level))->node_name,
+                            route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_CHANGED)); TRACE();
+                }
             }
             route_prefix = calloc(1, sizeof(prefix_t));
             memcpy(route_prefix, prefix, sizeof(prefix_t));
             ROUTE_ADD_LIKE_PREFIX_LIST(route, route_prefix, result->spf_metric);
             route_prefix->metric = route->spf_metric;
+            
+            /*If prc run, then set route->install_state = RTE_UPDATED;
+             * */
+            if(SPF_RUN_TYPE(GET_SPF_INFO_NODE(spf_info, level), level) == PRC_RUN){
+                route->install_state = RTE_UPDATED;
+                sprintf(LOG, "Node : %s : PRC route : %s/%u %s STATE set to %s", GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                                route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_UPDATED)); TRACE();
+            }
+
         }
-        else
+        else/*This else should not hit for prc run*/
         {
             /*route is from prev run and exists. This code hits only once per given route*/
             sprintf(LOG, "route : %s/%u, updated route(?)", 
@@ -1238,7 +1255,8 @@ add_route(node_t *lsp_reciever,
                 dist_info_hdr.add_or_remove = AD_CONFIG_ADDED;
                 dist_info_hdr.advert_id = TLV128;
                 dist_info_hdr.info_data = (char *)&ad_msg;
-                generate_lsp(instance, lsp_reciever, prefix_distribution_routine, &dist_info_hdr);
+                //generate_lsp(instance, lsp_reciever, prefix_distribution_routine, &dist_info_hdr);
+                generate_lsp(instance, lsp_reciever, lsp_distribution_routine, &dist_info_hdr);
             }
             else{
                 sprintf(LOG, "Node %s, clone prefix %s/%u is already present in leaked level %s. Processing done",
