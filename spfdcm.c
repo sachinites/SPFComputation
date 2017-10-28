@@ -107,6 +107,17 @@ validate_level_no(char *value_passed){
 }
 
 static int
+validate_metric_value(char *value_passed){
+
+    unsigned int metric = atoi(value_passed);
+    if(metric >= 0 && metric <= INFINITE_METRIC)
+        return VALIDATION_SUCCESS;
+
+    printf("Error : Incorrect metric Value.\n");
+    return VALIDATION_FAILED;
+}
+
+static int
 node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     tlv_struct_t *tlv = NULL;
@@ -115,12 +126,18 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
     char *node_name = NULL; 
     node_t *node = NULL;
     int cmd_code = -1;
+    LEVEL level = MAX_LEVEL;
+    unsigned int metric = 0;
       
     TLV_LOOP(tlv_buf, tlv, i){
         if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
             slot_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
+            level = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "mertic", strlen("metric")) ==0)
+            metric = atoi(tlv->value);
     }
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
@@ -130,6 +147,12 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
     switch(cmd_code){
         case CMDCODE_NODE_SLOT_ENABLE:
             spf_node_slot_enable_disable(node, slot_name, enable_or_disable);
+            break;
+        case CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE:
+            if(enable_or_disable == CONFIG_DISABLE)
+                spf_node_slot_metric_change(node, slot_name, level, DEFAULT_METRIC);
+            else
+                spf_node_slot_metric_change(node, slot_name, level, metric);
             break;
         default:
             printf("%s() : Error : No Handler for command code : %d\n", __FUNCTION__, cmd_code);
@@ -886,31 +909,52 @@ spf_init_dcm(){
     set_param_cmd_code(&show_spf_statistics, CMDCODE_SHOW_SPF_STATS);
 
     /*config commands */
+    
+        /*config node <node-name> [no] interface <slot-name> enable*/
+        static param_t config_node;
+        init_param(&config_node, CMD, "node", 0, 0, INVALID, 0, "node");
+        libcli_register_param(config, &config_node);
+        libcli_register_display_callback(&config_node, display_instance_nodes); 
 
-    /*config node <node-name> [no] slot <slot-name> enable*/
-    static param_t config_node;
-    init_param(&config_node, CMD, "node", 0, 0, INVALID, 0, "node");
-    libcli_register_param(config, &config_node);
-    libcli_register_display_callback(&config_node, display_instance_nodes); 
+        static param_t config_node_node_name;
+        init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
+        libcli_register_param(&config_node, &config_node_node_name);
 
-    static param_t config_node_node_name;
-    init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
-    libcli_register_param(&config_node, &config_node_node_name);
+        static param_t config_node_node_name_slot;
+        init_param(&config_node_node_name_slot, CMD, "interface", 0, 0, INVALID, 0, "interface");
+        libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
+        libcli_register_display_callback(&config_node_node_name_slot, display_instance_node_interfaces);
 
-    static param_t config_node_node_name_slot;
-    init_param(&config_node_node_name_slot, CMD, "slot", 0, 0, INVALID, 0, "slot");
-    libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
-    libcli_register_display_callback(&config_node_node_name_slot, display_instance_node_interfaces);
+        static param_t config_node_node_name_slot_slotname;
+        init_param(&config_node_node_name_slot_slotname, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
+        libcli_register_param(&config_node_node_name_slot, &config_node_node_name_slot_slotname);
 
-    static param_t config_node_node_name_slot_slotname;
-    init_param(&config_node_node_name_slot_slotname, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
-    libcli_register_param(&config_node_node_name_slot, &config_node_node_name_slot_slotname);
+        /*config node <node-name> [no] interface <slot-no> level <level-no> metric <metric_val>*/
+        {
+            static param_t level;
+            init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
+            libcli_register_param(&config_node_node_name_slot_slotname, &level);
 
-    static param_t config_node_node_name_slot_slotname_enable;
-    init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_handler, 0, INVALID, 0, "enable");
-    libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
-    set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_NODE_SLOT_ENABLE);
+            static param_t level_no;
+            init_param(&level_no, LEAF, 0, 0, validate_level_no, INT, "level-no", "level : 1 | 2");
+            libcli_register_param(&level, &level_no);
 
+            static param_t metric;
+            init_param(&metric, CMD, "metric", 0, 0, INVALID, 0, "metric");
+            libcli_register_param(&level_no, &metric);
+            
+            static param_t metric_val;
+            init_param(&metric_val, LEAF, 0, node_slot_config_handler, validate_metric_value, INT, "metric", "metric value [0 - 4294967295]");
+            libcli_register_param(&metric, &metric_val);
+            set_param_cmd_code(&metric_val, CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE);
+        }
+
+        static param_t config_node_node_name_slot_slotname_enable;
+        init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_handler, 0, INVALID, 0, "enable");
+        libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
+        set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_NODE_SLOT_ENABLE);
+
+    
     /*config node <node-name> overload level <level-no>*/
     {
         static param_t overload;

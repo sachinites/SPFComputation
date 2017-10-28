@@ -41,6 +41,10 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
                             op_mode enable_or_disable);
 
 void
+spf_node_slot_metric_change(node_t *node, char *slot_name,
+                            LEVEL level, unsigned int new_metric);
+
+void
 display_instance_nodes(param_t *param, ser_buff_t *tlv_buf);
 
 void

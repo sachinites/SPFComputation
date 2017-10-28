@@ -53,6 +53,6 @@
 #define CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES  16  /*debug instance node <node-name> route*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ROUTE   17  /* debug instance node <node-name> route <prefix> <mask>*/
 #define CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW 18  /* config node <node-name> overload level <level-no> interface <slot-no> */
-
+#define CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE 19  /*config node <node-name> interface <intf-name> level <level-no> metric <metric value>*/
 
 #endif /* __SPFCMDCODES__H */

@@ -49,6 +49,7 @@ typedef enum{
 typedef enum{
 
    TLV128,
+   TLV2,
    OVERLOAD
 } ADVERT_ID_T;
 

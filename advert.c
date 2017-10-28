@@ -121,6 +121,18 @@ lsp_distribution_routine(node_t *lsp_generator,
                 break;   
             }
         break;
+        
+        case TLV2:
+            switch(dist_info->add_or_remove){
+                case AD_CONFIG_ADDED:
+                case AD_CONFIG_REMOVED:
+                case AD_CONFIG_UPDATED:
+                    spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN);
+                break;
+            default:
+                break;   
+            }
+        break;
 
         case OVERLOAD:
             switch(dist_info->add_or_remove){

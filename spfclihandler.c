@@ -37,6 +37,7 @@
 #include "bitsop.h"
 #include "spfutil.h"
 #include "spfcmdcodes.h"
+#include "advert.h"
 
 extern instance_t * instance;
 
@@ -49,6 +50,7 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
     char found = 0;
+    LEVEL level_it; 
 
     for(; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
@@ -70,11 +72,80 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
                 attach_edge_end_prefix_on_node(edge->from.node, &edge->from);
             }
             found = 1;
+            break;
         }
     }
-    if(!found)
+    if(!found){
         printf("%s() : INFO : Node : %s, slot %s not found\n", __FUNCTION__, node->node_name, slot_name);
+        return;
+    }
+    
+    dist_info_hdr_t dist_info_hdr;
+
+    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+        if(!IS_LEVEL_SET(edge->level, level_it))
+            continue;
+        memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
+        dist_info_hdr.info_dist_level = level_it;
+        dist_info_hdr.advert_id = TLV2;
+        generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
+    }
+
+    node_t *nbr_node = edge->to.node;
+
+    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+        if(!IS_LEVEL_SET(edge->level, level_it))
+            continue;
+        memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
+        dist_info_hdr.info_dist_level = level_it;
+        dist_info_hdr.advert_id = TLV2;
+        generate_lsp(instance, nbr_node, lsp_distribution_routine, &dist_info_hdr);
+    }
 }
+
+void
+spf_node_slot_metric_change(node_t *node, char *slot_name,
+                            LEVEL level, unsigned int new_metric){
+
+    unsigned int i = 0;
+    edge_end_t *edge_end = NULL;
+    edge_t *edge = NULL;
+
+    for(; i < MAX_NODE_INTF_SLOTS; i++){
+        edge_end = node->edges[i];
+        
+        if(!edge_end){
+            return;
+        }
+
+        if(edge_end->dirn != OUTGOING)
+            continue;
+
+        if(!(strncmp(edge_end->intf_name, slot_name, strlen(edge_end->intf_name)) == 0 &&
+            strlen(edge_end->intf_name) == strlen(slot_name)))
+                continue;
+
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+
+        if(!IS_LEVEL_SET(edge->level, level))
+            continue;
+
+        if(edge->metric[level] == new_metric)
+            return;
+
+        edge->metric[level] = new_metric;
+        break;
+   } 
+
+    dist_info_hdr_t dist_info_hdr;
+    memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
+    dist_info_hdr.info_dist_level = level;
+    dist_info_hdr.advert_id = TLV2;
+    generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
+}
+
+
+
 
 void
 display_instance_nodes(param_t *param, ser_buff_t *tlv_buf){
