@@ -309,3 +309,77 @@ build_cisco_example_topo(){
     set_instance_root(instance, R1);
     return instance;
 }
+
+instance_t *
+overload_router_topo(){
+
+#if 0
+
+
+                         0/0+-------+0/9 50.1.1.1
+                   +--------+ R1    +-----+
+                   |10.1.1.1|       |     |
+                   |        +-------+     |
+                   |                      |
+                   |50                    |
+                   |                      |
+                   |                      |
+                   |                      |
+                   |                      |
+           10.1.1.2|0/1           50.1.1.2|0/8
+               +---+-+                +---+--+              70.1.1.2+-------+
+               |R2   +                +      +----------------------+       |
+               |     |                | R5   |0/10              0/11| R6    |
+               +--+--+                |      |70.1.1.1              |       |
+          20.1.1.1|0/2                +---+--+                      +-------+
+                  |              60.1.1.2 |0/7
+                  |                       |
+                  |                       |
+                  |100                    |
+                  |                       |
+                  |                       |
+                  |                       |
+          20.1.1.2|0/3                    |0/6 60.1.1.1
+              +---+--+                +---+---+
+              |      |0/4         0/5 |       |
+              | R3   +----------------+ R4    |
+              |      |30.1.1.1        |       |
+              +------+        30.1.1.2+-------+
+#endif
+              
+    instance_t *instance = get_new_instance();
+
+    node_t *R1 = create_new_node(instance, "R1", AREA1);
+    node_t *R2 = create_new_node(instance, "R2", AREA1);
+    node_t *R3 = create_new_node(instance, "R3", AREA1);
+    node_t *R4 = create_new_node(instance, "R4", AREA1);
+    node_t *R5 = create_new_node(instance, "R5", AREA1);
+    node_t *R6 = create_new_node(instance, "R6", AREA1);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 50, create_new_prefix("10.1.1.1", 30), create_new_prefix("10.1.1.2", 30), LEVEL1)),
+                                R1, R2, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 100, create_new_prefix("20.1.1.1", 30), create_new_prefix("20.1.1.2", 30), LEVEL1)),
+                                R2, R3, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 10, create_new_prefix("30.1.1.1", 30), create_new_prefix("30.1.1.2", 30), LEVEL1)),
+                                R3, R4, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("60.1.1.1", 30), create_new_prefix("60.1.1.2", 30), LEVEL1)),
+                                R4, R5, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("50.1.1.2", 30), create_new_prefix("50.1.1.1", 30), LEVEL1)),
+                                R5, R1, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, create_new_prefix("70.1.1.1", 30), create_new_prefix("70.1.1.2", 30), LEVEL1)),
+                                R5, R6, BIDIRECTIONAL);
+
+    set_instance_root(instance, R1);
+    return instance;
+}

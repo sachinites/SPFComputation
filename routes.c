@@ -294,7 +294,6 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
         sprintf(LOG, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.prefix, 
                         route->rt_key.mask, level); TRACE();
         i++;
-        /* To Do : Memory leak prefix, pls delete all liked prefix list routes also*/
         ROUTE_DEL_FROM_ROUTE_LIST(spf_info, route);
         free_route(route);
         route = NULL;
@@ -372,7 +371,7 @@ mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
 /* This routine delete all routes from protocol as well as RIB
  * except DIRECT routes*/
 void
-delete_all_routes(node_t *node, LEVEL level){
+delete_all_routes_except_direct_from_rib(node_t *node, LEVEL level){
 
     singly_ll_node_t* list_node = NULL;
     routes_t *route = NULL;
@@ -391,6 +390,47 @@ delete_all_routes(node_t *node, LEVEL level){
     }ITERATE_LIST_END; 
 
     delete_stale_routes(&node->spf_info, level);    
+}
+
+void
+delete_all_routes_from_rib(node_t *node, LEVEL level){
+
+    singly_ll_node_t* list_node = NULL;
+    routes_t *route = NULL;
+
+    mark_all_routes_stale(&node->spf_info, level);
+
+    ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
+
+        route = list_node->data;
+        if(route->install_state != RTE_STALE || 
+            route->level != level)
+            continue;
+        
+        install_route_in_rib(&node->spf_info, level, route);
+
+    }ITERATE_LIST_END; 
+
+    delete_stale_routes(&node->spf_info, level);    
+}
+
+
+void
+delete_all_application_routes(node_t *node, LEVEL level){
+
+    singly_ll_node_t* list_node = NULL;
+    routes_t *route = NULL;
+
+    ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
+
+        route = list_node->data;
+        if(route->level != level)
+            continue;
+
+        ROUTE_DEL_FROM_ROUTE_LIST((&node->spf_info), route); 
+        free_route(route);
+        route = NULL;
+    }ITERATE_LIST_END; 
 }
 
 static void 
@@ -533,7 +573,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 sprintf(LOG, "Node : %s : PRC route : %s/%u %s STATE set to %s", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_UPDATED)); TRACE();
             }
-
         }
         else/*This else should not hit for prc run*/
         {
@@ -542,19 +581,15 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     route->rt_key.prefix, route->rt_key.mask); TRACE();
             route->install_state = RTE_UPDATED;
 
-            sprintf(LOG, "Node : %s : route : %s/%u, spf_metric = %u,  marked RTE_UPDATED for level%u",  
+            sprintf(LOG, "Node : %s : route : %s/%u, old spf_metric = %u, new spf metric = %u, marked RTE_UPDATED for level%u",  
                 GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
-                route->spf_metric, route->level); TRACE();
-
-            if(result->spf_metric + prefix->metric < route->spf_metric){ 
-                sprintf(LOG, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u", 
-                        GET_SPF_INFO_NODE(spf_info, level)->node_name, 
-                        route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                        result->spf_metric + prefix->metric); TRACE();
-                overwrite_route(spf_info, route, prefix, result, level);
-            }else
-               route->version = spf_info->spf_level_info[level].version; 
+                route->spf_metric, result->spf_metric + prefix->metric, route->level); TRACE();
             
+            sprintf(LOG, "Node : %s : route : %s/%u %s is mandatorily over-written because of version mismatch",
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(level)); TRACE();
+
+            overwrite_route(spf_info, route, prefix, result, level);
+            route->version = spf_info->spf_level_info[level].version; 
             route_prefix = calloc(1, sizeof(prefix_t));
             memcpy(route_prefix, prefix, sizeof(prefix_t));
             ROUTE_ADD_LIKE_PREFIX_LIST(route, route_prefix, result->spf_metric);

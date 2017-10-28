@@ -386,12 +386,6 @@ spf_computation(node_t *spf_root,
                 spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "SKELETON_RUN",
                 level); TRACE();
                  
-#if 0
-
-   if(spf_root->node_type[level] == PSEUDONODE) 
-       assert(0); /*SPF computation never starts with PN*/
-#endif
-
     if(IS_OVERLOADED(spf_root, level)){
         printf("%s(): INFO : Node %s is overloaded, SPF cannot be run\n", 
             __FUNCTION__, spf_root->node_name);
@@ -407,8 +401,9 @@ spf_computation(node_t *spf_root,
 
     spf_init(&instance->ctree, spf_root, level);
 
-    if(spf_type == FULL_RUN)
+    if(spf_type == FULL_RUN){
         spf_info->spf_level_info[level].version++;
+    }
 
     run_dijkastra(spf_root, level, &instance->ctree);
 
