@@ -145,7 +145,7 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
     switch(cmd_code){
-        case CMDCODE_NODE_SLOT_ENABLE:
+        case CMDCODE_CONFIG_NODE_SLOT_ENABLE:
             spf_node_slot_enable_disable(node, slot_name, enable_or_disable);
             break;
         case CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE:
@@ -485,14 +485,14 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                 return 0;
             }
             break;
-        case CMDCODE_INSTANCE_IGNOREBIT_ENABLE:
+        case CMDCODE_CONFIG_INSTANCE_IGNOREBIT_ENABLE:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->instance_flags, IGNOREATTACHED) :
                 UNSET_BIT(node->instance_flags, IGNOREATTACHED);
             break;
-        case CMDCODE_INSTANCE_ATTACHBIT_ENABLE:
+        case CMDCODE_CONFIG_INSTANCE_ATTACHBIT_ENABLE:
             node->attached = (enable_or_disable == CONFIG_ENABLE) ? 1 : 0;
             break;
-        case CMDCODE_NODE_ADD_PREFIX:
+        case CMDCODE_CONFIG_NODE_ADD_PREFIX:
         {
 
             prefix_t *pfx = node_local_prefix_search(node, 
@@ -522,7 +522,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
         }
             break;     
-        case CMDCODE_NODE_LEAK_PREFIX:
+        case CMDCODE_CONFIG_NODE_LEAK_PREFIX:
         {
             prefix_t *leaked_prefix = NULL;
             if((leaked_prefix = leak_prefix(node_name, prefix, mask, from_level_no, to_level_no)) == NULL)
@@ -952,7 +952,7 @@ spf_init_dcm(){
         static param_t config_node_node_name_slot_slotname_enable;
         init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_handler, 0, INVALID, 0, "enable");
         libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
-        set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_NODE_SLOT_ENABLE);
+        set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_CONFIG_NODE_SLOT_ENABLE);
 
     
     /*config node <node-name> overload level <level-no>*/
@@ -990,7 +990,7 @@ spf_init_dcm(){
     static param_t config_node_node_name_ignorebit_enable;
     init_param(&config_node_node_name_ignorebit_enable, CMD, "enable", instance_node_config_handler, 0, INVALID, 0, "enable"); 
     libcli_register_param(&config_node_node_name_ignorebit, &config_node_node_name_ignorebit_enable);
-    set_param_cmd_code(&config_node_node_name_ignorebit_enable, CMDCODE_INSTANCE_IGNOREBIT_ENABLE);
+    set_param_cmd_code(&config_node_node_name_ignorebit_enable, CMDCODE_CONFIG_INSTANCE_IGNOREBIT_ENABLE);
 
     /*config node <node name> add prefix <prefix> <mask> level <level no>*/
     static param_t config_node_node_name_add;
@@ -1018,7 +1018,7 @@ spf_init_dcm(){
                     instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
     libcli_register_param(&config_node_node_name_add_prefix_prefix_mask_level,
                     &config_node_node_name_add_prefix_prefix_mask_level_level);
-    set_param_cmd_code(&config_node_node_name_add_prefix_prefix_mask_level_level, CMDCODE_NODE_ADD_PREFIX);
+    set_param_cmd_code(&config_node_node_name_add_prefix_prefix_mask_level_level, CMDCODE_CONFIG_NODE_ADD_PREFIX);
     
     /* config node <node-name> [no] attachbit enable*/    
     static param_t config_node_node_name_attachbit;
@@ -1028,7 +1028,7 @@ spf_init_dcm(){
     static param_t config_node_node_name_attachbit_enable;
     init_param(&config_node_node_name_attachbit_enable, CMD, "enable", instance_node_config_handler, 0, INVALID, 0, "enable");
     libcli_register_param(&config_node_node_name_attachbit, &config_node_node_name_attachbit_enable);
-    set_param_cmd_code(&config_node_node_name_attachbit_enable, CMDCODE_INSTANCE_ATTACHBIT_ENABLE);
+    set_param_cmd_code(&config_node_node_name_attachbit_enable, CMDCODE_CONFIG_INSTANCE_ATTACHBIT_ENABLE);
 
     /*config node <node name> static-route 10.1.1.1 24 20.1.1.1 S eth0/1*/
 
@@ -1086,7 +1086,7 @@ spf_init_dcm(){
         static param_t to_level_no;
         init_param(&to_level_no, LEAF, 0, instance_node_config_handler, validate_level_no, INT, "to-level-no", "To level : 1 | 2");
         libcli_register_param(&from_level_no, &to_level_no);
-        set_param_cmd_code(&to_level_no, CMDCODE_NODE_LEAK_PREFIX);
+        set_param_cmd_code(&to_level_no, CMDCODE_CONFIG_NODE_LEAK_PREFIX);
     }
 
     /*Debug commands*/

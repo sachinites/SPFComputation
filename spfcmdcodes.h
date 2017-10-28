@@ -35,9 +35,9 @@
 
 /*CLI command codes*/
 
-#define CMDCODE_NODE_SLOT_ENABLE            1   /*config node <node-name> [no] slot <slot-name> enable*/
-#define CMDCODE_INSTANCE_IGNOREBIT_ENABLE   2   /*config node <node-name> [no] ignorebit enable*/
-#define CMDCODE_INSTANCE_ATTACHBIT_ENABLE   3   /*config node <node-name [no] attachbit enable>*/
+#define CMDCODE_CONFIG_NODE_SLOT_ENABLE           1   /*config node <node-name> [no] slot <slot-name> enable*/
+#define CMDCODE_CONFIG_INSTANCE_IGNOREBIT_ENABLE   2   /*config node <node-name> [no] ignorebit enable*/
+#define CMDCODE_CONFIG_INSTANCE_ATTACHBIT_ENABLE   3   /*config node <node-name [no] attachbit enable>*/
 #define CMDCODE_SHOW_SPF_STATS              4   /*show spf run level <level-no> [root <node-name> [statistics]]*/
 #define CMDCODE_SHOW_SPF_RUN                5   /*show spf run level <level-no> [root <node-name>]*/
 #define CMDCODE_SHOW_SPF_RUN_INVERSE        6   /*show spf run level <level-no> [root <node-name>] inverse*/
@@ -47,8 +47,8 @@
 #define CMDCODE_SHOW_INSTANCE_NODE_PQSPACE  10  /*show instance node <node-name> level <level-no> pqspace [slot-no]*/
 #define CMDCODE_SHOW_INSTANCE_LEVEL         11  /*show instance level <level-no>*/
 #define CMDCODE_SHOW_INSTANCE_NODE_LEVEL    12  /*show instance node <node-name> level <level-no>*/
-#define CMDCODE_NODE_ADD_PREFIX             13  /*show instance node <node-name> add prefix <prefix> <mask> level <level-no>*/
-#define CMDCODE_NODE_LEAK_PREFIX            14  /*config node <node-name> leak prefix <prefix> mask level <from level-no> <To level-no>*/
+#define CMDCODE_CONFIG_NODE_ADD_PREFIX             13  /*show instance node <node-name> add prefix <prefix> <mask> level <level-no>*/
+#define CMDCODE_CONFIG_NODE_LEAK_PREFIX            14  /*config node <node-name> leak prefix <prefix> mask level <from level-no> <To level-no>*/
 #define CMDCODE_CONFIG_NODE_OVERLOAD        15  /*config node <node-name> overload level <level-no>*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES  16  /*debug instance node <node-name> route*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ROUTE   17  /* debug instance node <node-name> route <prefix> <mask>*/

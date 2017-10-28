@@ -373,7 +373,7 @@ mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
 void
 delete_all_routes_except_direct_from_rib(node_t *node, LEVEL level){
 
-    singly_ll_node_t* list_node = NULL;
+    singly_ll_node_t* list_node = NULL, *list_node1 = NULL;
     routes_t *route = NULL;
 
     mark_all_routes_stale_except_direct_routes(&node->spf_info, level);
@@ -386,6 +386,13 @@ delete_all_routes_except_direct_from_rib(node_t *node, LEVEL level){
             continue;
         
         install_route_in_rib(&node->spf_info, level, route);
+        
+        ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
+
+            free(list_node1->data);
+        } ITERATE_LIST_END;
+
+        delete_singly_ll(route->like_prefix_list);
 
     }ITERATE_LIST_END; 
 
