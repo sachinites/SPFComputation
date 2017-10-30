@@ -935,7 +935,7 @@ start_route_installation(spf_info_t *spf_info,
                     assert(existing_rt_route);
                     
                     if(existing_rt_route->level != route->level)
-                        break;
+                        continue;
                     
                     existing_rt_route->version = spf_info->spf_level_info[level].version;
                 break;

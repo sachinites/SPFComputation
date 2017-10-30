@@ -84,6 +84,8 @@ advert_id_str(ADVERT_ID_T advert_id){
     {
         case TLV128:
             return "TLV128";
+        case TLV2:
+            return "TLV2";
         default:
                 assert(0);
     }       
