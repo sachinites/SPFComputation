@@ -36,7 +36,8 @@
 #include "instanceconst.h"
 #include "LinkedListApi.h"
 
-#define DEFAULT_PREFIX_METRIC   0
+#define DEFAULT_LOCAL_PREFIX_METRIC         0
+#define DEFAULT_PHYSICAL_INTF_PFX_METRIC    LINK_DEFAULT_METRIC
 
 /* Prefix flags*/
 #define PREFIX_DOWNBIT_FLAG         0/*0th bit*/
@@ -73,6 +74,7 @@ create_new_prefix(const char *prefix, unsigned char mask);
 
 #define BIND_PREFIX(target_ptr, prefix_ptr) \
     target_ptr = prefix_ptr;                \
+    target_ptr->metric = DEFAULT_PHYSICAL_INTF_PFX_METRIC; \
     if(target_ptr) prefix_ptr->ref_count++;
 
 #define UNBIND_PREFIX(target_ptr)                   \

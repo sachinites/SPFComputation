@@ -150,7 +150,7 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
             break;
         case CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE:
             if(enable_or_disable == CONFIG_DISABLE)
-                spf_node_slot_metric_change(node, slot_name, level, DEFAULT_METRIC);
+                spf_node_slot_metric_change(node, slot_name, level, LINK_DEFAULT_METRIC);
             else
                 spf_node_slot_metric_change(node, slot_name, level, metric);
             break;
@@ -443,7 +443,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                     if(enable_or_disable == CONFIG_ENABLE)
                         prefix->metric = INFINITE_METRIC;
                     else
-                        prefix->metric = DEFAULT_PREFIX_METRIC; 
+                        prefix->metric = DEFAULT_LOCAL_PREFIX_METRIC; 
                     #if 1    
                     tlv128_ip_reach_t ad_msg;
                     memset(&ad_msg, 0, sizeof(tlv128_ip_reach_t));

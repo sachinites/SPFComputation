@@ -51,7 +51,7 @@ create_new_prefix(const char *prefix, unsigned char mask){
         strncpy(_prefix->prefix, prefix, strlen(prefix));
     _prefix->prefix[PREFIX_LEN] = '\0';
     _prefix->mask = mask;
-    set_prefix_property_metric(_prefix, DEFAULT_PREFIX_METRIC);
+    set_prefix_property_metric(_prefix, DEFAULT_LOCAL_PREFIX_METRIC);
     return _prefix;
 }
 
