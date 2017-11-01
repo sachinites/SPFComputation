@@ -256,6 +256,18 @@ add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix,
         return;
     }
 
+    /* If prefix need to be added as first node in a list*/
+    if(prefix->metric + prefix_hosting_node_metric < 
+                ((prefix_t *)(GET_HEAD_SINGLY_LL(prefix_list)->data))->metric){
+
+        singly_ll_node_t *new_node = singly_ll_init_node(prefix);
+        new_node->next = GET_HEAD_SINGLY_LL(prefix_list);
+        prefix_list->head = new_node;
+        INC_NODE_COUNT_SINGLY_LL(prefix_list);
+        return;
+    }
+
+
     ITERATE_LIST_BEGIN(prefix_list, list_node_next){
 
         list_prefix = list_node_next->data;
