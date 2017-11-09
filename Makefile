@@ -2,8 +2,8 @@ CC=gcc
 CFLAGS=-g -Wall
 INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./BitOp -I ./logging
 USECLILIB=-lcli
-TARGET:exe
-TARGET_NAME=exe
+TARGET:rpd
+TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
 OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
@@ -58,7 +58,7 @@ ${DSOBJ}:
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Queue/Queue.c -o Queue/Queue.o
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 clean:
-	rm exe
+	rm rpd
 	rm *.o
 all:
 	(cd CommandParser; make)

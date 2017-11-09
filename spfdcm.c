@@ -992,9 +992,9 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name_ignorebit, &config_node_node_name_ignorebit_enable);
     set_param_cmd_code(&config_node_node_name_ignorebit_enable, CMDCODE_CONFIG_INSTANCE_IGNOREBIT_ENABLE);
 
-    /*config node <node name> add prefix <prefix> <mask> level <level no>*/
+    /*config node <node name> export prefix <prefix> <mask> level <level no>*/
     static param_t config_node_node_name_add;
-    init_param(&config_node_node_name_add, CMD, "add", 0, 0, INVALID, 0, "'add' the prefix");
+    init_param(&config_node_node_name_add, CMD, "export", 0, 0, INVALID, 0, "export the route");
     libcli_register_param(&config_node_node_name, &config_node_node_name_add);
 
     static param_t config_node_node_name_add_prefix;

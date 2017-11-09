@@ -31,6 +31,7 @@
  */
 
 #include <assert.h>
+#include <unistd.h>
 #include "advert.h"
 #include "instance.h"
 #include "logging.h"
@@ -225,13 +226,17 @@ generate_lsp(instance_t *instance,
         return;
 
     /*distribute info in the network at a given level*/
-     Queue_t* q = initQ();
+     Queue_t *q = initQ();
      init_instance_traversal(instance);
 
      lsp_generator->traversing_bit = 1;
      enqueue(q, lsp_generator);
+
+     unsigned int propogation_delay = 1;
+
      while(!is_queue_empty(q)){
          curr_node = deque(q);
+         sleep(propogation_delay); /*Let us introduce some delay in information propogation*/
          ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge1, 
                                          edge2, level_of_info_dist){
              if(nbr_node->traversing_bit)

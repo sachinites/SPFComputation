@@ -122,6 +122,8 @@ rt_route_delete(rttable *rttable, char *prefix, char mask){
     }ITERATE_LIST_END;
      
     singly_ll_delete_node(GET_RT_TABLE(rttable), list_node);
+    free(temp);
+    temp = NULL;
     return 1;
 }
 
@@ -204,7 +206,8 @@ show_routing_table(rttable *rttable){
     char subnet[PREFIX_LEN_WITH_MASK + 1];
 
     printf("Table %s\n", rttable->table_name);
-    printf("Destination           Version        Cost       Lvl      Gateway             Nxt-Hop        OIF      Backup\n");
+    printf("Destination           Version        Metric     Level    Gateway             Nxt-Hop        OIF      Backup\n");
+    printf("------------------------------------------------------------------------------------------------------------\n");
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
@@ -236,6 +239,7 @@ show_traceroute(char *node_name, char *dst_prefix){
     do{
         node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
         rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
+
         if(!rt_entry){
             printf("Node %s : No route to prefix : %s\n", node_name, dst_prefix);
             break;
