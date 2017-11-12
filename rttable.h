@@ -64,6 +64,7 @@ typedef struct rttable_{
     
     char table_name[16];
     ll_t *rt_list;
+    char visit_flag;
 } rttable;
 
 #define RT_ENTRY_MATCH(rtptr, _prefix, _mask) \
@@ -74,6 +75,9 @@ typedef struct rttable_{
 #define GET_BACK_UP_NH(rtptr)               (&(rtptr->backup_nh))
 #define SET_BACK_UP_NH(rtptr, bnhptr)       (rtptr->backup_nh = *bnhptr)
 #define GET_RT_TABLE(rttableptr)            (rttableptr->rt_list)
+#define MARK_RT_TABLE_VISITED(rttableptr)   (rttableptr->visit_flag = 1)
+#define UNMARK_RT_TABLE_VISITED(rttableptr) (rttableptr->visit_flag = 0)
+#define IS_RT_TABLE_VISITED(rttableptr)     (rttableptr->visit_flag == 1)
 
 
 #define ITERATE_PR_NH_BEGIN(rt_entry)     \
@@ -122,7 +126,7 @@ init_rttable(char *table_name);
 void
 show_routing_table(rttable *rttable);
 
-void
+int
 show_traceroute(char *node_name, char *dst_prefix);
 
 void

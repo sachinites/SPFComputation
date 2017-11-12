@@ -194,6 +194,7 @@ init_rttable(char *table_name){
     strncpy(rttable->table_name, table_name, 15);
     rttable->table_name[15] = '\0';
     rttable->rt_list = init_singly_ll();
+    UNMARK_RT_TABLE_VISITED(rttable);
     return rttable;
 }
 
@@ -221,6 +222,20 @@ show_routing_table(rttable *rttable){
     }ITERATE_LIST_END;
 }
 
+static void
+mark_all_rttables_unvisited(){
+
+    singly_ll_node_t *list_node = NULL;
+    node_t *node = NULL;
+    rttable *rt_table = NULL;
+
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
+        
+        node = list_node->data;
+        rt_table = node->spf_info.rttable;
+        UNMARK_RT_TABLE_VISITED(rt_table);
+    } ITERATE_LIST_END;
+}
 
 /*-----------------------------------------------------------------------------
  *  Path trace for Destination dst_prefix is invoked on node node_name
@@ -228,32 +243,46 @@ show_routing_table(rttable *rttable){
 
 typedef struct _node_t node_t;
 
-void
+/* returns 0 if dest is found, 
+ * -1 if dest is not found,
+ *  1 if loop is found*/
+
+int
 show_traceroute(char *node_name, char *dst_prefix){
 
     node_t *node = NULL;
     rttable_entry_t * rt_entry = NULL;
     unsigned int i = 1;
+    
+    mark_all_rttables_unvisited();
      
     printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
+
     do{
         node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
+        if(IS_RT_TABLE_VISITED(node->spf_info.rttable)){
+            printf("Node %s : encountered again. Loop Detected\n", node_name);
+            return 1;
+        }
+
         rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
 
         if(!rt_entry){
             printf("Node %s : No route to prefix : %s\n", node_name, dst_prefix);
-            break;
+            return -1;
         }
 
         /*IF the best route present in routing table is the local route
          * means destination has arrived*/
         if(strncmp(rt_entry->primary_nh[0].nh_name, node_name, strlen(node_name)) == 0){
             printf("Trace Complete\n");
-            break;
+            return 0;
         }
 
         printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[0].oif, 
                 rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name);
+        MARK_RT_TABLE_VISITED(node->spf_info.rttable);
 
         node_name = rt_entry->primary_nh[0].nh_name;
     }

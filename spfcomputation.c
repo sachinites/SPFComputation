@@ -310,28 +310,28 @@ spf_init(candidate_tree_t *ctree,
     unsigned int i = 0;
     node_t *node = NULL, *pn_nbr = NULL;
     edge_t *edge = NULL, *pn_edge = NULL;
-    singly_ll_node_t *list_node = NULL;
 
     /*Drain off results list for level */
     spf_clear_result(spf_root, level);
 
-    /* You should intialize the nxthops and firect nxthops only for 
+    /* You should intialize the nxthops and direct nxthops only for 
      * reachable routers to spf root in the same level, not the entire
-     * graph. This is to DO work.*/
-    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){    
-        node = (node_t *)list_node->data;
+     * graph.*/
+
+    ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
+
         for(i = 0; i < MAX_NXT_HOPS; i++){
             node->next_hop[level][i] = 0;
             node->direct_next_hop[level][i] = 0;   
         }
-    }ITERATE_LIST_END;
-
+    } ITERATE_NODE_NBRS_END;
+   
     /*step 2 : Metric intialization*/
-    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
-        node = (node_t *)list_node->data;
-        node->spf_metric[level] = INFINITE_METRIC;
-    }ITERATE_LIST_END;
+   ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
 
+        node->spf_metric[level] = INFINITE_METRIC;
+   } ITERATE_NODE_NBRS_END;
+   
     spf_root->spf_metric[level] = 0;
 
     /*step 3 : Initialize direct nexthops.
