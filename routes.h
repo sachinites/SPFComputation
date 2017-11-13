@@ -54,6 +54,7 @@ typedef struct routes_{
     node_t *hosting_node;
     unsigned int spf_metric;
     unsigned int lsp_metric; /*meaningful if this LSP route*/
+    unsigned int ext_metric; /*External metric*/
 
     /* NH lists*/
     ll_t *primary_nh_list;/*Taking it as a list to accomodate ECMP*/

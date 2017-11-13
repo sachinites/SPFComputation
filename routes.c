@@ -545,6 +545,10 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         result->spf_metric + prefix->metric); TRACE();
                 overwrite_route(spf_info, route, prefix, result, level);
             }
+            else if(result->spf_metric + prefix->metric == route->spf_metric){
+                 sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                        route->rt_key.prefix, route->rt_key.mask); TRACE();
+            }
             route_prefix = calloc(1, sizeof(prefix_t));
             memcpy(route_prefix, prefix, sizeof(prefix_t));
             ROUTE_ADD_LIKE_PREFIX_LIST(route, route_prefix, result->spf_metric);
@@ -560,6 +564,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
                         result->spf_metric + prefix->metric); TRACE();
                 overwrite_route(spf_info, route, prefix, result, level);
+#if 1
                 /* if prc run then route->install_state = RTE_CHANGED*/
                 
                 if(SPF_RUN_TYPE(GET_SPF_INFO_NODE(spf_info, level), level) == PRC_RUN){
@@ -567,12 +572,14 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     sprintf(LOG, "Node : %s : PRC route : %s/%u %s STATE set to %s", (GET_SPF_INFO_NODE(spf_info, level))->node_name,
                             route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_CHANGED)); TRACE();
                 }
+#endif
             }
             route_prefix = calloc(1, sizeof(prefix_t));
             memcpy(route_prefix, prefix, sizeof(prefix_t));
             ROUTE_ADD_LIKE_PREFIX_LIST(route, route_prefix, result->spf_metric);
             route_prefix->metric = route->spf_metric;
-            
+
+#if 1
             /*If prc run, then set route->install_state = RTE_UPDATED;
              * */
             if(SPF_RUN_TYPE(GET_SPF_INFO_NODE(spf_info, level), level) == PRC_RUN){
@@ -580,6 +587,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 sprintf(LOG, "Node : %s : PRC route : %s/%u %s STATE set to %s", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_UPDATED)); TRACE();
             }
+#endif
         }
         else/*This else should not hit for prc run*/
         {

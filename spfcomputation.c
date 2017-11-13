@@ -310,6 +310,7 @@ spf_init(candidate_tree_t *ctree,
     unsigned int i = 0;
     node_t *node = NULL, *pn_nbr = NULL;
     edge_t *edge = NULL, *pn_edge = NULL;
+    singly_ll_node_t *list_node = NULL;
 
     /*Drain off results list for level */
     spf_clear_result(spf_root, level);
@@ -318,19 +319,21 @@ spf_init(candidate_tree_t *ctree,
      * reachable routers to spf root in the same level, not the entire
      * graph.*/
 
-    ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
-
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
+        
+        node = (node_t *)list_node->data;
         for(i = 0; i < MAX_NXT_HOPS; i++){
             node->next_hop[level][i] = 0;
             node->direct_next_hop[level][i] = 0;   
         }
-    } ITERATE_NODE_NBRS_END;
+    } ITERATE_LIST_END;
    
     /*step 2 : Metric intialization*/
-   ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
-
+   ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
+        
+        node = (node_t *)list_node->data;
         node->spf_metric[level] = INFINITE_METRIC;
-   } ITERATE_NODE_NBRS_END;
+   } ITERATE_LIST_END;
    
     spf_root->spf_metric[level] = 0;
 
