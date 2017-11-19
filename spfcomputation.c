@@ -385,22 +385,28 @@ spf_computation(node_t *spf_root,
                 spf_info_t *spf_info, 
                 LEVEL level, spf_type_t spf_type){
 
-    sprintf(LOG, "Node : %s, Triggered SPF run : %s, Level%d", 
-                spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "SKELETON_RUN",
-                level); TRACE();
-                 
+    if(level != LEVEL1 && level != LEVEL2){
+        printf("%s() : Error : invalid level specified\n", __FUNCTION__);
+        return;
+    }
+
     if(IS_OVERLOADED(spf_root, level)){
         printf("%s(): INFO : Node %s is overloaded, SPF cannot be run\n", 
             __FUNCTION__, spf_root->node_name);
         return;
     }
 
-    RE_INIT_CANDIDATE_TREE(&instance->ctree);
-
-    if(level != LEVEL1 && level != LEVEL2){
-        printf("%s() : Error : invalid level specified\n", __FUNCTION__);
-        return;
+    if(level == LEVEL2 && spf_root->spf_info.spf_level_info[LEVEL1].version == 0){
+        sprintf(LOG, "Root : %s, Running first LEVEL1 full SPF run before LEVEL2 full SPF run", 
+                        spf_root->node_name); TRACE();
+        spf_computation(spf_root, &spf_root->spf_info, LEVEL1, FULL_RUN);      
     }
+
+    sprintf(LOG, "Node : %s, Triggered SPF run : %s, %s", 
+                spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "SKELETON_RUN",
+                get_str_level(level)); TRACE();
+                 
+    RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
     spf_init(&instance->ctree, spf_root, level);
 

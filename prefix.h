@@ -41,8 +41,34 @@
 
 /* Prefix flags*/
 #define PREFIX_DOWNBIT_FLAG         0/*0th bit*/
-#define PREFIX_EXTERNABITL_FLAG     1/*Ist bit*/
-         
+#define PREFIX_EXTERNABIT_FLAG      1/*Ist bit*/
+#define PREFIX_METRIC_TYPE_EXT      2/*2nd bit*/
+
+/* Preferences - RFC 5302 For TLV128/130. We also incorporate RFC 7775 for routes advertised by TLV
+ * 135,235,236,237. Pls note that, RFC 5302 explicitely written for IPv4 takes complete care of RFC 
+ * 7775 as well which is written for IPV4|IPV6. However, for the sake of clarity we have intoduced 
+ * RFC 7775 same level enums*/
+typedef enum{
+
+    L1_INT_INT = 0,    /* 5302 : L1 Internal routes with interbal metric, 7775 3.3 : L1 Intra area routes*/
+    L1_EXT_INT = 0,    /* 5302 : L1 External routes with internal metric, 7775 3.3 : L1 External routes*/
+    L2_INT_INT = 1,    /* 5302 : L2 Internal routes with internal metric, 7775 3.3 : L2 Intra area routes*/
+    L2_EXT_INT = 1,    /* 5302 : L2 External routes with internal metric, 7775 3.3 : L2 external routes*/
+    L1_L2_INT_INT = 1, /* 5302 : L1->L2 Internal routes with internal metric, 7775 3.3 : L1->L2 inter-area routes*/
+    L1_L2_EXT_INT = 1, /* 5302 : L1->L2 External routes with internal metric, 7775 3.4 : L1-L2 external routes*/
+    L2_L2_EXT_INT = 1, /* 7775 3.3 : L2-L2 inter-area routes */
+    L2_L1_INT_INT = 2, /* 5302 : L2->L1 Internal routes with internal metric,  7775 3.3 : L2->L1 inter-area routes*/
+    L2_L1_EXT_INT = 2, /* 5302 : L2->L1 External routes with internal metric, 7775 3.1 Dont know why RFC 7775 3.1 do not list this case*/
+    L1_L1_EXT_INT = 2, /* 7775 3.3 : L1->L1 inter-area routes */
+    L1_EXT_EXT = 3,    /* 5302 : L1 External routes with  External metric*/
+    L2_EXT_EXT = 4,    /* 5302 : L2 External routes with  External metric*/
+    L1_L2_EXT_EXT = 4, /* 5302 : L1->L2 External routes with  External metric*/
+    L2_L1_EXT_EXT = 5, /* 5302 : L2->L1 External routes with  External metric*/
+    ROUTE_UNKNOWN_PREFERENCE = 6
+} prefix_preference_t;
+
+
+   
 /* Key structure for a prefix*/
 typedef struct common_pfx_{
 
@@ -119,6 +145,12 @@ add_prefix_to_prefix_list(ll_t *prefix_list, prefix_t *prefix, unsigned int host
 
 void
 delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask);
+
+prefix_preference_t
+route_preference(FLAG route_flags, LEVEL level);
+
+char *
+get_str_route_preference(prefix_preference_t pref);
 
 #endif /* __ROUTES__ */
 

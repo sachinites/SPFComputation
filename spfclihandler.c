@@ -204,22 +204,39 @@ dump_route_info(routes_t *route){
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
     prefix_t *prefix = NULL;
+    prefix_preference_t prefix_pref = ROUTE_UNKNOWN_PREFERENCE;
 
     printf("Route : %s/%u, %s\n", route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level));
-    printf("Version : %d, spf_metric = %u, lsp_metric = %u\n", route->version, route->spf_metric, route->lsp_metric);
-    printf("flags : %s\n", IS_BIT_SET(route->flags, PREFIX_DOWNBIT_FLAG) ? "PREFIX_DOWNBIT_FLAG" : "");
+    printf("Version : %d, spf_metric = %u, lsp_metric = %u, ext_metric = %u\n", 
+                    route->version, route->spf_metric, route->lsp_metric, route->ext_metric);
+
+    printf("flags : up/down : %s , Route : %s, Metric type : %s\n", 
+            IS_BIT_SET(route->flags, PREFIX_DOWNBIT_FLAG)    ? "SET" : "NOT SET",
+            IS_BIT_SET(route->flags, PREFIX_EXTERNABIT_FLAG) ? "EXTERNAL" : "INTERNAL",
+            IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) ? "EXTERNAL" : "INTERNAL");
+
     printf("hosting_node = %s\n", route->hosting_node->node_name);
     printf("Like prefix list count : %u\n", GET_NODE_COUNT_SINGLY_LL(route->like_prefix_list));
+
     ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
+
         prefix = list_node->data;
-        printf("%s/%u, hosting_node : %s, metric : %u\n", 
-            prefix->prefix, prefix->mask, prefix->hosting_node->node_name, prefix->metric);
+        prefix_pref = route_preference(prefix->prefix_flags, route->level);
+
+        printf("%s/%u, hosting_node : %s, prefix->metric : %u, preference = %s(%u)\n", 
+        prefix->prefix, prefix->mask, prefix->hosting_node->node_name, prefix->metric,
+        get_str_route_preference(prefix_pref), prefix_pref);
+
     }ITERATE_LIST_END;
+
     printf("Primary Nxt Hops count : %u\n", GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list));
+
     ITERATE_LIST_BEGIN(route->primary_nh_list, list_node){
+
         node = (node_t *)list_node->data;
         printf(" %s ", node->node_name);
     }ITERATE_LIST_END;
+
     printf("\nInstall state : %s\n\n", route_intall_status_str(route->install_state));
 }
 

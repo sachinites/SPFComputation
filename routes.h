@@ -49,7 +49,7 @@ typedef struct routes_{
 
     common_pfx_key_t rt_key;
     int version;
-    int flags;
+    FLAG flags;
     LEVEL level;
     node_t *hosting_node;
     unsigned int spf_metric;
@@ -89,9 +89,6 @@ free_route(routes_t *route);
 
 #define ROUTE_FLUSH_BACKUP_NH_LIST(routeptr)   \
     delete_singly_ll(routeptr->backup_nh_list)
-
-#define ROUTE_ADD_LIKE_PREFIX_LIST(routeptr, prefixptr, _hosting_node_metric)     \
-    add_prefix_to_prefix_list(routeptr->like_prefix_list, prefixptr, _hosting_node_metric)
 
 #define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr)    \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
@@ -139,24 +136,6 @@ prepare_new_nxt_hop_template(node_t *computing_node, /*Computing node running SP
         node_t *nxt_hop_node,   /*Nbr node*/
         nh_t *nh_template,
         LEVEL level);           /*SPF run level*/
-
-void
-add_route(node_t *lsp_reciever, 
-        node_t *lsp_generator,
-        LEVEL info_dist_level,
-        char *prefix, char mask,
-        unsigned int metric,
-        FLAG prefix_flags,
-        node_t *hosting_node);
-
-void
-delete_route(node_t *lsp_reciever,
-        node_t *lsp_generator,
-        LEVEL info_dist_level,
-        char *prefix, char mask,
-        FLAG prefix_flags,
-        unsigned int metric,
-        node_t *hosting_node);
 
 char *
 route_intall_status_str(route_intall_status install_status);

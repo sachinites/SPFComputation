@@ -429,7 +429,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
             LEVEL level, char *gw_prefix){
 
     unsigned int i = 0, 
-                 min_metric = 0xFFFFFFFF;
+                 min_metric = INFINITE_METRIC;
 
     edge_end_t *edge_end     = NULL, 
                *min_edge_oif = NULL,
@@ -471,7 +471,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
      * middle. We need to cover this scenario as well. Also, cover the case
      * of multiple PNs present in between node and node_nbr*/
     
-    min_metric = 0xFFFFFFFF;
+    min_metric = INFINITE_METRIC;
     ITERATE_NODE_NBRS_BEGIN(node, PN, edge_it, level){
 
         if(PN->node_type[level] != PSEUDONODE)  

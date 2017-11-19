@@ -92,21 +92,6 @@ advert_id_str(ADVERT_ID_T advert_id){
     }       
 }
 
-static char *
-add_or_remove_t_str(ADD_OR_REMOVE_T add_or_remove){
-
-    switch(add_or_remove){
-        case AD_CONFIG_ADDED:
-            return "AD_CONFIG_ADDED";
-        case AD_CONFIG_REMOVED:
-            return "AD_CONFIG_REMOVED";
-        case AD_CONFIG_UPDATED:
-            return "AD_CONFIG_UPDATED";
-        default:
-            assert(0);
-    }
-}
-
 void
 lsp_distribution_routine(node_t *lsp_generator,
                 node_t *lsp_receiver,
@@ -114,83 +99,20 @@ lsp_distribution_routine(node_t *lsp_generator,
     
      switch(dist_info->advert_id){
         case TLV128:
-            switch(dist_info->add_or_remove){
-                case AD_CONFIG_ADDED:
-                case AD_CONFIG_REMOVED:
-                case AD_CONFIG_UPDATED:
-                    partial_spf_run(lsp_receiver, dist_info->info_dist_level);
+                partial_spf_run(lsp_receiver, dist_info->info_dist_level);
                 break;
-            default:
-                break;   
-            }
-        break;
-        
+
         case TLV2:
-            switch(dist_info->add_or_remove){
-                case AD_CONFIG_ADDED:
-                case AD_CONFIG_REMOVED:
-                case AD_CONFIG_UPDATED:
-                    spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN);
+                spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN);
                 break;
-            default:
-                break;   
-            }
-        break;
 
         case OVERLOAD:
-            switch(dist_info->add_or_remove){
-                case AD_CONFIG_ADDED:
-                case AD_CONFIG_REMOVED:
-                case AD_CONFIG_UPDATED:
-                    /*Trigger full spf run if router overloads/or unoverloads*/
-                    spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN);
-                break;
-            default:
-                break;   
-            }
-        break;
+                /*Trigger full spf run if router overloads/or unoverloads*/
+                spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN);
+                break;  
+        default:
+            ; 
      }
-}
-
-void
-prefix_distribution_routine(node_t *lsp_generator, 
-                            node_t *lsp_receiver, 
-                            dist_info_hdr_t *dist_info){
-
-
-    sprintf(LOG, "LSP GEN = %s, LSP RECV = %s, ADVERT ID = %s, ADD_OR_REMOVE = %s, DIST LVL = %s", 
-                lsp_generator->node_name, lsp_receiver->node_name, 
-                advert_id_str(dist_info->advert_id), add_or_remove_t_str(dist_info->add_or_remove), 
-                get_str_level(dist_info->info_dist_level)); TRACE(); 
-
-    switch(dist_info->advert_id){
-        case TLV128:
-            switch(dist_info->add_or_remove){
-                case AD_CONFIG_ADDED:
-                    {
-                        tlv128_ip_reach_t *ad_msg = 
-                                (tlv128_ip_reach_t *)(dist_info->info_data);
-                        add_route(lsp_receiver, lsp_generator, dist_info->info_dist_level, ad_msg->prefix, 
-                                  ad_msg->mask, ad_msg->metric, ad_msg->prefix_flags, ad_msg->hosting_node);  
-                    }
-                break;
-                case AD_CONFIG_REMOVED:
-                    {
-                        tlv128_ip_reach_t *ad_msg = 
-                                (tlv128_ip_reach_t *)dist_info->info_data;
-                        delete_route(lsp_receiver, lsp_generator, dist_info->info_dist_level, ad_msg->prefix, 
-                                  ad_msg->mask, ad_msg->metric, ad_msg->prefix_flags, ad_msg->hosting_node);  
-                    }
-                break;
-                case AD_CONFIG_UPDATED:
-                break;
-                default:
-                    assert(0);
-            }
-            break;
-            default:
-            assert(0);
-    }
 }
 
 static void
