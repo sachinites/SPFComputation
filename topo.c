@@ -171,14 +171,6 @@ build_multi_area_topo(){
     insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("20.1.1.1", 24), create_new_prefix("20.1.1.2", 24), LEVEL2)),
                                 R2, R5, BIDIRECTIONAL);
 
-    /*Attach local aditional prefixes on nodes*/
-    attach_prefix_on_node(R1, "100.1.1.1", 24, LEVEL1, 0, 0);
-    attach_prefix_on_node(R3, "101.1.1.1", 24, LEVEL2, 0, 0);
-    attach_prefix_on_node(R3, "102.1.1.1", 24, LEVEL2, 10,0);
-
-    /*prefix leaking*/
-    //leak_prefix(R3->node_name, "100.1.1.1", 24, LEVEL2, LEVEL1);
-
     set_instance_root(instance, R0);
     return instance;
 }

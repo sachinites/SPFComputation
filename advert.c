@@ -154,7 +154,7 @@ generate_lsp(instance_t *instance,
      lsp_generator->traversing_bit = 1;
      enqueue(q, lsp_generator);
 
-     unsigned int propogation_delay = 1;
+     unsigned int propogation_delay = 0;
 
      while(!is_queue_empty(q)){
          curr_node = deque(q);

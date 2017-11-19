@@ -498,6 +498,10 @@ link_prefix_to_route_prefix_list(routes_t *route, prefix_t *new_prefix,
     prefix_preference_t list_prefix_pref = ROUTE_UNKNOWN_PREFERENCE,
                         new_prefix_pref = route_preference(new_prefix->prefix_flags, level);
 
+    sprintf(LOG, "To Route : %s/%u, %s, Appending prefix : %s/%u to Route prefix list",
+                 route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level),
+                 new_prefix->prefix, new_prefix->mask); TRACE();
+
     if(is_singly_ll_empty(route->like_prefix_list)){
         singly_ll_add_node_by_val(route->like_prefix_list, new_prefix);
         return;
@@ -587,7 +591,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         
 
 
-    sprintf(LOG, "Node %s, result node %s, prefix %s, level %s, prefix metric : %u",
+    sprintf(LOG, "Node : %s : result node %s, prefix %s, level %s, prefix metric : %u",
              GET_SPF_INFO_NODE(spf_info, level)->node_name, result->node->node_name, 
              prefix->prefix, get_str_level(level), prefix->metric); TRACE();
     
@@ -801,6 +805,14 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 return;
             }
 
+            /*If prc run, then set route->install_state = RTE_UPDATED else it would stay set to RTE_STALE;
+             * */
+            if(SPF_RUN_TYPE(GET_SPF_INFO_NODE(spf_info, level), level) == PRC_RUN){
+                route->install_state = RTE_UPDATED;
+                sprintf(LOG, "Node : %s : PRC route : %s/%u %s STATE set to %s", GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                                route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_UPDATED)); TRACE();
+            }
+
             if(route_pref < prefix_pref){
                 
                 /* if existing route is better*/ 
@@ -905,13 +917,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             }
  /* Comparison Block Ends*/
             
-            /*If prc run, then set route->install_state = RTE_UPDATED else it would stay set to RTE_STALE;
-             * */
-            if(SPF_RUN_TYPE(GET_SPF_INFO_NODE(spf_info, level), level) == PRC_RUN){
-                route->install_state = RTE_UPDATED;
-                sprintf(LOG, "Node : %s : PRC route : %s/%u %s STATE set to %s", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_UPDATED)); TRACE();
-            }
         }
         else/*This else should not hit for prc run*/
         {
