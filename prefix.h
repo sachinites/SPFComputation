@@ -48,6 +48,7 @@
  * 135,235,236,237. Pls note that, RFC 5302 explicitely written for IPv4 takes complete care of RFC 
  * 7775 as well which is written for IPV4|IPV6. However, for the sake of clarity we have intoduced 
  * RFC 7775 same level enums*/
+
 typedef enum{
 
     L1_INT_INT = 0,    /* 5302 : L1 Internal routes with interbal metric, 7775 3.3 : L1 Intra area routes*/
@@ -67,7 +68,11 @@ typedef enum{
     ROUTE_UNKNOWN_PREFERENCE = 6
 } prefix_preference_t;
 
+typedef struct prefix_pref_data_t_{
 
+    prefix_preference_t pref;
+    char *pref_str;
+} prefix_pref_data_t;
    
 /* Key structure for a prefix*/
 typedef struct common_pfx_{
@@ -146,11 +151,9 @@ add_prefix_to_prefix_list(ll_t *prefix_list, prefix_t *prefix, unsigned int host
 void
 delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask);
 
-prefix_preference_t
+prefix_pref_data_t
 route_preference(FLAG route_flags, LEVEL level);
 
-char *
-get_str_route_preference(prefix_preference_t pref);
 
 #endif /* __ROUTES__ */
 

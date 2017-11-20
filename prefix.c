@@ -93,148 +93,156 @@ prefix_order_comparison_fn(void *_prefix1, void *_prefix2){
     return 0;
 }
 
-char *
-get_str_route_preference(prefix_preference_t pref){
-
-    if(pref == L1_INT_INT)
-        return "L1_INT_INT";
-    if(pref == L1_EXT_INT)
-        return "L1_EXT_INT";
-    if(pref == L2_INT_INT)
-        return "L2_INT_INT";
-    if(pref == L2_EXT_INT)
-        return "L2_EXT_INT";
-    if(pref == L1_L2_INT_INT)
-        return "L1_L2_INT_INT";
-    if(pref == L1_L2_EXT_INT)
-        return "L1_L2_EXT_INT";
-    if(pref == L2_L2_EXT_INT )
-        return "L2_L2_EXT_INT";
-    if(pref == L2_L1_INT_INT)
-        return "L2_L1_INT_INT";
-    if(pref == L2_L1_EXT_INT)
-        return "L2_L1_EXT_INT";
-    if(pref == L1_L1_EXT_INT)
-        return "L1_L1_EXT_INT";
-    if(pref == L1_EXT_EXT)
-        return "L1_EXT_EXT";
-    if(pref == L2_EXT_EXT)
-        return "L2_EXT_EXT";
-    if(pref == L1_L2_EXT_EXT)
-        return "L1_L2_EXT_EXT";
-    if(pref == L2_L1_EXT_EXT)
-        return "L2_L1_EXT_EXT";
-    return "ROUTE_UNKNOWN_PREFERENCE";
-}
-
-
-/* Note that preference value return by this fn do not really reflect 
- * the route preference into which the route is categorised. We can get
- * some other preference enum but that would be of same value as the prefix
- * actual preference. We dont bother as long as we get the equivalent prefernece
- * enum of a route based on route flags*/
-
-prefix_preference_t
+prefix_pref_data_t
 route_preference(FLAG route_flags, LEVEL level){
 
 /* Same preference 0*/
+    prefix_pref_data_t pref;
+
     if(level == LEVEL1 &&
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) && 
        !IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L1_INT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = L1_INT_INT;
+            pref.pref_str = "L1_INT_INT";
+            return pref;
+    }
 
     if(level == LEVEL1 &&
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) && 
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L1_EXT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = L1_EXT_INT;
+            pref.pref_str = "L1_EXT_INT";
+            return pref;
+    }
 
 /* Same preference 1*/
     if(level == LEVEL2 &&
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) && 
        !IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L2_INT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = L2_INT_INT;
+            pref.pref_str = "L2_INT_INT";
+            return pref;
+    }
 
     if(level == LEVEL2 &&
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) &&  
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L2_EXT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+             pref.pref =  L2_EXT_INT;
+             pref.pref_str = "L2_EXT_INT";
+            return pref;
+    }
 
     if(level == LEVEL2 && 
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) &&
        !IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L1_L2_INT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref =  L1_L2_INT_INT;
+            pref.pref_str = "L1_L2_INT_INT";
+            return pref;
+    }
 
     if(level == LEVEL2 && 
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) &&
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L1_L2_EXT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref =  L1_L2_EXT_INT;
+            pref.pref_str = "L1_L2_EXT_INT";
+            return pref;
+    }
 
 
     if(level == LEVEL2 &&
        (IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) || 1) && /* Up/Down bit is set but ignored as if it is unset*/
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L2_L2_EXT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref =  L2_L2_EXT_INT;
+            pref.pref_str = "L2_L2_EXT_INT";
+            return pref;
+    }
 
 /* Same preference 2*/
     if(level == LEVEL1 && 
         IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) &&
        !IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L2_L1_INT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref =  L2_L1_INT_INT;
+            pref.pref_str = "L2_L1_INT_INT";
+            return pref;
+    }
 
     if(level == LEVEL1 && 
         IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) &&
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L2_L1_EXT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = L2_L1_EXT_INT;
+            pref.pref_str = "L2_L1_EXT_INT";
+            return pref;
+    }
     
     if(level == LEVEL1 &&
         IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) &&
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L1_L1_EXT_INT;
+       !IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = L1_L1_EXT_INT;
+            pref.pref_str = "L1_L1_EXT_INT";
+            return pref;
+    }
 
 /* Same preference 3*/
     if(level == LEVEL1 && 
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) &&
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L1_EXT_EXT;
+        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = L1_EXT_EXT;
+            pref.pref_str = "L1_EXT_EXT";
+            return pref;
+    }
     
 /* Same preference 4*/
     if(level == LEVEL2 &&
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) && 
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L2_EXT_EXT;
+        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = L2_EXT_EXT;
+            pref.pref_str = "L2_EXT_EXT";
+            return pref;
+    }
 
     if(level == LEVEL2 && 
        !IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) &&
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L1_L2_EXT_EXT;
+        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+             pref.pref = L1_L2_EXT_EXT;
+             pref.pref_str = "L1_L2_EXT_EXT";
+            return pref;
+    }
 
 /* Same preference 5*/
     if(level == LEVEL1 &&
         IS_BIT_SET(route_flags, PREFIX_DOWNBIT_FLAG) && 
         IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return L2_L1_EXT_EXT;
+        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = L2_L1_EXT_EXT;
+            pref.pref_str = "L2_L1_EXT_EXT";
+            return pref;
+    }
 
 /* Such a prefix is meant to be ignored*/
     if(!IS_BIT_SET(route_flags, PREFIX_EXTERNABIT_FLAG) &&
-        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT))
-            return ROUTE_UNKNOWN_PREFERENCE;
+        IS_BIT_SET(route_flags, PREFIX_METRIC_TYPE_EXT)){
+            pref.pref = ROUTE_UNKNOWN_PREFERENCE;
+            pref.pref_str = "ROUTE_UNKNOWN_PREFERENCE";
+            return pref;
+    }
 
     assert(0);
-    return ROUTE_UNKNOWN_PREFERENCE; /* Make compiler happy*/
+    pref.pref = ROUTE_UNKNOWN_PREFERENCE;
+    pref.pref_str = "ROUTE_UNKNOWN_PREFERENCE";
+    return pref; /* Make compiler happy*/
 }
 
 void
@@ -287,22 +295,24 @@ leak_prefix(char *node_name, char *_prefix, char mask,
     /* Case 1 : leaking prefix on a local hosting node */ 
     if(prefix){
    
-        /*Now add this prefix to L1 prefix list of node*/
+        /*Now add this prefix to to_level prefix list of node*/
         if(node_local_prefix_search(node, to_level, _prefix, mask)){
             printf("%s () : Error : Node : %s, prefix : %s already leaked/present in %s\n", 
             __FUNCTION__, node->node_name, STR_PREFIX(prefix), get_str_level(to_level));
             return NULL;
         }
 
-        leaked_prefix = attach_prefix_on_node (node, prefix->prefix, prefix->mask, to_level, prefix->metric, prefix->prefix_flags);
+        leaked_prefix = attach_prefix_on_node (node, prefix->prefix, prefix->mask, 
+                        to_level, prefix->metric, prefix->prefix_flags);
         if(!leaked_prefix){
             sprintf("Node : %s, equal best prefix : %s already leaked/present in %s\n",
                 node->node_name, STR_PREFIX(prefix), get_str_level(to_level)); TRACE();
             return NULL;
         }
         leaked_prefix->ref_count = 0;
-        SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
-        SET_BIT(leaked_prefix->prefix_flags, PREFIX_EXTERNABIT_FLAG);
+
+        if(from_level == LEVEL2 && to_level == LEVEL1)
+            SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, STR_PREFIX(prefix), PREFIX_MASK(prefix), get_str_level(from_level), get_str_level(to_level));
@@ -350,7 +360,8 @@ leak_prefix(char *node_name, char *_prefix, char mask,
          * so that L1 router can compute route to this leaked prefix by running full spf run */
 
         leaked_prefix = attach_prefix_on_node (node, _prefix, mask, 
-                        to_level, route_to_be_leaked->spf_metric, 0);
+                        to_level, IS_BIT_SET(route_to_be_leaked->flags, PREFIX_EXTERNABIT_FLAG) ? 
+                        route_to_be_leaked->ext_metric : route_to_be_leaked->spf_metric, 0);
 
         if(!leaked_prefix){
             sprintf("Node : %s, equal best prefix : %s already leaked/present in %s\n",
@@ -360,13 +371,15 @@ leak_prefix(char *node_name, char *_prefix, char mask,
 
         leaked_prefix->prefix_flags = route_to_be_leaked->flags;
         leaked_prefix->ref_count = 0;
-        SET_BIT(leaked_prefix->prefix_flags, PREFIX_EXTERNABIT_FLAG);
-        SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
+
+        if(from_level == LEVEL2 && to_level == LEVEL1)
+            SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 
         sprintf(LOG, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, route_to_be_leaked->rt_key.prefix, 
                 route_to_be_leaked->rt_key.mask, get_str_level(from_level), 
                 get_str_level(to_level));  TRACE();
+
         return leaked_prefix;
     }
     return NULL;

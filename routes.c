@@ -120,6 +120,7 @@ prepare_new_rt_entry_template(spf_info_t *spf_info, rttable_entry_t *rt_entry_te
     rt_entry_template->version = version;
     rt_entry_template->cost = route->spf_metric;
     rt_entry_template->level = route->level;
+    rt_entry_template->flags = route->flags;
 
     /*Find the spf result to reach route->hosting_node when spf_root is current node.*/
     self_res = singly_ll_search_by_key(route->hosting_node->self_spf_result[route->level], 
@@ -177,7 +178,7 @@ search_route_in_spf_route_list(spf_info_t *spf_info,
     ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
         route = list_node->data;
         if(strncmp(route->rt_key.prefix, prefix_with_mask, PREFIX_LEN) == 0 &&
-                (route->rt_key.mask == prefix->mask) && route->level == level)
+                (route->rt_key.mask == prefix->mask))
             return route;    
     }ITERATE_LIST_END;
     return NULL;
@@ -300,6 +301,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
         route = NULL;
        }
    }ITERATE_LIST_END;
+
    return i;
 }
 
@@ -495,7 +497,9 @@ link_prefix_to_route_prefix_list(routes_t *route, prefix_t *new_prefix,
     LEVEL level = route->level;
     unsigned int new_prefix_metric = 0;
 
-    prefix_preference_t list_prefix_pref = ROUTE_UNKNOWN_PREFERENCE,
+    prefix_pref_data_t list_prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, 
+                                          "ROUTE_UNKNOWN_PREFERENCE"},
+
                         new_prefix_pref = route_preference(new_prefix->prefix_flags, level);
 
     sprintf(LOG, "To Route : %s/%u, %s, Appending prefix : %s/%u to Route prefix list",
@@ -514,12 +518,12 @@ link_prefix_to_route_prefix_list(routes_t *route, prefix_t *new_prefix,
         list_prefix = (prefix_t *)list_node_next->data;
         list_prefix_pref = route_preference(list_prefix->prefix_flags, level);
 
-        if(new_prefix_pref > list_prefix_pref){
+        if(new_prefix_pref.pref > list_prefix_pref.pref){
             list_node_prev = list_node_next;
             continue;
         }
 
-        if(new_prefix_pref < list_prefix_pref){
+        if(new_prefix_pref.pref < list_prefix_pref.pref){
             list_new_node->next =  list_node_next;
             if(!list_node_prev)
                 route->like_prefix_list->head = list_new_node; 
@@ -586,8 +590,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
     routes_t *route = NULL;
     unsigned int i = 0;
     prefix_t *route_prefix = NULL;
-    prefix_preference_t prefix_pref = ROUTE_UNKNOWN_PREFERENCE,
-                        route_pref = ROUTE_UNKNOWN_PREFERENCE;
+    prefix_pref_data_t prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, "ROUTE_UNKNOWN_PREFERENCE"},
+                        route_pref = {ROUTE_UNKNOWN_PREFERENCE, "ROUTE_UNKNOWN_PREFERENCE"};
                         
 
 
@@ -664,7 +668,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     spf_info->spf_level_info[level].version, get_str_level(route->level), get_str_level(level)); TRACE();
 
         if(route->install_state == RTE_ADDED){
-           
+          
+#if 0 
             /*Level 1 routes are preferred over level 2 routes*/ 
             if((route->level == LEVEL1 && level == LEVEL2)){
                 sprintf(LOG, "Node : %s : route : %s/%u route->level : %s, prefix level : %s", 
@@ -674,24 +679,25 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 /*Do we need to do linkage here ?*/
                 return;
             }
+#endif
 
 /* Comparison Block Start*/
 
             prefix_pref = route_preference(prefix->prefix_flags, level);
-            route_pref = route_preference(route->flags, level);
+            route_pref  = route_preference(route->flags, route->level);
 
-            if(prefix_pref == ROUTE_UNKNOWN_PREFERENCE){
+            if(prefix_pref.pref == ROUTE_UNKNOWN_PREFERENCE){
                 sprintf(LOG, "Node : %s : Prefix : %s/%u pref = %s, ignoring prefix",  GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                              prefix->prefix, prefix->mask, get_str_route_preference(prefix_pref)); TRACE();
+                              prefix->prefix, prefix->mask, prefix_pref.pref_str); TRACE();
                 return;
             }
 
-            if(route_pref < prefix_pref){
+            if(route_pref.pref < prefix_pref.pref){
                 
                 /* if existing route is better*/ 
                 sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Not overwritten",
                               GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                              get_str_route_preference(route_pref), get_str_route_preference(prefix_pref)); TRACE();
+                              route_pref.pref_str, prefix_pref.pref_str); TRACE();
                 /*Linkage*/
                 route_prefix = calloc(1, sizeof(prefix_t));
                 memcpy(route_prefix, prefix, sizeof(prefix_t));
@@ -700,11 +706,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 return;
             }
             /* If new prefix is better*/
-            else if(prefix_pref < route_pref){
+            else if(prefix_pref.pref < route_pref.pref){
                 
                 sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, will be overwritten",
                               GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                              get_str_route_preference(route_pref), get_str_route_preference(prefix_pref)); TRACE();
+                              route_pref.pref_str, prefix_pref.pref_str); TRACE();
 
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
@@ -719,7 +725,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 /* If route pref = prefix pref, then decide based on metric*/
                 sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Same preference, Trying based on metric",
                               GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                              get_str_route_preference(route_pref), get_str_route_preference(prefix_pref)); TRACE();
+                              route_pref.pref_str, prefix_pref.pref_str); TRACE();
                 
                 /* If the prefix and route are of same pref, both will have internal metric Or both will have external metric*/
                 if(IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) && 
@@ -797,11 +803,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 /* Comparison Block Start*/
 
             prefix_pref = route_preference(prefix->prefix_flags, level);
-            route_pref = route_preference(route->flags, level);
+            route_pref = route_preference(route->flags, route->level);
 
-            if(prefix_pref == ROUTE_UNKNOWN_PREFERENCE){
+            if(prefix_pref.pref == ROUTE_UNKNOWN_PREFERENCE){
                 sprintf(LOG, "Node : %s : Prefix : %s/%u pref = %s, ignoring prefix",  GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                              prefix->prefix, prefix->mask, get_str_route_preference(prefix_pref)); TRACE();
+                              prefix->prefix, prefix->mask, prefix_pref.pref_str); TRACE();
                 return;
             }
 
@@ -813,12 +819,12 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                                 route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_UPDATED)); TRACE();
             }
 
-            if(route_pref < prefix_pref){
+            if(route_pref.pref < prefix_pref.pref){
                 
                 /* if existing route is better*/ 
                 sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Not overwritten",
                               GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                              get_str_route_preference(route_pref), get_str_route_preference(prefix_pref)); TRACE();
+                              route_pref.pref_str, prefix_pref.pref_str); TRACE();
                 /*Linkage*/
                 route_prefix = calloc(1, sizeof(prefix_t));
                 memcpy(route_prefix, prefix, sizeof(prefix_t));
@@ -827,11 +833,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 return;
             }
             /* If new prefix is better*/
-            else if(prefix_pref < route_pref){
+            else if(prefix_pref.pref < route_pref.pref){
                 
                 sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, will be overwritten",
                               GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                              get_str_route_preference(route_pref), get_str_route_preference(prefix_pref)); TRACE();
+                              route_pref.pref_str, prefix_pref.pref_str); TRACE();
 
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
@@ -846,7 +852,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 /* If route pref = prefix pref, then decide based on metric*/
                 sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Same preference, Trying based on metric",
                               GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                              get_str_route_preference(route_pref), get_str_route_preference(prefix_pref)); TRACE();
+                              route_pref.pref_str, prefix_pref.pref_str); TRACE();
                 
                 /* If the prefix and route are of same pref, both will have internal metric Or both will have external metric*/
                 if(IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) && 
@@ -957,8 +963,6 @@ install_route_in_rib(spf_info_t *spf_info,
                  rt_updated = 0, 
                  rt_no_change = 0;
 
-    rttable_entry_t *existing_rt_route = NULL;
-
     assert(route->level == level);
     assert(route->spf_metric != INFINITE_METRIC);
 
@@ -1035,6 +1039,7 @@ install_route_in_rib(spf_info_t *spf_info,
         /*It might be the case that the route already installed in RIB belong to other level, 
          * we need to check if the route we are installing has better cost or not*/
         {
+#if 0
             existing_rt_route = rt_route_lookup(spf_info->rttable, 
                                 route->rt_key.prefix, route->rt_key.mask);
             if(existing_rt_route){
@@ -1059,6 +1064,7 @@ install_route_in_rib(spf_info_t *spf_info,
                 else
                     assert(0); /* Impossible case*/
             }
+#endif
             if(rt_route_install(spf_info->rttable, rt_entry_template) < 0){
                 printf("%s() : Error : Could not Add route : %s/%u, Level%u\n", __FUNCTION__,
                         route->rt_key.prefix, route->rt_key.mask, route->level);
@@ -1070,6 +1076,7 @@ install_route_in_rib(spf_info_t *spf_info,
         }
             break;
         case RTE_CHANGED:
+#if 0
             existing_rt_route = rt_route_lookup(spf_info->rttable, 
                                 route->rt_key.prefix, route->rt_key.mask);
             if(existing_rt_route){
@@ -1096,6 +1103,7 @@ install_route_in_rib(spf_info_t *spf_info,
                     assert(0); /* Impossible case*/
 #endif
             }
+#endif
             rt_route_update(spf_info->rttable, rt_entry_template);
             free(rt_entry_template);
             rt_entry_template = NULL;
@@ -1198,6 +1206,7 @@ start_route_installation(spf_info_t *spf_info,
                 /*It might be the case that the route already installed in RIB belong to other level, 
                  * we need to check if the route we are installing has better cost or not*/
                 {
+#if 0
                     existing_rt_route = rt_route_lookup(spf_info->rttable, 
                             route->rt_key.prefix, route->rt_key.mask);
                     if(existing_rt_route){
@@ -1220,6 +1229,7 @@ start_route_installation(spf_info_t *spf_info,
                             }
                         }
                     }
+#endif
                     if(rt_route_install(spf_info->rttable, rt_entry_template) < 0){
                         printf("%s() : Error : Could not Add route : %s/%u, Level%u\n", __FUNCTION__,
                                 route->rt_key.prefix, route->rt_key.mask, route->level);
@@ -1231,6 +1241,7 @@ start_route_installation(spf_info_t *spf_info,
                 }
                 break;
             case RTE_CHANGED:
+#if 0
                 existing_rt_route = rt_route_lookup(spf_info->rttable, 
                         route->rt_key.prefix, route->rt_key.mask);
                 if(existing_rt_route){
@@ -1253,6 +1264,7 @@ start_route_installation(spf_info_t *spf_info,
                         }
                     }
                 }
+#endif
                 rt_route_update(spf_info->rttable, rt_entry_template);
                 free(rt_entry_template);
                 rt_entry_template = NULL;

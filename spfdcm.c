@@ -492,7 +492,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
         case CMDCODE_CONFIG_INSTANCE_ATTACHBIT_ENABLE:
             node->attached = (enable_or_disable == CONFIG_ENABLE) ? 1 : 0;
             break;
-        case CMDCODE_CONFIG_NODE_ADD_PREFIX:
+        case CMDCODE_CONFIG_NODE_EXPORT_PREFIX:
         {
 
             prefix_t *pfx = node_local_prefix_search(node, 
@@ -507,7 +507,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             ad_msg.prefix = prefix,
             ad_msg.mask = mask;
             ad_msg.metric = 0;
-            ad_msg.prefix_flags = 0;
+            SET_BIT(ad_msg.prefix_flags, PREFIX_EXTERNABIT_FLAG);
             ad_msg.hosting_node = node;
 
             dist_info_hdr.lsp_generator = node;
@@ -515,10 +515,8 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
             dist_info_hdr.advert_id = TLV128;
             dist_info_hdr.info_data = (char *)&ad_msg;
-            //generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
-
             /*Adopting to PRC behavior*/
-            pfx = attach_prefix_on_node (node, prefix, mask, level, 0, 0);
+            pfx = attach_prefix_on_node (node, prefix, mask, level, 0, ad_msg.prefix_flags);
             generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
         }
             break;     
@@ -540,7 +538,6 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
             dist_info_hdr.advert_id = TLV128;
             dist_info_hdr.info_data = (char *)&ad_msg;
-            //generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
             generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
         }
             break;  
@@ -1018,7 +1015,7 @@ spf_init_dcm(){
                     instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
     libcli_register_param(&config_node_node_name_add_prefix_prefix_mask_level,
                     &config_node_node_name_add_prefix_prefix_mask_level_level);
-    set_param_cmd_code(&config_node_node_name_add_prefix_prefix_mask_level_level, CMDCODE_CONFIG_NODE_ADD_PREFIX);
+    set_param_cmd_code(&config_node_node_name_add_prefix_prefix_mask_level_level, CMDCODE_CONFIG_NODE_EXPORT_PREFIX);
     
     /* config node <node-name> [no] attachbit enable*/    
     static param_t config_node_node_name_attachbit;

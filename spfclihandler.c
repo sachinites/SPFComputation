@@ -204,7 +204,8 @@ dump_route_info(routes_t *route){
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
     prefix_t *prefix = NULL;
-    prefix_preference_t prefix_pref = ROUTE_UNKNOWN_PREFERENCE;
+    prefix_pref_data_t prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, 
+                                      "ROUTE_UNKNOWN_PREFERENCE"};
 
     printf("Route : %s/%u, %s\n", route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level));
     printf("Version : %d, spf_metric = %u, lsp_metric = %u, ext_metric = %u\n", 
@@ -225,7 +226,7 @@ dump_route_info(routes_t *route){
 
         printf("%s/%u, hosting_node : %s, prefix->metric : %u, preference = %s(%u)\n", 
         prefix->prefix, prefix->mask, prefix->hosting_node->node_name, prefix->metric,
-        get_str_route_preference(prefix_pref), prefix_pref);
+        prefix_pref.pref_str, prefix_pref.pref);
 
     }ITERATE_LIST_END;
 

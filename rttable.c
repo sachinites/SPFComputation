@@ -207,16 +207,16 @@ show_routing_table(rttable *rttable){
     char subnet[PREFIX_LEN_WITH_MASK + 1];
 
     printf("Table %s\n", rttable->table_name);
-    printf("Destination           Version        Metric     Level    Gateway             Nxt-Hop        OIF      Backup\n");
-    printf("------------------------------------------------------------------------------------------------------------\n");
+    printf("Destination           Version        Metric     Level    Gateway         Nxt-Hop         OIF      Backup\n");
+    printf("----------------------------------------------------------------------------------------------------------------\n");
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
         rt_entry = (rttable_entry_t *)list_node->data;
         memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
         sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
-        printf("%-20s      %-4d        %-6d     %-4d    %-20s    %-8s   %-22s      %s\n",
-                subnet, rt_entry->version, rt_entry->cost,
+        printf("%-20s      %-4d        %d (%-3s)     %-4d    %-15s    %-8s   %-22s      %s\n",
+                subnet, rt_entry->version, rt_entry->cost, IS_BIT_SET(rt_entry->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT", 
                 rt_entry->level, rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name, 
                 rt_entry->primary_nh[0].oif, rt_entry->backup_nh.nh_name);
     }ITERATE_LIST_END;

@@ -57,6 +57,7 @@ typedef struct rttable_entry_{
     int primary_nh_count; 
     nh_t primary_nh[MAX_NXT_HOPS];
     nh_t backup_nh;
+    FLAG flags;
 
 } rttable_entry_t;
 
