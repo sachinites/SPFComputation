@@ -45,13 +45,18 @@ add_node_to_owning_instance(instance_t *instance, node_t *node){
 }
 
 node_t *
-create_new_node(instance_t *instance, char *node_name, AREA area){
+create_new_node(instance_t *instance, char *node_name, AREA area, char *router_id){
     
     assert(node_name);
     LEVEL level;
+    prefix_t *router_id_pfx = NULL;
+
     node_t * node = calloc(1, sizeof(node_t));
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';
+    strncpy(node->router_id, router_id, PREFIX_LEN);
+    node->router_id[PREFIX_LEN] = '\0';
+
     node->area = area;
 
     for(level = LEVEL1; level <= LEVEL2; level++){
@@ -65,6 +70,11 @@ create_new_node(instance_t *instance, char *node_name, AREA area){
         
         singly_ll_set_order_comparison_fn(node->local_prefix_list[level] , 
                 get_prefix_order_comparison_fn());
+
+        router_id_pfx = create_new_prefix(node->router_id, 0);
+        router_id_pfx->hosting_node = node;
+        router_id_pfx->mask = 32;
+        add_new_prefix_in_list(GET_NODE_PREFIX_LIST(node, level), router_id_pfx, 0);
 
         node->spf_run_result[level] = init_singly_ll();
         singly_ll_set_comparison_fn(node->spf_run_result[level], spf_run_result_comparison_fn);

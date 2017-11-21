@@ -46,18 +46,27 @@ typedef struct edge_end_ edge_end_t;
 
 typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
+    char router_id[PREFIX_LEN+1];
     AREA area;
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
     NODE_TYPE node_type[MAX_LEVEL];
+   /*Ipv4*/ 
     unsigned int spf_metric[MAX_LEVEL];
     struct _node_t *next_hop[MAX_LEVEL][MAX_NXT_HOPS];
-    struct _node_t *direct_next_hop[MAX_LEVEL][MAX_NXT_HOPS];
+    struct _node_t *direct_next_hop[MAX_LEVEL][0];
+
+   /*MPLS LSP*/
+    unsigned int lsp_spf_metric[MAX_LEVEL];
+    struct _node_t *lsp_next_hop[MAX_LEVEL][MAX_NXT_HOPS];
+    struct _node_t *lsp_direct_next_hop[MAX_LEVEL][0];
+
     edge_end_t *pn_intf[MAX_LEVEL];
 
     ll_t *local_prefix_list[MAX_LEVEL];
     ll_t *self_spf_result[MAX_LEVEL];                       /*Used for LFA and RLFA computation*/ 
     /*For SPF computation only*/ 
     ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of instance which contain result of SPF skeleton run*/
+    
     char attached;                                          /*Set if the router is L1L2 router. Admin responsibility to configure it as per the topology*/
 
     /*Every node in production has its own spf_info and 
@@ -107,7 +116,7 @@ typedef struct instance_{
 } instance_t;
 
 node_t *
-create_new_node(instance_t *instance, char *node_name, AREA area);
+create_new_node(instance_t *instance, char *node_name, AREA area, char *router_id);
 
 
 edge_t *

@@ -322,10 +322,11 @@ spf_init(candidate_tree_t *ctree,
     ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
         
         node = (node_t *)list_node->data;
-        for(i = 0; i < MAX_NXT_HOPS; i++){
+
+        for(i = 0; i < MAX_NXT_HOPS; i++)
             node->next_hop[level][i] = 0;
-            node->direct_next_hop[level][i] = 0;   
-        }
+        
+        node->direct_next_hop[level][0] = 0;   
     } ITERATE_LIST_END;
    
     /*step 2 : Metric intialization*/

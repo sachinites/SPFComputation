@@ -296,3 +296,15 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     }
     return 0;
 }
+
+void
+insert_label_switched_path(node_t *node, 
+                           char *lsp_name, 
+                           unsigned int metric, 
+                           char *tail_end_ip, 
+                           LEVEL level){
+
+    
+
+}
+

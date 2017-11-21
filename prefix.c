@@ -385,7 +385,7 @@ leak_prefix(char *node_name, char *_prefix, char mask,
     return NULL;
 }
 
-static void
+void
 add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix, 
                 unsigned int prefix_hosting_node_metric){
 

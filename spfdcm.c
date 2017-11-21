@@ -366,9 +366,12 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     int mask = 0;
     node_t *node = NULL;
     tlv_struct_t *tlv = NULL;
-    unsigned int i = 0;
-    char *node_name = NULL;
-    char *intf_name = NULL;
+    unsigned int i = 0,
+                 metric = 0;
+    char *node_name = NULL,
+         *intf_name = NULL,
+         *lsp_name = NULL,
+         *tail_end_ip = NULL;
 
     LEVEL level         = MAX_LEVEL,
           from_level_no = MAX_LEVEL,
@@ -380,6 +383,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
     
     TLV_LOOP(tlv_buf, tlv, i){
+
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) == 0)
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "prefix", strlen("prefix")) == 0)
@@ -394,6 +398,12 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             to_level_no = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
             intf_name =  tlv->value;
+        else if(strncmp(tlv->leaf_id, "lsp-name", strlen("lsp-name")) ==0)
+            lsp_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "metric-val", strlen("metric-val")) ==0)
+            metric = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "tail-end-ip", strlen("tail-end-ip")) ==0)
+            tail_end_ip = tlv->value;
         else
             assert(0);
     }
@@ -401,6 +411,9 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
     switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_LSP:
+            insert_label_switched_path(node, lsp_name, metric, tail_end_ip, level);
+            break;
         case CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW:
             {
                 edge_end_t *edge_end = NULL;
@@ -682,6 +695,9 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);
             //show_spf_results(spf_root, level);
             break;
+        case CMDCODE_SHOW_SPF_RUN_PRC:
+            partial_spf_run(spf_root, level);
+            break;
         case CMDCODE_SHOW_SPF_STATS:
             show_spf_run_stats(spf_root, level);
             break;
@@ -878,6 +894,13 @@ spf_init_dcm(){
     libcli_register_param(&show_spf_run_level, &show_spf_run_level_N);
     set_param_cmd_code(&show_spf_run_level_N, CMDCODE_SHOW_SPF_RUN);
 
+    /* show spf run level <Level NO> prc*/
+    {
+        static param_t prc;
+        init_param(&prc, CMD, "prc", show_spf_run_handler, 0, INVALID, 0, "run partial SPT computation");
+        libcli_register_param(&show_spf_run_level_N, &prc);
+        set_param_cmd_code(&prc, CMDCODE_SHOW_SPF_RUN_PRC);
+    }
 
     static param_t show_spf_run_level_N_inverse;
     init_param(&show_spf_run_level_N_inverse, CMD, "inverse", show_spf_run_handler, 0, INVALID, 0, "Inverse SPF");
@@ -893,6 +916,15 @@ spf_init_dcm(){
     init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, validate_node_extistence, STRING, "node-name", "node name to be SPF root");
     libcli_register_param(&show_spf_run_level_N_root, &show_spf_run_level_N_root_root_name);
     set_param_cmd_code(&show_spf_run_level_N_root_root_name, CMDCODE_SHOW_SPF_RUN);
+    
+    /* show spf run level <Level NO> root <node-name> prc*/
+
+    {
+        static param_t prc;
+        init_param(&prc, CMD, "prc", show_spf_run_handler, 0, INVALID, 0, "run partial SPT computation");
+        libcli_register_param(&show_spf_run_level_N_root_root_name, &prc);
+        set_param_cmd_code(&prc, CMDCODE_SHOW_SPF_RUN_PRC);
+    }
     
     static param_t show_spf_run_level_N_root_root_name_inverse;
     init_param(&show_spf_run_level_N_root_root_name_inverse, CMD, "inverse", show_spf_run_handler, 0, INVALID, 0, "Inverse SPF");
@@ -1053,8 +1085,44 @@ spf_init_dcm(){
     init_param(&config_node_node_name_static_route_dest_mask_nhip_nhname_slotno, LEAF, 0, config_static_route_handler, 0, STRING, "slot-no", "interface name ethx/y format");
     libcli_register_param(&config_node_node_name_static_route_dest_mask_nhip_nhname, &config_node_node_name_static_route_dest_mask_nhip_nhname_slotno); 
 
-    /*config node <node-name> leak prefix <prefix> mask <mask> from level <level-no> to <level-no>*/
+    /*config node <node-name> lsp <lsp-name> metric <metric-value> tail-end <tail-end-ip> level <level-no>*/
+    {
+        static param_t lsp;
+        init_param(&lsp, CMD, "lsp", 0, 0, INVALID, 0, "Label Switch Path");
+        libcli_register_param(&config_node_node_name, &lsp);
+        
+        static param_t lsp_name;
+        init_param(&lsp_name, LEAF, 0, 0, 0, STRING, "lsp-name", "LSP name");
+        libcli_register_param(&lsp, &lsp_name);
+        
+        static param_t metric;
+        init_param(&metric, CMD, "metric", 0, 0, INVALID, 0, "metric");
+        libcli_register_param(&lsp_name, &metric);
 
+        static param_t metric_val;
+        init_param(&metric_val, LEAF, 0, 0, 0, INT, "metric-val", "metric value");
+        libcli_register_param(&metric, &metric_val);
+        
+        static param_t tail_end;
+        init_param(&tail_end, CMD, "tail-end", 0, 0, INVALID, 0, "LSP tail-end");
+        libcli_register_param(&metric_val, &tail_end);
+
+        static param_t tail_end_ip;
+        init_param(&tail_end_ip, LEAF, 0, 0, 0, IPV4, "tail-end-ip", "LSP tail end router IP");
+        libcli_register_param(&tail_end, &tail_end_ip);
+
+        static param_t level;
+        init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
+        libcli_register_param(&tail_end_ip, &level);
+
+        static param_t level_no;
+        init_param(&level_no, LEAF, 0, instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
+        libcli_register_param(&level, &level_no);
+        
+        set_param_cmd_code(&level_no, CMDCODE_CONFIG_NODE_LSP);
+    }
+
+    /*config node <node-name> leak prefix <prefix> mask <mask> from level <level-no> to <level-no>*/
     {
         static param_t leak;
         init_param(&leak, CMD, "leak", 0, 0, INVALID, 0, "'leak' the prefix");
@@ -1142,7 +1210,7 @@ dump_nbrs(node_t *node, LEVEL level){
 
     node_t *nbr_node = NULL;
     edge_t *edge = NULL;
-    printf("Node : %s (%s : %s)\n", node->node_name, get_str_level(level), 
+    printf("Node : %s(%s) (%s : %s)\n", node->node_name, node->router_id, get_str_level(level), 
                 (node->node_type[level] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
     printf("Overloaded ? %s\n", IS_BIT_SET(node->attributes[level], OVERLOAD_BIT) ? "Yes" : "No");
 
@@ -1175,7 +1243,7 @@ dump_node_info(node_t *node){
     singly_ll_node_t *list_node = NULL;
     prefix_t *prefix = NULL;
 
-    printf("node->node_name : %s, L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s\n", node->node_name, 
+    printf("node->node_name : %s(%s), L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s\n", node->node_name, node->router_id,
             (node->node_type[LEVEL1] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE", 
             (node->node_type[LEVEL2] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE",
             get_str_node_area(node->area));

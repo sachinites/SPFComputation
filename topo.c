@@ -47,9 +47,9 @@ build_linear_topo(){
     
     instance_t *instance = get_new_instance();
 
-    node_t *R0 = create_new_node(instance, "R0", AREA1);
-    node_t *R1 = create_new_node(instance, "R1", AREA1);
-    node_t *R2 = create_new_node(instance, "R2", AREA1);
+    node_t *R0 = create_new_node(instance, "R0", AREA1, "192.168.0.1");
+    node_t *R1 = create_new_node(instance, "R1", AREA1, "192.168.0.2");
+    node_t *R2 = create_new_node(instance, "R2", AREA1, "192.168.0.3");
 
     prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24);
     prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24);
@@ -139,13 +139,13 @@ build_multi_area_topo(){
 
     instance_t *instance = get_new_instance();
 
-    node_t *R0 = create_new_node(instance, "R0", AREA1);
-    node_t *R1 = create_new_node(instance, "R1", AREA1);
-    node_t *R2 = create_new_node(instance, "R2", AREA1);
-    node_t *R3 = create_new_node(instance, "R3", AREA2);
-    node_t *R4 = create_new_node(instance, "R4", AREA2);
-    node_t *R5 = create_new_node(instance, "R5", AREA3);
-    node_t *R6 = create_new_node(instance, "R6", AREA3);
+    node_t *R0 = create_new_node(instance, "R0", AREA1, "192.168.0.0");
+    node_t *R1 = create_new_node(instance, "R1", AREA1, "192.168.0.1");
+    node_t *R2 = create_new_node(instance, "R2", AREA1, "192.168.0.2");
+    node_t *R3 = create_new_node(instance, "R3", AREA2, "192.168.0.3");
+    node_t *R4 = create_new_node(instance, "R4", AREA2, "192.168.0.4");
+    node_t *R5 = create_new_node(instance, "R5", AREA3, "192.168.0.5");
+    node_t *R6 = create_new_node(instance, "R6", AREA3, "192.168.0.6");
 
     insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, create_new_prefix("10.1.1.1", 24), create_new_prefix("10.1.1.2", 24), LEVEL1)),
                                 R0, R1, BIDIRECTIONAL);
@@ -193,12 +193,12 @@ build_ring_topo(){
 
     instance_t *instance = get_new_instance();
 
-    node_t *A = create_new_node(instance, "A", AREA1);
-    node_t *B = create_new_node(instance, "B", AREA1);
-    node_t *C = create_new_node(instance, "C", AREA1);
-    node_t *D = create_new_node(instance, "D", AREA1);
-    node_t *E = create_new_node(instance, "E", AREA1);
-    node_t *S = create_new_node(instance, "S", AREA1);
+    node_t *A = create_new_node(instance, "A", AREA1, "192.168.0.1");
+    node_t *B = create_new_node(instance, "B", AREA1, "192.168.0.2");
+    node_t *C = create_new_node(instance, "C", AREA1, "192.168.0.3");
+    node_t *D = create_new_node(instance, "D", AREA1, "192.168.0.4");
+    node_t *E = create_new_node(instance, "E", AREA1, "192.168.0.5");
+    node_t *S = create_new_node(instance, "S", AREA1, "192.168.0.6");
 
     insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30), create_new_prefix("10.1.1.2", 30), LEVEL1)),
                                 S, E, BIDIRECTIONAL);
@@ -265,12 +265,12 @@ build_cisco_example_topo(){
               
     instance_t *instance = get_new_instance();
 
-    node_t *R1 = create_new_node(instance, "R1", AREA1);
-    node_t *R2 = create_new_node(instance, "R2", AREA1);
-    node_t *R3 = create_new_node(instance, "R3", AREA1);
-    node_t *R4 = create_new_node(instance, "R4", AREA1);
-    node_t *R5 = create_new_node(instance, "R5", AREA1);
-    node_t *R6 = create_new_node(instance, "R6", AREA1);
+    node_t *R1 = create_new_node(instance, "R1", AREA1, "192.168.0.1");
+    node_t *R2 = create_new_node(instance, "R2", AREA1, "192.168.0.2");
+    node_t *R3 = create_new_node(instance, "R3", AREA1, "192.168.0.3");
+    node_t *R4 = create_new_node(instance, "R4", AREA1, "192.168.0.4");
+    node_t *R5 = create_new_node(instance, "R5", AREA1, "192.168.0.5");
+    node_t *R6 = create_new_node(instance, "R6", AREA1, "192.168.0.6");
 
 
     insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30), create_new_prefix("10.1.1.2", 30), LEVEL1)),
@@ -341,12 +341,12 @@ overload_router_topo(){
               
     instance_t *instance = get_new_instance();
 
-    node_t *R1 = create_new_node(instance, "R1", AREA1);
-    node_t *R2 = create_new_node(instance, "R2", AREA1);
-    node_t *R3 = create_new_node(instance, "R3", AREA1);
-    node_t *R4 = create_new_node(instance, "R4", AREA1);
-    node_t *R5 = create_new_node(instance, "R5", AREA1);
-    node_t *R6 = create_new_node(instance, "R6", AREA1);
+    node_t *R1 = create_new_node(instance, "R1", AREA1, "192.168.0.1");
+    node_t *R2 = create_new_node(instance, "R2", AREA1, "192.168.0.2");
+    node_t *R3 = create_new_node(instance, "R3", AREA1, "192.168.0.3");
+    node_t *R4 = create_new_node(instance, "R4", AREA1, "192.168.0.4");
+    node_t *R5 = create_new_node(instance, "R5", AREA1, "192.168.0.5");
+    node_t *R6 = create_new_node(instance, "R6", AREA1, "192.168.0.6");
 
 
     insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 50, create_new_prefix("10.1.1.1", 30), create_new_prefix("10.1.1.2", 30), LEVEL1)),

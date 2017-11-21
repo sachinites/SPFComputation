@@ -154,6 +154,9 @@ delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask);
 prefix_pref_data_t
 route_preference(FLAG route_flags, LEVEL level);
 
+void
+add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix,
+                unsigned int prefix_hosting_node_metric);
 
 #endif /* __ROUTES__ */
 
