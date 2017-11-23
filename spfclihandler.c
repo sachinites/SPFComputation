@@ -320,11 +320,10 @@ insert_label_switched_path(node_t *ingress_lsr_node,
             break;
         default:
             assert(0);
-
     }
 
     if(!tail_end_node){
-        printf("%s(): Error : Could not find Node for Router id %s", __FUNCTION__, tail_end_ip);   
+        printf("Error : Could not find Node for Router id %s in LEVEL%u", tail_end_ip, level);   
         free(lsp);
         lsp = NULL;
         return;

@@ -211,15 +211,17 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         ITERATE_NODE_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
             sprintf(LOG, "Processing Nbr : %s", nbr_node->node_name); TRACE();
 
-            /*To way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
-             * not consider the node for SPF computation if we find 2-way nbrship is broken*/
+            /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
+             * not consider the node for SPF computation if we find 2-way nbrship is broken. Two
+             * way nbrship should be checked only for unicast topology  neighbors*/
 
-            if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
+            if(edge->etype == UNICAST){
+                if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
 
-                sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
-                continue;
+                    sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
+                    continue;
+                }
             }
-            
             sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
 
             if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 

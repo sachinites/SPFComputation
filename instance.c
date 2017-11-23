@@ -498,8 +498,14 @@ get_min_oif(node_t *node, node_t *node_nbr,
     if(min_edge_oif){
         edge = GET_EGDE_PTR_FROM_EDGE_END(min_edge_oif);
         if(gw_prefix){
-            strncpy(gw_prefix, edge->to.prefix[level]->prefix, PREFIX_LEN + 1);
-            gw_prefix[PREFIX_LEN] = '\0';
+            /*LSP ends do not have edge end prefixes*/
+            if(edge->to.prefix[level]){
+                strncpy(gw_prefix, edge->to.prefix[level]->prefix, PREFIX_LEN + 1);
+                gw_prefix[PREFIX_LEN] = '\0';
+            }
+            else{
+                memset(gw_prefix, 0, PREFIX_LEN);
+            }
         }
         return min_edge_oif;
     }

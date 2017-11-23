@@ -145,9 +145,7 @@ prepare_new_nxt_hop_template(node_t *computing_node,
 
     edge_end_t *oif = NULL;
     char gw_prefix[PREFIX_LEN + 1];
-
-    nh_template->nh_type = IPNH; /*We have not implemented yet LSP NH functionality*/
-
+   
     strncpy(nh_template->nh_name, nxt_hop_node->node_name, NODE_NAME_SIZE);
     nh_template->nh_name[NODE_NAME_SIZE - 1] = '\0';
 
@@ -160,6 +158,7 @@ prepare_new_nxt_hop_template(node_t *computing_node,
         return;
     }
 
+    nh_template->nh_type = (GET_EGDE_PTR_FROM_FROM_EDGE_END(oif))->etype == UNICAST ? IPNH : LSPNH;
     strncpy(nh_template->oif, oif->intf_name, IF_NAME_SIZE);
     nh_template->oif[IF_NAME_SIZE -1] = '\0';
     strncpy(nh_template->gwip, gw_prefix, PREFIX_LEN + 1);
