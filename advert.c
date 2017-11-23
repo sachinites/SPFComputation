@@ -78,7 +78,7 @@ delete_route(node_t *lsp_reciever,
         node_t *hosting_node);
 
 
-static char *
+char *
 advert_id_str(ADVERT_ID_T advert_id){
 
     switch(advert_id)
@@ -115,7 +115,7 @@ lsp_distribution_routine(node_t *lsp_generator,
      }
 }
 
-static void
+void
 init_instance_traversal(instance_t * instance){
 
     singly_ll_node_t *list_node = NULL;

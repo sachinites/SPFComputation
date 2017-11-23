@@ -56,9 +56,9 @@ main(int argc, char **argv){
 
     /* Topology Initialization*/
     //instance = build_linear_topo();
-    instance = build_multi_area_topo();
+    //instance = build_multi_area_topo();
     //instance = build_ring_topo();
-    //instance = build_cisco_example_topo();
+    instance = build_cisco_example_topo();
     //instance = overload_router_topo();
     //leak_prefix("R3", "100.1.1.1", 24, LEVEL2, LEVEL1);
 

@@ -100,12 +100,19 @@ struct edge_end_{
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
 };
 
+typedef enum {
+
+    UNICAST,
+    LSP
+} edge_type_t;
+
 typedef struct _edge_t{
     edge_end_t from;
     unsigned int metric[MAX_LEVEL];
     LEVEL level;
     edge_end_t to;
     struct _edge_t *inv_edge;
+    edge_type_t etype;
     char status;/* 0 down, 1 up*/
 } edge_t;
 
@@ -250,6 +257,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
     do{                                                           \
         unsigned int _i = 0;                                      \
         edge_end_t *_edge_end = 0;                                \
+        assert(_level != LEVEL12);                                \
         for(;_i < MAX_NODE_INTF_SLOTS; _i++){                     \
             _edge_end = _node->edges[_i];                         \
             if(!_edge_end) break;                                 \
@@ -268,12 +276,13 @@ get_min_oif(node_t *node, node_t *node_nbr,
  * of a _node
  * _egde1 - edge connecting _node and its nbr which could be PN
  * _edge2 - if nbr is a PN, then this is the edge connecting PN and its nbr
- * */
+ * _level - LEVEL1 Or LEVEL2 but not Both*/
 
 #define ITERATE_NODE_PHYSICAL_NBRS_BEGIN(_node, _nbr_node,                 \
                                    _edge1, _edge2, _level)                 \
     _nbr_node = NULL;                                                      \
     _edge1 = NULL; _edge2 = NULL;                                          \
+    assert(_level != LEVEL12);                                             \
     do{                                                                    \
         __label__ NONPN;                                                   \
         unsigned int _i = 0;                                               \
@@ -318,5 +327,11 @@ attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end);
 
 void
 dettach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end);
+
+edge_t *
+create_new_lsp_adj(char *lsp_name,
+        unsigned int metric,
+        LEVEL level);
+
 
 #endif /* __INSTANCE__ */

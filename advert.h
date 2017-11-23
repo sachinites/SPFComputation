@@ -106,4 +106,10 @@ lsp_distribution_routine(node_t *lsp_generator,
                             node_t *lsp_receiver,
                             dist_info_hdr_t *dist_info);
 
+char *
+advert_id_str(ADVERT_ID_T advert_id);
+
+void
+init_instance_traversal(instance_t * instance);
+
 #endif /* __ADVERT__ */

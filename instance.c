@@ -71,9 +71,8 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
         singly_ll_set_order_comparison_fn(node->local_prefix_list[level] , 
                 get_prefix_order_comparison_fn());
 
-        router_id_pfx = create_new_prefix(node->router_id, 0);
+        router_id_pfx = create_new_prefix(node->router_id, 32);
         router_id_pfx->hosting_node = node;
-        router_id_pfx->mask = 32;
         add_new_prefix_in_list(GET_NODE_PREFIX_LIST(node, level), router_id_pfx, 0);
 
         node->spf_run_result[level] = init_singly_ll();
@@ -142,8 +141,37 @@ create_new_edge(char *from_ifname,
     edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;
     edge->status    = 1;
     edge->inv_edge  = NULL;
-   
+    edge->etype = UNICAST;
     return edge;
+}
+
+edge_t *
+create_new_lsp_adj(char *lsp_name,
+               unsigned int metric,
+               LEVEL level){
+
+    edge_t *edge = calloc(1, sizeof(edge_t));
+    strncpy(edge->from.intf_name, lsp_name, IF_NAME_SIZE);
+    edge->from.intf_name[IF_NAME_SIZE - 1] = '\0';
+
+    strncpy(edge->to.intf_name, lsp_name, IF_NAME_SIZE);
+    edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
+    
+    edge->level     = level;
+    
+    if(IS_LEVEL_SET(level, LEVEL1)) 
+        edge->metric[LEVEL1] = metric;
+
+    if(IS_LEVEL_SET(level, LEVEL2)) 
+        edge->metric[LEVEL2] = metric;
+
+    edge->from.dirn = EDGE_END_DIRN_UNKNOWN;
+    edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;
+    edge->status    = 1;
+    edge->inv_edge  = NULL;
+    edge->etype = LSP;
+    return edge;
+
 }
 
 void

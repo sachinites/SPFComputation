@@ -297,14 +297,39 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     return 0;
 }
 
+/* level could LEVEL12*/
 void
-insert_label_switched_path(node_t *node, 
+insert_label_switched_path(node_t *ingress_lsr_node, 
                            char *lsp_name, 
                            unsigned int metric, 
                            char *tail_end_ip, 
                            LEVEL level){
 
-    
+    node_t *tail_end_node = NULL;
+    edge_t *lsp = create_new_lsp_adj(lsp_name, metric, level);
 
+    switch(level){
+        case LEVEL1:
+        case LEVEL2:
+            tail_end_node = get_system_id_from_router_id(ingress_lsr_node, tail_end_ip, level);    
+            break;
+        case LEVEL12:
+            tail_end_node = get_system_id_from_router_id(ingress_lsr_node, tail_end_ip, LEVEL1);
+            if(!tail_end_node)
+                tail_end_node = get_system_id_from_router_id(ingress_lsr_node, tail_end_ip, LEVEL2);
+            break;
+        default:
+            assert(0);
+
+    }
+
+    if(!tail_end_node){
+        printf("%s(): Error : Could not find Node for Router id %s", __FUNCTION__, tail_end_ip);   
+        free(lsp);
+        lsp = NULL;
+        return;
+    }
+
+    insert_edge_between_2_nodes(lsp, ingress_lsr_node, tail_end_node, UNIDIRECTIONAL);
 }
 

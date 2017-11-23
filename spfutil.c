@@ -30,10 +30,12 @@
  * =====================================================================================
  */
 
+#include <arpa/inet.h>
 #include "spfutil.h"
 #include "logging.h"
-#include <arpa/inet.h>
 #include "bitsop.h"
+#include "Queue.h"
+#include "advert.h"
 
 extern instance_t *instance;
 
@@ -130,5 +132,54 @@ apply_mask(char *prefix, char mask, char *str_prefix){
     binary_prefix = htonl(binary_prefix);
     inet_ntop(AF_INET, &binary_prefix, str_prefix, PREFIX_LEN + 1);
     str_prefix[PREFIX_LEN] = '\0';
+}
+
+/* Iterate over all 'level' reachable routers in the network from
+ *  * ingress_lsr and get the node_t * of router whose router_id is tail_end_ip*/
+
+node_t *
+get_system_id_from_router_id(node_t *ingress_lsr,
+        char *tail_end_ip, LEVEL level){
+
+
+    node_t  *curr_node = NULL,
+            *nbr_node = NULL;
+
+    edge_t *edge1 = NULL,  /*Edge connecting curr node with PN*/
+           *edge2 = NULL; /*Edge connecting PN to its nbr*/
+
+    assert(level != LEVEL12);
+
+    Queue_t *q = initQ();
+    init_instance_traversal(instance);
+
+    ingress_lsr->traversing_bit = 1;
+
+    enqueue(q, ingress_lsr);
+
+    while(!is_queue_empty(q)){
+        
+        curr_node = deque(q);
+
+        ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge1,
+                edge2, level){
+
+            if(nbr_node->traversing_bit)
+                continue;
+
+            if(strncmp(nbr_node->router_id, tail_end_ip, PREFIX_LEN) == 0){
+                free(q);
+                q = NULL;
+                return nbr_node;
+            }
+            nbr_node->traversing_bit = 1;
+            enqueue(q, nbr_node);
+        }
+        ITERATE_NODE_PHYSICAL_NBRS_END;
+    }
+    assert(is_queue_empty(q));
+    free(q);
+    q = NULL;
+    return NULL;
 }
 
