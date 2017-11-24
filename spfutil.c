@@ -48,6 +48,41 @@ copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
     }
 }
 
+
+void
+union_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
+
+    unsigned int i = 0, j = 0;
+
+    for(; i < MAX_NXT_HOPS; i++){
+        if(dst_nh_list[i])
+            continue;
+        break;
+    }
+
+    if(i == MAX_NXT_HOPS)
+        return;
+
+    for(; i < MAX_NXT_HOPS; i++){
+
+        if(src_nh_list[j]){
+            dst_nh_list[i] = src_nh_list[j];
+            j++;
+            continue;
+        }
+        break;
+    }
+}
+
+void
+flush_nh_list(node_t *nh_list[]){
+
+    unsigned int i = 0;
+
+    for(; i < MAX_NXT_HOPS; i++)
+        nh_list[i] = NULL;
+}
+
 int
 is_nh_list_empty(node_t *nh_list[]){
 

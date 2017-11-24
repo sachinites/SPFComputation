@@ -136,7 +136,7 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
             level = atoi(tlv->value);
-        else if(strncmp(tlv->leaf_id, "mertic", strlen("metric")) ==0)
+        else if(strncmp(tlv->leaf_id, "metric", strlen("metric")) ==0)
             metric = atoi(tlv->value);
     }
 
@@ -412,7 +412,15 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     
     switch(cmd_code){
         case CMDCODE_CONFIG_NODE_LSP:
-            insert_label_switched_path(node, lsp_name, metric, tail_end_ip, level);
+            switch(enable_or_disable){
+                case CONFIG_ENABLE:
+                    insert_label_switched_path(node, lsp_name, metric, tail_end_ip, level);
+                    break;
+                    case CONFIG_DISABLE:
+                    break;
+                default:
+                    ;
+            }
             break;
         case CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW:
             {
@@ -693,7 +701,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     switch(CMDCODE){
         case CMDCODE_SHOW_SPF_RUN:
             spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);
-            //show_spf_results(spf_root, level);
+            show_spf_results(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_RUN_PRC:
             partial_spf_run(spf_root, level);

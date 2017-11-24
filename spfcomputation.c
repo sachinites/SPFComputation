@@ -38,6 +38,8 @@
 #include "logging.h"
 #include "routes.h"
 #include "bitsop.h"
+#include "Queue.h"
+#include "advert.h"
 
 extern instance_t *instance;
 
@@ -159,6 +161,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
     edge_t *edge = NULL;
     unsigned int i = 0;
     self_spf_result_t *self_res = NULL;
+    nh_type_t nh = IPNH;
 
     /*Process untill candidate tree is not empty*/
     sprintf(LOG, "Running Dijkastra with root node = %s, Level = %u", 
@@ -180,13 +183,14 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             spf_result_t *res = calloc(1, sizeof(spf_result_t));
             res->node = candidate_node;
             res->spf_metric = candidate_node->spf_metric[level];
+
             for(i = 0 ; i < MAX_NXT_HOPS; i++){
-                if(candidate_node->next_hop[level][i])
-                    res->next_hop[i] = candidate_node->next_hop[level][i];
+                if(candidate_node->next_hop[level][nh][i])
+                    res->next_hop[i] = candidate_node->next_hop[level][nh][i];
                 else
                     break;
             }
-
+            
             singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
             self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
 
@@ -212,16 +216,14 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             sprintf(LOG, "Processing Nbr : %s", nbr_node->node_name); TRACE();
 
             /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
-             * not consider the node for SPF computation if we find 2-way nbrship is broken. Two
-             * way nbrship should be checked only for unicast topology  neighbors*/
+             * not consider the node for SPF computation if we find 2-way nbrship is broken. */
+             
+            if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
 
-            if(edge->etype == UNICAST){
-                if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
-
-                    sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
-                    continue;
-                }
+                sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
+                continue;
             }
+
             sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
 
             if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
@@ -233,29 +235,32 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 TRACE();
                 
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
-                if(is_nh_list_empty(&candidate_node->next_hop[level][0]) &&
-                        nbr_node->node_type[level] == PSEUDONODE){
+                    
+                    if(is_nh_list_empty(&candidate_node->next_hop[level][nh][0]) &&
+                            nbr_node->node_type[level] == PSEUDONODE){
 
-                    sprintf(LOG, "case 1 if My own List is empty, and nbr is Pseuodnode , do nothing"); TRACE();
-                }
+                        sprintf(LOG, "case 1 if My own NH List is empty, and nbr is Pseuodnode , do nothing"); TRACE();
+                    }
 
-                /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
-                else if(is_nh_list_empty(&candidate_node->next_hop[level][0]) &&
-                        nbr_node->node_type[level] == NON_PSEUDONODE){
-    
-                     sprintf(LOG, "case 2 if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list");
-                     TRACE();
+                    /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
+                    else if(is_nh_list_empty(&candidate_node->next_hop[level][nh][0]) &&
+                            nbr_node->node_type[level] == NON_PSEUDONODE){
 
-                    copy_nh_list(&nbr_node->direct_next_hop[level][0], &nbr_node->next_hop[level][0]);
-                }
+                        sprintf(LOG, "case 2 if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list");
+                        TRACE();
 
-                /*case 3 : if My own List is not empty, then nbr should inherit my next hop list*/
-                else if(!is_nh_list_empty(&candidate_node->next_hop[level][0])){
+                        copy_nh_list(&nbr_node->direct_next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
+                    }
 
-                    sprintf(LOG, "case 3 if My own List is not empty, then nbr should inherit my next hop list"); TRACE();
-                    copy_nh_list(&candidate_node->next_hop[level][0], &nbr_node->next_hop[level][0]);
-                }
 
+                    /*case 3 : if My own List is not empty, then nbr should inherit my next hop list*/
+                    else if(!is_nh_list_empty(&candidate_node->next_hop[level][nh][0])){
+
+                        sprintf(LOG, "case 3 if My own List is not empty, then nbr should inherit my next hop list"); TRACE();
+                        copy_nh_list(&candidate_node->next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
+                    }
+
+                 
                 nbr_node->spf_metric[level] =  IS_OVERLOADED(candidate_node, level) ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
                 INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
                 sprintf(LOG, "%s's spf_metric has been updated to %u, and inserted into candidate list", 
@@ -269,6 +274,13 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 sprintf(LOG, "Old Metric : %u, New Metric : %u, ECMP path",
                         nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
                         ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]); TRACE();
+
+                /*We shold do two things here :
+                 * 1. union of nexthops (IPNH and LSPNH)
+                 * 2. if direct NH is present, then merge it into IPNH or LSPNH depeneding on direct NH type
+                 * Help : See pseudonode_ecmp_topo() for detail
+                 * */
+
             }
             else{
                 sprintf(LOG, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
@@ -310,9 +322,14 @@ spf_init(candidate_tree_t *ctree,
     /*step 1 : Purge NH list of all nodes in the topo*/
 
     unsigned int i = 0;
-    node_t *node = NULL, *pn_nbr = NULL;
-    edge_t *edge = NULL, *pn_edge = NULL;
-    singly_ll_node_t *list_node = NULL;
+    node_t *pn_nbr = NULL,
+           *nbr_node = NULL,
+           *curr_node = NULL;
+
+    edge_t *edge = NULL, *pn_edge = NULL,
+           *edge1 = NULL, *edge2 = NULL;
+
+    nh_type_t nh;
 
     /*Drain off results list for level */
     spf_clear_result(spf_root, level);
@@ -321,24 +338,59 @@ spf_init(candidate_tree_t *ctree,
      * reachable routers to spf root in the same level, not the entire
      * graph.*/
 
-    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
-        
-        node = (node_t *)list_node->data;
+    Queue_t *q = initQ();
+    init_instance_traversal(instance);
+
+    spf_root->traversing_bit = 1;
+
+    /*step 1 :Initialize spf root*/
+
+    ITERATE_NH_TYPE_BEGIN(nh){
 
         for(i = 0; i < MAX_NXT_HOPS; i++)
-            node->next_hop[level][i] = 0;
-        
-        node->direct_next_hop[level][0] = 0;   
-    } ITERATE_LIST_END;
-   
-    /*step 2 : Metric intialization*/
-   ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
-        
-        node = (node_t *)list_node->data;
-        node->spf_metric[level] = INFINITE_METRIC;
-   } ITERATE_LIST_END;
-   
+            spf_root->next_hop[level][nh][i] = 0;
+
+        spf_root->direct_next_hop[level][nh][0] = 0;  
+
+    }ITERATE_NH_TYPE_END;
+
     spf_root->spf_metric[level] = 0;
+    spf_root->lsp_metric[level] = 0;
+
+    /*step 2 : Initialize the entire level graph*/
+    enqueue(q, spf_root);
+
+    while(!is_queue_empty(q)){
+
+        curr_node = deque(q);
+
+        ITERATE_NODE_NBRS_BEGIN(curr_node, nbr_node, edge,
+                level){
+
+            if(nbr_node->traversing_bit)
+                continue;
+
+            ITERATE_NH_TYPE_BEGIN(nh){
+
+                for(i = 0; i < MAX_NXT_HOPS; i++)
+                    nbr_node->next_hop[level][nh][i] = 0;
+
+                nbr_node->direct_next_hop[level][nh][0] = 0;   
+
+            } ITERATE_NH_TYPE_END;
+            
+            nbr_node->spf_metric[level] = INFINITE_METRIC;
+            nbr_node->lsp_metric[level] = INFINITE_METRIC;
+
+            nbr_node->traversing_bit = 1;
+            enqueue(q, nbr_node);
+        }
+        ITERATE_NODE_NBRS_END;
+    }
+    assert(is_queue_empty(q));
+    free(q);
+    q = NULL;
+
 
     /*step 3 : Initialize direct nexthops.
      * Iterate over real physical nbrs of root (that is skip PNs)
@@ -349,37 +401,44 @@ spf_init(candidate_tree_t *ctree,
      * nbrs of directly connected PN as own nbrs, which is infact the concept
      * of pseudonode. Again, do not compute direct next hops of PN*/
 
-    ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
-        
-        if(node->node_type[level] == PSEUDONODE){
+    ITERATE_NODE_NBRS_BEGIN(spf_root, nbr_node, edge, level){
 
-            ITERATE_NODE_NBRS_BEGIN(node, pn_nbr, pn_edge, level){
-            
+        if(nbr_node->node_type[level] == PSEUDONODE){
+
+            ITERATE_NODE_NBRS_BEGIN(nbr_node, pn_nbr, pn_edge, level){
+
                 if(pn_nbr == spf_root)
                     continue;
 
-                pn_nbr->direct_next_hop[level][0] = pn_nbr;
+                if(pn_edge->etype == LSP)
+                    pn_nbr->direct_next_hop[level][LSPNH][0] = pn_nbr;
+                else
+                    pn_nbr->direct_next_hop[level][IPNH][0] = pn_nbr;
             }
             ITERATE_NODE_NBRS_END;
             continue;
         }
-        node->direct_next_hop[level][0] = node;
+
+        if(edge->etype == LSP)
+            nbr_node->direct_next_hop[level][LSPNH][0] = nbr_node;
+        else
+            nbr_node->direct_next_hop[level][IPNH][0] = nbr_node;
     }
     ITERATE_NODE_NBRS_END;
 
 
     /*Step 4 : Initialize candidate tree with root*/
-   INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
-   
-   /*Step 5 : Link Directly Conneccted PN to the instance root. This
-    * will help identifying the route oif when spf_root is connected to PN */
+    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
 
-   ITERATE_NODE_NBRS_BEGIN(spf_root, node, edge, level){
+    /*Step 5 : Link Directly Connected PN to the instance root. This
+     * will help identifying the route oif when spf_root is connected to PN */
 
-       if(node->node_type[level] == PSEUDONODE)
-           node->pn_intf[level] = &edge->from;/*There is exactly one PN per LAN per level*/            
-   }
-   ITERATE_NODE_NBRS_END;
+    ITERATE_NODE_NBRS_BEGIN(spf_root, nbr_node, edge, level){
+
+        if(nbr_node->node_type[level] == PSEUDONODE)
+            nbr_node->pn_intf[level] = &edge->from;/*There is exactly one PN per LAN per level*/            
+    }
+    ITERATE_NODE_NBRS_END;
 }
 
 

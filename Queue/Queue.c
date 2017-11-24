@@ -17,6 +17,11 @@ is_queue_empty(Queue_t *q){
 	return 0;
 }
 
+void
+reuse_q(Queue_t *q){
+    q->rear = Q_DEFAULT_SIZE -1;
+    q->front = q->rear;
+}
 
 int
 is_queue_full(Queue_t *q){

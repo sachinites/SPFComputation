@@ -47,6 +47,12 @@ is_nh_list_empty(node_t *nh_list[]);
 char *
 get_str_level(LEVEL level);
 
+void
+union_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]);
+
+void
+flush_nh_list(node_t *nh_list[]);
+
 char*
 get_str_node_area(AREA area);
 

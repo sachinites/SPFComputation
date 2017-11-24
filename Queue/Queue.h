@@ -29,4 +29,6 @@ deque(Queue_t *q);
 void
 print_Queue(Queue_t *q);
 
+void
+reuse_q(Queue_t *q);
 #endif

@@ -50,15 +50,13 @@ typedef struct _node_t{
     AREA area;
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
     NODE_TYPE node_type[MAX_LEVEL];
-   /*Ipv4*/ 
+    
     unsigned int spf_metric[MAX_LEVEL];
-    struct _node_t *next_hop[MAX_LEVEL][MAX_NXT_HOPS];
-    struct _node_t *direct_next_hop[MAX_LEVEL][0];
+    unsigned int lsp_metric[MAX_LEVEL];
+    struct _node_t *next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
+    struct _node_t *direct_next_hop[MAX_LEVEL][NH_MAX][1];
 
    /*MPLS LSP*/
-    unsigned int lsp_spf_metric[MAX_LEVEL];
-    struct _node_t *lsp_next_hop[MAX_LEVEL][MAX_NXT_HOPS];
-    struct _node_t *lsp_direct_next_hop[MAX_LEVEL][0];
 
     edge_end_t *pn_intf[MAX_LEVEL];
 

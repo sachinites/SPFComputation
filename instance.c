@@ -109,16 +109,20 @@ create_new_edge(char *from_ifname,
         prefix_t *to_prefix,
         LEVEL level){/*LEVEL value can be LEVEL12 also*/
 
-    assert(from_ifname);
-    assert(to_ifname);
-
     edge_t *edge = calloc(1, sizeof(edge_t));
 
-    strncpy(edge->from.intf_name, from_ifname, IF_NAME_SIZE);
-    edge->from.intf_name[IF_NAME_SIZE - 1] = '\0';
+    /*ifnames may be specified as NULL in case of edges incoming to PN or 
+     * outgoing from PN*/
+
+    if(from_ifname){
+        strncpy(edge->from.intf_name, from_ifname, IF_NAME_SIZE);
+        edge->from.intf_name[IF_NAME_SIZE - 1] = '\0';
+    }
    
-    strncpy(edge->to.intf_name, to_ifname, IF_NAME_SIZE);
-    edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
+    if(to_ifname){
+        strncpy(edge->to.intf_name, to_ifname, IF_NAME_SIZE);
+        edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
+    }
 
     if(IS_LEVEL_SET(level, LEVEL1)) 
         edge->metric[LEVEL1] = metric;

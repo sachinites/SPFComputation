@@ -103,8 +103,14 @@ typedef enum{
 typedef enum nh_type{
 
     IPNH,
-    LSPNH
+    LSPNH,
+    NH_MAX
 } nh_type_t;
+
+#define ITERATE_NH_TYPE_BEGIN(_nh)     \
+    for(_nh = IPNH; _nh < NH_MAX; nh++)
+   
+#define ITERATE_NH_TYPE_END
 
 typedef enum{
 

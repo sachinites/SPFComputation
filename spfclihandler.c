@@ -110,6 +110,7 @@ spf_node_slot_metric_change(node_t *node, char *slot_name,
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
+    boolean found = FALSE;
 
     for(; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
@@ -125,6 +126,7 @@ spf_node_slot_metric_change(node_t *node, char *slot_name,
             strlen(edge_end->intf_name) == strlen(slot_name)))
                 continue;
 
+        found = TRUE;
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
 
         if(!IS_LEVEL_SET(edge->level, level))
@@ -136,6 +138,11 @@ spf_node_slot_metric_change(node_t *node, char *slot_name,
         edge->metric[level] = new_metric;
         break;
    } 
+
+    if(found == FALSE){
+        printf("Error : node %s, Interface %s not found\n", node->node_name, edge_end->intf_name);
+        return;
+    }
 
     dist_info_hdr_t dist_info_hdr;
     memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));

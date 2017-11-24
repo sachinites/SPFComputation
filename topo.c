@@ -300,6 +300,64 @@ build_cisco_example_topo(){
     return instance;
 }
 
+
+instance_t *
+pseudonode_ecmp_topo(){
+
+#if 0
+                                          0/2  +---------+
+               +-------------------------------+         |70.1.1.1
+               |    5                  60.1.1.2|   D     +-----------------------------------+
+               |                               +---------+0/3                                |
+               |                                                                             |
+               |                                                                             |
+               |                                                                             |
+               |                                                                             |
+               |                                                                             |
+               |                                                                         0/3 |70.1.1.2
+       60.1.1.1|0/2                      +-----------+                                  +----+----+
+          +----+----+                    |           |            0                 0/1 |         |
+          |         |50.1.1.1            |    PN     +----------------------------------+         |
+          |         +--------------------+           |                         50.1.1.2 |         |
+          |         |         10         |           |                                  +---------+
+          +---------+                    +-----------+
+
+#endif
+
+    instance_t *instance = get_new_instance();
+    node_t *A  = create_new_node(instance, "A",  AREA1, "192.168.0.1");
+    node_t *PN = create_new_node(instance, "PN", AREA1, "192.168.0.1");
+    node_t *C  = create_new_node(instance, "C",  AREA1, "192.168.0.3");
+    node_t *D  = create_new_node(instance, "D" , AREA1, "192.168.0.2");
+
+    insert_edge_between_2_nodes((create_new_edge(0, "eth0/1", 0, 
+                                 0, create_new_prefix("50.1.1.2", 30),
+                                 LEVEL1)),
+                                 PN, C, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 5, 
+                                 create_new_prefix("60.1.1.1", 30), create_new_prefix("60.1.1.2", 30),
+                                 LEVEL1)),
+                                 A, D, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", 0, 10, 
+                                 create_new_prefix("50.1.1.1", 30), 0,
+                                 LEVEL1)),
+                                 A, PN, BIDIRECTIONAL);
+    
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/3", "eth0/3", 5, 
+                                 create_new_prefix("70.1.1.1", 30), create_new_prefix("70.1.1.2", 30),
+                                 LEVEL1)),
+                                 D,C,  BIDIRECTIONAL);
+
+    set_instance_root(instance, A);
+    mark_node_pseudonode(PN, LEVEL1);
+    return instance;
+}
+
+
 instance_t *
 overload_router_topo(){
 
