@@ -52,25 +52,38 @@ instance_t *instance;
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
-    
+
     singly_ll_node_t *list_node = NULL;
     spf_result_t *res = NULL;
     unsigned int i = 0;
-
+    edge_end_t *oif = NULL;
+    nh_type_t nh;
     printf("\nSPF run results for LEVEL%u, ROOT = %s\n", level, spf_root->node_name);
 
     ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
         res = (spf_result_t *)list_node->data;
         printf("DEST : %-10s spf_metric : %-6u", res->node->node_name, res->spf_metric);
         printf(" Nxt Hop : ");
-        for( i = 0; i < MAX_NXT_HOPS; i++){
-            if(res->next_hop[i] == NULL)
-                break;
-        
-            printf("%-10s       OIF : %-7s\n", res->next_hop[i]->node_name, 
-                    (get_min_oif(spf_root, res->next_hop[i], level, NULL))->intf_name);
 
-        }
+        ITERATE_NH_TYPE_BEGIN(nh){
+
+            for( i = 0; i < MAX_NXT_HOPS; i++){
+                if(res->next_hop[nh][i] == NULL)
+                    break;
+
+                oif = get_min_oif(spf_root, res->next_hop[nh][i], level, NULL);
+                if(i == 0){
+                    printf("%s|%-8s       OIF : %-7s\n", res->next_hop[nh][i]->node_name, 
+                            nh == LSPNH ? "LSPNH" : "IPNH", 
+                            oif->intf_name);
+                }
+                else{
+                    printf("                                              : %s|%-8s       OIF : %-7s\n", res->next_hop[nh][i]->node_name, 
+                            nh == LSPNH ? "LSPNH" : "IPNH", 
+                            oif->intf_name);
+                }
+            }
+        } ITERATE_NH_TYPE_END;
     }ITERATE_LIST_END;
 }
 
@@ -616,14 +629,14 @@ config_static_route_handler(param_t *param,
             rt_entry->dest.mask = mask;
             rt_entry->version = 0;
             rt_entry->cost = 0;
-            rt_entry->primary_nh_count = 1;
-            rt_entry->primary_nh[0].nh_type = IPNH;
-            strncpy(rt_entry->primary_nh[0].oif, intf_name, IF_NAME_SIZE);
-            rt_entry->primary_nh[0].oif[IF_NAME_SIZE] = '\0'; 
-            strncpy(rt_entry->primary_nh[0].nh_name, nh_name, NODE_NAME_SIZE);
-            rt_entry->primary_nh[0].nh_name[NODE_NAME_SIZE] = '\0';
-            strncpy(rt_entry->primary_nh[0].gwip, gw_ip, 15);
-            rt_entry->primary_nh[0].gwip[15] = '\0';
+            rt_entry->primary_nh_count[IPNH] = 1;
+            rt_entry->primary_nh[IPNH][0].nh_type = IPNH;
+            strncpy(rt_entry->primary_nh[IPNH][0].oif, intf_name, IF_NAME_SIZE);
+            rt_entry->primary_nh[IPNH][0].oif[IF_NAME_SIZE] = '\0'; 
+            strncpy(rt_entry->primary_nh[IPNH][0].nh_name, nh_name, NODE_NAME_SIZE);
+            rt_entry->primary_nh[0][IPNH].nh_name[NODE_NAME_SIZE] = '\0';
+            strncpy(rt_entry->primary_nh[IPNH][0].gwip, gw_ip, 15);
+            rt_entry->primary_nh[IPNH][0].gwip[15] = '\0';
 
             if(rt_route_install(host_node->spf_info.rttable, rt_entry) > 0)
                 return 0;

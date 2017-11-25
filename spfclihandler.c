@@ -211,6 +211,7 @@ dump_route_info(routes_t *route){
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
     prefix_t *prefix = NULL;
+    nh_type_t nh;
     prefix_pref_data_t prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, 
                                       "ROUTE_UNKNOWN_PREFERENCE"};
 
@@ -236,16 +237,24 @@ dump_route_info(routes_t *route){
         prefix_pref.pref_str, prefix_pref.pref);
 
     }ITERATE_LIST_END;
+    
+    printf("Install state : %s\n", route_intall_status_str(route->install_state));
 
-    printf("Primary Nxt Hops count : %u\n", GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list));
+    ITERATE_NH_TYPE_BEGIN(nh){
+        
+        printf("%s Primary Nxt Hops count : %u\n",
+                nh == IPNH ? "IPNH" : "LSPNH", GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]));
 
-    ITERATE_LIST_BEGIN(route->primary_nh_list, list_node){
+        ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
 
-        node = (node_t *)list_node->data;
-        printf(" %s ", node->node_name);
-    }ITERATE_LIST_END;
+            node = (node_t *)list_node->data;
+            printf(" %s ", node->node_name);
+        }ITERATE_LIST_END;
 
-    printf("\nInstall state : %s\n\n", route_intall_status_str(route->install_state));
+        printf("\n");
+
+    } ITERATE_NH_TYPE_END;
+
 }
 
 int

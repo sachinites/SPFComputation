@@ -46,26 +46,13 @@ extern instance_t *instance;
 void
 add_primary_nh(rttable_entry_t *rt_entry, nh_t *nh){
 
-    if(rt_entry->primary_nh_count == MAX_NXT_HOPS){
+    if(rt_entry->primary_nh_count[nh->nh_type] == MAX_NXT_HOPS){
         printf("%s() : Error : MAX_NXT_HOPS limit exceeded\n", __FUNCTION__);
         return;
     }
 
-    rt_entry->primary_nh[rt_entry->primary_nh_count] = *nh;
-    rt_entry->primary_nh_count++;
-}
-
-void
-delete_primary_nh_by_name(rttable_entry_t *rt_entry, char *nh_name){
-
-    int i = 0;
-    for( ; i < rt_entry->primary_nh_count; i++){
-        if(strncmp(rt_entry->primary_nh[i].nh_name, nh_name, strlen(nh_name)))
-            continue;
-
-        memset(&rt_entry->primary_nh[i], 0 , sizeof(nh_t));
-        rt_entry->primary_nh_count--;
-    }
+    rt_entry->primary_nh[nh->nh_type][rt_entry->primary_nh_count[nh->nh_type]] = *nh;
+    rt_entry->primary_nh_count[nh->nh_type]++;
 }
 
 void
@@ -95,8 +82,8 @@ rt_route_lookup(rttable *rttable, char *prefix, char mask){
 int
 rt_route_install(rttable *rttable, rttable_entry_t *rt_entry){
 
-    sprintf(LOG, "Added route %s/%d to Routing table for level%d, nh_name = %s", 
-        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level, rt_entry->primary_nh[0].nh_name); TRACE();
+    sprintf(LOG, "Added route %s/%d to Routing table for level%d", 
+        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
     singly_ll_add_node_by_val(GET_RT_TABLE(rttable), rt_entry);
     return 1;
 }
@@ -131,7 +118,8 @@ int
 rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
 
     int i = 0;
-
+    nh_type_t nh;
+    
     rttable_entry_t *rt_entry1 = rt_route_lookup(rttable, rt_entry->dest.prefix, rt_entry->dest.mask);
     if(!rt_entry1){
         printf("%s() : Warning route for %s/%d not found in routing table\n", 
@@ -144,11 +132,15 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
     rt_entry1->version     = rt_entry->version;
     rt_entry1->cost        = rt_entry->cost;
     rt_entry1->level       = rt_entry->level;
-    rt_entry1->primary_nh_count = rt_entry->primary_nh_count;
-    
-    for(; i < MAX_NXT_HOPS; i++){
-        rt_entry1->primary_nh[i] = rt_entry->primary_nh[i];
-    }
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+        
+        rt_entry1->primary_nh_count[IPNH] = rt_entry->primary_nh_count[IPNH];
+
+        for(; i < MAX_NXT_HOPS; i++)
+            rt_entry1->primary_nh[nh][i] = rt_entry->primary_nh[nh][i];
+        
+    } ITERATE_NH_TYPE_END;
 
     rt_entry1->backup_nh = rt_entry->backup_nh;
     return 1;
@@ -217,9 +209,10 @@ show_routing_table(rttable *rttable){
         sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
         printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-22s      %s\n",
                 subnet, rt_entry->version, rt_entry->cost, IS_BIT_SET(rt_entry->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT", 
-                rt_entry->level, rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name,  
-                rt_entry->primary_nh[0].nh_type == IPNH ? "IPNH" : "LSPNH",
-                rt_entry->primary_nh[0].oif, rt_entry->backup_nh.nh_name);
+                rt_entry->level, 
+                rt_entry->primary_nh[IPNH][0].gwip, rt_entry->primary_nh[IPNH][0].nh_name,  
+                rt_entry->primary_nh[IPNH][0].nh_type == IPNH ? "IPNH" : "LSPNH",
+                rt_entry->primary_nh[IPNH][0].oif, rt_entry->backup_nh.nh_name);
     }ITERATE_LIST_END;
 }
 
@@ -254,7 +247,8 @@ show_traceroute(char *node_name, char *dst_prefix){
     node_t *node = NULL;
     rttable_entry_t * rt_entry = NULL;
     unsigned int i = 1;
-    
+    nh_type_t nh;
+     
     mark_all_rttables_unvisited();
      
     printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
@@ -276,16 +270,26 @@ show_traceroute(char *node_name, char *dst_prefix){
 
         /*IF the best route present in routing table is the local route
          * means destination has arrived*/
-        if(strncmp(rt_entry->primary_nh[0].nh_name, node_name, strlen(node_name)) == 0){
-            printf("Trace Complete\n");
-            return 0;
+        ITERATE_NH_TYPE_BEGIN(nh){
+            if(strncmp(rt_entry->primary_nh[nh][0].nh_name, node_name, strlen(node_name)) == 0){
+                printf("Trace Complete\n");
+                return 0;
+            }
+
+        }ITERATE_NH_TYPE_END;
+
+        if(rt_entry->primary_nh_count[IPNH]){
+            printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[IPNH][0].oif, 
+                rt_entry->primary_nh[IPNH][0].gwip, rt_entry->primary_nh[IPNH][0].nh_name);
+             node_name = rt_entry->primary_nh[IPNH][0].nh_name;
         }
-
-        printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[0].oif, 
-                rt_entry->primary_nh[0].gwip, rt_entry->primary_nh[0].nh_name);
+        else if(rt_entry->primary_nh_count[LSPNH]){
+            printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[LSPNH][0].oif, 
+                rt_entry->primary_nh[LSPNH][0].gwip, rt_entry->primary_nh[LSPNH][0].nh_name);
+            node_name = rt_entry->primary_nh[LSPNH][0].nh_name;
+        }
+        
         MARK_RT_TABLE_VISITED(node->spf_info.rttable);
-
-        node_name = rt_entry->primary_nh[0].nh_name;
     }
     while(1);
 }

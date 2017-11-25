@@ -159,9 +159,8 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
     node_t *candidate_node = NULL,
            *nbr_node = NULL;
     edge_t *edge = NULL;
-    unsigned int i = 0;
     self_spf_result_t *self_res = NULL;
-    nh_type_t nh = IPNH;
+    nh_type_t nh = NH_MAX;
 
     /*Process untill candidate tree is not empty*/
     sprintf(LOG, "Running Dijkastra with root node = %s, Level = %u", 
@@ -183,14 +182,14 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             spf_result_t *res = calloc(1, sizeof(spf_result_t));
             res->node = candidate_node;
             res->spf_metric = candidate_node->spf_metric[level];
+            res->lsp_metric = candidate_node->lsp_metric[level];
 
-            for(i = 0 ; i < MAX_NXT_HOPS; i++){
-                if(candidate_node->next_hop[level][nh][i])
-                    res->next_hop[i] = candidate_node->next_hop[level][nh][i];
-                else
-                    break;
-            }
-            
+            ITERATE_NH_TYPE_BEGIN(nh){
+
+                copy_nh_list(&candidate_node->next_hop[level][nh][0], &res->next_hop[nh][0]); 
+
+            } ITERATE_NH_TYPE_END;
+
             singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
             self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
 
@@ -236,6 +235,8 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
                     
+                ITERATE_NH_TYPE_BEGIN(nh){
+
                     if(is_nh_list_empty(&candidate_node->next_hop[level][nh][0]) &&
                             nbr_node->node_type[level] == PSEUDONODE){
 
@@ -248,8 +249,18 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
                         sprintf(LOG, "case 2 if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list");
                         TRACE();
+                        
+                        sprintf(LOG, "Copying %s direct_next_hop %s %s to %s next_hop list", nbr_node->node_name, get_str_level(level), 
+                                      nh == IPNH ? "IPNH" : "LSPNH", nbr_node->node_name); TRACE();
+                        
+                        sprintf(LOG, "printing %s direct_next_hop list at %s %s before copy", nbr_node->node_name, get_str_level(level),
+                                      nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
 
-                        copy_nh_list(&nbr_node->direct_next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
+                        print_direct_nh_list(&nbr_node->direct_next_hop[level][nh][0]);
+                        copy_direct_to_nh_list(&nbr_node->direct_next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
+                        sprintf(LOG, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
+                                      nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                        print_nh_list(&nbr_node->next_hop[level][nh][0]);
                     }
 
 
@@ -257,11 +268,21 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     else if(!is_nh_list_empty(&candidate_node->next_hop[level][nh][0])){
 
                         sprintf(LOG, "case 3 if My own List is not empty, then nbr should inherit my next hop list"); TRACE();
+                        sprintf(LOG, "Copying %s next_hop list %s %s to %s next_hop list", candidate_node->node_name, get_str_level(level), 
+                                      nh == IPNH ? "IPNH" : "LSPNH", nbr_node->node_name); TRACE();
                         copy_nh_list(&candidate_node->next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
+                        sprintf(LOG, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
+                                      nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                        print_nh_list(&nbr_node->next_hop[level][nh][0]);
                     }
 
+                } ITERATE_NH_TYPE_END;
+
+                nbr_node->spf_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
+                                               INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
+                nbr_node->lsp_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
+                                               INFINITE_METRIC : candidate_node->lsp_metric[level] + edge->metric[level];
                  
-                nbr_node->spf_metric[level] =  IS_OVERLOADED(candidate_node, level) ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
                 INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
                 sprintf(LOG, "%s's spf_metric has been updated to %u, and inserted into candidate list", 
                         nbr_node->node_name, nbr_node->spf_metric[level]); 
@@ -275,11 +296,32 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                         nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
                         ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]); TRACE();
 
-                /*We shold do two things here :
+                /*We should do two things here :
                  * 1. union of nexthops (IPNH and LSPNH)
                  * 2. if direct NH is present, then merge it into IPNH or LSPNH depeneding on direct NH type
                  * Help : See pseudonode_ecmp_topo() for detail
                  * */
+                ITERATE_NH_TYPE_BEGIN(nh){
+                    
+                    sprintf(LOG, "Union next_hop of %s %s at %s %s", candidate_node->node_name, 
+                                  nbr_node->node_name, get_str_level(level), 
+                            nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+
+                    union_nh_list(&candidate_node->next_hop[level][nh][0]  , &nbr_node->next_hop[level][nh][0] );
+                    sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
+                                  get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                    print_nh_list(&nbr_node->next_hop[level][nh][0] );
+                    
+#if 1
+                    sprintf(LOG, "Union direct_next_hop of %s with Next hop of %s at %s %s", nbr_node->node_name, 
+                                  nbr_node->node_name, get_str_level(level), 
+                                  nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                    union_direct_nh_list(&nbr_node->direct_next_hop[level][nh][0] , &nbr_node->next_hop[level][nh][0] );
+                    sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
+                                  get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                    print_nh_list(&nbr_node->next_hop[level][nh][0] );
+#endif
+                } ITERATE_NH_TYPE_END;
 
             }
             else{
@@ -326,8 +368,7 @@ spf_init(candidate_tree_t *ctree,
            *nbr_node = NULL,
            *curr_node = NULL;
 
-    edge_t *edge = NULL, *pn_edge = NULL,
-           *edge1 = NULL, *edge2 = NULL;
+    edge_t *edge = NULL, *pn_edge = NULL;
 
     nh_type_t nh;
 
@@ -482,7 +523,7 @@ spf_computation(node_t *spf_root,
     /*We dont build routing table for reverse spf run*/
     if(spf_type == FULL_RUN){
         sprintf(LOG, "Route building starts After SPF skeleton run"); TRACE();
-        spf_postprocessing(spf_info, spf_root, level);
+        //spf_postprocessing(spf_info, spf_root, level);
     }
 }
 

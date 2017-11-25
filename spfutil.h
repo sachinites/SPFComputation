@@ -39,10 +39,22 @@
 #define SET_LEVEL(input_level, level)       ((input_level) |= (level))
 
 void
+print_nh_list(node_t *nh_list[]);
+
+void
+print_direct_nh_list(node_t *direct_nh_list[]);
+
+void
 copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]);
 
 int
 is_nh_list_empty(node_t *nh_list[]);
+
+void
+union_direct_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]);
+
+void
+copy_direct_to_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]);
 
 char *
 get_str_level(LEVEL level);

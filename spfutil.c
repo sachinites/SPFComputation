@@ -50,6 +50,31 @@ copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
 
 
 void
+copy_direct_to_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]){
+    
+    unsigned int i = 0;
+    for(; i < MAX_NXT_HOPS; i++){
+        dst_nh_list[i] = NULL;
+    }
+    dst_nh_list[0] = src_direct_nh_list[0];
+}
+
+static boolean 
+is_present(node_t *list[], node_t *node){
+
+    unsigned int i = 0;
+    for(; i < MAX_NXT_HOPS; i++){
+        if(list[i]){
+            if(list[i] == node)
+                return TRUE;
+            continue;
+        }
+        return FALSE;
+    }
+    return FALSE;
+}
+
+void
 union_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
 
     unsigned int i = 0, j = 0;
@@ -66,12 +91,34 @@ union_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
     for(; i < MAX_NXT_HOPS; i++){
 
         if(src_nh_list[j]){
-            dst_nh_list[i] = src_nh_list[j];
+            if(!is_present(&dst_nh_list[0], src_nh_list[j])){
+                dst_nh_list[i] = src_nh_list[j];
+            }
             j++;
             continue;
         }
         break;
     }
+}
+
+void
+union_direct_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]){
+
+    unsigned int i = 0;
+
+    if(is_present(&dst_nh_list[0], src_direct_nh_list[0]))
+        return;
+
+    for(; i < MAX_NXT_HOPS; i++){
+        if(dst_nh_list[i])
+            continue;
+        break;
+    }
+
+    if(i == MAX_NXT_HOPS)
+        return;
+
+    dst_nh_list[i] = src_direct_nh_list[0];
 }
 
 void
@@ -218,3 +265,31 @@ get_system_id_from_router_id(node_t *ingress_lsr,
     return NULL;
 }
 
+void
+print_nh_list(node_t *nh_list[]){
+
+    unsigned int i = 0;
+    
+    sprintf(LOG, "printing next hop list"); TRACE();
+
+    for(; i < MAX_NXT_HOPS; i++){
+
+        if(!nh_list[i])
+            return;
+
+        sprintf(LOG, "%s", nh_list[i]->node_name); TRACE();
+    }
+}
+
+
+void
+print_direct_nh_list(node_t *nh_list[]){
+
+    sprintf(LOG, "printing direct next hop list"); TRACE();
+    if(nh_list[0]){
+        sprintf(LOG, "%s", nh_list[0]->node_name); TRACE();
+    }
+    else{
+        sprintf(LOG, "Nil"); TRACE();
+    }
+}

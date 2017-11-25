@@ -56,8 +56,8 @@ typedef struct routes_{
     unsigned int lsp_metric; /*meaningful if this LSP route*/
     unsigned int ext_metric; /*External metric*/
 
-    /* NH lists*/
-    ll_t *primary_nh_list;/*Taking it as a list to accomodate ECMP*/
+    /* NH lists*//*ToDo : Convert it into arrays*/
+    ll_t *primary_nh_list[NH_MAX];/*Taking it as a list to accomodate ECMP*/
     ll_t *backup_nh_list; /*List of node_t pointers*/
 
     /*same subnet prefix lists*/
@@ -78,11 +78,11 @@ route_set_key(routes_t *route, char *ipv4_addr, char mask);
 void
 free_route(routes_t *route);
 
-#define ROUTE_ADD_PRIMARY_NH(routeptr, nodeptr)     \
-    singly_ll_add_node_by_val(routeptr->primary_nh_list, nodeptr)
+#define ROUTE_ADD_PRIMARY_NH(_route_nh_list, nodeptr)     \
+    singly_ll_add_node_by_val(_route_nh_list, nodeptr)
 
-#define ROUTE_FLUSH_PRIMARY_NH_LIST(routeptr)       \
-    delete_singly_ll(routeptr->primary_nh_list)
+#define ROUTE_FLUSH_PRIMARY_NH_LIST(routeptr, _nh)       \
+    delete_singly_ll(routeptr->primary_nh_list[_nh])
 
 #define ROUTE_ADD_BACKUP_NH(routeptr, nodeptr)      \
     singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr)
@@ -98,11 +98,40 @@ free_route(routes_t *route);
     singly_ll_delete_node_by_data_ptr(spfinfo_ptr->routes_list, routeptr);  \
     singly_ll_delete_node_by_data_ptr(spfinfo_ptr->priority_routes_list, routeptr)
 
-#define ROUTE_GET_PR_NH_CNT(routeptr)   \
-    GET_NODE_COUNT_SINGLY_LL(routeptr->primary_nh_list)
+#define ROUTE_GET_PR_NH_CNT(routeptr, _nh)   \
+    GET_NODE_COUNT_SINGLY_LL(routeptr->primary_nh_list[_nh])
 
 #define ROUTE_GET_BEST_PREFIX(routeptr)   \
     ((GET_HEAD_SINGLY_LL(routeptr->like_prefix_list))->data)
+
+static inline void
+UNION_ROUTE_PRIMARY_NEXTHOPS(routes_t *route, spf_result_t *result, nh_type_t nh){
+
+    unsigned int i = 0;
+
+    singly_ll_node_t* list_node = NULL;
+
+    ll_t *union_list = init_singly_ll();
+
+    ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
+
+        singly_ll_add_node_by_val(union_list, list_node->data);
+
+    } ITERATE_LIST_END;
+
+    for( ; i < MAX_NXT_HOPS ; i++){
+
+        if(!result->next_hop[nh][i])
+            break;
+
+        singly_ll_add_node_by_val(union_list, result->next_hop[nh][i]);
+    }
+
+    assert(GET_NODE_COUNT_SINGLY_LL(union_list) <= MAX_NXT_HOPS);
+
+    delete_singly_ll(route->primary_nh_list[nh]);
+    route->primary_nh_list[nh] = union_list;
+}
 
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/

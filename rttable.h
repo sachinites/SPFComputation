@@ -54,8 +54,8 @@ typedef struct rttable_entry_{
     int version; 
     LEVEL level;
     int cost; 
-    int primary_nh_count; 
-    nh_t primary_nh[MAX_NXT_HOPS];
+    int primary_nh_count[NH_MAX]; 
+    nh_t primary_nh[NH_MAX][MAX_NXT_HOPS];
     nh_t backup_nh;
     FLAG flags;
 
