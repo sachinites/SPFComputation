@@ -71,6 +71,7 @@ typedef struct _node_t{
      * instance flags*/
     spf_info_t spf_info;
     unsigned int instance_flags;                            /*Hope instance flags are not level specific, is there any ? If we come across later, we will have level specific flags*/
+    boolean is_node_on_heap;
 
     /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/

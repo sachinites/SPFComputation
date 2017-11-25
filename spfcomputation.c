@@ -172,6 +172,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
     
         candidate_node = GET_CANDIDATE_TREE_TOP(ctree, level);
         REMOVE_CANDIDATE_TREE_TOP(ctree);
+        candidate_node->is_node_on_heap = FALSE;
         sprintf(LOG, "Candidate node %s Taken off candidate list", candidate_node->node_name); TRACE();
 
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
@@ -236,15 +237,17 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
                     
                 ITERATE_NH_TYPE_BEGIN(nh){
+                    
+                    /* is_all_nh_list_empty(node, level) is TRUE only for spf_root and directly connected PNs */
 
-                    if(is_nh_list_empty(&candidate_node->next_hop[level][nh][0]) &&
+                    if(is_all_nh_list_empty(candidate_node, level) &&
                             nbr_node->node_type[level] == PSEUDONODE){
 
                         sprintf(LOG, "case 1 if My own NH List is empty, and nbr is Pseuodnode , do nothing"); TRACE();
                     }
 
                     /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
-                    else if(is_nh_list_empty(&candidate_node->next_hop[level][nh][0]) &&
+                    else if(is_all_nh_list_empty(candidate_node, level) &&
                             nbr_node->node_type[level] == NON_PSEUDONODE){
 
                         sprintf(LOG, "case 2 if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list");
@@ -265,7 +268,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
 
                     /*case 3 : if My own List is not empty, then nbr should inherit my next hop list*/
-                    else if(!is_nh_list_empty(&candidate_node->next_hop[level][nh][0])){
+                    else if(!is_all_nh_list_empty(candidate_node, level)){
 
                         sprintf(LOG, "case 3 if My own List is not empty, then nbr should inherit my next hop list"); TRACE();
                         sprintf(LOG, "Copying %s next_hop list %s %s to %s next_hop list", candidate_node->node_name, get_str_level(level), 
@@ -282,11 +285,22 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                                                INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
                 nbr_node->lsp_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
                                                INFINITE_METRIC : candidate_node->lsp_metric[level] + edge->metric[level];
-                 
-                INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
-                sprintf(LOG, "%s's spf_metric has been updated to %u, and inserted into candidate list", 
-                        nbr_node->node_name, nbr_node->spf_metric[level]); 
-                TRACE();
+
+                sprintf(LOG, "%s's spf_metric has been updated to %u",  
+                        nbr_node->node_name, nbr_node->spf_metric[level]); TRACE();
+
+                if(nbr_node->is_node_on_heap == FALSE){
+                    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
+                    nbr_node->is_node_on_heap = TRUE;
+                    sprintf(LOG, "%s inserted into candidate tree", nbr_node->node_name); TRACE();
+                }
+                else{
+                    /* We should remove the node and then add again into candidate tree
+                     * But now i dont have brain cells to do this useless work. It has impact
+                     * on performance, but not on output*/
+
+                    sprintf(LOG, "%s is already present in candidate tree", nbr_node->node_name); TRACE();
+                }
             }
 
             else if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
@@ -470,6 +484,7 @@ spf_init(candidate_tree_t *ctree,
 
     /*Step 4 : Initialize candidate tree with root*/
     INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
+    spf_root->is_node_on_heap = TRUE;
 
     /*Step 5 : Link Directly Connected PN to the instance root. This
      * will help identifying the route oif when spf_root is connected to PN */

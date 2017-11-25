@@ -48,6 +48,18 @@ copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
     }
 }
 
+boolean
+is_all_nh_list_empty(node_t *node, LEVEL level){
+
+    nh_type_t nh;
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+
+        if(!is_nh_list_empty(&node->next_hop[level][nh][0]))
+            return FALSE;
+    } ITERATE_NH_TYPE_END;
+    return TRUE;
+}
 
 void
 copy_direct_to_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]){

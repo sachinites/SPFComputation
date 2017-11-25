@@ -45,7 +45,7 @@ extern instance_t * build_ring_topo();
 extern instance_t * build_cisco_example_topo();
 extern instance_t * overload_router_topo();
 extern instance_t * pseudonode_ecmp_topo();
-
+extern instance_t * lsp_ecmp_topo();
 /*Globals */
 instance_t *instance = NULL;
 
@@ -57,7 +57,8 @@ main(int argc, char **argv){
 
     /* Topology Initialization*/
     //instance = build_linear_topo();
-    instance = pseudonode_ecmp_topo();
+    //instance = pseudonode_ecmp_topo();
+      instance = lsp_ecmp_topo();
     //instance = build_multi_area_topo();
     //instance = build_ring_topo();
     //instance = build_cisco_example_topo();

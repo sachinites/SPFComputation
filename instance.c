@@ -58,6 +58,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     node->router_id[PREFIX_LEN] = '\0';
 
     node->area = area;
+    node->is_node_on_heap = FALSE;
 
     for(level = LEVEL1; level <= LEVEL2; level++){
 
