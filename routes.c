@@ -74,6 +74,25 @@ route_malloc(){
     return route;
 }
 
+static inline void
+merge_route_primary_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh){
+
+    unsigned int i = 0;
+    
+    for( ; i < MAX_NXT_HOPS ; i++){
+
+        if(!result->next_hop[nh][i])
+            break;
+
+        singly_ll_add_node_by_val(route->primary_nh_list[nh], result->next_hop[nh][i]);
+        sprintf(LOG, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
+                     route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                     result->next_hop[nh][i]->node_name); TRACE();
+    }
+
+    assert(GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]) <= MAX_NXT_HOPS);
+}
+
 void
 route_set_key(routes_t *route, char *ipv4_addr, char mask){
 
@@ -495,8 +514,12 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
             /* route->backup_nh_list Not supported yet */
             ROUTE_FLUSH_BACKUP_NH_LIST(route); /*Not supported*/ 
             for(i = 0 ; i < MAX_NXT_HOPS; i++){
-                if(result->next_hop[nh][i])
+                if(result->next_hop[nh][i]){
                     ROUTE_ADD_PRIMARY_NH(route->primary_nh_list[nh], result->next_hop[nh][i]);   
+                    sprintf(LOG, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
+                            route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                            result->next_hop[nh][i]->node_name); TRACE();
+                }
                 else
                     break;
             }
@@ -661,7 +684,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         ITERATE_NH_TYPE_BEGIN(nh){ 
              
-            for(; i < MAX_NXT_HOPS; i++){
+            for(i = 0; i < MAX_NXT_HOPS; i++){
                 if(result->next_hop[nh][i]){
                     ROUTE_ADD_PRIMARY_NH(route->primary_nh_list[nh], result->next_hop[nh][i]);   
                     sprintf(LOG, "Node : %s : route : %s/%u Next hop added : %s|%s at %s", 
@@ -767,7 +790,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                                 /* Union LFA,s RLFA,s Primary nexthops*/
 
                         ITERATE_NH_TYPE_BEGIN(nh){
-                            UNION_ROUTE_PRIMARY_NEXTHOPS(route, result, nh);
+                            merge_route_primary_nexthops(route, result, nh);
                         } ITERATE_NH_TYPE_END;
                     }
                     /*Linkage*/
@@ -792,7 +815,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                                 route->rt_key.prefix, route->rt_key.mask); TRACE();
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
                         ITERATE_NH_TYPE_BEGIN(nh){
-                            UNION_ROUTE_PRIMARY_NEXTHOPS(route, result, nh);
+                            merge_route_primary_nexthops(route, result, nh);
                         } ITERATE_NH_TYPE_END;
                     }
                     else{
@@ -918,7 +941,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                                 route->rt_key.prefix, route->rt_key.mask); TRACE();
                           /* Union LFA,s RLFA,s Primary nexthops*/ 
                         ITERATE_NH_TYPE_BEGIN(nh){
-                            UNION_ROUTE_PRIMARY_NEXTHOPS(route, result, nh);
+                            merge_route_primary_nexthops(route, result, nh);
                         } ITERATE_NH_TYPE_END;
                     }
                     else{
@@ -1020,11 +1043,13 @@ install_route_in_rib(spf_info_t *spf_info,
         }
         else
         {
+            i = 0;
             ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
                 prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node, 
                         list_node->data,
                         &rt_entry_template->primary_nh[nh][i],
                         level, nh);
+                i++;
             } ITERATE_LIST_END;
         }
 
@@ -1135,12 +1160,13 @@ start_route_installation(spf_info_t *spf_info,
                             level, nh);
                 }
                 else{
+                    i = 0;
                     ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node2){
                         prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node, 
                                 list_node2->data, 
                                 &rt_entry_template->primary_nh[nh][i],
                                 level, nh);
-
+                        i++;
                     } ITERATE_LIST_END;
                 }
 

@@ -104,35 +104,6 @@ free_route(routes_t *route);
 #define ROUTE_GET_BEST_PREFIX(routeptr)   \
     ((GET_HEAD_SINGLY_LL(routeptr->like_prefix_list))->data)
 
-static inline void
-UNION_ROUTE_PRIMARY_NEXTHOPS(routes_t *route, spf_result_t *result, nh_type_t nh){
-
-    unsigned int i = 0;
-
-    singly_ll_node_t* list_node = NULL;
-
-    ll_t *union_list = init_singly_ll();
-
-    ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
-
-        singly_ll_add_node_by_val(union_list, list_node->data);
-
-    } ITERATE_LIST_END;
-
-    for( ; i < MAX_NXT_HOPS ; i++){
-
-        if(!result->next_hop[nh][i])
-            break;
-
-        singly_ll_add_node_by_val(union_list, result->next_hop[nh][i]);
-    }
-
-    assert(GET_NODE_COUNT_SINGLY_LL(union_list) <= MAX_NXT_HOPS);
-
-    delete_singly_ll(route->primary_nh_list[nh]);
-    route->primary_nh_list[nh] = union_list;
-}
-
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
                    node_t *spf_root,          /* computing node which stores the result of spf run*/

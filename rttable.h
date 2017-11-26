@@ -85,7 +85,7 @@ typedef struct rttable_{
 do{                                       \
     unsigned int _i = 0;                  \
     nh_t *_nh = NULL;                     \
-    for(; _i < MAX_NXT_HOPS; _i++){       \
+    for(_i = 0; _i < MAX_NXT_HOPS; _i++){ \
         _nh = &rt_entry->primary_nh[i];
                 
 #define ITERATE_PR_NH_END  }}while(0)
