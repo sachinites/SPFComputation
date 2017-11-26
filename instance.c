@@ -469,7 +469,7 @@ node_local_prefix_search(node_t *node, LEVEL level,
 
 edge_end_t *
 get_min_oif(node_t *node, node_t *node_nbr, 
-            LEVEL level, char *gw_prefix){
+            LEVEL level, char *gw_prefix, nh_type_t nh){
 
     unsigned int i = 0, 
                  min_metric = INFINITE_METRIC;
@@ -488,10 +488,21 @@ get_min_oif(node_t *node, node_t *node_nbr,
          
     /*Covering P2P case */ 
     for(; i < MAX_NODE_INTF_SLOTS; i++){
+        
         edge_end = node->edges[i];
+       
         if(!edge_end || (edge_end->dirn != OUTGOING))   
             continue;
+        
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        
+        if(nh == LSPNH && edge->etype != LSP)
+            continue;
+
+
+        if(nh == IPNH && edge->etype != UNICAST)
+            continue;
+
         if(edge->to.node == node_nbr){
             if(edge->metric[level] < min_metric){
                 min_metric = edge->metric[level];
@@ -501,7 +512,9 @@ get_min_oif(node_t *node, node_t *node_nbr,
     }
 
     if(min_edge_oif){
+        
         edge = GET_EGDE_PTR_FROM_EDGE_END(min_edge_oif);
+        
         if(gw_prefix){
             /*LSP ends do not have edge end prefixes*/
             if(edge->to.prefix[level]){
@@ -523,11 +536,18 @@ get_min_oif(node_t *node, node_t *node_nbr,
     min_metric = INFINITE_METRIC;
     ITERATE_NODE_NBRS_BEGIN(node, PN, edge_it, level){
 
+        
+        if(nh == LSPNH && edge_it->etype != LSP)
+            continue;
+
+        if(nh == IPNH && edge_it->etype != UNICAST)
+            continue;
+
         if(PN->node_type[level] != PSEUDONODE)  
             continue;
 
         /* Get the OIF from PN to nbr node with remote gw_prefix*/
-        min_pn_oif = get_min_oif(PN, node_nbr, level, gw_prefix);
+        min_pn_oif = get_min_oif(PN, node_nbr, level, gw_prefix, nh);
              
         /*Do not count the PN which is not present in same LAN 
          * segment as R0 and R2*/
@@ -542,6 +562,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
 
         edge_end = PN->pn_intf[level];
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+
         if(edge->metric[level] < min_metric){
             min_metric = edge->metric[level];
             min_edge_oif = edge_end;

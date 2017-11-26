@@ -154,7 +154,7 @@ route_search_comparison_fn(void * route, void *key);
 
 typedef struct rttable_entry_ rttable_entry_t;
 
-spf_result_t *
+void
 prepare_new_rt_entry_template(spf_info_t *spf_info, rttable_entry_t *rt_entry_template,
                                routes_t *route, unsigned int version);
 
@@ -162,9 +162,9 @@ typedef struct nh_t_ nh_t;
 
 void
 prepare_new_nxt_hop_template(node_t *computing_node, /*Computing node running SPF*/
-        node_t *nxt_hop_node,   /*Nbr node*/
+        node_t *nxt_hop_node,                        /*Nbr node*/
         nh_t *nh_template,
-        LEVEL level);           /*SPF run level*/
+        LEVEL level, nh_type_t nh);                  /*SPF run level*/
 
 char *
 route_intall_status_str(route_intall_status install_status);

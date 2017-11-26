@@ -71,7 +71,7 @@ show_spf_results(node_t *spf_root, LEVEL level){
                 if(res->next_hop[nh][i] == NULL)
                     break;
 
-                oif = get_min_oif(spf_root, res->next_hop[nh][i], level, NULL);
+                oif = get_min_oif(spf_root, res->next_hop[nh][i], level, NULL, nh);
                 if(i == 0){
                     printf("%s|%-8s       OIF : %-7s\n", res->next_hop[nh][i]->node_name, 
                             nh == LSPNH ? "LSPNH" : "IPNH", 

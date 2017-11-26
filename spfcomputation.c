@@ -538,7 +538,7 @@ spf_computation(node_t *spf_root,
     /*We dont build routing table for reverse spf run*/
     if(spf_type == FULL_RUN){
         sprintf(LOG, "Route building starts After SPF skeleton run"); TRACE();
-        //spf_postprocessing(spf_info, spf_root, level);
+        spf_postprocessing(spf_info, spf_root, level);
     }
 }
 

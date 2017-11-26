@@ -245,7 +245,7 @@ get_edge_direction(node_t *node, edge_t *edge){
 
 edge_end_t *
 get_min_oif(node_t *node, node_t *node_nbr, 
-            LEVEL level, char *input_gw_ip_buffer);
+            LEVEL level, char *input_gw_ip_buffer, nh_type_t nh);
 
 
 /*This Macro iterates over all logical nbrs of a node. Logical nbrs includes
