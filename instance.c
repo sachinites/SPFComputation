@@ -72,7 +72,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
         singly_ll_set_order_comparison_fn(node->local_prefix_list[level] , 
                 get_prefix_order_comparison_fn());
 
-        router_id_pfx = create_new_prefix(node->router_id, 32);
+        router_id_pfx = create_new_prefix(node->router_id, 32, level);
         router_id_pfx->hosting_node = node;
         add_new_prefix_in_list(GET_NODE_PREFIX_LIST(node, level), router_id_pfx, 0);
 
@@ -182,7 +182,9 @@ create_new_lsp_adj(char *lsp_name,
 void
 attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
 
-    prefix_t *prefix = NULL;
+    prefix_t *prefix = NULL,
+             *clone_prefix = NULL;
+
     LEVEL level_it, level;
     if(edge_end->dirn != OUTGOING)
         return;
@@ -202,8 +204,10 @@ attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
             continue;
 
         prefix->hosting_node = node;
-        add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level_it), prefix, 0);
-        prefix->ref_count++;
+        clone_prefix = create_new_prefix(prefix->prefix, prefix->mask, LEVEL_UNKNOWN);
+        memcpy(clone_prefix, prefix, sizeof(prefix_t));
+        clone_prefix->level = level_it;
+        add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level_it), clone_prefix, 0);
     }
 }
 
@@ -409,14 +413,17 @@ attach_prefix_on_node(node_t *node,
 
     prefix_t *_prefix = NULL;
 
-    _prefix = create_new_prefix(prefix, mask);
+    _prefix = create_new_prefix(prefix, mask, level);
     _prefix->metric = metric;
     _prefix->hosting_node = node;
     _prefix->prefix_flags = prefix_flags;
+
     sprintf(LOG, "Node : %s, prefix attached : %s/%u, prefix metric : %u",
         node->node_name, prefix, mask, metric); TRACE();
+
     if(add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level), _prefix, 0))
         return _prefix;
+
     free(_prefix);
     _prefix = NULL;
     return NULL;

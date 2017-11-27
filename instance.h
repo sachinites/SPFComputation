@@ -95,6 +95,7 @@ next_hop_count(node_t **nh_array){
 struct edge_end_{
     node_t *node;
     char intf_name[IF_NAME_SIZE];
+    common_pfx_key_t if_prefix;/*ToDo : use this sata structure instead if below prefix_t */
     prefix_t * prefix[MAX_LEVEL];
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
 };

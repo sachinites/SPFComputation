@@ -151,23 +151,29 @@ get_longest_prefix_match(rttable *rttable, char *prefix){
 
     singly_ll_node_t *list_node = NULL;
     rttable_entry_t *rt_entry = NULL, 
-                    *lpm_rt_entry = NULL;
-    char subnet[PREFIX_LEN_WITH_MASK + 1];
+                    *lpm_rt_entry = NULL,
+                    *rt_default_entry = NULL;
+
+    char subnet[PREFIX_LEN + 1];
     char longest_mask = 0;
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
         rt_entry = (rttable_entry_t *)list_node->data;
-        memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
+        memset(subnet, 0, PREFIX_LEN + 1);
         apply_mask(prefix, rt_entry->dest.mask, subnet);
-        if(strncmp(subnet, rt_entry->dest.prefix, strlen(subnet)) == 0){
+        if(strncmp("0.0.0.0", rt_entry->dest.prefix, strlen("0.0.0.0")) == 0 &&
+                rt_entry->dest.mask == 0){
+            rt_default_entry = rt_entry;   
+        }
+        else if(strncmp(subnet, rt_entry->dest.prefix, strlen(subnet)) == 0){
             if( rt_entry->dest.mask > longest_mask){
                 longest_mask = rt_entry->dest.mask;
                 lpm_rt_entry = rt_entry;
             }
         }
     }ITERATE_LIST_END;
-    return lpm_rt_entry;
+    return lpm_rt_entry ? lpm_rt_entry : rt_default_entry;
 }
 
 

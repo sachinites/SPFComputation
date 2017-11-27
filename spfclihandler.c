@@ -230,11 +230,11 @@ dump_route_info(routes_t *route){
     ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
 
         prefix = list_node->data;
-        prefix_pref = route_preference(prefix->prefix_flags, route->level);
+        prefix_pref = route_preference(prefix->prefix_flags, prefix->level);
 
-        printf("%s/%u, hosting_node : %s, prefix->metric : %u, preference = %s(%u)\n", 
+        printf("%s/%u, hosting_node : %s, prefix->metric : %u, prefix->level = %s, pfx preference = %s(%u)\n", 
         prefix->prefix, prefix->mask, prefix->hosting_node->node_name, prefix->metric,
-        prefix_pref.pref_str, prefix_pref.pref);
+        get_str_level(prefix->level), prefix_pref.pref_str, prefix_pref.pref);
 
     }ITERATE_LIST_END;
     

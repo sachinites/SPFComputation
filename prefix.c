@@ -44,13 +44,14 @@
 extern instance_t *instance;
 
 prefix_t *
-create_new_prefix(const char *prefix, unsigned char mask){
+create_new_prefix(const char *prefix, unsigned char mask, LEVEL level){
 
     prefix_t *_prefix = calloc(1, sizeof(prefix_t));
     if(prefix)
         strncpy(_prefix->prefix, prefix, strlen(prefix));
     _prefix->prefix[PREFIX_LEN] = '\0';
     _prefix->mask = mask;
+     _prefix->level = level;
     set_prefix_property_metric(_prefix, DEFAULT_LOCAL_PREFIX_METRIC);
     return _prefix;
 }

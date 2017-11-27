@@ -51,10 +51,10 @@ build_linear_topo(){
     node_t *R1 = create_new_node(instance, "R1", AREA1, "192.168.0.2");
     node_t *R2 = create_new_node(instance, "R2", AREA1, "192.168.0.3");
 
-    prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24);
-    prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24);
-    prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24);
-    prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24);
+    prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24, LEVEL12);
+    prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24, LEVEL12);
+    prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24, LEVEL12);
+    prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24, LEVEL12);
 
     edge_t *R0_R1_edge = create_new_edge("eth0/0", "eth0/1", 10,
             prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL12);
@@ -145,28 +145,28 @@ build_multi_area_topo(){
     node_t *R5 = create_new_node(instance, "R5", AREA3, "192.168.0.5");
     node_t *R6 = create_new_node(instance, "R6", AREA3, "192.168.0.6");
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, create_new_prefix("10.1.1.1", 24), create_new_prefix("10.1.1.2", 24), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, create_new_prefix("10.1.1.1", 24, LEVEL1), create_new_prefix("10.1.1.2", 24, LEVEL1), LEVEL1)),
                                 R0, R1, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/0", 10, create_new_prefix("11.1.1.1", 24), create_new_prefix("11.1.1.2", 24), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/0", 10, create_new_prefix("11.1.1.1", 24, LEVEL1), create_new_prefix("11.1.1.2", 24, LEVEL1), LEVEL1)),
                                 R0, R2, BIDIRECTIONAL);
     
-    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, create_new_prefix("12.1.1.1", 24), create_new_prefix("12.1.1.2", 24), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, create_new_prefix("12.1.1.1", 24, LEVEL1), create_new_prefix("12.1.1.2", 24, LEVEL1), LEVEL1)),
                                 R1, R2, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("14.1.1.1", 24), create_new_prefix("14.1.1.2", 24), LEVEL2)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("14.1.1.1", 24, LEVEL2), create_new_prefix("14.1.1.2", 24, LEVEL2), LEVEL2)),
                                 R0, R3, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, create_new_prefix("15.1.1.1", 24), create_new_prefix("15.1.1.2", 24), LEVEL12)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 10, create_new_prefix("15.1.1.1", 24, LEVEL12), create_new_prefix("15.1.1.2", 24, LEVEL12), LEVEL12)),
                                 R3, R4, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 10, create_new_prefix("16.1.1.1", 24), create_new_prefix("16.1.1.2", 24), LEVEL2)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 10, create_new_prefix("16.1.1.1", 24, LEVEL2), create_new_prefix("16.1.1.2", 24, LEVEL2), LEVEL2)),
                                 R4, R5, BIDIRECTIONAL);
     
-    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, create_new_prefix("17.1.1.1", 24), create_new_prefix("17.1.1.2", 24), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 10, create_new_prefix("17.1.1.1", 24, LEVEL1), create_new_prefix("17.1.1.2", 24, LEVEL1), LEVEL1)),
                                 R5, R6, BIDIRECTIONAL);
     
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("20.1.1.1", 24), create_new_prefix("20.1.1.2", 24), LEVEL2)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("20.1.1.1", 24, LEVEL2), create_new_prefix("20.1.1.2", 24, LEVEL2), LEVEL2)),
                                 R2, R5, BIDIRECTIONAL);
 
     set_instance_root(instance, R0);
@@ -198,22 +198,22 @@ build_ring_topo(){
     node_t *E = create_new_node(instance, "E", AREA1, "192.168.0.5");
     node_t *S = create_new_node(instance, "S", AREA1, "192.168.0.6");
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30), create_new_prefix("10.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30, LEVEL1), create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
                                 S, E, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 10, create_new_prefix("20.1.1.1", 30), create_new_prefix("20.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 10, create_new_prefix("20.1.1.1", 30, LEVEL1), create_new_prefix("20.1.1.2", 30, LEVEL1), LEVEL1)),
                                 E, D, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 10, create_new_prefix("30.1.1.1", 30), create_new_prefix("30.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 10, create_new_prefix("30.1.1.1", 30, LEVEL1), create_new_prefix("30.1.1.2", 30, LEVEL1), LEVEL1)),
                                 D, C, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("40.1.1.1", 30), create_new_prefix("40.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("40.1.1.1", 30, LEVEL1), create_new_prefix("40.1.1.2", 30, LEVEL1), LEVEL1)),
                                 C, B, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("50.1.1.1", 30), create_new_prefix("50.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("50.1.1.1", 30, LEVEL1), create_new_prefix("50.1.1.2", 30, LEVEL1), LEVEL1)),
                                 B, A, BIDIRECTIONAL);
     
-    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, create_new_prefix("60.1.1.1", 30), create_new_prefix("60.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, create_new_prefix("60.1.1.1", 30, LEVEL1), create_new_prefix("60.1.1.2", 30, LEVEL1), LEVEL1)),
                                 A, S, BIDIRECTIONAL);
 
     set_instance_root(instance, S);
@@ -271,27 +271,27 @@ build_cisco_example_topo(){
     node_t *R6 = create_new_node(instance, "R6", AREA1, "192.168.0.6");
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30), create_new_prefix("10.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30, LEVEL1), create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R1, R2, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 10, create_new_prefix("20.1.1.1", 30), create_new_prefix("20.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 10, create_new_prefix("20.1.1.1", 30, LEVEL1), create_new_prefix("20.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R2, R3, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 10, create_new_prefix("30.1.1.1", 30), create_new_prefix("30.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 10, create_new_prefix("30.1.1.1", 30, LEVEL1), create_new_prefix("30.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R3, R4, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("50.1.1.3", 24), 0, LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("50.1.1.3", 24, LEVEL1), 0, LEVEL1)),
                                 R4, R5, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, 0, create_new_prefix("50.1.1.1", 24), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, 0, create_new_prefix("50.1.1.1", 24, LEVEL1), LEVEL1)),
                                 R5, R1, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, 0, create_new_prefix("50.1.1.2", 24), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, 0, create_new_prefix("50.1.1.2", 24, LEVEL1), LEVEL1)),
                                 R5, R6, BIDIRECTIONAL);
 
     mark_node_pseudonode(R5, LEVEL1);
@@ -331,24 +331,24 @@ pseudonode_ecmp_topo(){
     node_t *D  = create_new_node(instance, "D" , AREA1, "192.168.0.2");
 
     insert_edge_between_2_nodes((create_new_edge(0, "eth0/1", 0, 
-                                 0, create_new_prefix("50.1.1.2", 30),
+                                 0, create_new_prefix("50.1.1.2", 30, LEVEL1),
                                  LEVEL1)),
                                  PN, C, BIDIRECTIONAL);
 
 
     insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 5, 
-                                 create_new_prefix("60.1.1.1", 30), create_new_prefix("60.1.1.2", 30),
+                                 create_new_prefix("60.1.1.1", 30, LEVEL1), create_new_prefix("60.1.1.2", 30, LEVEL1),
                                  LEVEL1)),
                                  A, D, BIDIRECTIONAL);
 
     insert_edge_between_2_nodes((create_new_edge("eth0/1", 0, 10, 
-                                 create_new_prefix("50.1.1.1", 30), 0,
+                                 create_new_prefix("50.1.1.1", 30, LEVEL1), 0,
                                  LEVEL1)),
                                  A, PN, BIDIRECTIONAL);
     
 
     insert_edge_between_2_nodes((create_new_edge("eth0/3", "eth0/3", 5, 
-                                 create_new_prefix("70.1.1.1", 30), create_new_prefix("70.1.1.2", 30),
+                                 create_new_prefix("70.1.1.1", 30, LEVEL1), create_new_prefix("70.1.1.2", 30, LEVEL1),
                                  LEVEL1)),
                                  D,C,  BIDIRECTIONAL);
 
@@ -405,27 +405,27 @@ overload_router_topo(){
     node_t *R6 = create_new_node(instance, "R6", AREA1, "192.168.0.6");
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 50, create_new_prefix("10.1.1.1", 30), create_new_prefix("10.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 50, create_new_prefix("10.1.1.1", 30, LEVEL1), create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R1, R2, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 100, create_new_prefix("20.1.1.1", 30), create_new_prefix("20.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 100, create_new_prefix("20.1.1.1", 30, LEVEL1), create_new_prefix("20.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R2, R3, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 10, create_new_prefix("30.1.1.1", 30), create_new_prefix("30.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 10, create_new_prefix("30.1.1.1", 30, LEVEL1), create_new_prefix("30.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R3, R4, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("60.1.1.1", 30), create_new_prefix("60.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("60.1.1.1", 30, LEVEL1), create_new_prefix("60.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R4, R5, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("50.1.1.2", 30), create_new_prefix("50.1.1.1", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("50.1.1.2", 30, LEVEL1), create_new_prefix("50.1.1.1", 30, LEVEL1), LEVEL1)),
                                 R5, R1, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, create_new_prefix("70.1.1.1", 30), create_new_prefix("70.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, create_new_prefix("70.1.1.1", 30, LEVEL1), create_new_prefix("70.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R5, R6, BIDIRECTIONAL);
 
     set_instance_root(instance, R1);                                        
@@ -482,23 +482,23 @@ lsp_ecmp_topo(){
     node_t *E = create_new_node(instance, "E", AREA1, "192.168.0.5");
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 2, create_new_prefix("20.1.1.1", 30), create_new_prefix("20.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 2, create_new_prefix("20.1.1.1", 30, LEVEL1), create_new_prefix("20.1.1.2", 30, LEVEL1), LEVEL1)),
                                 A, E, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 1, create_new_prefix("30.1.1.2", 30), create_new_prefix("30.1.1.1", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 1, create_new_prefix("30.1.1.2", 30, LEVEL1), create_new_prefix("30.1.1.1", 30, LEVEL1), LEVEL1)),
                                 E, B, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 2, create_new_prefix("40.1.1.1", 30), create_new_prefix("40.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 2, create_new_prefix("40.1.1.1", 30, LEVEL1), create_new_prefix("40.1.1.2", 30, LEVEL1), LEVEL1)),
                                 B, C, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 1, create_new_prefix("50.1.1.1", 30), create_new_prefix("50.1.1.2", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 1, create_new_prefix("50.1.1.1", 30, LEVEL1), create_new_prefix("50.1.1.2", 30, LEVEL1), LEVEL1)),
                                 C, D, BIDIRECTIONAL);
 
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 3, create_new_prefix("60.1.1.2", 30), create_new_prefix("60.1.1.1", 30), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 3, create_new_prefix("60.1.1.2", 30, LEVEL1), create_new_prefix("60.1.1.1", 30, LEVEL1), LEVEL1)),
                                 D, E, BIDIRECTIONAL);
 
 

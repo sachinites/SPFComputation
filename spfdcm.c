@@ -422,14 +422,21 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     
     switch(cmd_code){
         case CMDCODE_CONFIG_NODE_LSP:
-            switch(enable_or_disable){
-                case CONFIG_ENABLE:
-                    insert_label_switched_path(node, lsp_name, metric, tail_end_ip, level);
-                    break;
+            {
+                switch(enable_or_disable){
+                    case CONFIG_ENABLE:
+                        insert_label_switched_path(node, lsp_name, metric, tail_end_ip, level);
+                        break;
                     case CONFIG_DISABLE:
-                    break;
-                default:
-                    ;
+                        break;
+                    default:
+                        ;
+                }
+                dist_info_hdr_t dist_info_hdr;
+                memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
+                dist_info_hdr.info_dist_level = level;
+                dist_info_hdr.advert_id = TLV2;
+                generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
             }
             break;
         case CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW:
@@ -489,7 +496,6 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                     dist_info_hdr.add_or_remove = (enable_or_disable == CONFIG_ENABLE) ? AD_CONFIG_ADDED : AD_CONFIG_REMOVED;
                     dist_info_hdr.advert_id = TLV128;
                     dist_info_hdr.info_data = (char *)&ad_msg;
-                    //generate_lsp(instance, node, prefix_distribution_routine, &dist_info_hdr);
                     #endif
                     generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
                     return 0;
@@ -499,7 +505,6 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
         case CMDCODE_CONFIG_NODE_OVERLOAD:
             (enable_or_disable == CONFIG_ENABLE) ? SET_BIT(node->attributes[level], OVERLOAD_BIT) :
                 UNSET_BIT(node->attributes[level], OVERLOAD_BIT);
-                //delete_all_routes(node, level);
             {
                 lsp_hdr_t lsp_hdr;
                 if(enable_or_disable == CONFIG_ENABLE)

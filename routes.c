@@ -489,8 +489,6 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         sprintf(LOG, "route : %s/%u being over written for %s", route->rt_key.prefix, 
                     route->rt_key.mask, get_str_level(level)); TRACE();
 
-        assert(IS_LEVEL_SET(route->level, level));
-       
         route->version = spf_info->spf_level_info[level].version;
         route->flags = prefix->prefix_flags;
        
@@ -535,13 +533,12 @@ link_prefix_to_route_prefix_list(routes_t *route, prefix_t *new_prefix,
                      *list_new_node = NULL;
 
     prefix_t *list_prefix = NULL;
-    LEVEL level = route->level;
     unsigned int new_prefix_metric = 0;
 
     prefix_pref_data_t list_prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, 
                                           "ROUTE_UNKNOWN_PREFERENCE"},
 
-                        new_prefix_pref = route_preference(new_prefix->prefix_flags, level);
+                        new_prefix_pref = route_preference(new_prefix->prefix_flags, new_prefix->level);
 
     sprintf(LOG, "To Route : %s/%u, %s, Appending prefix : %s/%u to Route prefix list",
                  route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level),
@@ -557,7 +554,7 @@ link_prefix_to_route_prefix_list(routes_t *route, prefix_t *new_prefix,
     ITERATE_LIST_BEGIN(route->like_prefix_list, list_node_next){
         
         list_prefix = (prefix_t *)list_node_next->data;
-        list_prefix_pref = route_preference(list_prefix->prefix_flags, level);
+        list_prefix_pref = route_preference(list_prefix->prefix_flags, list_prefix->level);
 
         if(new_prefix_pref.pref > list_prefix_pref.pref){
             list_node_prev = list_node_next;
@@ -698,9 +695,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         /* route->backup_nh_list Not supported yet */
 
         /*Linkage*/
-        route_prefix = calloc(1, sizeof(prefix_t));
-        memcpy(route_prefix, prefix, sizeof(prefix_t));
-        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+        if(linkage){
+            route_prefix = calloc(1, sizeof(prefix_t));
+            memcpy(route_prefix, prefix, sizeof(prefix_t));
+            link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+        }
 
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
         route->install_state = RTE_ADDED;
@@ -718,7 +717,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
           
 /* Comparison Block Start*/
 
-            prefix_pref = route_preference(prefix->prefix_flags, level);
+            prefix_pref = route_preference(prefix->prefix_flags, prefix->level);
             route_pref  = route_preference(route->flags, route->level);
 
             if(prefix_pref.pref == ROUTE_UNKNOWN_PREFERENCE){
@@ -734,9 +733,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                               GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
                               route_pref.pref_str, prefix_pref.pref_str); TRACE();
                 /*Linkage*/
-                route_prefix = calloc(1, sizeof(prefix_t));
-                memcpy(route_prefix, prefix, sizeof(prefix_t));
-                link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                if(linkage){
+                    route_prefix = calloc(1, sizeof(prefix_t));
+                    memcpy(route_prefix, prefix, sizeof(prefix_t));
+                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                }
                 return;
             }
             /* If new prefix is better*/
@@ -748,9 +749,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
-                route_prefix = calloc(1, sizeof(prefix_t));
-                memcpy(route_prefix, prefix, sizeof(prefix_t));
-                link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                if(linkage){
+                    route_prefix = calloc(1, sizeof(prefix_t));
+                    memcpy(route_prefix, prefix, sizeof(prefix_t));
+                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                }
                 return;
             }
             /* If prefixes are of same preference*/ 
@@ -794,9 +797,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         } ITERATE_NH_TYPE_END;
                     }
                     /*Linkage*/
-                    route_prefix = calloc(1, sizeof(prefix_t));
-                    memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                    if(linkage){
+                        route_prefix = calloc(1, sizeof(prefix_t));
+                        memcpy(route_prefix, prefix, sizeof(prefix_t));
+                        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                    }
                     return;
 
                 }else{
@@ -825,9 +830,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                                 result->spf_metric + prefix->metric, route->spf_metric); TRACE();
                     }
                     /*Linkage*/
-                    route_prefix = calloc(1, sizeof(prefix_t));
-                    memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                    if(linkage){
+                        route_prefix = calloc(1, sizeof(prefix_t));
+                        memcpy(route_prefix, prefix, sizeof(prefix_t));
+                        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                    }
                     return;
                 }
             }
@@ -840,7 +847,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             
 /* Comparison Block Start*/
 
-            prefix_pref = route_preference(prefix->prefix_flags, level);
+            prefix_pref = route_preference(prefix->prefix_flags, prefix->level);
             route_pref = route_preference(route->flags, route->level);
 
             if(prefix_pref.pref == ROUTE_UNKNOWN_PREFERENCE){
@@ -864,9 +871,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                               GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
                               route_pref.pref_str, prefix_pref.pref_str); TRACE();
                 /*Linkage*/
-                route_prefix = calloc(1, sizeof(prefix_t));
-                memcpy(route_prefix, prefix, sizeof(prefix_t));
-                link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                if(linkage){
+                    route_prefix = calloc(1, sizeof(prefix_t));
+                    memcpy(route_prefix, prefix, sizeof(prefix_t));
+                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                }
                 return;
             }
             /* If new prefix is better*/
@@ -878,9 +887,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
-                route_prefix = calloc(1, sizeof(prefix_t));
-                memcpy(route_prefix, prefix, sizeof(prefix_t));
-                link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                if(linkage){
+                    route_prefix = calloc(1, sizeof(prefix_t));
+                    memcpy(route_prefix, prefix, sizeof(prefix_t));
+                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                }
                 return;
             }
             /* If prefixes are of same preference*/ 
@@ -920,9 +931,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                                 /* Union LFA,s RLFA,s Primary nexthops*/
                     }
                     /*Linkage*/
-                    route_prefix = calloc(1, sizeof(prefix_t));
-                    memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                    if(linkage){
+                        route_prefix = calloc(1, sizeof(prefix_t));
+                        memcpy(route_prefix, prefix, sizeof(prefix_t));
+                        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                    }
                     return;
 
                 }else{
@@ -951,9 +964,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                                 result->spf_metric + prefix->metric, route->spf_metric); TRACE();
                     }
                     /*Linkage*/
-                    route_prefix = calloc(1, sizeof(prefix_t));
-                    memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                    if(linkage){
+                        route_prefix = calloc(1, sizeof(prefix_t));
+                        memcpy(route_prefix, prefix, sizeof(prefix_t));
+                        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+                    }
                     return;
 
                 }
@@ -979,9 +994,11 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             route->version = spf_info->spf_level_info[level].version;
             
             /*Linkage*/ 
-            route_prefix = calloc(1, sizeof(prefix_t));
-            memcpy(route_prefix, prefix, sizeof(prefix_t));
-            link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+            if(linkage){
+                route_prefix = calloc(1, sizeof(prefix_t));
+                memcpy(route_prefix, prefix, sizeof(prefix_t));
+                link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric);
+            }
         }
     }
 }
@@ -1262,41 +1279,42 @@ build_routing_table(spf_info_t *spf_info,
 
 
     ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
-        
-         result = (spf_result_t *)list_node->data;
-       
+
+        result = (spf_result_t *)list_node->data;
+
         /*If computing router is a pure L1 router, and if computing
          * router is connected to L1L2 router with in its own area, then
          * computing router should install the default gw in RIB*/
-         
-         if(level == LEVEL1                                              &&       /*The current run us LEVEL1*/
-                 !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)   &&       /*By default, router should process Attached Bit*/
-                 spf_info->spff_multi_area == 0                          &&       /*computing router L1-only router. For L1-only router this bit is never set*/
-                 result->node != NULL                                    &&       /*first fragment of the node whose result is being processed exist*/
-                 result->node->attached){                                         /*Router being inspected is L1L2 router*/
 
-             /* Installation of Default route in L1-only router RIB*/
+        if(level == LEVEL1                                              &&       /*The current run us LEVEL1*/
+                !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)   &&       /*By default, router should process Attached Bit*/
+                spf_info->spff_multi_area == 0                          &&       /*computing router L1-only router. For L1-only router this bit is never set*/
+                result->node != NULL                                    &&       /*first fragment of the node whose result is being processed exist*/
+                result->node->attached){                                         /*Router being inspected is L1L2 router*/
 
-             common_pfx_key_t common_pfx;
-             memset(&common_pfx, 0, sizeof(common_pfx_key_t));
-             if(node_local_prefix_search(result->node, level, common_pfx.prefix, common_pfx.mask) == NULL){
+            /* Installation of Default route in L1-only router RIB*/
 
-                 /* Default prefix 0.0.0.0/0 is not advertised by 'node' which is L1L2 router*/
-                 sprintf(LOG, "Default prefix 0.0.0.0/0 not found in L1L2 node %s prefix db for %s", 
-                         result->node->node_name, get_str_level(level));  TRACE();
-#if 0
-                 prefix_t *prefix = calloc(1, sizeof(prefix_t));
-                 fill_prefix(prefix, &common_pfx, 0, FALSE);
-                 update_route(spf_info, result, prefix, level, FALSE);
-#endif
-             }
-         }
+            common_pfx_key_t common_pfx;
+            memset(&common_pfx, 0, sizeof(common_pfx_key_t));
+            if(node_local_prefix_search(result->node, level, 
+                        common_pfx.prefix, common_pfx.mask) == NULL){
+
+                prefix_t default_prefix;
+                memset(&default_prefix, 0, sizeof(prefix_t)); 
+                UNSET_BIT(default_prefix.prefix_flags, PREFIX_DOWNBIT_FLAG);
+                UNSET_BIT(default_prefix.prefix_flags, PREFIX_EXTERNABIT_FLAG);
+                UNSET_BIT(default_prefix.prefix_flags, PREFIX_METRIC_TYPE_EXT);
+                default_prefix.hosting_node = result->node;
+                default_prefix.metric = 0;
+                default_prefix.mask = 0;
+                update_route(spf_info, result, &default_prefix, level, FALSE);
+            }
+        }
 
         /*Iterate over all the prefixes of result->node for level 'level'*/
-        
-        prefix = NULL;    
+
         ITERATE_LIST_BEGIN(GET_NODE_PREFIX_LIST(result->node, level), prefix_list_node){
-        
+
             prefix = (prefix_t *)prefix_list_node->data;  
             update_route(spf_info, result, prefix, level, TRUE);
         }ITERATE_LIST_END;

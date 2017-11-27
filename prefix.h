@@ -87,18 +87,21 @@ typedef struct prefix_{
 
     char prefix[PREFIX_LEN + 1];
     unsigned char mask;/*Numeric value [0-32]*/
-    unsigned int metric;/*Prefix metric, zero for local prefix, non-zeroi for leaked or external prefixes*/
+    unsigned int metric;/*Prefix metric, zero for local prefix, non-zero for leaked or external prefixes*/
     FLAG prefix_flags;
     node_t *hosting_node;   /*back pointer to hosting node*/
+    LEVEL level;
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;
 
 FLAG
-is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2, unsigned int prefix2_hosting_node_metric);
+is_prefix_byte_equal(prefix_t *prefix1, 
+                     prefix_t *prefix2, 
+                     unsigned int prefix2_hosting_node_metric);
 
 prefix_t *
-create_new_prefix(const char *prefix, unsigned char mask);
+create_new_prefix(const char *prefix, unsigned char mask, LEVEL level);
 
 #define STR_PREFIX(prefix_t_ptr)    (prefix_t_ptr ? prefix_t_ptr->prefix : "NIL")
 #define PREFIX_MASK(prefix_t_ptr)   (prefix_t_ptr ? prefix_t_ptr->mask : 0)
