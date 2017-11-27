@@ -134,7 +134,6 @@ static int
 node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     tlv_struct_t *tlv = NULL;
-    unsigned int i = 0;
     char *slot_name = NULL;
     char *node_name = NULL; 
     node_t *node = NULL;
@@ -142,7 +141,7 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
     LEVEL level = MAX_LEVEL;
     unsigned int metric = 0;
       
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
             slot_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
@@ -151,7 +150,7 @@ node_slot_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_
             level = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "metric", strlen("metric")) ==0)
             metric = atoi(tlv->value);
-    }
+    } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
 
@@ -178,11 +177,10 @@ static int
 show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     char *node_name = NULL;
-    unsigned int i = 0;
     tlv_struct_t *tlv = NULL;
     node_t *node = NULL;
 
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
              node_name = tlv->value;
     }
@@ -190,24 +188,23 @@ show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     show_routing_table(node->spf_info.rttable);
     return 0;
-}
+} TLV_LOOP_END;
 
 static int
 show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     char *node_name = NULL;
     char *prefix = NULL;
-    unsigned int i = 0;
     tlv_struct_t *tlv = NULL;
 
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
              node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "prefix", strlen("prefix")) ==0)
             prefix = tlv->value;
         else
             assert(0);
-    }
+    } TLV_LOOP_END;
 
     show_traceroute(node_name, prefix);
     return 0; 
@@ -228,14 +225,14 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
     singly_ll_node_t *list_node = NULL;
     int cmdcode = -1;
 
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
             level = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
              slot_name = tlv->value;
-    }
+    } TLV_LOOP_END;
 
    cmdcode = EXTRACT_CMD_CODE(tlv_buf); 
    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
@@ -395,7 +392,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
     
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
 
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) == 0)
             node_name = tlv->value;
@@ -419,7 +416,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             tail_end_ip = tlv->value;
         else
             assert(0);
-    }
+    } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
@@ -589,7 +586,6 @@ config_static_route_handler(param_t *param,
 
     node_t *host_node = NULL;
     tlv_struct_t *tlv = NULL;
-    unsigned int i = 0;
     char *nh_name = NULL, 
          *host_node_name = NULL,
          *dest_ip = NULL,
@@ -599,7 +595,7 @@ config_static_route_handler(param_t *param,
     int mask = 0;
     rttable_entry_t *rt_entry = NULL;
 
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
 
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             host_node_name = tlv->value;
@@ -615,7 +611,7 @@ config_static_route_handler(param_t *param,
             intf_name =  tlv->value;
         else
             assert(0);
-    }
+    } TLV_LOOP_END;
 
     host_node = singly_ll_search_by_key(instance->instance_node_list, host_node_name);
 
@@ -657,12 +653,11 @@ static int
 debug_log_enable_disable_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
     
     tlv_struct_t *tlv = NULL;
-    unsigned int i = 0;
     char *value = NULL;
 
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
         value = tlv->value;        
-    }
+    } TLV_LOOP_END;
 
     if(strncmp(value, "enable", strlen(value)) ==0){
         enable_logging();
@@ -688,7 +683,6 @@ static int
 show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     tlv_struct_t *tlv = NULL;
-    unsigned int i = 0;
     LEVEL level = LEVEL1 | LEVEL2;;
     char *node_name = NULL;
     node_t *spf_root = NULL;
@@ -696,14 +690,14 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
 
     CMDCODE = EXTRACT_CMD_CODE(tlv_buf);
      
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0){
             level = atoi(tlv->value);
         }
         else if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0){
             node_name = tlv->value;
         }
-    }
+    } TLV_LOOP_END;
 
     if(node_name == NULL)
         spf_root = instance->instance_root;
@@ -739,7 +733,6 @@ show_instance_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_dis
     
     singly_ll_node_t *list_node = NULL;
     tlv_struct_t *tlv = NULL;
-    unsigned int i = 0;
     LEVEL level = LEVEL_UNKNOWN;
     char *node_name = NULL;
     int CMDCODE = -1;
@@ -747,14 +740,14 @@ show_instance_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_dis
 
     CMDCODE = EXTRACT_CMD_CODE(tlv_buf); 
 
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) == 0)
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) == 0)
             level = atoi(tlv->value);   
         else
             assert(0); 
-    }
+    } TLV_LOOP_END;
     
     switch(CMDCODE){
         
@@ -778,13 +771,12 @@ static int
 show_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     tlv_struct_t *tlv = NULL;
-    unsigned int i = 0;
     char *node_name = NULL;
     node_t *node = NULL;
 
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
         node_name = tlv->value;
-    }
+    } TLV_LOOP_END;
 
     node =  (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     dump_node_info(node); 

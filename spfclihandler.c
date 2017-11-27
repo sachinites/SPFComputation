@@ -176,11 +176,11 @@ display_instance_node_interfaces(param_t *param, ser_buff_t *tlv_buf){
     node_t *node = NULL;
     edge_end_t *edge_end = NULL;
 
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
 
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
-    }
+    } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     if(!node)
@@ -261,7 +261,6 @@ int
 show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     tlv_struct_t *tlv = NULL;
-    unsigned int i = 0;
     char *node_name = NULL;
     node_t *node = NULL;
     routes_t *route = NULL;
@@ -273,7 +272,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
 
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
       
-    TLV_LOOP(tlv_buf, tlv, i){
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
 
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
@@ -283,7 +282,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             mask = atoi(tlv->value);
         else
             assert(0);
-    }
+    } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
