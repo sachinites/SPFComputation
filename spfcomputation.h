@@ -100,6 +100,9 @@ typedef struct spf_info_{
 #define SPF_RUN_TYPE(spfrootptr, _level)    \
     (spfrootptr->spf_info.spf_level_info[_level].spf_type)
 
+#define GET_SPF_RESULT(_spf_info, _node_ptr, _level)    \
+        singly_ll_search_by_key(_spf_info->spf_level_info[_level].node->spf_run_result[_level], \
+        _node_ptr);
 
 typedef struct _node_t node_t;
 
