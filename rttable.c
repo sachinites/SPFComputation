@@ -30,11 +30,11 @@
  * =====================================================================================
  */
 
-#include "rttable.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include "rttable.h"
 #include "bitsop.h"
 #include "logging.h"
 #include "spfutil.h"
@@ -287,8 +287,9 @@ show_traceroute(char *node_name, char *dst_prefix){
 
     node_t *node = NULL;
     rttable_entry_t * rt_entry = NULL;
-    unsigned int i = 1;
-     
+    unsigned int i = 1, j = 0;
+
+    nh_type_t nh ;
     mark_all_rttables_unvisited();
      
     printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
@@ -317,17 +318,26 @@ show_traceroute(char *node_name, char *dst_prefix){
             return 0;
         }
 
-        if(rt_entry->primary_nh_count[IPNH]){
+        if(rt_entry->primary_nh_count[IPNH] == 1 && rt_entry->primary_nh_count[LSPNH] == 0){
             printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[IPNH][0].oif, 
                 rt_entry->primary_nh[IPNH][0].gwip, rt_entry->primary_nh[IPNH][0].nh_name);
              node_name = rt_entry->primary_nh[IPNH][0].nh_name;
         }
-        else if(rt_entry->primary_nh_count[LSPNH]){
+        else if(rt_entry->primary_nh_count[IPNH] == 0 && rt_entry->primary_nh_count[LSPNH] == 1){
             printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[LSPNH][0].oif, 
                 rt_entry->primary_nh[LSPNH][0].gwip, rt_entry->primary_nh[LSPNH][0].nh_name);
             node_name = rt_entry->primary_nh[LSPNH][0].nh_name;
         }
-        
+        else{
+            ITERATE_NH_TYPE_BEGIN(nh){
+
+                for(j = 0 ; j < rt_entry->primary_nh_count[nh]; j++){
+                    printf("ECMP : %u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[nh][j].oif, 
+                            rt_entry->primary_nh[nh][j].gwip, rt_entry->primary_nh[nh][j].nh_name);
+                    node_name = rt_entry->primary_nh[nh][j].nh_name;
+                }
+            } ITERATE_NH_TYPE_END;
+        }
         MARK_RT_TABLE_VISITED(node->spf_info.rttable);
     }
     while(1);
