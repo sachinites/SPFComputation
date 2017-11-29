@@ -98,6 +98,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     singly_ll_set_comparison_fn(node->spf_info.deferred_routes_list, route_search_comparison_fn);
 
     node->spf_info.rttable = init_rttable("inet.0");
+    node->attached = 1; /*By default attached bit is enabled*/
     add_node_to_owning_instance(instance, node);
     return node;    
 }

@@ -332,11 +332,12 @@ show_traceroute(char *node_name, char *dst_prefix){
             ITERATE_NH_TYPE_BEGIN(nh){
 
                 for(j = 0 ; j < rt_entry->primary_nh_count[nh]; j++){
-                    printf("ECMP : %u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[nh][j].oif, 
+                    printf("ECMP : %u. %s(%s)--->(%s)%s\n", i, node->node_name, rt_entry->primary_nh[nh][j].oif, 
                             rt_entry->primary_nh[nh][j].gwip, rt_entry->primary_nh[nh][j].nh_name);
                     node_name = rt_entry->primary_nh[nh][j].nh_name;
                 }
             } ITERATE_NH_TYPE_END;
+            i++;
         }
         MARK_RT_TABLE_VISITED(node->spf_info.rttable);
     }

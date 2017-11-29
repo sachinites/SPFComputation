@@ -75,7 +75,6 @@ typedef struct _node_t{
 
     /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
-    ll_t *attached_nodes;                                   /*Every node should know the L2 router(s) within a local area which are attached to another Area*/
     char traversing_bit;                                    /*This bit is only used to traverse the instance, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
 } node_t;
 

@@ -1321,6 +1321,7 @@ build_routing_table(spf_info_t *spf_info,
                 default_prefix.hosting_node = result->node;
                 default_prefix.metric = 0;
                 default_prefix.mask = 0;
+                default_prefix.level = LEVEL2;
                 update_route(spf_info, result, &default_prefix, level, FALSE);
             }
         }

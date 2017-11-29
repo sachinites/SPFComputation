@@ -134,45 +134,61 @@ generate_lsp(instance_t *instance,
                   info_dist_fn_ptr fn_ptr, dist_info_hdr_t *dist_info){
 
     node_t  *curr_node = NULL,
-            *nbr_node = NULL;
+    *nbr_node = NULL;
 
     edge_t *edge1 = NULL,  /*Edge connecting curr node with PN*/
-            *edge2 = NULL; /*Edge connecting PN to its nbr*/
-    LEVEL level_of_info_dist = dist_info->info_dist_level;
-    
-     init_flooding(); 
-     /*distribute the info to self*/
-     fn_ptr(lsp_generator, lsp_generator, dist_info);
+           *edge2 = NULL; /*Edge connecting PN to its nbr*/
+
+    LEVEL level_of_info_dist = dist_info->info_dist_level,
+          level_it = LEVEL_UNKNOWN;
+
+    init_flooding(); 
+    /*distribute the info to self*/
+    fn_ptr(lsp_generator, lsp_generator, dist_info);
 
     if(get_flooding_status() == 0)
         return;
 
     /*distribute info in the network at a given level*/
-     Queue_t *q = initQ();
-     init_instance_traversal(instance);
+    Queue_t *q = initQ();
 
-     lsp_generator->traversing_bit = 1;
-     enqueue(q, lsp_generator);
+    for(level_it = LEVEL1 ; level_it < MAX_LEVEL; level_it++){
 
-     unsigned int propogation_delay = 0;
+        if(!IS_LEVEL_SET(level_of_info_dist, level_it))
+            continue;
 
-     while(!is_queue_empty(q)){
-         curr_node = deque(q);
-         sleep(propogation_delay); /*Let us introduce some delay in information propogation*/
-         ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge1, 
-                                         edge2, level_of_info_dist){
-             if(nbr_node->traversing_bit)
-                 continue;
-              sprintf(LOG, "LSP Distribution Src : %s, Des Node : %s", 
-                    lsp_generator->node_name, nbr_node->node_name); TRACE();
-             fn_ptr(lsp_generator, nbr_node, dist_info);
-             nbr_node->traversing_bit = 1;
-             enqueue(q, nbr_node);
-         }
-         ITERATE_NODE_PHYSICAL_NBRS_END;
-     }
-     assert(is_queue_empty(q));
-     free(q);
-     q = NULL;
+        init_instance_traversal(instance);
+
+        lsp_generator->traversing_bit = 1;
+        enqueue(q, lsp_generator);
+
+        unsigned int propogation_delay = 0;
+
+        while(!is_queue_empty(q)){
+
+            curr_node = deque(q);
+
+            sleep(propogation_delay); /*Let us introduce some delay in information propogation*/
+
+            ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge1, 
+                                            edge2, level_it){
+
+                if(nbr_node->traversing_bit)
+                    continue;
+
+                sprintf(LOG, "LSP Distribution Src : %s, Des Node : %s", 
+                        lsp_generator->node_name, nbr_node->node_name); TRACE();
+
+                fn_ptr(lsp_generator, nbr_node, dist_info);
+                nbr_node->traversing_bit = 1;
+                enqueue(q, nbr_node);
+            }
+            ITERATE_NODE_PHYSICAL_NBRS_END;
+        }
+        assert(is_queue_empty(q));
+        reuse_q(q);
+    }
+    free(q);
+    q = NULL;
 }
 
