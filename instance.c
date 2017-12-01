@@ -315,7 +315,7 @@ mark_node_pseudonode(node_t *node, LEVEL level){
     node->node_type[level] = PSEUDONODE;
 
     for(; i < MAX_NODE_INTF_SLOTS; i++){
-        if(!node->edges[i]) continue;;
+        if(!node->edges[i]) continue;
         
         edge_end = node->edges[i];
         

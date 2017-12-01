@@ -56,12 +56,11 @@ typedef struct _node_t{
     struct _node_t *next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     struct _node_t *direct_next_hop[MAX_LEVEL][NH_MAX][1];
 
-   /*MPLS LSP*/
-
     edge_end_t *pn_intf[MAX_LEVEL];
 
     ll_t *local_prefix_list[MAX_LEVEL];
     ll_t *self_spf_result[MAX_LEVEL];                       /*Used for LFA and RLFA computation*/ 
+    
     /*For SPF computation only*/ 
     ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of instance which contain result of SPF skeleton run*/
     

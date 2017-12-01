@@ -772,6 +772,7 @@ show_instance_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_dis
     return 0;
 }
 
+
 static int
 show_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
@@ -798,6 +799,24 @@ spf_init_dcm(){
     param_t *show   = libcli_get_show_hook();
     param_t *debug  = libcli_get_debug_hook();
     param_t *config = libcli_get_config_hook();
+    param_t *run = libcli_get_run_hook();
+
+    /*run commands*/
+
+    /*run instance sync*/
+    
+    {
+        static param_t instance;
+        init_param(&instance, CMD, "instance", 0, 0, INVALID, 0, "Network graph");
+        libcli_register_param(run, &instance);
+
+        {
+            static param_t sync;
+            init_param(&sync, CMD, "sync", run_spf_run_all_nodes, 0, INVALID, 0, "Run L1L2 spf run on entire Network graph");
+            libcli_register_param(&instance, &sync);
+            set_param_cmd_code(&sync, CMDCODE_RUN_INSTANCE_SYNC);
+        }
+    }
 
     /*Show commands*/
     

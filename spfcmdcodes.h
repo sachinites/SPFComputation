@@ -56,4 +56,6 @@
 #define CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE  19 /*config node <node-name> interface <intf-name> level <level-no> metric <metric value>*/
 #define CMDCODE_SHOW_SPF_RUN_PRC            20  /*show spf run level <level-no>* [root <node-name>] prc*/
 #define CMDCODE_CONFIG_NODE_LSP             21  /*config node <node-name> lsp <lsp-name> metric <metric-value> tail-end <tail-end-ip>*/
+#define CMDCODE_RUN_INSTANCE_SYNC           22  /*run instance sync*/
+
 #endif /* __SPFCMDCODES__H */

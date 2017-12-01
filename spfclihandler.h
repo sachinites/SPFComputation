@@ -56,6 +56,9 @@ validate_ipv4_mask(char *mask);
 int
 show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 
+int
+run_spf_run_all_nodes(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
+
 void
 insert_label_switched_path(node_t *node, char *lsp_name, unsigned int metric, 
                            char *tail_end_ip, LEVEL level);

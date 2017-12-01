@@ -41,6 +41,32 @@
 
 extern instance_t * instance;
 
+static void
+_run_spf_run_all_nodes(){
+
+    LEVEL level_it;
+    singly_ll_node_t *list_node = NULL;
+    node_t *node = NULL;;
+
+    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+        ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
+            node = list_node->data;
+            if(node->node_type[level_it] == PSEUDONODE)
+                continue;
+            spf_computation(node, &node->spf_info, level_it, FULL_RUN);
+        } ITERATE_LIST_END;
+    }
+}
+
+int
+run_spf_run_all_nodes(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    _run_spf_run_all_nodes();
+    _run_spf_run_all_nodes();
+    return 0;
+}
+
+
 void
 spf_node_slot_enable_disable(node_t *node, char *slot_name,
                                 op_mode enable_or_disable){

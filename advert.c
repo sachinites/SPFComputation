@@ -59,25 +59,6 @@ get_flooding_status(void){
     return flood;
 }
 
-extern void
-add_route(node_t *lsp_reciever,
-        node_t *lsp_generator,
-        LEVEL info_dist_level,
-        char *prefix, char mask,
-        unsigned int metric,
-        FLAG prefix_flags,
-        node_t *hosting_node);
-
-extern void
-delete_route(node_t *lsp_reciever,
-        node_t *lsp_generator,
-        LEVEL info_dist_level,
-        char *prefix, char mask,
-        FLAG prefix_flags,
-        unsigned int metric,
-        node_t *hosting_node);
-
-
 char *
 advert_id_str(ADVERT_ID_T advert_id){
 

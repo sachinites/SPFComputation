@@ -1280,9 +1280,11 @@ build_routing_table(spf_info_t *spf_info,
 
     routes_t *route = NULL;
     prefix_t *prefix = NULL;
-    spf_result_t *result = NULL;
-    rttable_entry_t *rt_entry = NULL;
+    spf_result_t *result = NULL,
+                 *L1L2_result = NULL;
 
+    rttable_entry_t *rt_entry = NULL;
+    
     sprintf(LOG, "Entered ... spf_root : %s, Level : %s", spf_root->node_name, get_str_level(level)); TRACE();
     
     mark_all_routes_stale(spf_info, level);
@@ -1296,15 +1298,16 @@ build_routing_table(spf_info_t *spf_info,
 
         result = (spf_result_t *)list_node->data;
 
+#if 0
         /*If computing router is a pure L1 router, and if computing
          * router is connected to L1L2 router with in its own area, then
          * computing router should install the default gw in RIB*/
 
-        if(level == LEVEL1                                              &&       /*The current run us LEVEL1*/
+        if(level == LEVEL1                                              &&       /*The current run is LEVEL2*/
                 !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)   &&       /*By default, router should process Attached Bit*/
                 spf_info->spff_multi_area == 0                          &&       /*computing router L1-only router. For L1-only router this bit is never set*/
                 result->node != NULL                                    &&       /*first fragment of the node whose result is being processed exist*/
-                result->node->attached){                                         /*Router being inspected is L1L2 router*/
+                result->node->attached){                                         /*Router being inspected is reachable to L1L2 router*/
 
             /* Installation of Default route in L1-only router RIB*/
 
@@ -1325,15 +1328,43 @@ build_routing_table(spf_info_t *spf_info,
                 update_route(spf_info, result, &default_prefix, level, FALSE);
             }
         }
+#endif
 
         /*Iterate over all the prefixes of result->node for level 'level'*/
+
+
+        if(level == LEVEL1                                          &&  /* If current spf run is Level1*/
+           !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)    &&  /* If computing router is programmed to detect the L1L2 routers*/
+           result->node->spf_info.spff_multi_area){                              /* if the router being inspected is L1L2 router*/
+               
+               L1L2_result = result;                                    /* Record the L1L2 router result*/
+        }
+
 
         ITERATE_LIST_BEGIN(GET_NODE_PREFIX_LIST(result->node, level), prefix_list_node){
 
             prefix = (prefix_t *)prefix_list_node->data;  
             update_route(spf_info, result, prefix, level, TRUE);
         }ITERATE_LIST_END;
+
     } ITERATE_LIST_END;
+
+    /* L1L2_result now points to the result of L1L2 router which is nearest 
+     * to the computing router*/
+
+    if(L1L2_result){
+
+        prefix_t default_prefix;
+        memset(&default_prefix, 0, sizeof(prefix_t)); 
+        UNSET_BIT(default_prefix.prefix_flags, PREFIX_DOWNBIT_FLAG);
+        UNSET_BIT(default_prefix.prefix_flags, PREFIX_EXTERNABIT_FLAG);
+        UNSET_BIT(default_prefix.prefix_flags, PREFIX_METRIC_TYPE_EXT);
+        default_prefix.hosting_node = L1L2_result->node;
+        default_prefix.metric = 0;
+        default_prefix.mask = 0;
+        default_prefix.level = LEVEL1;
+        update_route(spf_info, L1L2_result, &default_prefix, LEVEL1, FALSE);
+    }
 
 
     /*Iterate over all UPDATED routes and figured out which one needs to be updated
