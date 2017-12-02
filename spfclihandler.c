@@ -48,7 +48,10 @@ _run_spf_run_all_nodes(){
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;;
 
-    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+    /*Ist run LEVEL2 spf run on all nodes, so that L1L2 routers would set multi_area bit appropriately*/
+
+    for(level_it = LEVEL2; level_it >= LEVEL1; level_it--){
+
         ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
             node = list_node->data;
             if(node->node_type[level_it] == PSEUDONODE)
@@ -61,7 +64,6 @@ _run_spf_run_all_nodes(){
 int
 run_spf_run_all_nodes(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
-    _run_spf_run_all_nodes();
     _run_spf_run_all_nodes();
     return 0;
 }
