@@ -1303,13 +1303,24 @@ build_routing_table(spf_info_t *spf_info,
         /*Iterate over all the prefixes of result->node for level 'level'*/
 
 
-        if(level == LEVEL1                                          &&  /* If current spf run is Level1*/
-           !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)    &&  /* If computing router is programmed to detect the L1L2 routers*/
-           result->node->spf_info.spff_multi_area){                              /* if the router being inspected is L1L2 router*/
-               
-               L1L2_result = result;                                    /* Record the L1L2 router result*/
-               sprintf(LOG, "Node %s : L1L2_result recorded - %s", spf_root->node_name, 
-                            L1L2_result->node->node_name); TRACE(); 
+        if(level == LEVEL1                                               &&  /* If current spf run is Level1*/
+                !IS_BIT_SET(spf_root->instance_flags, IGNOREATTACHED)    &&  /* If computing router is programmed to detect the L1L2 routers*/
+                result->node->spf_info.spff_multi_area){                              /* if the router being inspected is L1L2 router*/
+
+            L1L2_result = result;                                    /* Record the L1L2 router result*/
+            sprintf(LOG, "Node %s : L1L2_result recorded - %s", 
+                            spf_root->node_name, L1L2_result->node->node_name); TRACE(); 
+
+            prefix_t default_prefix;
+            memset(&default_prefix, 0, sizeof(prefix_t)); 
+            UNSET_BIT(default_prefix.prefix_flags, PREFIX_DOWNBIT_FLAG);
+            UNSET_BIT(default_prefix.prefix_flags, PREFIX_EXTERNABIT_FLAG);
+            UNSET_BIT(default_prefix.prefix_flags, PREFIX_METRIC_TYPE_EXT);
+            default_prefix.hosting_node = L1L2_result->node;
+            default_prefix.metric = 0;
+            default_prefix.mask = 0;
+            default_prefix.level = LEVEL1;
+            update_route(spf_info, L1L2_result, &default_prefix, LEVEL1, FALSE);
         }
 
 
@@ -1321,6 +1332,7 @@ build_routing_table(spf_info_t *spf_info,
 
     } ITERATE_LIST_END;
 
+#if 0
     /* L1L2_result now points to the result of L1L2 router which is nearest 
      * to the computing router*/
 
@@ -1337,7 +1349,7 @@ build_routing_table(spf_info_t *spf_info,
         default_prefix.level = LEVEL1;
         update_route(spf_info, L1L2_result, &default_prefix, LEVEL1, FALSE);
     }
-
+#endif
 
     /*Iterate over all UPDATED routes and figured out which one needs to be updated
      * in RIB*/

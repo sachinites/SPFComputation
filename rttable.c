@@ -330,6 +330,9 @@ show_traceroute(char *node_name, char *dst_prefix){
         }
         else{
             ITERATE_NH_TYPE_BEGIN(nh){
+                
+                /* ToDo : This fn is to be re-written as recursive or degregated to print the complete
+                 * ECMP paths. Currently only the last ecmp path is traced completely*/
 
                 for(j = 0 ; j < rt_entry->primary_nh_count[nh]; j++){
                     printf("ECMP : %u. %s(%s)--->(%s)%s\n", i, node->node_name, rt_entry->primary_nh[nh][j].oif, 
