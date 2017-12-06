@@ -338,25 +338,6 @@ leak_prefix(char *node_name, char *_prefix, char mask,
             return NULL;
         }
 
-        /* Even though the route for a prefix being leaked is already present in leaking level(destination level),
-         * We will go ahead and leak the prefix. This is because, leaked prefix may have better
-         * route than the route already present in leaking level for the same prefix. For example, in build_multi_area_topo()
-         * if 192.168.0.1 is a local prefix on node R1 in LEVEL1, and node R0 leaks this prefix in LEVEL2,
-         * then node R5 will have LEVEL2 cost = 40 for route 192.168.0.1. Now, if node R2 also leaks the LEVEL1
-         * prefix 192.168.0.1 to LEVEL2, then node R5 will have LEVEL2 cost = 20 for route 192.168.0.1 which
-         * is better than previous cost(40). Hence, we should not prevent node R2 from leaking L1 prefix
-         * in L2 domain even if the prefix is already present in L2 domain. By leaking the prefix, node
-         * actually conveys to connected nodes in the domain its own cost to reach the leaked prefix which
-         * could be better than rest of the nodes currently have */
-#if 0
-         if(search_route_in_spf_route_list(&node->spf_info, &prefix_key, to_level)){
-            printf("%s() : Node : %s : INFO : route %s/%u already present in %s\n", 
-                    __FUNCTION__, node->node_name,  
-                    _prefix, mask, 
-                    get_str_level(to_level));
-            return -1;
-        }
-#endif
         /*We need to add this remote route which is leaked from L2 to L1 in native L1 prefix list
          * so that L1 router can compute route to this leaked prefix by running full spf run */
 
@@ -473,16 +454,6 @@ add_prefix_to_prefix_list(ll_t *prefix_list,
     key.prefix[PREFIX_LEN] = '\0'; 
     key.mask = prefix->mask;
 
-#if 0
-    prefix_t *old_prefix = NULL;
-
-    old_prefix = singly_ll_search_by_key(prefix_list, &key);
-
-    if(old_prefix){        
-       if(is_prefix_byte_equal(old_prefix, prefix, hosting_node_metric))
-           return 0; 
-    }
-#endif
     assert(!singly_ll_search_by_key(prefix_list, &key));
 
     add_new_prefix_in_list(prefix_list, prefix, hosting_node_metric);

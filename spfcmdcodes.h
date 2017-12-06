@@ -58,4 +58,8 @@
 #define CMDCODE_CONFIG_NODE_LSP             21  /*config node <node-name> lsp <lsp-name> metric <metric-value> tail-end <tail-end-ip>*/
 #define CMDCODE_RUN_INSTANCE_SYNC           22  /*run instance sync*/
 
+/*Administrative tag support*/
+#define CMDCODE_CONFIG_INSTANCE_NODE_TAG_PRIORITY    23  /*config instance node <node-name> tag <tag-value> priority <high | medium | low>*/
+#define CMDCODE_CONFIG_NODE_SLOT_TAG_VALUE           24  /*config node <node-name> [no] slot <slot-name> tag <tag-value>*/
+
 #endif /* __SPFCMDCODES__H */

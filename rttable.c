@@ -84,6 +84,7 @@ rt_route_install(rttable *rttable, rttable_entry_t *rt_entry){
 
     sprintf(LOG, "Added route %s/%d to Routing table for level%d", 
         rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
+
     singly_ll_add_node_by_val(GET_RT_TABLE(rttable), rt_entry);
     return 1;
 }
@@ -100,6 +101,9 @@ rt_route_delete(rttable *rttable, char *prefix, char mask){
         printf("%s() : Warning route for %s/%d not found in routing table\n", __FUNCTION__, prefix, mask);
         return -1;
     }
+
+    sprintf(LOG, "Deleted route %s/%d from Routing table for level%d", 
+        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
     
@@ -121,11 +125,15 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
     nh_type_t nh;
     
     rttable_entry_t *rt_entry1 = rt_route_lookup(rttable, rt_entry->dest.prefix, rt_entry->dest.mask);
+    
     if(!rt_entry1){
         printf("%s() : Warning route for %s/%d not found in routing table\n", 
                     __FUNCTION__, rt_entry->dest.prefix, rt_entry->dest.mask);
         return -1;
     }
+    
+    sprintf(LOG, "Updated route %s/%d to Routing table for level%d", 
+        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
 
     memcpy(rt_entry1->dest.prefix, rt_entry->dest.prefix, PREFIX_LEN + 1); 
     rt_entry1->dest.mask   = rt_entry->dest.mask;
