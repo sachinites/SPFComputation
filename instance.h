@@ -75,6 +75,7 @@ typedef struct _node_t{
     /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
     char traversing_bit;                                    /*This bit is only used to traverse the instance, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
+    char lsp_distribution_bit;
 } node_t;
 
 static inline unsigned int 

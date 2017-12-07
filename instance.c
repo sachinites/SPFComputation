@@ -99,6 +99,10 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
 
     node->spf_info.rttable = init_rttable("inet.0");
     node->attached = 1; /*By default attached bit is enabled*/
+
+    node->traversing_bit = 0;
+    node->lsp_distribution_bit = 0;
+
     add_node_to_owning_instance(instance, node);
     return node;    
 }

@@ -108,6 +108,19 @@ init_instance_traversal(instance_t * instance){
     }ITERATE_LIST_END;  
 }
 
+static void
+init_instance_lsp_distrution_traversal(instance_t * instance){
+
+    singly_ll_node_t *list_node = NULL;
+    node_t *node = NULL;
+
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
+        node = (node_t *)list_node->data;
+        node->lsp_distribution_bit = 0;
+    }ITERATE_LIST_END;
+}
+
+
 /*fn to simulate LSP generation and distribution at its simplest.*/
 void
 generate_lsp(instance_t *instance, 
@@ -118,7 +131,7 @@ generate_lsp(instance_t *instance,
     *nbr_node = NULL;
 
     edge_t *edge1 = NULL,  /*Edge connecting curr node with PN*/
-           *edge2 = NULL; /*Edge connecting PN to its nbr*/
+           *edge2 = NULL;  /*Edge connecting PN to its nbr*/
 
     LEVEL level_of_info_dist = dist_info->info_dist_level,
           level_it = LEVEL_UNKNOWN;
@@ -138,9 +151,9 @@ generate_lsp(instance_t *instance,
         if(!IS_LEVEL_SET(level_of_info_dist, level_it))
             continue;
 
-        init_instance_traversal(instance);
+        init_instance_lsp_distrution_traversal(instance);
 
-        lsp_generator->traversing_bit = 1;
+        lsp_generator->lsp_distribution_bit = 1;
         enqueue(q, lsp_generator);
 
         unsigned int propogation_delay = 0;
@@ -154,14 +167,14 @@ generate_lsp(instance_t *instance,
             ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge1, 
                                             edge2, level_it){
 
-                if(nbr_node->traversing_bit)
+                if(nbr_node->lsp_distribution_bit)
                     continue;
 
                 sprintf(LOG, "LSP Distribution Src : %s, Des Node : %s", 
                         lsp_generator->node_name, nbr_node->node_name); TRACE();
 
                 fn_ptr(lsp_generator, nbr_node, dist_info);
-                nbr_node->traversing_bit = 1;
+                nbr_node->lsp_distribution_bit = 1;
                 enqueue(q, nbr_node);
             }
             ITERATE_NODE_PHYSICAL_NBRS_END;
