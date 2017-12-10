@@ -206,9 +206,6 @@ inverse_topology(instance_t *instance, LEVEL level);
 #define IS_OVERLOADED(nodeptr, level)                   \
     IS_BIT_SET(nodeptr->attributes[level], OVERLOAD_BIT)
 
-#define IS_ROUTER_STUB_RTR(nodeptr, _level)             \
-    IS_BIT_SET(nodeptr->spf_info.spf_level_info[_level].node_level_flags, STUB_ROUTER_FLAG)
-
 static inline edge_t *
 GET_EGDE_PTR_FROM_EDGE_END(edge_end_t *edge_end){
     

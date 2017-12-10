@@ -331,6 +331,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
                 if(strncmp(route->rt_key.prefix, masked_prefix, PREFIX_LEN) != 0)
                     continue;
                 dump_route_info(route);
+                break;
             }ITERATE_LIST_END;
 
         break;
