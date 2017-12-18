@@ -38,6 +38,7 @@
 #include "spfutil.h"
 #include "spfcmdcodes.h"
 #include "advert.h"
+#include "rlfa.h"
 
 extern instance_t * instance;
 
@@ -343,7 +344,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
 
 /* level could LEVEL12*/
 void
-insert_label_switched_path(node_t *ingress_lsr_node, 
+inset_lsp_as_forward_adjacency(node_t *ingress_lsr_node, 
                            char *lsp_name, 
                            unsigned int metric, 
                            char *tail_end_ip, 
@@ -376,3 +377,66 @@ insert_label_switched_path(node_t *ingress_lsr_node,
     insert_edge_between_2_nodes(lsp, ingress_lsr_node, tail_end_node, UNIDIRECTIONAL);
 }
 
+int
+lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    node_t *node = NULL;
+    char *node_name = NULL;
+    char *intf_name = NULL; 
+    int cmd_code = -1, i = 0;
+    tlv_struct_t *tlv = NULL;
+    edge_t *edge = NULL;
+    edge_end_t *edge_end = NULL;
+
+    cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+        
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
+            intf_name = tlv->value;
+    } TLV_LOOP_END;
+
+    if(node_name == NULL)
+        node = instance->instance_root;
+    else
+        node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
+    for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+        edge_end = node->edges[i];
+        if(!edge_end){
+            printf("%s() : Error : Interface %s do not exist\n", __FUNCTION__, intf_name);
+            return 0;
+        }
+
+        if(edge_end->dirn != OUTGOING)
+            continue;
+
+        if(strncmp(intf_name, edge_end->intf_name, strlen(edge_end->intf_name)))
+            continue;
+
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        break;
+    }
+
+    switch(cmd_code){
+        case CMDCODE_CONFIG_INTF_LINK_PROTECTION:
+        {
+            lfa_t *lfa_l1 = NULL, *lfa_l2 = NULL;
+
+            if(IS_LEVEL_SET(edge->level, LEVEL1))
+                lfa_l1 = link_protection_lfa_back_up_nh(node, edge, LEVEL1, FALSE);
+            
+            if(IS_LEVEL_SET(edge->level, LEVEL2))
+                lfa_l2 = link_protection_lfa_back_up_nh(node, edge, LEVEL2, FALSE);
+
+            print_lfa_info(lfa_l1);
+            print_lfa_info(lfa_l2); 
+            free_lfa(lfa_l1);
+            free_lfa(lfa_l2);
+        }
+        break;
+    } 
+    return 0;
+}

@@ -501,7 +501,13 @@ lsp_ecmp_topo(){
     insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 3, create_new_prefix("60.1.1.2", 30, LEVEL1), create_new_prefix("60.1.1.1", 30, LEVEL1), LEVEL1)),
                                 D, E, BIDIRECTIONAL);
 
-
+#if 0
+    /* LSP should be inserted after spf runs, not at compile time*/
+    config node A lsp A-B metric 5 to 192.168.0.2 level 1
+    config node B lsp B-A metric 5 to 192.168.0.1 level 1
+    inset_lsp_as_forward_adjacency(A, "A-B", 5, "192.168.0.2", LEVEL1);
+    inset_lsp_as_forward_adjacency(B, "B-A", 5, "192.168.0.1", LEVEL1);
+#endif
     set_instance_root(instance, A);
     return instance;
 }

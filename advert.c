@@ -128,7 +128,7 @@ generate_lsp(instance_t *instance,
                   info_dist_fn_ptr fn_ptr, dist_info_hdr_t *dist_info){
 
     node_t  *curr_node = NULL,
-    *nbr_node = NULL;
+            *nbr_node = NULL;
 
     edge_t *edge1 = NULL,  /*Edge connecting curr node with PN*/
            *edge2 = NULL;  /*Edge connecting PN to its nbr*/

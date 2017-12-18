@@ -5,7 +5,7 @@ USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o lfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -20,9 +20,6 @@ instance.o:instance.c
 advert.o:advert.c
 	@echo "Building advert.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} advert.c -o advert.o
-lfa.o:lfa.c
-	@echo "Building lfa.o" 
-	@ ${CC} ${CFLAGS} -c ${INCLUDES} lfa.c -o lfa.o
 rlfa.o:rlfa.c
 	@echo "Building rlfa.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} rlfa.c -o rlfa.o

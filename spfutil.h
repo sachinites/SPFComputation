@@ -41,6 +41,9 @@
 void
 print_nh_list(node_t *nh_list[]);
 
+boolean
+is_present(node_t *list[], node_t *node);
+
 void
 print_direct_nh_list(node_t *direct_nh_list[]);
 

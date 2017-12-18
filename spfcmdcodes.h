@@ -55,11 +55,19 @@
 #define CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW 18     /*config node <node-name> overload level <level-no> interface <slot-no> */
 #define CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE  19 /*config node <node-name> interface <intf-name> level <level-no> metric <metric value>*/
 #define CMDCODE_SHOW_SPF_RUN_PRC            20  /*show spf run level <level-no>* [root <node-name>] prc*/
-#define CMDCODE_CONFIG_NODE_LSP             21  /*config node <node-name> lsp <lsp-name> metric <metric-value> tail-end <tail-end-ip>*/
+#define CMDCODE_CONFIG_NODE_RSVPLSP             21  /*config node <node-name> lsp <lsp-name> metric <metric-value> to <tail-end-ip>*/
 #define CMDCODE_RUN_INSTANCE_SYNC           22  /*run instance sync*/
 
 /*Administrative tag support*/
-#define CMDCODE_CONFIG_INSTANCE_NODE_TAG_PRIORITY    23  /*config instance node <node-name> tag <tag-value> priority <high | medium | low>*/
-#define CMDCODE_CONFIG_NODE_SLOT_TAG_VALUE           24  /*config node <node-name> [no] slot <slot-name> tag <tag-value>*/
+#define CMDCODE_CONFIG_INSTANCE_NODE_TAG_PRIORITY    23  /*config node <node-name> tag <tag-value> priority <high | medium | low>*/
+#define CMDCODE_CONFIG_NODE_SLOT_TAG_VALUE           24  /*config node <node-name> [no] interface <slot-name> tag <tag-value>*/
+
+/*LFAs*/
+#define CMDCODE_CONFIG_INTF_LINK_PROTECTION         25 /*config node <node-name> interface <ifname> link-protection*/ 
+#define CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION    26 /*config node <node-name> interface <ifname> node-link-protection*/
+#define CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP      27 /*config node <node-name> interface <ifname> no-eligible-backup */ 
+#define CMDCODE_CONFIG_RSVPLSP_AS_BACKUP            28 /*config node <node-name> lsp <lsp-name> backup to <tail-end ip address>*/
+#define CMDCODE_CONFIG_ALL_INTERFACE_LINK_PROTECTION 29 /*config node <node-name> interface all link-protection*/
+#define CMDCODE_CONFIG_ALL_INTERFACE_NODE_LINK_PROTECTION 30 /*config node <node-name> interface all node-link-protection*/
 
 #endif /* __SPFCMDCODES__H */

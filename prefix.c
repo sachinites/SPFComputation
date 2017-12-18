@@ -267,11 +267,6 @@ get_prefix_order_comparison_fn(){
     return prefix_order_comparison_fn;
 }
 
-#if 0
-THREAD_NODE_TO_STRUCT(prefix_t,     
-                      like_prefix_thread, 
-                      get_prefix_from_like_prefix_thread);
-#endif
 /* Returns the prefix being leaked from L2 to L1 (Or otherwise). If the prefix is already
  * leaked, return NULL. This fn simply add the new prefix to new prefix list.*/
 

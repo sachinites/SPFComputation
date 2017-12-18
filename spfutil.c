@@ -71,7 +71,7 @@ copy_direct_to_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]){
     dst_nh_list[0] = src_direct_nh_list[0];
 }
 
-static boolean 
+boolean 
 is_present(node_t *list[], node_t *node){
 
     unsigned int i = 0;

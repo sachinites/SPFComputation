@@ -53,7 +53,11 @@ typedef struct _node_t{
     
     unsigned int spf_metric[MAX_LEVEL];
     unsigned int lsp_metric[MAX_LEVEL];
+
     struct _node_t *next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
+    struct _node_t *old_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
+    struct _node_t *backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
+    struct _node_t *old_backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     struct _node_t *direct_next_hop[MAX_LEVEL][NH_MAX][1];
 
     edge_end_t *pn_intf[MAX_LEVEL];

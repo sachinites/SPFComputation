@@ -184,6 +184,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             res->node = candidate_node;
             res->spf_metric = candidate_node->spf_metric[level];
             res->lsp_metric = candidate_node->lsp_metric[level];
+            res->link_protection_lfas = init_singly_ll();
 
             ITERATE_NH_TYPE_BEGIN(nh){
 
@@ -358,12 +359,31 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 static void
 spf_clear_result(node_t *spf_root, LEVEL level){
 
-   singly_ll_node_t *list_node = NULL;
+   singly_ll_node_t *list_node = NULL, 
+                    *list_node1 = NULL,
+                    *list_node2 = NULL;
    spf_result_t *result = NULL;
+   lfa_dest_pair_t *lfa_dest_pair = NULL;
+
+   lfa_t *lfa = NULL;
 
    ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
 
        result = list_node->data;
+       ITERATE_LIST_BEGIN(result->link_protection_lfas, list_node1){
+
+            lfa = list_node1->data;
+            ITERATE_LIST_BEGIN(lfa->lfa, list_node2){
+                             
+                lfa_dest_pair = list_node2->data;
+                free(lfa_dest_pair);
+                lfa_dest_pair = NULL;
+            } ITERATE_LIST_END;
+            delete_singly_ll(lfa->lfa);
+            free(lfa->lfa);
+       } ITERATE_LIST_END;
+       delete_singly_ll(result->link_protection_lfas);
+       free(result->link_protection_lfas);
        free(result);
        result = NULL;    
    }ITERATE_LIST_END;

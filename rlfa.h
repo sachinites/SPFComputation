@@ -44,6 +44,27 @@ typedef ll_t * pq_space_set_t;
 typedef struct _node_t node_t;
 typedef struct _edge_t edge_t;
 
+typedef struct lfa_dest_pair_{
+    node_t *lfa;
+    edge_end_t *oif_to_lfa;
+    node_t *dest;
+} lfa_dest_pair_t;
+
+typedef struct lfa_{
+    
+    edge_end_t *protected_link;
+    ll_t *lfa;
+} lfa_t;
+
+lfa_t *
+get_new_lfa();
+
+void
+free_lfa();
+
+void
+print_lfa_info(lfa_t *lfa);
+
 void
 Compute_and_Store_Forward_SPF(node_t *spf_root,
                             spf_info_t *spf_info,
@@ -64,9 +85,81 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level);
 pq_space_set_t
 Intersect_Extended_P_and_Q_Space(p_space_set_t pset, q_space_set_t qset);
 
-
 void
 compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest);
 
+#define DIST_X_Y(X,Y,_level)    \
+    ((spf_result_t *)(GET_SPF_RESULT((&(X->spf_info)), Y, _level)))->spf_metric
+
+/*
+LFA Link/Link-and-node Protection
+====================================
+
+    Inequality 1 : Loop Free Criteria
+    DIST(N,D) < DIST(N,S) + DIST(S,D)  - Means, the LFA N will not send the traffic back to S in case of primary link failure (S-E link failure)
+
+    Inequality 2 :  Downstream Path Criteria
+    DIST(N,D) < DIST(S,D)              - Means, Select LFA among nbrs such that, N is a downstream router to Destination D
+
+    Inequality 3 : Node protection Criteria
+    DIST(N,D) < DIST(N,E) + DIST(E,D)  - Means, S can safely re-route traffic to N, since N's path to D do not contain failed Hop E.
+
+              +-----+                      +-----+
+              |  S  +----------------------+  N  |
+              +--+--+                      +-+---+
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |                           |
+                 |         +---------+       |
+                 |         |         |       |
+                 |         |    D    |       |
+                 +---------+         +-------+
+                           |         |
+                           +----+----+
+                                |
+                                |
+                                |
+                                |
+                                |
+                                |
+                                |
+                                |
+                                |
+                                |
+                                |
+                          +-----+-----+
+                          |           |
+                          |    E      |
+                          |           |
+                          |           |
+                          +-----------+
+
+
+
+STEPS : To compute LFA, do the following steps
+    1. Run SPF on S to know DIST(S,D)
+    2. Run SPF on all nbrs of S except primary-NH(S) to know DIST(N,D) and DIST(N,S)
+    3. Filter nbrs of S using inequality 1
+    4. Narrow down the subset further using inequality 2
+    5. Remain is the potential set of LFAs which each surely provides Link protection, but do not guarantee node protection
+    6. We need to investigate this subset of potential LFAs to possibly find one LFA which provide node protection(hence link protection)
+    7. Test the remaining set for inequality 3
+
+*/
+
+lfa_t *
+link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
+
+lfa_t *
+node_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, LEVEL level);
 
 #endif /* __RLFA__ */

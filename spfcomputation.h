@@ -33,11 +33,14 @@
 #ifndef __SPFCOMPUTATION__
 #define __SPFCOMPUTATION__
 
+
 /*-----------------------------------------------------------------------------
  *  Do not #include graph.h in this file, as it will create circular dependency.
  *  Keep this file independant of graph.h using forward declaration
  *-----------------------------------------------------------------------------*/
 typedef struct _node_t node_t;
+typedef struct edge_end_ edge_end_t;
+typedef struct link_prot_lfa_ link_prot_lfa_t;
 
 /*We need to enhance this structure more to persistently store all spf result run
   for each node in the network at spf_root only*/
@@ -48,6 +51,7 @@ typedef struct spf_result_{
     unsigned int spf_metric;
     unsigned int lsp_metric;
     struct _node_t *next_hop[NH_MAX][MAX_NXT_HOPS];
+    ll_t *link_protection_lfas;
 } spf_result_t;
 
 /* spf result of a node wrt to spf_root */
@@ -101,8 +105,7 @@ typedef struct spf_info_{
     (spfrootptr->spf_info.spf_level_info[_level].spf_type)
 
 #define GET_SPF_RESULT(_spf_info, _node_ptr, _level)    \
-        singly_ll_search_by_key(_spf_info->spf_level_info[_level].node->spf_run_result[_level], \
-        _node_ptr);
+        singly_ll_search_by_key(_spf_info->spf_level_info[_level].node->spf_run_result[_level], _node_ptr)
 
 typedef struct _node_t node_t;
 

@@ -30,11 +30,12 @@
  * =====================================================================================
  */
 
-#include "rlfa.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "rlfa.h"
 #include "instance.h"
 #include "spfutil.h"
+#include "logging.h"
 
 extern instance_t *instance;
 
@@ -60,17 +61,17 @@ Compute_Neighbor_SPFs(node_t *spf_root, edge_t *failed_edge,
      *-----------------------------------------------------------------------------*/
 
     node_t *nbr_node = NULL;
-    edge_t *edge = NULL;
+    edge_t *edge1 = NULL, *edge2 = NULL;
 
-    ITERATE_NODE_NBRS_BEGIN(spf_root, nbr_node, edge, level){
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, nbr_node, edge1, edge2, level){
 
-        if(failed_edge->to.node == edge->to.node)
+        if(failed_edge->to.node == edge1->to.node)
             continue;
 
         Compute_and_Store_Forward_SPF(nbr_node, &nbr_node->spf_info, level);
 
     }
-    ITERATE_NODE_NBRS_END;
+    ITERATE_NODE_PHYSICAL_NBRS_END;
 }
 
 
@@ -374,5 +375,181 @@ compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
             printf("PQ node : %s\n", pq_node->node_name);
         }
     }ITERATE_LIST_END;
+}
+
+lfa_t *
+get_new_lfa(){
+
+    lfa_t *lfa = calloc(1, sizeof(lfa_t));
+    lfa->protected_link = NULL;
+    lfa->lfa = init_singly_ll();
+    return lfa;
+}
+
+void
+free_lfa(lfa_t *lfa){
+
+    singly_ll_node_t *list_node = NULL;
+    lfa_dest_pair_t *lfa_dest_pair = NULL;
+
+    if(!lfa)
+        return;
+    ITERATE_LIST_BEGIN(lfa->lfa, list_node){
+        lfa_dest_pair = list_node->data;
+        free(lfa_dest_pair);
+        lfa_dest_pair = NULL;
+    } ITERATE_LIST_END;
+
+    delete_singly_ll(lfa->lfa);
+    lfa->lfa = NULL;
+    free(lfa);
+    lfa = NULL;
+}
+
+lfa_t *
+get_link_protection_lfa(node_t *S, edge_end_t *protected_link, node_t *dest_node, LEVEL level){
+
+    spf_result_t *D_res = NULL;
+    singly_ll_node_t *list_node = NULL; 
+    lfa_t *lfa = NULL;
+
+    D_res = GET_SPF_RESULT((&(S->spf_info)), dest_node, level);
+
+    ITERATE_LIST_BEGIN(D_res->link_protection_lfas, list_node){
+        lfa = list_node->data;
+        if(lfa->protected_link == protected_link)
+            return lfa;
+    } ITERATE_LIST_END;
+    return NULL;
+}
+
+lfa_t *
+link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, 
+                               LEVEL level, boolean strict_down_stream_lfa){
+
+    node_t *E = NULL, *N = NULL, *D = NULL;
+    spf_result_t *D_res = NULL;
+    edge_t *edge1 = NULL, *edge2 = NULL;
+    singly_ll_node_t *list_node = NULL;
+    unsigned int dist_N_D = 0, dist_N_S = 0, dist_S_D = 0;
+    lfa_dest_pair_t *lfa_dest_pair = NULL;
+    lfa_t *lfa = get_new_lfa(); 
+    lfa->protected_link = &protected_link->from;
+
+    /* 1. Run SPF on S to know DIST(S,D) */
+    Compute_and_Store_Forward_SPF(S, &S->spf_info, level);
+
+    /* 2. Run SPF on all nbrs of S except primary-NH(S) to know DIST(N,D) and DIST(N,S)*/
+    Compute_Neighbor_SPFs(S, protected_link, level); 
+
+    /* 3. Filter nbrs of S using inequality 1 */
+    E = protected_link->to.node;
+
+    /*ToDo : to be changed to ITERATE_NODE_PHYSICAL_NBRS_BEGIN*/
+    ITERATE_NODE_NBRS_BEGIN(S, N, edge1, level){
+        
+        if(N->node_type[level] == PSEUDONODE)
+            continue;
+
+        /*Do not consider the link being protected to find LFA*/
+        if(N == E && edge1 == protected_link)
+            continue;
+                
+        ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node){
+
+            D_res = list_node->data;
+            D = D_res->node;
+
+            sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = %s", 
+                S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
+
+            /* If to reach D from S , primary nexthop is not E, then skip D*/
+            if(!is_present(&D_res->next_hop[IPNH][0], E)){
+                sprintf(LOG, "Node : %s : skipping Dest %s as %s is not its primary nexthop",
+                    S->node_name, D->node_name, E->node_name); TRACE();
+                continue;
+            }
+
+            dist_N_D = DIST_X_Y(N, D, level);
+            dist_N_S = DIST_X_Y(N, S, level);
+            dist_S_D = D_res->spf_metric;
+
+            sprintf(LOG, "Node : %s : Testing inequality 1 : dist_N_D(%u) < dist_N_S(%u) + dist_S_D(%u)",
+                S->node_name, dist_N_D, dist_N_S, dist_S_D); TRACE();
+
+            /* Apply inequality 1*/
+            if(!(dist_N_D < dist_N_S + dist_S_D)){
+                sprintf(LOG, "Node : %s : Inequality 1 failed", S->node_name); TRACE();
+                continue;
+            }
+
+            sprintf(LOG, "Node : %s : Inequality 1 passed", S->node_name); TRACE();
+
+            /* Inequality 2 has been controlled by additon boolean argument because, inequality should be
+             * explicitely applied under administrator's control. Inequality 2 has following drawbacks :
+             * 1. It drastically reduces the LFA coverage
+             * 2. It helps in avoid microloops only when multiple link fails at the same time, What is the probablity when multiple link
+             * failures happen at the same time
+             * 3. It helps in avoid microloops when node completely fails, and in specific topologies
+             *
+             * I feel the drawbacks of this inequality weighs far more than benefits we get from it. We are not totally discarding this
+             * inequality from implementation, but giving explitely knob if admin wants to harness the advantages Or disadvantages
+             * of this inequality at his own will
+             * */
+
+            if(strict_down_stream_lfa){
+                /* 4. Narrow down the subset further using inequality 2 */
+
+                sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
+                        S->node_name, dist_N_D, dist_S_D); TRACE();
+
+                if(!(dist_N_D < dist_S_D)){
+                    sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
+                    continue;
+                }
+
+                sprintf(LOG, "Node : %s : Inequality 2 passed", S->node_name); TRACE(); 
+            }
+
+            lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
+            lfa_dest_pair->lfa = N;
+            lfa_dest_pair->oif_to_lfa = &edge1->from; 
+            lfa_dest_pair->dest = D;
+            
+            assert(lfa_dest_pair->oif_to_lfa);
+
+            singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair); 
+            sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s", N->node_name, 
+                lfa_dest_pair->oif_to_lfa->intf_name, D->node_name); TRACE();
+
+        } ITERATE_LIST_END;
+    } ITERATE_NODE_NBRS_END;
+    return lfa;
+}
+
+void
+print_lfa_info(lfa_t *lfa){
+
+    singly_ll_node_t *list_node = NULL;
+    lfa_dest_pair_t *lfa_dest_pair = NULL;
+    
+    if(!lfa)
+        return;
+    printf("protected link : %s\n", lfa->protected_link->intf_name);
+    printf("LFAs(LFA, D) : ");
+    ITERATE_LIST_BEGIN(lfa->lfa, list_node){
+
+        lfa_dest_pair = list_node->data;
+        printf("(%s(OIF = %s),%s) ", lfa_dest_pair->lfa->node_name, 
+        lfa_dest_pair->oif_to_lfa->intf_name, lfa_dest_pair->dest->node_name);    
+    } ITERATE_LIST_END;
+    printf("\n");
+}
+
+
+lfa_t *
+node_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, LEVEL level){
+
+        return NULL;
 }
 

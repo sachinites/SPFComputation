@@ -421,11 +421,11 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
     switch(cmd_code){
-        case CMDCODE_CONFIG_NODE_LSP:
+        case CMDCODE_CONFIG_NODE_RSVPLSP:
             {
                 switch(enable_or_disable){
                     case CONFIG_ENABLE:
-                        insert_label_switched_path(node, lsp_name, metric, tail_end_ip, level);
+                        inset_lsp_as_forward_adjacency(node, lsp_name, metric, tail_end_ip, level);
                         break;
                     case CONFIG_DISABLE:
                         break;
@@ -1055,6 +1055,30 @@ spf_init_dcm(){
             set_param_cmd_code(&metric_val, CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE);
         }
 
+        /*config node <node-name> [no] interface <slot-no> link-protection*/
+        {
+            static param_t link_protection;
+            init_param(&link_protection, CMD, "link-protection", lfa_rlfa_config_handler, 0, INVALID, 0, "local link protection");
+            libcli_register_param(&config_node_node_name_slot_slotname, &link_protection);
+            set_param_cmd_code(&link_protection, CMDCODE_CONFIG_INTF_LINK_PROTECTION);
+        }
+
+        /*config node <node-name> [no] interface <slot-no> node-link-protection*/
+        {
+            static param_t node_link_protection;
+            init_param(&node_link_protection, CMD, "node-link-protection", lfa_rlfa_config_handler, 0, INVALID, 0, "local node local link protection");
+            libcli_register_param(&config_node_node_name_slot_slotname, &node_link_protection);
+            set_param_cmd_code(&node_link_protection, CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION);
+        }
+
+        /*config node <node-name> [no] interface <slot-no> no-eligible-backup*/
+        {
+            static param_t no_eligible_backup;
+            init_param(&no_eligible_backup, CMD, "no-eligible-backup", lfa_rlfa_config_handler, 0, INVALID, 0, "exclude interface from selected as Alternate");
+            libcli_register_param(&config_node_node_name_slot_slotname, &no_eligible_backup);
+            set_param_cmd_code(&no_eligible_backup, CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP);
+        }
+        
         static param_t config_node_node_name_slot_slotname_enable;
         init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_handler, 0, INVALID, 0, "enable");
         libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
@@ -1162,15 +1186,30 @@ spf_init_dcm(){
     init_param(&config_node_node_name_static_route_dest_mask_nhip_nhname_slotno, LEAF, 0, config_static_route_handler, 0, STRING, "slot-no", "interface name ethx/y format");
     libcli_register_param(&config_node_node_name_static_route_dest_mask_nhip_nhname, &config_node_node_name_static_route_dest_mask_nhip_nhname_slotno); 
 
-    /*config node <node-name> lsp <lsp-name> metric <metric-value> tail-end <tail-end-ip> level <level-no>*/
+    /*config node <node-name> lsp <lsp-name> metric <metric-value> to <tail-end-ip> level <level-no>*/
     {
         static param_t lsp;
-        init_param(&lsp, CMD, "lsp", 0, 0, INVALID, 0, "Label Switch Path");
+        init_param(&lsp, CMD, "lsp", 0, 0, INVALID, 0, "RSVP Label Switch Path");
         libcli_register_param(&config_node_node_name, &lsp);
         
         static param_t lsp_name;
         init_param(&lsp_name, LEAF, 0, 0, 0, STRING, "lsp-name", "LSP name");
         libcli_register_param(&lsp, &lsp_name);
+       
+        {
+            static param_t backup;
+            init_param(&backup, CMD, "backup", 0, 0, INVALID, 0, "backup");
+            libcli_register_param(&lsp_name, &backup);
+
+            static param_t to;
+            init_param(&to, CMD, "to", 0, 0, INVALID, 0, "LSP tail-end");
+            libcli_register_param(&backup, &to);
+
+            static param_t tail_end_ip;
+            init_param(&tail_end_ip, LEAF, 0, lfa_rlfa_config_handler, 0, IPV4, "tail-end-ip", "LSP tail end router IP");
+            libcli_register_param(&to, &tail_end_ip);
+            set_param_cmd_code(&tail_end_ip, CMDCODE_CONFIG_RSVPLSP_AS_BACKUP);
+        }
         
         static param_t metric;
         init_param(&metric, CMD, "metric", 0, 0, INVALID, 0, "metric");
@@ -1180,13 +1219,13 @@ spf_init_dcm(){
         init_param(&metric_val, LEAF, 0, 0, 0, INT, "metric-val", "metric value");
         libcli_register_param(&metric, &metric_val);
         
-        static param_t tail_end;
-        init_param(&tail_end, CMD, "tail-end", 0, 0, INVALID, 0, "LSP tail-end");
-        libcli_register_param(&metric_val, &tail_end);
+        static param_t to;
+        init_param(&to, CMD, "to", 0, 0, INVALID, 0, "LSP tail-end");
+        libcli_register_param(&metric_val, &to);
 
         static param_t tail_end_ip;
         init_param(&tail_end_ip, LEAF, 0, 0, 0, IPV4, "tail-end-ip", "LSP tail end router IP");
-        libcli_register_param(&tail_end, &tail_end_ip);
+        libcli_register_param(&to, &tail_end_ip);
 
         static param_t level;
         init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
@@ -1196,7 +1235,7 @@ spf_init_dcm(){
         init_param(&level_no, LEAF, 0, instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
         libcli_register_param(&level, &level_no);
         
-        set_param_cmd_code(&level_no, CMDCODE_CONFIG_NODE_LSP);
+        set_param_cmd_code(&level_no, CMDCODE_CONFIG_NODE_RSVPLSP);
     }
 
     /*config node <node-name> leak prefix <prefix> mask <mask> from level <level-no> to <level-no>*/

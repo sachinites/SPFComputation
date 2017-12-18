@@ -60,7 +60,10 @@ int
 run_spf_run_all_nodes(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 
 void
-insert_label_switched_path(node_t *node, char *lsp_name, unsigned int metric, 
+inset_lsp_as_forward_adjacency(node_t *node, char *lsp_name, unsigned int metric, 
                            char *tail_end_ip, LEVEL level);
+
+int
+lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 
 #endif /* __SPFCLIHANDLER__ */
