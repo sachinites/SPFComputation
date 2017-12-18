@@ -401,9 +401,32 @@ free_lfa(lfa_t *lfa){
     } ITERATE_LIST_END;
 
     delete_singly_ll(lfa->lfa);
+    free(lfa->lfa);
     lfa->lfa = NULL;
     free(lfa);
     lfa = NULL;
+}
+
+char *
+get_str_lfa_type(lfa_type_t lfa_type){
+    
+    switch(lfa_type){
+        
+        case LINK_PROTECTION_LFA:
+            return "LINK_PROTECTION_LFA";
+        case LINK_PROTECTION_LFA_DOWNSTREAM:
+            return "LINK_PROTECTION_LFA_DOWNSTREAM";
+        case LINK_AND_NODE_PROTECTION_LFA:
+            return "LINK_AND_NODE_PROTECTION_LFA";
+        case LINK_PROTECTION_RLFA:
+            return "LINK_PROTECTION_RLFA";
+        case LINK_PROTECTION_RLFA_DOWNSTREAM:
+            return "LINK_PROTECTION_RLFA_DOWNSTREAM";
+        case LINK_AND_NODE_PROTECTION_RLFA:
+            return "LINK_AND_NODE_PROTECTION_RLFA";
+         default:
+            return "UNKNOWN_LFA_TYPE";
+    }
 }
 
 lfa_t *
@@ -427,12 +450,20 @@ lfa_t *
 link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, 
                                LEVEL level, boolean strict_down_stream_lfa){
 
-    node_t *E = NULL, *N = NULL, *D = NULL;
+    node_t *E = NULL, 
+           *N = NULL, 
+           *D = NULL;
+
+    edge_t *edge1 = NULL;
     spf_result_t *D_res = NULL;
-    edge_t *edge1 = NULL, *edge2 = NULL;
     singly_ll_node_t *list_node = NULL;
-    unsigned int dist_N_D = 0, dist_N_S = 0, dist_S_D = 0;
+
+    unsigned int dist_N_D = 0, 
+                 dist_N_S = 0, 
+                 dist_S_D = 0;
+
     lfa_dest_pair_t *lfa_dest_pair = NULL;
+
     lfa_t *lfa = get_new_lfa(); 
     lfa->protected_link = &protected_link->from;
 
@@ -515,12 +546,12 @@ link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link,
             lfa_dest_pair->lfa = N;
             lfa_dest_pair->oif_to_lfa = &edge1->from; 
             lfa_dest_pair->dest = D;
-            
+            lfa_dest_pair->lfa_type = strict_down_stream_lfa ? LINK_PROTECTION_LFA_DOWNSTREAM : LINK_PROTECTION_LFA; 
             assert(lfa_dest_pair->oif_to_lfa);
 
             singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair); 
-            sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s", N->node_name, 
-                lfa_dest_pair->oif_to_lfa->intf_name, D->node_name); TRACE();
+            sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s, lfa_type = %s", N->node_name, 
+                lfa_dest_pair->oif_to_lfa->intf_name, D->node_name, get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();
 
         } ITERATE_LIST_END;
     } ITERATE_NODE_NBRS_END;
@@ -536,12 +567,13 @@ print_lfa_info(lfa_t *lfa){
     if(!lfa)
         return;
     printf("protected link : %s\n", lfa->protected_link->intf_name);
-    printf("LFAs(LFA, D) : ");
+    printf("LFAs(LFA, D) : \n");
     ITERATE_LIST_BEGIN(lfa->lfa, list_node){
 
         lfa_dest_pair = list_node->data;
-        printf("(%s(OIF = %s),%s) ", lfa_dest_pair->lfa->node_name, 
-        lfa_dest_pair->oif_to_lfa->intf_name, lfa_dest_pair->dest->node_name);    
+        printf("    LFA = %s, OIF = %s, Dest = %s, lfa_type = %s\n", lfa_dest_pair->lfa->node_name, 
+        lfa_dest_pair->oif_to_lfa->intf_name, lfa_dest_pair->dest->node_name, get_str_lfa_type(lfa_dest_pair->lfa_type));
+          
     } ITERATE_LIST_END;
     printf("\n");
 }

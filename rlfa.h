@@ -44,10 +44,25 @@ typedef ll_t * pq_space_set_t;
 typedef struct _node_t node_t;
 typedef struct _edge_t edge_t;
 
+typedef enum{
+
+    LINK_PROTECTION_LFA,
+    LINK_PROTECTION_LFA_DOWNSTREAM,
+    LINK_AND_NODE_PROTECTION_LFA,
+    LINK_PROTECTION_RLFA,
+    LINK_PROTECTION_RLFA_DOWNSTREAM,
+    LINK_AND_NODE_PROTECTION_RLFA,
+    UNKNOWN_LFA_TYPE
+} lfa_type_t;
+
+char *
+get_str_lfa_type(lfa_type_t lfa_type);
+
 typedef struct lfa_dest_pair_{
     node_t *lfa;
     edge_end_t *oif_to_lfa;
     node_t *dest;
+    lfa_type_t lfa_type;
 } lfa_dest_pair_t;
 
 typedef struct lfa_{
