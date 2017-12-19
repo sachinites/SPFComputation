@@ -82,11 +82,9 @@ print_lfa_info(lfa_t *lfa);
 
 void
 Compute_and_Store_Forward_SPF(node_t *spf_root,
-                            spf_info_t *spf_info,
-                            LEVEL level);
+                              LEVEL level);
 void
-Compute_Neighbor_SPFs(node_t *spf_root, edge_t *edge, 
-                      LEVEL level);
+Compute_Neighbor_SPFs(node_t *spf_root, LEVEL level);
 
 p_space_set_t 
 compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level);

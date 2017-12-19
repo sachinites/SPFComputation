@@ -44,16 +44,14 @@ instance_node_comparison_fn(void *_node, void *input_node_name);
 
 void
 Compute_and_Store_Forward_SPF(node_t *spf_root,
-                            spf_info_t *spf_info,
-                            LEVEL level){
+                              LEVEL level){
 
-    spf_computation(spf_root, spf_info, level, SKELETON_RUN);
+    spf_computation(spf_root, &spf_root->spf_info, level, SKELETON_RUN);
 }
 
 
 void
-Compute_Neighbor_SPFs(node_t *spf_root, edge_t *failed_edge,
-                      LEVEL level){
+Compute_Neighbor_SPFs(node_t *spf_root, LEVEL level){
 
     
     /*-----------------------------------------------------------------------------
@@ -65,11 +63,7 @@ Compute_Neighbor_SPFs(node_t *spf_root, edge_t *failed_edge,
 
     ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, nbr_node, edge1, edge2, level){
 
-        if(failed_edge->to.node == edge1->to.node)
-            continue;
-
-        Compute_and_Store_Forward_SPF(nbr_node, &nbr_node->spf_info, level);
-
+        Compute_and_Store_Forward_SPF(nbr_node, level);
     }
     ITERATE_NODE_PHYSICAL_NBRS_END;
 }
@@ -87,7 +81,7 @@ compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
     spf_result_t *res = NULL;
     singly_ll_node_t* list_node = NULL;
 
-    Compute_and_Store_Forward_SPF(node, &node->spf_info, level);
+    Compute_and_Store_Forward_SPF(node, level);
     ll_t *spf_result = node->spf_run_result[level];
 
     p_space_set_t p_space = init_singly_ll();
@@ -141,9 +135,9 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
     singly_ll_set_comparison_fn(ex_p_space, instance_node_comparison_fn);
 
     /*run spf on self*/
-    Compute_and_Store_Forward_SPF(node, &node->spf_info, level); 
+    Compute_and_Store_Forward_SPF(node, level); 
     /*Run SPF on all nbrs of S except E*/
-    Compute_Neighbor_SPFs(node, failed_edge, level);
+    Compute_Neighbor_SPFs(node, level);
 
     /*iterate over entire network. Note that node->spf_run_result list
      * carries all nodes of the network reachable from source at level l.
@@ -212,8 +206,8 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
     /*Compute reverse SPF for nodes S and E as roots*/
     inverse_topology(instance, level);
-    Compute_and_Store_Forward_SPF(S, &S->spf_info, level);
-    Compute_and_Store_Forward_SPF(E, &E->spf_info, level);
+    Compute_and_Store_Forward_SPF(S, level);
+    Compute_and_Store_Forward_SPF(E, level);
     inverse_topology(instance, level);
 
     ITERATE_LIST_BEGIN(E->spf_run_result[level], list_node1){
@@ -297,8 +291,6 @@ void
 compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
 
     /* Run SPF for protecting node S*/
-    //Compute_and_Store_Forward_SPF(node, &node->spf_info, level);    
-    //Compute_and_Store_Forward_SPF(failed_edge->to.node, &failed_edge->to.node->spf_info, level);    
 
     singly_ll_node_t *list_node = NULL,
                      *list_node2 = NULL;
@@ -343,7 +335,7 @@ compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
 
         pq_node = (node_t *)list_node->data;
 
-        Compute_and_Store_Forward_SPF(pq_node, &pq_node->spf_info, level);
+        Compute_and_Store_Forward_SPF(pq_node, level);
         /* Check for D_opt(pq_node, dest) < D_opt(S, dest)*/
 
         d_pq_node_to_dest = 0;
@@ -460,7 +452,9 @@ link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link,
 
     unsigned int dist_N_D = 0, 
                  dist_N_S = 0, 
-                 dist_S_D = 0;
+                 dist_S_D = 0,
+                 dist_N_E = 0,
+                 dist_E_D = 0;
 
     lfa_dest_pair_t *lfa_dest_pair = NULL;
 
@@ -468,10 +462,10 @@ link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link,
     lfa->protected_link = &protected_link->from;
 
     /* 1. Run SPF on S to know DIST(S,D) */
-    Compute_and_Store_Forward_SPF(S, &S->spf_info, level);
+    Compute_and_Store_Forward_SPF(S, level);
 
     /* 2. Run SPF on all nbrs of S except primary-NH(S) to know DIST(N,D) and DIST(N,S)*/
-    Compute_Neighbor_SPFs(S, protected_link, level); 
+    Compute_Neighbor_SPFs(S, level); 
 
     /* 3. Filter nbrs of S using inequality 1 */
     E = protected_link->to.node;
@@ -543,15 +537,36 @@ link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link,
             }
 
             lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
+            
+            lfa_dest_pair->lfa_type = strict_down_stream_lfa ? 
+                                      LINK_PROTECTION_LFA_DOWNSTREAM : LINK_PROTECTION_LFA; 
+            
             lfa_dest_pair->lfa = N;
             lfa_dest_pair->oif_to_lfa = &edge1->from; 
             lfa_dest_pair->dest = D;
-            lfa_dest_pair->lfa_type = strict_down_stream_lfa ? LINK_PROTECTION_LFA_DOWNSTREAM : LINK_PROTECTION_LFA; 
+
             assert(lfa_dest_pair->oif_to_lfa);
 
-            singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair); 
+            /* Inequality 3 : Node protecting LFA */
+            dist_N_E = DIST_X_Y(N, E, level);
+            dist_E_D = DIST_X_Y(E, D, level); 
+
+            sprintf(LOG, "Node : %s : Testing inequality 3 : dist_N_E(%u) < dist_E_D(%u)",
+                     S->node_name, dist_N_E, dist_E_D); TRACE();
+
+            if(dist_N_D < dist_N_E + dist_E_D){
+                lfa_dest_pair->lfa_type = LINK_AND_NODE_PROTECTION_LFA;  
+                sprintf(LOG, "Node : %s : inequality 3 Passed, Link protecting LFA promoted to node-protecting LFA",
+                             S->node_name); TRACE();
+            }else{
+                sprintf(LOG, "Node : %s : inequality 3 Failed", S->node_name); TRACE();
+            }
+
+            singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
+             
             sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s, lfa_type = %s", N->node_name, 
-                lfa_dest_pair->oif_to_lfa->intf_name, D->node_name, get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();
+                          lfa_dest_pair->oif_to_lfa->intf_name, D->node_name, 
+                          get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();
 
         } ITERATE_LIST_END;
     } ITERATE_NODE_NBRS_END;
