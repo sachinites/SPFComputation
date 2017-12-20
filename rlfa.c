@@ -438,15 +438,41 @@ get_link_protection_lfa(node_t *S, edge_end_t *protected_link, node_t *dest_node
     return NULL;
 }
 
-lfa_t *
-link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, 
-                               LEVEL level, boolean strict_down_stream_lfa){
+
+static lfa_t *
+broadcast_link_compute_lfa(node_t * S, edge_t *protected_link, 
+                           LEVEL level, 
+                           boolean strict_down_stream_lfa){
+
+    return NULL;
+}
+
+static lfa_t *
+_p2p_compute_lfa(node_t * S, edge_t *protected_link,
+                            LEVEL level,
+                            boolean strict_down_stream_lfa){
+
+    edge_t *edge1 = NULL, *edge2 = NULL;
+    node_t *N = NULL;
+
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, edge1, edge2, level){
+
+        printf("Nbr = %s, edge1 = %s\n", N->node_name, edge1->from.intf_name);
+        continue;   
+    } ITERATE_NODE_PHYSICAL_NBRS_END;
+    return NULL;
+}
+
+static lfa_t *
+p2p_compute_lfa(node_t * S, edge_t *protected_link, 
+                            LEVEL level, 
+                            boolean strict_down_stream_lfa){
 
     node_t *E = NULL, 
            *N = NULL, 
            *D = NULL;
 
-    edge_t *edge1 = NULL;
+    edge_t *edge1 = NULL, *edge2 = NULL;
     spf_result_t *D_res = NULL;
     singly_ll_node_t *list_node = NULL;
 
@@ -461,21 +487,15 @@ link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link,
     lfa_t *lfa = get_new_lfa(); 
     lfa->protected_link = &protected_link->from;
 
-    /* 1. Run SPF on S to know DIST(S,D) */
-    Compute_and_Store_Forward_SPF(S, level);
-
-    /* 2. Run SPF on all nbrs of S except primary-NH(S) to know DIST(N,D) and DIST(N,S)*/
-    Compute_Neighbor_SPFs(S, level); 
-
     /* 3. Filter nbrs of S using inequality 1 */
     E = protected_link->to.node;
 
     /*ToDo : to be changed to ITERATE_NODE_PHYSICAL_NBRS_BEGIN*/
-    ITERATE_NODE_NBRS_BEGIN(S, N, edge1, level){
-        
-        if(N->node_type[level] == PSEUDONODE)
-            continue;
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, edge1, edge2, level){
 
+        sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature",/*Strange : adding edge2 in log solves problem of this macro looping*/ 
+            S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
+        
         /*Do not consider the link being protected to find LFA*/
         if(N == E && edge1 == protected_link)
             continue;
@@ -545,8 +565,6 @@ link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link,
             lfa_dest_pair->oif_to_lfa = &edge1->from; 
             lfa_dest_pair->dest = D;
 
-            assert(lfa_dest_pair->oif_to_lfa);
-
             /* Inequality 3 : Node protecting LFA */
             dist_N_E = DIST_X_Y(N, E, level);
             dist_E_D = DIST_X_Y(E, D, level); 
@@ -569,9 +587,36 @@ link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link,
                           get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();
 
         } ITERATE_LIST_END;
-    } ITERATE_NODE_NBRS_END;
+
+        sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature Done", 
+            S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
+
+    } ITERATE_NODE_PHYSICAL_NBRS_END;
     return lfa;
 }
+
+lfa_t *
+compute_lfa(node_t * S, edge_t *protected_link,
+            LEVEL level,
+            boolean strict_down_stream_lfa){
+
+    /* Run necessary SPF runs required to compute LFAs 
+     * of any type - p2p link/node protection or broadcast link
+     * node protecting LFAs*/
+
+     /* 1. Run SPF on S to know DIST(S,D) */
+     Compute_and_Store_Forward_SPF(S, level);
+    
+     /* 2. Run SPF on all nbrs of S to know DIST(N,D) and DIST(N,S)*/
+     Compute_Neighbor_SPFs(S, level); 
+
+     if(is_broadcast_link(protected_link, level) == FALSE)
+         return p2p_compute_lfa(S, protected_link, level, TRUE); 
+     else
+         return broadcast_link_compute_lfa(S, protected_link, level, TRUE);
+}
+
+
 
 void
 print_lfa_info(lfa_t *lfa){
@@ -591,12 +636,5 @@ print_lfa_info(lfa_t *lfa){
           
     } ITERATE_LIST_END;
     printf("\n");
-}
-
-
-lfa_t *
-node_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, LEVEL level){
-
-        return NULL;
 }
 

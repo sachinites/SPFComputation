@@ -305,3 +305,13 @@ print_direct_nh_list(node_t *nh_list[]){
         sprintf(LOG, "Nil"); TRACE();
     }
 }
+
+boolean
+is_broadcast_link(edge_t *edge, LEVEL level){
+
+    assert(level == LEVEL1 || level == LEVEL2);
+    node_t *node = edge->to.node;
+    if(node->node_type[level] == PSEUDONODE)
+        return TRUE;
+    return FALSE;
+}

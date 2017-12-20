@@ -92,4 +92,7 @@ node_t *
 get_system_id_from_router_id(node_t *ingress_lsr,
         char *tail_end_ip, LEVEL level);
 
+boolean
+is_broadcast_link(edge_t *edge, LEVEL level);
+
 #endif /* __SPFUTIL__ */ 

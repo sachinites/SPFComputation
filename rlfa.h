@@ -170,9 +170,6 @@ STEPS : To compute LFA, do the following steps
 */
 
 lfa_t *
-link_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
-
-lfa_t *
-node_protection_lfa_back_up_nh(node_t * S, edge_t *protected_link, LEVEL level);
+compute_lfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
 
 #endif /* __RLFA__ */

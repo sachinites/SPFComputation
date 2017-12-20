@@ -426,10 +426,10 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             lfa_t *lfa_l1 = NULL, *lfa_l2 = NULL;
 
             if(IS_LEVEL_SET(edge->level, LEVEL1))
-                lfa_l1 = link_protection_lfa_back_up_nh(node, edge, LEVEL1, TRUE);
+                lfa_l1 = compute_lfa(node, edge, LEVEL1, TRUE);
             
             if(IS_LEVEL_SET(edge->level, LEVEL2))
-                lfa_l2 = link_protection_lfa_back_up_nh(node, edge, LEVEL2, TRUE);
+                lfa_l2 = compute_lfa(node, edge, LEVEL2, TRUE);
 
             print_lfa_info(lfa_l1);
             print_lfa_info(lfa_l2); 
