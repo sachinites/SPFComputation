@@ -421,24 +421,6 @@ get_str_lfa_type(lfa_type_t lfa_type){
     }
 }
 
-lfa_t *
-get_link_protection_lfa(node_t *S, edge_end_t *protected_link, node_t *dest_node, LEVEL level){
-
-    spf_result_t *D_res = NULL;
-    singly_ll_node_t *list_node = NULL; 
-    lfa_t *lfa = NULL;
-
-    D_res = GET_SPF_RESULT((&(S->spf_info)), dest_node, level);
-
-    ITERATE_LIST_BEGIN(D_res->link_protection_lfas, list_node){
-        lfa = list_node->data;
-        if(lfa->protected_link == protected_link)
-            return lfa;
-    } ITERATE_LIST_END;
-    return NULL;
-}
-
-
 static lfa_t *
 broadcast_link_compute_lfa(node_t * S, edge_t *protected_link, 
                            LEVEL level, 
@@ -638,3 +620,28 @@ print_lfa_info(lfa_t *lfa){
     printf("\n");
 }
 
+void
+clear_lfa_result(node_t *node){
+
+    singly_ll_node_t *list_node = NULL,
+                     *list_node1 = NULL;
+    lfa_dest_pair_t *lfa_dest_pair = NULL;
+    lfa_t *lfa = NULL;
+
+    ITERATE_LIST_BEGIN(node->link_protection_lfas, list_node){
+
+        lfa = list_node->data;
+
+        ITERATE_LIST_BEGIN(lfa->lfa, list_node1){
+
+            lfa_dest_pair = list_node1->data;
+            free(lfa_dest_pair);
+            lfa_dest_pair = NULL;
+        } ITERATE_LIST_END;
+        delete_singly_ll(lfa->lfa);
+        free(lfa->lfa);
+    } ITERATE_LIST_END;
+    delete_singly_ll(node->link_protection_lfas);
+    free(node->link_protection_lfas);
+    node->link_protection_lfas = NULL;
+}

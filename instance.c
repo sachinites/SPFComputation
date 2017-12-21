@@ -47,10 +47,10 @@ add_node_to_owning_instance(instance_t *instance, node_t *node){
 node_t *
 create_new_node(instance_t *instance, char *node_name, AREA area, char *router_id){
     
-    assert(node_name);
     LEVEL level;
     prefix_t *router_id_pfx = NULL;
 
+    assert(node_name);
     node_t * node = calloc(1, sizeof(node_t));
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';

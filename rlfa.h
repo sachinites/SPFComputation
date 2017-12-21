@@ -75,6 +75,9 @@ lfa_t *
 get_new_lfa();
 
 void
+clear_lfa_result(node_t *node);
+
+void
 free_lfa();
 
 void
