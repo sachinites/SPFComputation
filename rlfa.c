@@ -410,6 +410,10 @@ get_str_lfa_type(lfa_type_t lfa_type){
             return "LINK_PROTECTION_LFA_DOWNSTREAM";
         case LINK_AND_NODE_PROTECTION_LFA:
             return "LINK_AND_NODE_PROTECTION_LFA";
+        case LINK_PROTECTION_BROADCAST_LINK:
+            return "LINK_PROTECTION_BROADCAST_LINK";
+        case LINK_AND_NODE_PROTECTION_BROADCAST_LINK:
+            return "LINK_AND_NODE_PROTECTION_BROADCAST_LINK";
         case LINK_PROTECTION_RLFA:
             return "LINK_PROTECTION_RLFA";
         case LINK_PROTECTION_RLFA_DOWNSTREAM:
@@ -426,22 +430,7 @@ broadcast_link_compute_lfa(node_t * S, edge_t *protected_link,
                            LEVEL level, 
                            boolean strict_down_stream_lfa){
 
-    return NULL;
-}
-
-static lfa_t *
-_p2p_compute_lfa(node_t * S, edge_t *protected_link,
-                            LEVEL level,
-                            boolean strict_down_stream_lfa){
-
-    edge_t *edge1 = NULL, *edge2 = NULL;
-    node_t *N = NULL;
-
-    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, edge1, edge2, level){
-
-        printf("Nbr = %s, edge1 = %s\n", N->node_name, edge1->from.intf_name);
-        continue;   
-    } ITERATE_NODE_PHYSICAL_NBRS_END;
+    
     return NULL;
 }
 
@@ -466,9 +455,8 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
 
     lfa_dest_pair_t *lfa_dest_pair = NULL;
 
-    lfa_t *lfa = get_new_lfa(); 
-    lfa->protected_link = &protected_link->from;
-
+    lfa_t *lfa = NULL; 
+    
     /* 3. Filter nbrs of S using inequality 1 */
     E = protected_link->to.node;
 
@@ -537,6 +525,9 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
 
                 sprintf(LOG, "Node : %s : Inequality 2 passed", S->node_name); TRACE(); 
             }
+            
+            lfa = get_new_lfa(); 
+            lfa->protected_link = &protected_link->from;
 
             lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
             
@@ -546,6 +537,9 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
             lfa_dest_pair->lfa = N;
             lfa_dest_pair->oif_to_lfa = &edge1->from; 
             lfa_dest_pair->dest = D;
+           
+            /*Record the LFA*/ 
+            singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
 
             /* Inequality 3 : Node protecting LFA */
             dist_N_E = DIST_X_Y(N, E, level);
@@ -562,8 +556,6 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
                 sprintf(LOG, "Node : %s : inequality 3 Failed", S->node_name); TRACE();
             }
 
-            singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
-             
             sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s, lfa_type = %s", N->node_name, 
                           lfa_dest_pair->oif_to_lfa->intf_name, D->node_name, 
                           get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();

@@ -95,4 +95,10 @@ get_system_id_from_router_id(node_t *ingress_lsr,
 boolean
 is_broadcast_link(edge_t *edge, LEVEL level);
 
+/*Return True if D is a member node on S's broadcast LAN segment connected 
+ * by interface 'interface' */
+
+boolean
+is_broadcast_member_node(node_t *S, edge_t *interface, node_t *D, LEVEL level);
+
 #endif /* __SPFUTIL__ */ 

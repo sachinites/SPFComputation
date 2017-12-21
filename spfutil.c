@@ -315,3 +315,29 @@ is_broadcast_link(edge_t *edge, LEVEL level){
         return TRUE;
     return FALSE;
 }
+
+boolean
+is_broadcast_member_node(node_t *S, edge_t *interface, node_t *D, LEVEL level){
+
+    assert(S!=D);
+    
+    if(!is_broadcast_link(interface, level)){
+        return D == interface->to.node;
+    }
+
+    node_t *PN = interface->to.node,
+           *nbr_node = NULL;
+
+    edge_t *edge = NULL;
+    ITERATE_NODE_NBRS_BEGIN(PN, nbr_node, edge, level){
+        
+        if(nbr_node == S)
+            continue;
+
+        if(nbr_node == D)
+            return TRUE;
+
+    } ITERATE_NODE_NBRS_END;
+    return FALSE;
+}
+
