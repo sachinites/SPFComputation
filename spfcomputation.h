@@ -65,7 +65,7 @@ typedef struct self_spf_result_{
 
 typedef enum {
 
-    SKELETON_RUN,/*To compute LFA and RLFAs*/
+    FORWARD_RUN,/*To compute LFA and RLFAs*/
     FULL_RUN,     /*To compute Main routes*/
     PRC_RUN
 } spf_type_t;
@@ -123,5 +123,8 @@ self_spf_run_result_comparison_fn(void *self_spf_result_ptr, void *node_ptr);
 
 void
 partial_spf_run(node_t *spf_root, LEVEL level);
+
+unsigned int 
+DIST_X_Y(node_t *X, node_t *Y, LEVEL _level);
 
 #endif /* __SPFCOMPUTATION__ */

@@ -302,6 +302,78 @@ build_cisco_example_topo(){
 
 
 instance_t *
+broadcast_link_protecting_lfa(){
+
+#if 0
+
+
+                         0/0+-------+0/9 50.1.1.1
+                   +--------+   S   +-----+
+                   |10.1.1.1|       |     |
+                   |        +-------+     |
+                   |                      |15
+                   |5                     |
+                   |                      |
+                   |                      |
+                   |                      |
+                   |                      |
+                   |0/1           50.1.1.2|0/8
+               +---+-+                +---+--+                               
+               | PN  +0/10        0/10+      +                               
+               |    -+----------------+ N    |                               
+               +--+--+        10.1.1.3|      |                               
+                  |0/2                +---+--+                               
+                  |              60.1.1.2 |0/7
+                  |                       |
+                  |                       |
+                  |5                      |8
+                  |                       |
+                  |                       |
+                  |                       |
+          10.1.1.2|0/3                    |0/6 60.1.1.1
+              +---+--+                +---+---+
+              |      |0/4    5    0/5 |       |
+              | E    +----------------+ D     |
+              |      |30.1.1.1        |       |
+              +------+        30.1.1.2+-------+
+#endif
+              
+    instance_t *instance = get_new_instance();
+
+    node_t *S = create_new_node(instance, "S", AREA1, "192.168.0.1");
+    node_t *PN = create_new_node(instance, "PN", AREA1, "0.0.0.0");
+    node_t *E = create_new_node(instance, "E", AREA1, "192.168.0.3");
+    node_t *D = create_new_node(instance, "D", AREA1, "192.168.0.4");
+    node_t *N = create_new_node(instance, "N", AREA1, "192.168.0.5");
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 5, create_new_prefix("10.1.1.1", 30, LEVEL1), 0, LEVEL1)),
+                                S, PN, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 5, 0, create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
+                                PN, E, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 5, create_new_prefix("30.1.1.1", 30, LEVEL1), create_new_prefix("30.1.1.2", 30, LEVEL1), LEVEL1)),
+                                E, D, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 8, create_new_prefix("60.1.1.1", 30, LEVEL1), create_new_prefix("60.1.1.2", 30, LEVEL1), LEVEL1)),
+                                D, N, BIDIRECTIONAL);
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 15, create_new_prefix("50.1.1.2", 30, LEVEL1), create_new_prefix("50.1.1.1", 30, LEVEL1), LEVEL1)),
+                                N, S, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/10", 5, 0, create_new_prefix("10.1.1.3", 30, LEVEL1), LEVEL1)),
+                                PN, N, BIDIRECTIONAL);
+
+    mark_node_pseudonode(PN, LEVEL1); 
+    set_instance_root(instance, S);                                        
+    return instance;                                                        
+}                                                                           
+
+instance_t *
 pseudonode_ecmp_topo(){
 
 #if 0
@@ -356,6 +428,7 @@ pseudonode_ecmp_topo(){
     mark_node_pseudonode(PN, LEVEL1);
     return instance;
 }
+
 
 
 instance_t *

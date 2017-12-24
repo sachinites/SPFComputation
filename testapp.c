@@ -46,6 +46,8 @@ extern instance_t * build_cisco_example_topo();
 extern instance_t * overload_router_topo();
 extern instance_t * pseudonode_ecmp_topo();
 extern instance_t * lsp_ecmp_topo();
+extern instance_t * broadcast_link_protecting_lfa();
+
 /*Globals */
 instance_t *instance = NULL;
 
@@ -62,9 +64,9 @@ main(int argc, char **argv){
     // instance = build_multi_area_topo();
     //instance = build_ring_topo();
     //instance = build_cisco_example_topo();
-    instance = overload_router_topo();
+      instance = broadcast_link_protecting_lfa();
+    //instance = overload_router_topo();
     //leak_prefix("R3", "100.1.1.1", 24, LEVEL2, LEVEL1);
-
 
     start_shell();
     return 0;

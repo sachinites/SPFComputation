@@ -178,7 +178,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
          * however we process it as ususal like other nodes*/
 
-        if(candidate_node->node_type[level] != PSEUDONODE){
+        //if(candidate_node->node_type[level] != PSEUDONODE){
 
             spf_result_t *res = calloc(1, sizeof(spf_result_t));
             res->node = candidate_node;
@@ -191,7 +191,9 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
             } ITERATE_NH_TYPE_END;
 
-            singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
+            if(candidate_node->node_type[level] != PSEUDONODE)
+                singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
+
             self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
 
             if(self_res){
@@ -208,7 +210,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                  self_res->res = res;
                  singly_ll_add_node_by_val(candidate_node->self_spf_result[level], self_res);
             }
-        }
+        //}
 
         /*Iterare over all the nbrs of Candidate node*/
 
@@ -521,7 +523,7 @@ spf_computation(node_t *spf_root,
     }
 
     sprintf(LOG, "Node : %s, Triggered SPF run : %s, %s", 
-                spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "SKELETON_RUN",
+                spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "FORWARD_RUN",
                 get_str_level(level)); TRACE();
                  
     RE_INIT_CANDIDATE_TREE(&instance->ctree);
@@ -567,6 +569,35 @@ partial_spf_run(node_t *spf_root, LEVEL level){
     spf_root->spf_info.spf_level_info[level].spf_type = FULL_RUN;
 }
 
+/*This macro should work as follows :
+ *  * 1. if X and Y both are non-PN, then compute the dist from X to Y from spf result of X
+ *   * 2. if X is a PN, then compute the dist from X to Y from spf result of X, explicit forward SPF computation on X is required in this case
+ *    * 3. if Y is a PN, then get the dist from X to Y from self_spf_result stored in Y list of self spf result with spf_root = X
+ *     * 4. if X and Y both are PNs, then you need to check your basic forward SPF algorithm, this is invalid case, so assert
+ *      * */
 
+unsigned int
+DIST_X_Y(node_t *X, node_t *Y, LEVEL _level){
+
+    assert(_level == LEVEL1 || _level == LEVEL2);
+
+    if(X->node_type[_level] != PSEUDONODE &&
+            Y->node_type[_level] != PSEUDONODE){
+        return ((spf_result_t *)(GET_SPF_RESULT((&(X->spf_info)), Y, _level)))->spf_metric;
+    }
+
+    if(X->node_type[_level] == PSEUDONODE &&
+            Y->node_type[_level] != PSEUDONODE){
+        return ((spf_result_t *)(GET_SPF_RESULT((&(X->spf_info)), Y, _level)))->spf_metric;
+    }
+
+
+    if(X->node_type[_level] != PSEUDONODE &&
+            Y->node_type[_level] == PSEUDONODE){
+        return ((self_spf_result_t *)(singly_ll_search_by_key(Y->self_spf_result[_level], X)))->res->spf_metric;
+    }
+
+    assert(0);
+}
 
 

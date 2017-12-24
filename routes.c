@@ -279,7 +279,7 @@ is_changed_route(spf_info_t *spf_info,
      * because the old  backup will be stale and do not guarantee microloop 
      * free alternate path. It is better to have no backup than to have unpromising backup.
      *
-     * If spf_type == SKELETON_RUN, it means, we are in second phase, that we are 
+     * If spf_type == FORWARD_RUN, it means, we are in second phase, that we are 
      * done with computing our main routes and now comuting backups only. Whatever 
      * backup we have at this point, we will install backups only against the corresponging
      * route. 
@@ -307,7 +307,7 @@ is_changed_route(spf_info_t *spf_info,
            } ITERATE_NH_TYPE_END;
            break;
 
-       case SKELETON_RUN:
+       case FORWARD_RUN:
            break;
        default:
            ; 

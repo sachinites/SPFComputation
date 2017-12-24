@@ -763,7 +763,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             break;
         case CMDCODE_SHOW_SPF_RUN_INVERSE:
             inverse_topology(instance, level);
-            spf_computation(spf_root, &spf_root->spf_info, level, SKELETON_RUN);
+            spf_computation(spf_root, &spf_root->spf_info, level, FORWARD_RUN);
             inverse_topology(instance, level);
             show_spf_results(spf_root, level);
             break;

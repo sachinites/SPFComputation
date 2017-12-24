@@ -46,11 +46,18 @@ typedef struct _edge_t edge_t;
 
 typedef enum{
 
-    LINK_PROTECTION_LFA,
-    LINK_PROTECTION_LFA_DOWNSTREAM,
-    LINK_AND_NODE_PROTECTION_LFA,
-    LINK_PROTECTION_BROADCAST_LINK,
-    LINK_AND_NODE_PROTECTION_BROADCAST_LINK,
+    /* when protected link is P2P*/
+    LINK_PROTECTION_LFA,    /*Ineq 1 only*/
+    LINK_PROTECTION_LFA_DOWNSTREAM, /*Ineq 1 and 2 only*/
+    LINK_AND_NODE_PROTECTION_LFA, /*Ineq 1 2 and 3 only*/
+
+    /*When protected Link is Broadcast Link*/
+    BROADCAST_LINK_PROTECTION_LFA, /*Ineq 1 and 4*/
+    BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM,/*Ineq 1 2 and 4*/
+    BROADCAST_ONLY_NODE_PROTECTION_LFA, /*Ineq 1 2 and 3 and N is reachable from S through protected link, this LFA is not loop free wrt to LAN segment it can pump the traffic back into LAN segment*/
+    BROADCAST_LINK_AND_NODE_PROTECTION_LFA,/*(Ineq 1 2 and 3 and N is reachable from S from link other than protected link) OR (Ineq 1 2 3 4)*/
+
+    /*RLFA cases*/
     LINK_PROTECTION_RLFA,
     LINK_PROTECTION_RLFA_DOWNSTREAM,
     LINK_AND_NODE_PROTECTION_RLFA,
@@ -105,9 +112,6 @@ Intersect_Extended_P_and_Q_Space(p_space_set_t pset, q_space_set_t qset);
 
 void
 compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest);
-
-#define DIST_X_Y(X,Y,_level)    \
-    ((spf_result_t *)(GET_SPF_RESULT((&(X->spf_info)), Y, _level)))->spf_metric
 
 /*
 LFA Link/Link-and-node Protection
