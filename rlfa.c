@@ -201,14 +201,13 @@ q_space_set_t
 compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
     node_t *S = NULL, *E = NULL;
-    singly_ll_node_t *list_node1 = NULL,
-                     *list_node2 = NULL;
-    unsigned int d_S_to_E = 0,
+    singly_ll_node_t *list_node1 = NULL;
+    
+    unsigned int d_E_to_S = 0,
                  d_S_to_y = 0,
                  d_E_to_y = 0;
 
-    spf_result_t *spf_result_y = NULL,
-                 *spf_result_e = NULL;
+    spf_result_t *spf_result_y = NULL;
 
     q_space_set_t q_space = init_singly_ll();
     singly_ll_set_comparison_fn(q_space, instance_node_comparison_fn);
@@ -222,14 +221,7 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
     Compute_and_Store_Forward_SPF(E, level);
     inverse_topology(instance, level);
 
-    ITERATE_LIST_BEGIN(E->spf_run_result[level], list_node1){
-
-        spf_result_e = (spf_result_t *)list_node1->data;
-        if(spf_result_e->node == S){
-            d_S_to_E = spf_result_e->spf_metric;
-            break;
-        }
-    }ITERATE_LIST_END;
+    d_E_to_S = DIST_X_Y(E, S, level);
 
     /*Iterare over all nodes of the network*/
 
@@ -237,34 +229,25 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
         spf_result_y = (spf_result_t *)list_node1->data;
         
+        if(spf_result_y->node == E) /*Do not add self*/
+            continue;
+
         /*Now find d_S_to_y */
         d_S_to_y = spf_result_y->spf_metric;
 
         /*Now find d_E_to_y */
-        ITERATE_LIST_BEGIN(E->spf_run_result[level], list_node2){
+        d_E_to_y = DIST_X_Y(E, spf_result_y->node, level);
 
-            spf_result_e = (spf_result_t *)list_node2->data;
-            if(spf_result_e->node == spf_result_y->node){
-                d_E_to_y = spf_result_e->spf_metric;
-                break;
-            }
-        }ITERATE_LIST_END;
+        if(d_E_to_y < (d_S_to_y + d_E_to_S)){
 
-        if(d_E_to_y < (d_S_to_y + d_S_to_E)){
             /*I think check for duplicates is not required
              * will remove after UT*/
             if(singly_ll_search_by_key(q_space, spf_result_y->node->node_name)){
-                d_S_to_y = 0;
-                d_E_to_y = 0;
                 continue;
             }
 
-            if(spf_result_y->node != E) /*Do not add self*/
-                singly_ll_add_node_by_val(q_space, spf_result_y->node);
         }
 
-        d_S_to_y = 0;
-        d_E_to_y = 0;
     }ITERATE_LIST_END;
     return q_space;
 }

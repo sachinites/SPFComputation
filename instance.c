@@ -572,7 +572,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
 
         /* Till here, node ===== PN ====== node_nbr*/
 
-        edge_end = PN->pn_intf[level];
+        edge_end = &edge_it->from;
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
 
         if(edge->metric[level] < min_metric){
