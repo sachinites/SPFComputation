@@ -258,9 +258,9 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
 
                    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
                    if(cmdcode == CMDCODE_SHOW_INSTANCE_NODE_PSPACE)
-                       p_space = compute_p_space(node, edge, level);
+                       p_space = p2p_compute_p_space(node, edge, level);
                    else
-                       p_space = compute_extended_p_space(node, edge, level);
+                       p_space = p2p_compute_extended_p_space(node, edge, level);
 
                    if(cmdcode == CMDCODE_SHOW_INSTANCE_NODE_PSPACE)
                        printf("Node %s p-space : ", node->node_name);
@@ -298,7 +298,7 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        continue;
 
                    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-                   q_space_set_t q_space = compute_q_space(node, edge, level);
+                   q_space_set_t q_space = p2p_compute_q_space(node, edge, level);
                    printf("Node %s q-space : ", node->node_name);
                    ITERATE_LIST_BEGIN(q_space, list_node){
 
@@ -336,12 +336,12 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        continue;
 
                    edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-                   ex_p_space = compute_extended_p_space(node, edge, level);
+                   ex_p_space = p2p_compute_extended_p_space(node, edge, level);
                    break;
                }
 
                /*Compute Q space now*/
-               q_space_set_t q_space = compute_q_space(edge->to.node, edge, level);
+               q_space_set_t q_space = p2p_compute_q_space(edge->to.node, edge, level);
 
 
                /*now merge extended p-space and q-space*/
@@ -1311,7 +1311,50 @@ spf_init_dcm(){
         libcli_register_param(&prefix, &mask);
         set_param_cmd_code(&mask, CMDCODE_DEBUG_INSTANCE_NODE_ROUTE);
     }
-    
+
+#if 0
+    /* debug show rlfa source <node-name> interface <slot-no> destination <node-name>*/
+    {
+
+        static param_t show;
+        init_param(&show, CMD, "show", 0, 0, INVALID, 0, "debug show"); 
+        libcli_register_param(debug, &show);
+
+
+        static param_t rlfa;
+        init_param(&rlfa, CMD, "rlfa", 0, 0, INVALID, 0, "Remote LFAs"); 
+        libcli_register_param(&show, &rlfa);
+
+        static param_t source;
+        init_param(&source, CMD, "source", 0, 0, INVALID, 0, "Source Node Name");
+        libcli_register_param(&rlfa, &source);
+        libcli_register_display_callback(&source, display_instance_nodes); 
+
+        static param_t src_node_name;
+        init_param(&src_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
+        libcli_register_param(&source, &src_node_name);
+
+        static param_t interface;
+        init_param(&interface, CMD, "interface", 0, 0, INVALID, 0, "interface");
+        libcli_register_param(&src_node_name, &interface);
+        libcli_register_display_callback(&src_node_name, display_instance_node_interfaces);
+
+        static param_t slot_name;
+        init_param(&slot_name, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
+        libcli_register_param(&interface, &slot_name);
+
+        static param_t destination;
+        init_param(&destination, CMD, "destination", 0, 0, INVALID, 0, "Destination Node Name");
+        libcli_register_param(&slot_name, &destination);
+        libcli_register_display_callback(&destination, display_instance_nodes);
+
+        static param_t dst_node_name;
+        init_param(&dst_node_name, LEAF, 0, lfa_rlfa_config_handler, validate_node_extistence, STRING, "destination", "Node Name");
+        libcli_register_param(&destination, &dst_node_name);
+
+        set_param_cmd_code(&dst_node_name, CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES);
+    }
+#endif
     /* Added Negation support to appropriate command, post this
      * do not extend any negation supported commands*/
 

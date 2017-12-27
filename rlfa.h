@@ -99,19 +99,19 @@ void
 Compute_Neighbor_SPFs(node_t *spf_root, LEVEL level);
 
 p_space_set_t 
-compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
+p2p_compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
 p_space_set_t 
-compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
+p2p_compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
 q_space_set_t
-compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level);
+p2p_compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
 pq_space_set_t
 Intersect_Extended_P_and_Q_Space(p_space_set_t pset, q_space_set_t qset);
 
 void
-compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest);
+p2p_compute_rlfa_for_given_dest(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest);
 
 /*
 LFA Link/Link-and-node Protection

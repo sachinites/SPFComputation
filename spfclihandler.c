@@ -380,13 +380,16 @@ inset_lsp_as_forward_adjacency(node_t *ingress_lsr_node,
 int
 lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
-    node_t *node = NULL;
-    char *node_name = NULL;
+    node_t *node = NULL,
+           *dest_node = NULL;
+    char *node_name = NULL,
+         *dest_name = NULL;
     char *intf_name = NULL; 
     int cmd_code = -1, i = 0;
     tlv_struct_t *tlv = NULL;
     edge_t *edge = NULL;
     edge_end_t *edge_end = NULL;
+    LEVEL level = LEVEL_UNKNOWN;
 
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
@@ -396,12 +399,19 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
             intf_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "level", strlen("level")) ==0)
+            level = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "destination", strlen("destination")) ==0)
+            dest_name = tlv->value;
+
     } TLV_LOOP_END;
 
     if(node_name == NULL)
         node = instance->instance_root;
     else
         node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
+    dest_node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, dest_name);
 
     for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
@@ -437,6 +447,9 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             free_lfa(lfa_l2);
         }
         break;
+        case CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES:
+            p2p_compute_rlfa_for_given_dest(node, level, edge, dest_node);
+            break;
     } 
     return 0;
 }

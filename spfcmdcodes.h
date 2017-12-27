@@ -70,4 +70,5 @@
 #define CMDCODE_CONFIG_ALL_INTERFACE_LINK_PROTECTION 29 /*config node <node-name> interface all link-protection*/
 #define CMDCODE_CONFIG_ALL_INTERFACE_NODE_LINK_PROTECTION 30 /*config node <node-name> interface all node-link-protection*/
 
+#define CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES    31
 #endif /* __SPFCMDCODES__H */

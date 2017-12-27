@@ -76,7 +76,7 @@ Compute_Neighbor_SPFs(node_t *spf_root, LEVEL level){
  *-----------------------------------------------------------------------------*/
 
 p_space_set_t 
-compute_p_space(node_t *S, edge_t *failed_edge, LEVEL level){
+p2p_compute_p_space(node_t *S, edge_t *failed_edge, LEVEL level){
     
     spf_result_t *res = NULL;
     singly_ll_node_t* list_node = NULL;
@@ -85,6 +85,8 @@ compute_p_space(node_t *S, edge_t *failed_edge, LEVEL level){
     unsigned int dist_E_to_y = 0,
                  dist_S_to_y = 0,
                  dist_S_to_E = 0;
+    
+    assert(!is_broadcast_link(failed_edge, level));
 
     E = failed_edge->to.node;
     Compute_and_Store_Forward_SPF(S, level);
@@ -125,7 +127,7 @@ compute_p_space(node_t *S, edge_t *failed_edge, LEVEL level){
  *  'edge'. Note that, 'edge' need not be directly connected edge of 'node'.
  *-----------------------------------------------------------------------------*/
 p_space_set_t
-compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
+p2p_compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
     /*Compute p space of all nbrs of node except failed_edge->to.node
      * and union it. Remove duplicates from union*/
@@ -140,6 +142,7 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
                  d_self_to_y = 0;
 
     spf_result_t *spf_result_y = NULL;
+    assert(!is_broadcast_link(failed_edge, level));
 
     ex_p_space = init_singly_ll();
     singly_ll_set_comparison_fn(ex_p_space, instance_node_comparison_fn);
@@ -182,7 +185,7 @@ compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
 /* Note : here node is E, not S*/
 q_space_set_t
-compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
+p2p_compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
 
     node_t *S = NULL, *E = NULL;
     singly_ll_node_t *list_node1 = NULL;
@@ -192,6 +195,8 @@ compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
                  d_E_to_y = 0;
 
     spf_result_t *spf_result_y = NULL;
+    
+    assert(!is_broadcast_link(failed_edge, level));
 
     q_space_set_t q_space = init_singly_ll();
     singly_ll_set_comparison_fn(q_space, instance_node_comparison_fn);
@@ -261,21 +266,19 @@ Intersect_Extended_P_and_Q_Space(p_space_set_t p_space, q_space_set_t q_space){
  * computed per destination (Need to check for LFAs)*/
 
 void 
-compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
+p2p_compute_rlfa_for_given_dest(node_t *S, LEVEL level, edge_t *failed_edge, node_t *dest){
 
     /* Run SPF for protecting node S*/
 
-    singly_ll_node_t *list_node = NULL,
-                     *list_node2 = NULL;
+    singly_ll_node_t *list_node = NULL;
     node_t *pq_node = NULL;
-    spf_result_t *spf_result = NULL;
-    unsigned int d_pq_node_to_dest = 0,
-                 d_S_node_to_dest = 0;
 
+    unsigned int d_pq_to_dest = 0,
+                 d_S_to_dest = 0;
 
-    //p_space_set_t ex_p_space = compute_extended_p_space(node, failed_edge, level);
-    p_space_set_t ex_p_space = compute_p_space(node, failed_edge, level);
-    q_space_set_t q_space = compute_q_space(node, failed_edge, level);
+    assert(!is_broadcast_link(failed_edge, level));
+    p_space_set_t ex_p_space = p2p_compute_p_space(S, failed_edge, level);
+    q_space_set_t q_space = p2p_compute_q_space(S, failed_edge, level);
 
     pq_space_set_t pq_space = Intersect_Extended_P_and_Q_Space(ex_p_space, q_space);
 
@@ -304,38 +307,20 @@ compute_rlfa(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest){
      * p-space(S) guarantees that P nodes in p-space(S) are downstream nodes to S, but same is not true for extended-p-space(S).
      *
      * */
+    
+    d_S_to_dest = DIST_X_Y(S, dest, level);
+
     ITERATE_LIST_BEGIN(pq_space, list_node){
 
         pq_node = (node_t *)list_node->data;
 
         Compute_and_Store_Forward_SPF(pq_node, level);
+       
         /* Check for D_opt(pq_node, dest) < D_opt(S, dest)*/
 
-        d_pq_node_to_dest = 0;
-        d_S_node_to_dest = 0;
-
-        ITERATE_LIST_BEGIN(pq_node->spf_run_result[level], list_node2){
-
-            spf_result = (spf_result_t *)list_node2->data;
-            if(spf_result->node != dest)
-                continue;
-
-            d_pq_node_to_dest = spf_result->spf_metric;
-            break;
-        }ITERATE_LIST_END;
-
-        /*We had run run the SPF for computing node also.*/
-        ITERATE_LIST_BEGIN(node->spf_run_result[level], list_node2){
-
-            spf_result = (spf_result_t *)list_node2->data;
-            if(spf_result->node != dest)
-                continue;
-
-            d_S_node_to_dest = spf_result->spf_metric;
-            break;
-        }ITERATE_LIST_END;
-
-        if(d_pq_node_to_dest < d_S_node_to_dest){
+        d_pq_to_dest = DIST_X_Y(pq_node, dest, level);
+         
+        if(d_pq_to_dest < d_S_to_dest){
 
             printf("PQ node : %s\n", pq_node->node_name);
         }
