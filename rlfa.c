@@ -36,6 +36,7 @@
 #include "instance.h"
 #include "spfutil.h"
 #include "logging.h"
+#include "bitsop.h"
 
 extern instance_t *instance;
 
@@ -109,6 +110,12 @@ p2p_compute_p_space(node_t *S, edge_t *failed_edge, LEVEL level){
         /*Do not add computing node itself*/
         if(res->node == S)
             continue;
+        
+        /* RFC 7490 - section 5.4*/
+        /* Do not pick up overloaded node as a p-node*/
+
+        if(IS_OVERLOADED(res->node, level))
+            continue;
 
         dist_E_to_y = DIST_X_Y(E, res->node , level);
         dist_S_to_y = DIST_X_Y(S, res->node , level);
@@ -161,6 +168,9 @@ p2p_compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
         spf_result_y = (spf_result_t *)list_node1->data;
 
         if(spf_result_y->node == node)
+            continue;
+
+        if(IS_OVERLOADED(spf_result_y->node, level))
             continue;
 
         d_self_to_y = spf_result_y->spf_metric;
@@ -217,6 +227,10 @@ p2p_compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
         spf_result_y = (spf_result_t *)list_node1->data;
 
         if(spf_result_y->node == E) /*Do not add self*/
+            continue;
+
+
+        if(IS_OVERLOADED(spf_result_y->node, level))
             continue;
 
         /*Now find d_S_to_y */
@@ -433,6 +447,10 @@ broadcast_link_compute_lfa(node_t * S, edge_t *protected_link,
         sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature",/*Strange : adding edge2 in log solves problem of this macro looping*/ 
                 S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
     
+        if(IS_OVERLOADED(N, level)){
+            sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
+            continue;
+        }
       
        dist_N_S = DIST_X_Y(N, S, level);
        dist_N_PN =  DIST_X_Y(N, PN, level);
@@ -609,8 +627,8 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
                             boolean strict_down_stream_lfa){
 
     node_t *E = NULL, 
-           *N = NULL, 
-           *D = NULL;
+    *N = NULL, 
+    *D = NULL;
 
     edge_t *edge1 = NULL, *edge2 = NULL;
     spf_result_t *D_res = NULL;
@@ -638,6 +656,12 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
         /*Do not consider the link being protected to find LFA*/
         if(N == E && edge1 == protected_link)
             continue;
+
+
+        if(IS_OVERLOADED(N, level)){
+            sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
+            continue;
+        }
 
         dist_N_S = DIST_X_Y(N, S, level);
         ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node){
@@ -723,7 +747,7 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
             }else{
                 sprintf(LOG, "Node : %s : inequality 3 Failed", S->node_name); TRACE();
             }
-            
+
             sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s, lfa_type = %s", N->node_name, 
                     lfa_dest_pair->oif_to_lfa->intf_name, D->node_name, 
                     get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();
