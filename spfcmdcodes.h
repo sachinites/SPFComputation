@@ -63,7 +63,7 @@
 #define CMDCODE_CONFIG_NODE_SLOT_TAG_VALUE           24  /*config node <node-name> [no] interface <slot-name> tag <tag-value>*/
 
 /*LFAs*/
-#define CMDCODE_CONFIG_INTF_LINK_PROTECTION         25 /*config node <node-name> interface <ifname> link-protection*/ 
+#define CMDCODE_CONFIG_INTF_LINK_PROTECTION_LFA     25 /*config node <node-name> interface <ifname> link-protection lfa*/ 
 #define CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION    26 /*config node <node-name> interface <ifname> node-link-protection*/
 #define CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP      27 /*config node <node-name> interface <ifname> no-eligible-backup */ 
 #define CMDCODE_CONFIG_RSVPLSP_AS_BACKUP            28 /*config node <node-name> lsp <lsp-name> backup to <tail-end ip address>*/
@@ -71,4 +71,6 @@
 #define CMDCODE_CONFIG_ALL_INTERFACE_NODE_LINK_PROTECTION 30 /*config node <node-name> interface all node-link-protection*/
 
 #define CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES    31
+#define CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA     32 /*config node <node-name> interface <ifname> link-protection rlfa*/ 
+
 #endif /* __SPFCMDCODES__H */

@@ -1058,9 +1058,21 @@ spf_init_dcm(){
         /*config node <node-name> [no] interface <slot-no> link-protection*/
         {
             static param_t link_protection;
-            init_param(&link_protection, CMD, "link-protection", lfa_rlfa_config_handler, 0, INVALID, 0, "local link protection");
+            init_param(&link_protection, CMD, "link-protection", 0, 0, INVALID, 0, "local link protection");
             libcli_register_param(&config_node_node_name_slot_slotname, &link_protection);
-            set_param_cmd_code(&link_protection, CMDCODE_CONFIG_INTF_LINK_PROTECTION);
+            
+            {
+                static param_t lfa;
+                init_param(&lfa, CMD, "lfa", lfa_rlfa_config_handler, 0, INVALID, 0, "local link protection through LFAs");
+                libcli_register_param(&link_protection, &lfa);
+                set_param_cmd_code(&lfa, CMDCODE_CONFIG_INTF_LINK_PROTECTION_LFA);
+            }
+            {
+                static param_t rlfa;
+                init_param(&rlfa, CMD, "rlfa", lfa_rlfa_config_handler, 0, INVALID, 0, "local link protection through rlfa");
+                libcli_register_param(&link_protection, &rlfa);
+                set_param_cmd_code(&rlfa, CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA);
+            }
         }
 
         /*config node <node-name> [no] interface <slot-no> node-link-protection*/

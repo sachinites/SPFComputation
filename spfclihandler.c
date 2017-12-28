@@ -431,7 +431,7 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     }
 
     switch(cmd_code){
-        case CMDCODE_CONFIG_INTF_LINK_PROTECTION:
+        case CMDCODE_CONFIG_INTF_LINK_PROTECTION_LFA:
         {
             lfa_t *lfa_l1 = NULL, *lfa_l2 = NULL;
 
@@ -440,6 +440,22 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             
             if(IS_LEVEL_SET(edge->level, LEVEL2))
                 lfa_l2 = compute_lfa(node, edge, LEVEL2, TRUE);
+
+            print_lfa_info(lfa_l1);
+            print_lfa_info(lfa_l2); 
+            free_lfa(lfa_l1);
+            free_lfa(lfa_l2);
+        }
+        break;
+        case CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA:
+        {
+            lfa_t *lfa_l1 = NULL, *lfa_l2 = NULL;
+
+            if(IS_LEVEL_SET(edge->level, LEVEL1))
+                lfa_l1 = compute_rlfa(node, edge, LEVEL1, TRUE);
+            
+            if(IS_LEVEL_SET(edge->level, LEVEL2))
+                lfa_l2 = compute_rlfa(node, edge, LEVEL2, TRUE);
 
             print_lfa_info(lfa_l1);
             print_lfa_info(lfa_l2); 

@@ -274,6 +274,131 @@ Intersect_Extended_P_and_Q_Space(p_space_set_t p_space, q_space_set_t q_space){
     return pq_space;
 }
 
+
+static lfa_t *
+broadcast_link_compute_link_protection_rlfa(node_t *S, 
+                                  edge_t *protected_link,  
+                                  LEVEL level,
+                                  boolean strict_down_stream_lfa){
+
+    return NULL;
+}
+
+static lfa_t *
+p2p_compute_link_protection_rlfas(node_t *S, 
+                                  edge_t *protected_link,  
+                                  LEVEL level,
+                                  boolean strict_down_stream_lfa){
+
+    singly_ll_node_t *list_node = NULL,
+    *list_node1 = NULL;
+
+    node_t *pq_node = NULL,
+           *D = NULL,
+           *E = NULL;
+
+    spf_result_t *D_res = NULL;
+
+    unsigned int d_pq_to_D = 0,
+                 d_S_to_D = 0;
+
+    lfa_dest_pair_t *lfa_dest_pair = NULL;
+    edge_end_t *S_E_oif_for_D = NULL;
+    edge_t *S_E_oif_edge_for_D = NULL;
+
+    lfa_t *lfa = get_new_lfa();
+    lfa->protected_link = &protected_link->from;
+
+    assert(!is_broadcast_link(protected_link, level));
+
+    p_space_set_t ex_p_space = p2p_compute_extended_p_space(S, protected_link, level);
+    q_space_set_t q_space    = p2p_compute_q_space(protected_link->to.node, protected_link, level);
+
+    sprintf(LOG, "No of nodes in ex_p_space = %u", GET_NODE_COUNT_SINGLY_LL(ex_p_space)); TRACE();
+    sprintf(LOG, "No of nodes in q_space = %u", GET_NODE_COUNT_SINGLY_LL(q_space)); TRACE();
+
+    /*This PQ space will not contain overloaded nodes*/
+    pq_space_set_t pq_space  = Intersect_Extended_P_and_Q_Space(ex_p_space, q_space);
+    sprintf(LOG, "No of nodes in pq_space = %u", GET_NODE_COUNT_SINGLY_LL(pq_space)); TRACE();
+
+    /*Avoid double free*/
+    ex_p_space = NULL;
+    q_space = NULL;
+
+
+    ITERATE_LIST_BEGIN(pq_space, list_node){
+
+        pq_node = (node_t *)list_node->data;
+        Compute_and_Store_Forward_SPF(pq_node, level);
+
+    } ITERATE_LIST_END;
+
+    ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node){
+
+        D_res = list_node->data;
+        D = D_res->node;
+        
+        if(D == S) continue;
+
+        E = D_res->next_hop[IPNH][0];
+
+        /*Now if S reaches D via E through protected link, then D's LFA needs to be computed*/
+        S_E_oif_for_D = get_min_oif(S, E, level, NULL, IPNH);
+
+        sprintf(LOG, "Node : %s : OIF from node= %s to Nbr %s is %s",
+                S->node_name,  S->node_name, E->node_name, S_E_oif_for_D->intf_name); TRACE();
+
+        S_E_oif_edge_for_D = GET_EGDE_PTR_FROM_EDGE_END(S_E_oif_for_D);
+
+        if(S_E_oif_edge_for_D != protected_link){
+            sprintf(LOG, "Node : %s : Source(S) = %s, DEST(D) = %s, Primary NH(E) = NOT IMPACTED, skipping this Destination", S->node_name, S->node_name, D->node_name); TRACE();
+            continue;
+        }
+
+        sprintf(LOG, "Node : %s : Source(S) = %s, DEST(D) = %s, Primary NH(E) = %s(IMPACTED)", S->node_name, S->node_name, D->node_name, E->node_name); TRACE();
+
+        /*Examining all PQ nodes for Destination D for potential link protection RLFAs*/
+
+        d_S_to_D = DIST_X_Y(S, D, level);
+
+        ITERATE_LIST_BEGIN(pq_space, list_node1){
+
+            pq_node = (node_t *)list_node1->data;
+            d_pq_to_D = DIST_X_Y(pq_node, D, level);
+
+            if(strict_down_stream_lfa){
+                sprintf(LOG, "Node : %s : Testing Downsream inequality between PQ node = %s, and Dest = %s, d_pq_to_D(%u) < d_S_to_D(%u)", S->node_name, pq_node->node_name, D->node_name, d_pq_to_D, d_S_to_D); TRACE();
+                if(d_pq_to_D < d_S_to_D){
+
+                    lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
+                    lfa_dest_pair->lfa_type = LINK_PROTECTION_RLFA;
+                    lfa_dest_pair->lfa = pq_node;
+                    lfa_dest_pair->oif_to_lfa = NULL;
+                    lfa_dest_pair->dest = D;
+                    /*Record the LFA*/
+                    singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
+                }
+            }
+            else{
+                /* no need to check downstream criterion, it improves the coverage, but the cost of loops*/
+                lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
+                lfa_dest_pair->lfa_type = LINK_PROTECTION_RLFA;
+                lfa_dest_pair->lfa = pq_node;
+                lfa_dest_pair->oif_to_lfa = NULL;
+                lfa_dest_pair->dest = D;
+                /*Record the LFA*/
+                singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
+            }
+        } ITERATE_LIST_END;
+    } ITERATE_LIST_END;
+
+    if(GET_NODE_COUNT_SINGLY_LL(lfa->lfa) == 0){
+        free_lfa(lfa);
+        return NULL;
+    }
+    return lfa;
+}
+
 /*Routine to compute RLFA of node S, wrt to failed link 
  * failed_edge at given level for destination dest. Note that
  * to compute RLFA we need to know dest also, thus RLFAs are 
@@ -396,6 +521,12 @@ get_str_lfa_type(lfa_type_t lfa_type){
             return "LINK_PROTECTION_RLFA_DOWNSTREAM";
          case LINK_AND_NODE_PROTECTION_RLFA:
             return "LINK_AND_NODE_PROTECTION_RLFA";
+        case BROADCAST_LINK_PROTECTION_RLFA:
+            return "BROADCAST_LINK_PROTECTION_RLFA";
+         case BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM:
+            return "BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM";
+         case BROADCAST_LINK_AND_NODE_PROTECTION_RLFA:
+            return "BROADCAST_LINK_AND_NODE_PROTECTION_RLFA";
          default:
             return "UNKNOWN_LFA_TYPE";
     }
@@ -788,6 +919,16 @@ compute_lfa(node_t * S, edge_t *protected_link,
          return broadcast_link_compute_lfa(S, protected_link, level, TRUE);
 }
 
+lfa_t *
+compute_rlfa(node_t * S, edge_t *protected_link,
+            LEVEL level,
+            boolean strict_down_stream_lfa){
+
+     if(is_broadcast_link(protected_link, level) == FALSE)
+         return p2p_compute_link_protection_rlfas(S, protected_link, level, TRUE); 
+     else
+         return broadcast_link_compute_link_protection_rlfa(S, protected_link, level, TRUE);
+}
 
 
 void
@@ -804,7 +945,8 @@ print_lfa_info(lfa_t *lfa){
 
         lfa_dest_pair = list_node->data;
         printf("    LFA = %s, OIF = %s, Dest = %s, lfa_type = %s\n", lfa_dest_pair->lfa->node_name, 
-        lfa_dest_pair->oif_to_lfa->intf_name, lfa_dest_pair->dest->node_name, get_str_lfa_type(lfa_dest_pair->lfa_type));
+        lfa_dest_pair->oif_to_lfa ? lfa_dest_pair->oif_to_lfa->intf_name : "Nil", 
+        lfa_dest_pair->dest->node_name, get_str_lfa_type(lfa_dest_pair->lfa_type));
           
     } ITERATE_LIST_END;
     printf("\n");

@@ -61,6 +61,11 @@ typedef enum{
     LINK_PROTECTION_RLFA,
     LINK_PROTECTION_RLFA_DOWNSTREAM,
     LINK_AND_NODE_PROTECTION_RLFA,
+    
+    /*When protected Link is Broadcast Link*/
+    BROADCAST_LINK_PROTECTION_RLFA,
+    BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM,
+    BROADCAST_LINK_AND_NODE_PROTECTION_RLFA,
     UNKNOWN_LFA_TYPE
 } lfa_type_t;
 
@@ -180,5 +185,9 @@ STEPS : To compute LFA, do the following steps
 
 lfa_t *
 compute_lfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
+
+lfa_t *
+compute_rlfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
+
 
 #endif /* __RLFA__ */

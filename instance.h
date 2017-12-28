@@ -83,6 +83,7 @@ typedef struct _node_t{
 
     /* LFA related Data structures*/
     ll_t *link_protection_lfas;
+    ll_t *link_protection_rlfas;
 } node_t;
 
 static inline unsigned int 
