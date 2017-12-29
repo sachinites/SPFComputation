@@ -400,6 +400,7 @@ p2p_compute_link_protection_rlfas(node_t *S,
             if(strict_down_stream_lfa){
                 sprintf(LOG, "Node : %s : Testing Downsream inequality between PQ node = %s, and Dest = %s, d_pq_to_D(%u) < d_S_to_D(%u)", 
                              S->node_name, pq_node->node_name, D->node_name, d_pq_to_D, d_S_to_D); TRACE();
+
                 if(d_pq_to_D < d_S_to_D){
 
                     lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
@@ -434,6 +435,7 @@ p2p_compute_link_protection_rlfas(node_t *S,
             }
             else{
                 /* no need to check downstream criterion, it improves the coverage, but the cost of loops*/
+                sprintf(LOG, "Node : %s : Downsream inequality skipped for all PQ nodes", S->node_name); TRACE();
                 lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
                 lfa_dest_pair->lfa_type = LINK_PROTECTION_RLFA;
                 lfa_dest_pair->lfa = pq_node;
@@ -441,6 +443,25 @@ p2p_compute_link_protection_rlfas(node_t *S,
                 lfa_dest_pair->dest = D;
                 /*Record the LFA*/
                 singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
+                sprintf(LOG, "Node : %s : Downsream inequality qualified by PQ node %s for Dest %s", 
+                        S->node_name, pq_node->node_name, D->node_name); TRACE();
+
+                /*promote the recorded LFA to LINK_AND_NODE_PROTECTION_RLFA if Node protection inequality meets*/
+
+                sprintf(LOG, "Node : %s : Testing inequality for node protection on PQ node %s for Dest %s : \
+                        d_pq_to_D(%u) < d_pq_to_E(%u) + d_E_to_D(%u)", 
+                        S->node_name, pq_node->node_name, D->node_name, d_pq_to_D, d_pq_to_E, d_E_to_D); TRACE();
+
+                /* Here : E = protected_link->to.node */
+                d_pq_to_E = DIST_X_Y(pq_node, protected_link->to.node, level);
+                d_E_to_D = DIST_X_Y(protected_link->to.node, D, level);
+
+                if(d_pq_to_D < d_pq_to_E + d_E_to_D){
+
+                    lfa_dest_pair->lfa_type = LINK_AND_NODE_PROTECTION_RLFA;
+                    sprintf(LOG, "Node : %s : Node protection inequality qualified, PQ node = %s promoted to %s for Dest %s", 
+                            S->node_name, pq_node->node_name, get_str_lfa_type(lfa_dest_pair->lfa_type),  D->node_name); TRACE();
+                }
             }
         } ITERATE_LIST_END;
     } ITERATE_LIST_END;

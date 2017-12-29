@@ -61,9 +61,9 @@ all:
 	(cd CommandParser; make)
 	make
 cleanall:
-	(cd LinkedList; make clean)
-	(cd CommandParser; make clean)
 	rm Heap/*.o
 	rm Queue/*.o
 	rm logging/*.o
+	(cd LinkedList; make clean)
+	(cd CommandParser; make clean)
 	make clean

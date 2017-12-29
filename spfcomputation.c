@@ -570,11 +570,11 @@ partial_spf_run(node_t *spf_root, LEVEL level){
 }
 
 /*This macro should work as follows :
- *  * 1. if X and Y both are non-PN, then compute the dist from X to Y from spf result of X
- *   * 2. if X is a PN, then compute the dist from X to Y from spf result of X, explicit forward SPF computation on X is required in this case
- *    * 3. if Y is a PN, then get the dist from X to Y from self_spf_result stored in Y list of self spf result with spf_root = X
- *     * 4. if X and Y both are PNs, then you need to check your basic forward SPF algorithm, this is invalid case, so assert
- *      * */
+ * 1. if X and Y both are non-PN, then compute the dist from X to Y from spf result of X
+ * 2. if X is a PN, then compute the dist from X to Y from spf result of X, explicit forward SPF computation on X is required in this case
+ * 3. if Y is a PN, then get the dist from X to Y from self_spf_result stored in Y list of self spf result with spf_root = X
+ * 4. if X and Y both are PNs, then you need to check your basic forward SPF algorithm, this is invalid case, so assert
+ */
 
 unsigned int
 DIST_X_Y(node_t *X, node_t *Y, LEVEL _level){
