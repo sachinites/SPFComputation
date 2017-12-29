@@ -181,6 +181,15 @@ p2p_compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level){
             if(edge1 == failed_edge)
                 continue;
 
+            /*RFC 7490 section 5.4 : skip neighbors in computation of PQ nodes(extended p space) 
+             * which are either overloaded or reachable through infinite metric*/
+
+            if(edge1->metric[level] >= INFINITE_METRIC)
+                continue;
+
+            if(IS_OVERLOADED(nbr_node, level))
+                continue;
+
             d_nbr_to_self = DIST_X_Y(nbr_node, node, level);
             d_nbr_to_y = DIST_X_Y(nbr_node, spf_result_y->node, level);
 
@@ -229,6 +238,9 @@ p2p_compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level){
         if(spf_result_y->node == E) /*Do not add self*/
             continue;
 
+        /*Another way of overloading the router is to set the outgoing
+         * metric on all its edges = INFINITE_METRIC. Though, we dont follow
+         * this mechanism of overloading the router in this project*/
 
         if(IS_OVERLOADED(spf_result_y->node, level))
             continue;
@@ -539,9 +551,9 @@ free_lfa(lfa_t *lfa){
 
 char *
 get_str_lfa_type(lfa_type_t lfa_type){
-    
+
     switch(lfa_type){
-        
+
         case LINK_PROTECTION_LFA:
             return "LINK_PROTECTION_LFA";               /*Only inequality 1 - RFC5286*/
         case LINK_PROTECTION_LFA_DOWNSTREAM:
@@ -558,17 +570,17 @@ get_str_lfa_type(lfa_type_t lfa_type){
             return "BROADCAST_LINK_AND_NODE_PROTECTION_LFA";
         case LINK_PROTECTION_RLFA:
             return "LINK_PROTECTION_RLFA";
-         case LINK_PROTECTION_RLFA_DOWNSTREAM:
+        case LINK_PROTECTION_RLFA_DOWNSTREAM:
             return "LINK_PROTECTION_RLFA_DOWNSTREAM";
-         case LINK_AND_NODE_PROTECTION_RLFA:
+        case LINK_AND_NODE_PROTECTION_RLFA:
             return "LINK_AND_NODE_PROTECTION_RLFA";
         case BROADCAST_LINK_PROTECTION_RLFA:
             return "BROADCAST_LINK_PROTECTION_RLFA";
-         case BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM:
+        case BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM:
             return "BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM";
-         case BROADCAST_LINK_AND_NODE_PROTECTION_RLFA:
+        case BROADCAST_LINK_AND_NODE_PROTECTION_RLFA:
             return "BROADCAST_LINK_AND_NODE_PROTECTION_RLFA";
-         default:
+        default:
             return "UNKNOWN_LFA_TYPE";
     }
 }
