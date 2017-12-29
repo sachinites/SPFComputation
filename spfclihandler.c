@@ -181,8 +181,6 @@ spf_node_slot_metric_change(node_t *node, char *slot_name,
 }
 
 
-
-
 void
 display_instance_nodes(param_t *param, ser_buff_t *tlv_buf){
 

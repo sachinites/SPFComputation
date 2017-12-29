@@ -300,7 +300,10 @@ p2p_compute_link_protection_rlfas(node_t *S,
     spf_result_t *D_res = NULL;
 
     unsigned int d_pq_to_D = 0,
-                 d_S_to_D = 0;
+                 d_S_to_D  = 0,
+                 d_pq_to_E = 0,
+                 d_E_to_D  = 0;
+
 
     lfa_dest_pair_t *lfa_dest_pair = NULL;
     edge_end_t *S_E_oif_for_D = NULL;
@@ -312,19 +315,33 @@ p2p_compute_link_protection_rlfas(node_t *S,
     assert(!is_broadcast_link(protected_link, level));
 
     p_space_set_t ex_p_space = p2p_compute_extended_p_space(S, protected_link, level);
-    q_space_set_t q_space    = p2p_compute_q_space(protected_link->to.node, protected_link, level);
-
     sprintf(LOG, "No of nodes in ex_p_space = %u", GET_NODE_COUNT_SINGLY_LL(ex_p_space)); TRACE();
+    
+    if(GET_NODE_COUNT_SINGLY_LL(ex_p_space) == 0){
+        free_lfa(lfa);
+        return NULL;
+    }
+
+    q_space_set_t q_space    = p2p_compute_q_space(protected_link->to.node, protected_link, level);
     sprintf(LOG, "No of nodes in q_space = %u", GET_NODE_COUNT_SINGLY_LL(q_space)); TRACE();
+    
+    if(GET_NODE_COUNT_SINGLY_LL(q_space) == 0){
+        free_lfa(lfa);
+        return NULL;
+    }
 
     /*This PQ space will not contain overloaded nodes*/
     pq_space_set_t pq_space  = Intersect_Extended_P_and_Q_Space(ex_p_space, q_space);
     sprintf(LOG, "No of nodes in pq_space = %u", GET_NODE_COUNT_SINGLY_LL(pq_space)); TRACE();
 
+    if(GET_NODE_COUNT_SINGLY_LL(pq_space) == 0){
+        free_lfa(lfa);
+        return NULL;
+    }
+
     /*Avoid double free*/
     ex_p_space = NULL;
     q_space = NULL;
-
 
     ITERATE_LIST_BEGIN(pq_space, list_node){
 
@@ -351,11 +368,13 @@ p2p_compute_link_protection_rlfas(node_t *S,
         S_E_oif_edge_for_D = GET_EGDE_PTR_FROM_EDGE_END(S_E_oif_for_D);
 
         if(S_E_oif_edge_for_D != protected_link){
-            sprintf(LOG, "Node : %s : Source(S) = %s, DEST(D) = %s, Primary NH(E) = NOT IMPACTED, skipping this Destination", S->node_name, S->node_name, D->node_name); TRACE();
+            sprintf(LOG, "Node : %s : Source(S) = %s, DEST(D) = %s, Primary NH(E) = NOT IMPACTED, skipping this Destination", 
+                          S->node_name, S->node_name, D->node_name); TRACE();
             continue;
         }
 
-        sprintf(LOG, "Node : %s : Source(S) = %s, DEST(D) = %s, Primary NH(E) = %s(IMPACTED)", S->node_name, S->node_name, D->node_name, E->node_name); TRACE();
+        sprintf(LOG, "Node : %s : Source(S) = %s, DEST(D) = %s, Primary NH(E) = %s(IMPACTED)", 
+                          S->node_name, S->node_name, D->node_name, E->node_name); TRACE();
 
         /*Examining all PQ nodes for Destination D for potential link protection RLFAs*/
 
@@ -367,16 +386,38 @@ p2p_compute_link_protection_rlfas(node_t *S,
             d_pq_to_D = DIST_X_Y(pq_node, D, level);
 
             if(strict_down_stream_lfa){
-                sprintf(LOG, "Node : %s : Testing Downsream inequality between PQ node = %s, and Dest = %s, d_pq_to_D(%u) < d_S_to_D(%u)", S->node_name, pq_node->node_name, D->node_name, d_pq_to_D, d_S_to_D); TRACE();
+                sprintf(LOG, "Node : %s : Testing Downsream inequality between PQ node = %s, and Dest = %s, d_pq_to_D(%u) < d_S_to_D(%u)", 
+                             S->node_name, pq_node->node_name, D->node_name, d_pq_to_D, d_S_to_D); TRACE();
                 if(d_pq_to_D < d_S_to_D){
 
                     lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
-                    lfa_dest_pair->lfa_type = LINK_PROTECTION_RLFA;
+                    lfa_dest_pair->lfa_type = LINK_PROTECTION_RLFA_DOWNSTREAM;
                     lfa_dest_pair->lfa = pq_node;
                     lfa_dest_pair->oif_to_lfa = NULL;
                     lfa_dest_pair->dest = D;
+
                     /*Record the LFA*/
                     singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
+                    
+                    sprintf(LOG, "Node : %s : Downsream inequality qualified by PQ node %s for Dest %s", 
+                                    S->node_name, pq_node->node_name, D->node_name); TRACE();
+
+                    /*promote the recorded LFA to LINK_AND_NODE_PROTECTION_RLFA if Node protection inequality meets*/
+                    
+                    sprintf(LOG, "Node : %s : Testing inequality for node protection on PQ node %s for Dest %s : \
+                                   d_pq_to_D(%u) < d_pq_to_E(%u) + d_E_to_D(%u)", 
+                                    S->node_name, pq_node->node_name, D->node_name, d_pq_to_D, d_pq_to_E, d_E_to_D); TRACE();
+
+                    /* Here : E = protected_link->to.node */
+                    d_pq_to_E = DIST_X_Y(pq_node, protected_link->to.node, level);
+                    d_E_to_D = DIST_X_Y(protected_link->to.node, D, level);
+
+                    if(d_pq_to_D < d_pq_to_E + d_E_to_D){
+                        
+                        lfa_dest_pair->lfa_type = LINK_AND_NODE_PROTECTION_RLFA;
+                        sprintf(LOG, "Node : %s : Node protection inequality qualified, PQ node = %s promoted to %s for Dest %s", 
+                            S->node_name, pq_node->node_name, get_str_lfa_type(lfa_dest_pair->lfa_type),  D->node_name); TRACE();
+                    }
                 }
             }
             else{
@@ -613,11 +654,13 @@ broadcast_link_compute_lfa(node_t * S, edge_t *protected_link,
            S_E_oif_edge_for_D = GET_EGDE_PTR_FROM_EDGE_END(S_E_oif_for_D);
            
            if(S_E_oif_edge_for_D != protected_link){
-               sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = NOT IMPACTED, skipping this Destination", S->node_name, S->node_name, N->node_name, D->node_name); TRACE();
+               sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = NOT IMPACTED, skipping this Destination", 
+                             S->node_name, S->node_name, N->node_name, D->node_name); TRACE();
                continue;
            }
 
-            sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = %s(IMPACTED)", S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
+            sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = %s(IMPACTED)", 
+                            S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
 
 
             dist_N_D = DIST_X_Y(N, D, level);
@@ -785,8 +828,11 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
                 S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
 
         /*Do not consider the link being protected to find LFA*/
-        if(N == E && edge1 == protected_link)
+        if(N == E && edge1 == protected_link){
+            sprintf(LOG, "Node : %s : Nbr %s with OIF %s is same as protected link %s, skipping this nbr from LFA candidature", 
+                    S->node_name, N->node_name, edge1->from.intf_name, protected_link->from.intf_name); TRACE();
             continue;
+        }
 
 
         if(IS_OVERLOADED(N, level)){
@@ -800,6 +846,8 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
             D_res = list_node->data;
             D = D_res->node;
 
+            if(D == S) continue;
+
             sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = %s", 
                     S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
 
@@ -809,6 +857,8 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
                         S->node_name, D->node_name, E->node_name); TRACE();
                 continue;
             }
+            
+            sprintf(LOG, "Node : %s : Dest %s IMPACTED", S->node_name, D->node_name); TRACE();
 
             dist_N_D = DIST_X_Y(N, D, level);
             dist_S_D = D_res->spf_metric;
@@ -898,38 +948,6 @@ p2p_compute_lfa(node_t * S, edge_t *protected_link,
     return lfa;
 }
 
-lfa_t *
-compute_lfa(node_t * S, edge_t *protected_link,
-            LEVEL level,
-            boolean strict_down_stream_lfa){
-
-    /* Run necessary SPF runs required to compute LFAs 
-     * of any type - p2p link/node protection or broadcast link
-     * node protecting LFAs*/
-
-     /* 1. Run SPF on S to know DIST(S,D) */
-     Compute_and_Store_Forward_SPF(S, level);
-    
-     /* 2. Run SPF on all nbrs of S to know DIST(N,D) and DIST(N,S)*/
-     Compute_Neighbor_SPFs(S, level); 
-
-     if(is_broadcast_link(protected_link, level) == FALSE)
-         return p2p_compute_lfa(S, protected_link, level, TRUE); 
-     else
-         return broadcast_link_compute_lfa(S, protected_link, level, TRUE);
-}
-
-lfa_t *
-compute_rlfa(node_t * S, edge_t *protected_link,
-            LEVEL level,
-            boolean strict_down_stream_lfa){
-
-     if(is_broadcast_link(protected_link, level) == FALSE)
-         return p2p_compute_link_protection_rlfas(S, protected_link, level, TRUE); 
-     else
-         return broadcast_link_compute_link_protection_rlfa(S, protected_link, level, TRUE);
-}
-
 
 void
 print_lfa_info(lfa_t *lfa){
@@ -979,3 +997,43 @@ clear_lfa_result(node_t *node){
     free(node->link_protection_lfas);
     node->link_protection_lfas = NULL;
 }
+
+
+lfa_t *
+compute_lfa(node_t * S, edge_t *protected_link,
+            LEVEL level,
+            boolean strict_down_stream_lfa){
+
+     /*LFA computation is possible only for unicast links*/
+     assert(protected_link->etype == UNICAST);
+
+    /* Run necessary SPF runs required to compute LFAs 
+     * of any type - p2p link/node protection or broadcast link
+     * node protecting LFAs*/
+
+     /* 1. Run SPF on S to know DIST(S,D) */
+     Compute_and_Store_Forward_SPF(S, level);
+    
+     /* 2. Run SPF on all nbrs of S to know DIST(N,D) and DIST(N,S)*/
+     Compute_Neighbor_SPFs(S, level); 
+
+     if(is_broadcast_link(protected_link, level) == FALSE)
+         return p2p_compute_lfa(S, protected_link, level, TRUE); 
+     else
+         return broadcast_link_compute_lfa(S, protected_link, level, TRUE);
+}
+
+lfa_t *
+compute_rlfa(node_t * S, edge_t *protected_link,
+            LEVEL level,
+            boolean strict_down_stream_lfa){
+
+     /*R LFA computation is possible only for unicast links*/
+     assert(protected_link->etype == UNICAST);
+
+     if(is_broadcast_link(protected_link, level) == FALSE)
+         return p2p_compute_link_protection_rlfas(S, protected_link, level, TRUE); 
+     else
+         return broadcast_link_compute_link_protection_rlfa(S, protected_link, level, TRUE);
+}
+

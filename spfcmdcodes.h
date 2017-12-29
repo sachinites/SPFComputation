@@ -35,42 +35,42 @@
 
 /*CLI command codes*/
 
-#define CMDCODE_CONFIG_NODE_SLOT_ENABLE            1   /*config node <node-name> [no] slot <slot-name> enable*/
-#define CMDCODE_CONFIG_INSTANCE_IGNOREBIT_ENABLE   2   /*config node <node-name> [no] ignorebit enable*/
-#define CMDCODE_CONFIG_INSTANCE_ATTACHBIT_ENABLE   3   /*config node <node-name [no] attachbit enable>*/
-#define CMDCODE_SHOW_SPF_STATS              4   /*show spf run level <level-no> [root <node-name> [statistics]]*/
-#define CMDCODE_SHOW_SPF_RUN                5   /*show spf run level <level-no> [root <node-name>]*/
-#define CMDCODE_SHOW_SPF_RUN_INVERSE        6   /*show spf run level <level-no> [root <node-name>] inverse*/
-#define CMDCODE_SHOW_INSTANCE_NODE_PSPACE   7   /*show instance node <node-name> level <level-no> pspace [slot-no]*/
-#define CMDCODE_SHOW_INSTANCE_NODE_QSPACE   8   /*show instance node <node-name> level <level-no> qspace [slot-no]*/
-#define CMDCODE_SHOW_INSTANCE_NODE_EXPSPACE 9   /*show instance node <node-name> level <level-no> expspace [slot-no]*/
-#define CMDCODE_SHOW_INSTANCE_NODE_PQSPACE  10  /*show instance node <node-name> level <level-no> pqspace [slot-no]*/
-#define CMDCODE_SHOW_INSTANCE_LEVEL         11  /*show instance level <level-no>*/
-#define CMDCODE_SHOW_INSTANCE_NODE_LEVEL    12  /*show instance node <node-name> level <level-no>*/
-#define CMDCODE_CONFIG_NODE_EXPORT_PREFIX      13  /*show instance node <node-name> export prefix <prefix> <mask> level <level-no>*/
-#define CMDCODE_CONFIG_NODE_LEAK_PREFIX     14  /*config node <node-name> leak prefix <prefix> mask level <from level-no> <To level-no>*/
-#define CMDCODE_CONFIG_NODE_OVERLOAD        15     /*config node <node-name> overload level <level-no>*/
-#define CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES  16 /*debug instance node <node-name> route*/
-#define CMDCODE_DEBUG_INSTANCE_NODE_ROUTE   17     /*debug instance node <node-name> route <prefix> <mask>*/
-#define CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW 18     /*config node <node-name> overload level <level-no> interface <slot-no> */
-#define CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE  19 /*config node <node-name> interface <intf-name> level <level-no> metric <metric value>*/
-#define CMDCODE_SHOW_SPF_RUN_PRC            20  /*show spf run level <level-no>* [root <node-name>] prc*/
-#define CMDCODE_CONFIG_NODE_RSVPLSP             21  /*config node <node-name> lsp <lsp-name> metric <metric-value> to <tail-end-ip>*/
-#define CMDCODE_RUN_INSTANCE_SYNC           22  /*run instance sync*/
+#define CMDCODE_CONFIG_NODE_SLOT_ENABLE                     1   /*config node <node-name> [no] slot <slot-name> enable*/
+#define CMDCODE_CONFIG_INSTANCE_IGNOREBIT_ENABLE            2   /*config node <node-name> [no] ignorebit enable*/
+#define CMDCODE_CONFIG_INSTANCE_ATTACHBIT_ENABLE            3   /*config node <node-name [no] attachbit enable>*/
+#define CMDCODE_SHOW_SPF_STATS                              4   /*show spf run level <level-no> [root <node-name> [statistics]]*/
+#define CMDCODE_SHOW_SPF_RUN                                5   /*show spf run level <level-no> [root <node-name>]*/
+#define CMDCODE_SHOW_SPF_RUN_INVERSE                        6   /*show spf run level <level-no> [root <node-name>] inverse*/
+#define CMDCODE_SHOW_INSTANCE_NODE_PSPACE                   7   /*show instance node <node-name> level <level-no> pspace [slot-no]*/
+#define CMDCODE_SHOW_INSTANCE_NODE_QSPACE                   8   /*show instance node <node-name> level <level-no> qspace [slot-no]*/
+#define CMDCODE_SHOW_INSTANCE_NODE_EXPSPACE                 9   /*show instance node <node-name> level <level-no> expspace [slot-no]*/
+#define CMDCODE_SHOW_INSTANCE_NODE_PQSPACE                  10  /*show instance node <node-name> level <level-no> pqspace [slot-no]*/
+#define CMDCODE_SHOW_INSTANCE_LEVEL                         11  /*show instance level <level-no>*/
+#define CMDCODE_SHOW_INSTANCE_NODE_LEVEL                    12  /*show instance node <node-name> level <level-no>*/
+#define CMDCODE_CONFIG_NODE_EXPORT_PREFIX                   13  /*show instance node <node-name> export prefix <prefix> <mask> level <level-no>*/
+#define CMDCODE_CONFIG_NODE_LEAK_PREFIX                     14  /*config node <node-name> leak prefix <prefix> mask level <from level-no> <To level-no>*/
+#define CMDCODE_CONFIG_NODE_OVERLOAD                        15  /*config node <node-name> overload level <level-no>*/
+#define CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES              16  /*debug instance node <node-name> route*/
+#define CMDCODE_DEBUG_INSTANCE_NODE_ROUTE                   17  /*debug instance node <node-name> route <prefix> <mask>*/
+#define CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW                 18  /*config node <node-name> overload level <level-no> interface <slot-no> */
+#define CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE              19  /*config node <node-name> interface <intf-name> level <level-no> metric <metric value>*/
+#define CMDCODE_SHOW_SPF_RUN_PRC                            20  /*show spf run level <level-no>* [root <node-name>] prc*/
+#define CMDCODE_CONFIG_NODE_RSVPLSP                         21  /*config node <node-name> lsp <lsp-name> metric <metric-value> to <tail-end-ip>*/
+#define CMDCODE_RUN_INSTANCE_SYNC                           22  /*run instance sync*/
 
 /*Administrative tag support*/
-#define CMDCODE_CONFIG_INSTANCE_NODE_TAG_PRIORITY    23  /*config node <node-name> tag <tag-value> priority <high | medium | low>*/
-#define CMDCODE_CONFIG_NODE_SLOT_TAG_VALUE           24  /*config node <node-name> [no] interface <slot-name> tag <tag-value>*/
+#define CMDCODE_CONFIG_INSTANCE_NODE_TAG_PRIORITY           23  /*config node <node-name> tag <tag-value> priority <high | medium | low>*/
+#define CMDCODE_CONFIG_NODE_SLOT_TAG_VALUE                  24  /*config node <node-name> [no] interface <slot-name> tag <tag-value>*/
 
 /*LFAs*/
-#define CMDCODE_CONFIG_INTF_LINK_PROTECTION_LFA     25 /*config node <node-name> interface <ifname> link-protection lfa*/ 
-#define CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION    26 /*config node <node-name> interface <ifname> node-link-protection*/
-#define CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP      27 /*config node <node-name> interface <ifname> no-eligible-backup */ 
-#define CMDCODE_CONFIG_RSVPLSP_AS_BACKUP            28 /*config node <node-name> lsp <lsp-name> backup to <tail-end ip address>*/
-#define CMDCODE_CONFIG_ALL_INTERFACE_LINK_PROTECTION 29 /*config node <node-name> interface all link-protection*/
-#define CMDCODE_CONFIG_ALL_INTERFACE_NODE_LINK_PROTECTION 30 /*config node <node-name> interface all node-link-protection*/
+#define CMDCODE_CONFIG_INTF_LINK_PROTECTION_LFA             25 /*config node <node-name> interface <ifname> link-protection lfa*/ 
+#define CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION            26 /*config node <node-name> interface <ifname> node-link-protection*/
+#define CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP              27 /*config node <node-name> interface <ifname> no-eligible-backup */ 
+#define CMDCODE_CONFIG_RSVPLSP_AS_BACKUP                    28 /*config node <node-name> lsp <lsp-name> backup to <tail-end ip address>*/
+#define CMDCODE_CONFIG_ALL_INTERFACE_LINK_PROTECTION        29 /*config node <node-name> interface all link-protection*/
+#define CMDCODE_CONFIG_ALL_INTERFACE_NODE_LINK_PROTECTION   30 /*config node <node-name> interface all node-link-protection*/
 
-#define CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES    31
-#define CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA     32 /*config node <node-name> interface <ifname> link-protection rlfa*/ 
+#define CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES        31 /*debug instance node <node-name> interface <ifname> destination <dest-node-name> pqnodes (YET TO IMPLEMENT)*/
+#define CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA            32 /*config node <node-name> interface <ifname> link-protection rlfa*/ 
 
 #endif /* __SPFCMDCODES__H */
