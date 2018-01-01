@@ -69,6 +69,22 @@ typedef enum{
     UNKNOWN_LFA_TYPE
 } lfa_type_t;
 
+/*Flags to enable the type of protection enabled on protected link*/
+#define LINK_PROTECTION         0
+#define LINK_NODE_PROTECTION    1
+
+#define SET_LINK_PROTECTION_TYPE(edge_ptr, protection_bit)      \
+    (SET_BIT(edge_ptr->from.edge_config_flags, protection_bit))
+
+#define UNSET_LINK_PROTECTION_TYPE(edge_ptr, protection_bit)    \
+    (UNSET_BIT(edge_ptr->from.edge_config_flags, protection_bit))
+
+#define IS_LINK_PROTECTION_ENABLED(edge_ptr)                    \
+    (IS_BIT_SET(edge_ptr->from.edge_config_flags, LINK_PROTECTION))
+
+#define IS_LINK_NODE_PROTECTION_ENABLED(edge_ptr)               \
+    (IS_BIT_SET(edge_ptr->from.edge_config_flags, LINK_NODE_PROTECTION))
+
 char *
 get_str_lfa_type(lfa_type_t lfa_type);
 
@@ -101,13 +117,16 @@ void
 Compute_and_Store_Forward_SPF(node_t *spf_root,
                               LEVEL level);
 void
-Compute_Neighbor_SPFs(node_t *spf_root, LEVEL level);
+Compute_PHYSICAL_Neighbor_SPFs(node_t *spf_root, LEVEL level);
+
+void
+Compute_LOGICAL_Neighbor_SPFs(node_t *spf_root, LEVEL level);
 
 p_space_set_t 
 p2p_compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
 p_space_set_t 
-p2p_compute_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
+p2p_compute_link_node_protecting_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
 q_space_set_t
 p2p_compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level);
@@ -183,11 +202,13 @@ STEPS : To compute LFA, do the following steps
 
 */
 
+void
+init_back_up_computation(node_t *S, LEVEL level);
+
 lfa_t *
 compute_lfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
 
 lfa_t *
 compute_rlfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
-
 
 #endif /* __RLFA__ */

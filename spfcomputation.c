@@ -214,7 +214,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
         /*Iterare over all the nbrs of Candidate node*/
 
-        ITERATE_NODE_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
+        ITERATE_NODE_LOGICAL_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
             sprintf(LOG, "Processing Nbr : %s", nbr_node->node_name); TRACE();
 
             /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
@@ -347,7 +347,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 TRACE();
             }
         }
-        ITERATE_NODE_NBRS_END;
+        ITERATE_NODE_LOGICAL_NBRS_END;
     }
 }
 
@@ -421,7 +421,7 @@ spf_init(candidate_tree_t *ctree,
 
         curr_node = deque(q);
 
-        ITERATE_NODE_NBRS_BEGIN(curr_node, nbr_node, edge,
+        ITERATE_NODE_LOGICAL_NBRS_BEGIN(curr_node, nbr_node, edge,
                 level){
 
             if(nbr_node->traversing_bit)
@@ -442,7 +442,7 @@ spf_init(candidate_tree_t *ctree,
             nbr_node->traversing_bit = 1;
             enqueue(q, nbr_node);
         }
-        ITERATE_NODE_NBRS_END;
+        ITERATE_NODE_LOGICAL_NBRS_END;
     }
     assert(is_queue_empty(q));
     free(q);
@@ -458,11 +458,11 @@ spf_init(candidate_tree_t *ctree,
      * nbrs of directly connected PN as own nbrs, which is infact the concept
      * of pseudonode. Again, do not compute direct next hops of PN*/
 
-    ITERATE_NODE_NBRS_BEGIN(spf_root, nbr_node, edge, level){
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(spf_root, nbr_node, edge, level){
 
         if(nbr_node->node_type[level] == PSEUDONODE){
 
-            ITERATE_NODE_NBRS_BEGIN(nbr_node, pn_nbr, pn_edge, level){
+            ITERATE_NODE_LOGICAL_NBRS_BEGIN(nbr_node, pn_nbr, pn_edge, level){
 
                 if(pn_nbr == spf_root)
                     continue;
@@ -472,7 +472,7 @@ spf_init(candidate_tree_t *ctree,
                 else
                     pn_nbr->direct_next_hop[level][IPNH][0] = pn_nbr;
             }
-            ITERATE_NODE_NBRS_END;
+            ITERATE_NODE_LOGICAL_NBRS_END;
             continue;
         }
 
@@ -481,7 +481,7 @@ spf_init(candidate_tree_t *ctree,
         else
             nbr_node->direct_next_hop[level][IPNH][0] = nbr_node;
     }
-    ITERATE_NODE_NBRS_END;
+    ITERATE_NODE_LOGICAL_NBRS_END;
 
 
     /*Step 4 : Initialize candidate tree with root*/
@@ -491,12 +491,12 @@ spf_init(candidate_tree_t *ctree,
     /*Step 5 : Link Directly Connected PN to the instance root. This
      * will help identifying the route oif when spf_root is connected to PN */
 
-    ITERATE_NODE_NBRS_BEGIN(spf_root, nbr_node, edge, level){
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(spf_root, nbr_node, edge, level){
 
         if(nbr_node->node_type[level] == PSEUDONODE)
             nbr_node->pn_intf[level] = &edge->from;/*There is exactly one PN per LAN per level*/            
     }
-    ITERATE_NODE_NBRS_END;
+    ITERATE_NODE_LOGICAL_NBRS_END;
 }
 
 

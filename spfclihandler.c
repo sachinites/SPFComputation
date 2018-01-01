@@ -281,7 +281,6 @@ dump_route_info(routes_t *route){
         printf("\n");
 
     } ITERATE_NH_TYPE_END;
-
 }
 
 int
@@ -376,6 +375,12 @@ inset_lsp_as_forward_adjacency(node_t *ingress_lsr_node,
 }
 
 int
+debug_show_node_lfas(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    return 0;
+}
+
+int
 lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     node_t *node = NULL,
@@ -429,20 +434,28 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     }
 
     switch(cmd_code){
-        case CMDCODE_CONFIG_INTF_LINK_PROTECTION_LFA:
-        {
-            lfa_t *lfa_l1 = NULL, *lfa_l2 = NULL;
-
-            if(IS_LEVEL_SET(edge->level, LEVEL1))
-                lfa_l1 = compute_lfa(node, edge, LEVEL1, TRUE);
-            
-            if(IS_LEVEL_SET(edge->level, LEVEL2))
-                lfa_l2 = compute_lfa(node, edge, LEVEL2, TRUE);
-
-            print_lfa_info(lfa_l1);
-            print_lfa_info(lfa_l2); 
-            free_lfa(lfa_l1);
-            free_lfa(lfa_l2);
+        case CMDCODE_CONFIG_INTF_LINK_PROTECTION:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE: 
+                SET_LINK_PROTECTION_TYPE(edge, LINK_PROTECTION);
+                break;
+            case CONFIG_DISABLE:
+                UNSET_LINK_PROTECTION_TYPE(edge, LINK_PROTECTION);
+                break;
+            default:
+                assert(0);
+        }
+        break;
+        case CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE: 
+                SET_LINK_PROTECTION_TYPE(edge, LINK_NODE_PROTECTION);
+                break;
+            case CONFIG_DISABLE:
+                UNSET_LINK_PROTECTION_TYPE(edge, LINK_NODE_PROTECTION);
+                break;
+            default:
+                assert(0);
         }
         break;
         case CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA:

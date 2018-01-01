@@ -84,6 +84,15 @@ typedef struct _node_t{
     /* LFA related Data structures*/
     ll_t *link_protection_lfas;
     ll_t *link_protection_rlfas;
+
+    /* 0th bit set if this node is a member of extended p space
+     * of some computing router and provides only link protection.
+     * Ist bit is set if this node is a member of extended p space
+     * of some computing router and provides link-node protection*/
+    FLAG p_space_protection_type;
+    FLAG q_space_protection_type;
+    boolean backup_spf_options;    /*TRUE- means RLFA computation is enabled*/
+
 } node_t;
 
 static inline unsigned int 
@@ -105,6 +114,7 @@ struct edge_end_{
     common_pfx_key_t if_prefix;/*ToDo : use this sata structure instead if below prefix_t */
     prefix_t * prefix[MAX_LEVEL];
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
+    FLAG edge_config_flags;
 };
 
 typedef enum {
@@ -255,7 +265,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
 
 /*This Macro iterates over all logical nbrs of a node. Logical nbrs includes
  * pseudonodes as well. Nbrs of directly connected PN do not count*/
-#define ITERATE_NODE_NBRS_BEGIN(_node, _nbr_node, _edge, _level)  \
+#define ITERATE_NODE_LOGICAL_NBRS_BEGIN(_node, _nbr_node, _edge, _level)  \
     _nbr_node = NULL;                                             \
     _edge = NULL;                                                 \
     do{                                                           \
@@ -273,7 +283,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
                 continue;                                         \
             _nbr_node = _edge->to.node;
              
-#define ITERATE_NODE_NBRS_END   }}while(0)
+#define ITERATE_NODE_LOGICAL_NBRS_END   }}while(0)
              
 /*This macro iterates over all physical nbrs of a node. Physical nbrs includes
  * P2P nbrs and nbrs of directly connected PN. PN itself do not count as a nbr

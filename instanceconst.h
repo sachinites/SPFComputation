@@ -42,7 +42,7 @@
 #define PREFIX_LEN_WITH_MASK    (PREFIX_LEN + 3)
 #define MAX_NXT_HOPS            8
 #define INFINITE_METRIC         (0xFE000000)
-#define LINK_DEFAULT_METRIC          10
+#define LINK_DEFAULT_METRIC     10
 /* instance global flags */
 
 #define IGNOREATTACHED  1   /*If this bit is set, then L1-only router will not install default gateway to L1L2 router of the local Area*/

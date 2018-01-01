@@ -215,7 +215,6 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
 
     char *node_name = NULL,
          *slot_name = NULL;
-    LEVEL level;
     unsigned int i = 0;
     tlv_struct_t *tlv = NULL;
     node_t *node = NULL, *p_node = NULL,
@@ -228,18 +227,18 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
-        else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
-            level = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
              slot_name = tlv->value;
+        else
+            assert(0);
     } TLV_LOOP_END;
 
    cmdcode = EXTRACT_CMD_CODE(tlv_buf); 
    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
 
    switch(cmdcode){
-       case CMDCODE_SHOW_INSTANCE_NODE_PSPACE:
-       case CMDCODE_SHOW_INSTANCE_NODE_EXPSPACE:
+       case CMDCODE_DEBUG_SHOW_NODE_INTF_PSPACE:
+       case CMDCODE_DEBUG_SHOW_NODE_INTF_EXPSPACE:
            {
                p_space_set_t p_space = NULL;
                for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
@@ -257,20 +256,34 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        continue;
 
                    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-                   if(cmdcode == CMDCODE_SHOW_INSTANCE_NODE_PSPACE)
-                       p_space = p2p_compute_p_space(node, edge, level);
+                   if(cmdcode == CMDCODE_DEBUG_SHOW_NODE_INTF_PSPACE)
+                       p_space = p2p_compute_p_space(node, edge, edge->level);
                    else
-                       p_space = p2p_compute_extended_p_space(node, edge, level);
+                       p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
 
-                   if(cmdcode == CMDCODE_SHOW_INSTANCE_NODE_PSPACE)
-                       printf("Node %s p-space : ", node->node_name);
-                   else
-                        printf("Node %s Extended p-space : ", node->node_name);
+                   if(cmdcode == CMDCODE_DEBUG_SHOW_NODE_INTF_PSPACE)
+                       printf("Node %s p-space : \n", node->node_name);
+                   else{
+                        printf("Node %s Extended p-space : \n", node->node_name);
+                   }
+
+                   if(!p_space){
+                       printf("Empty.");
+                       return 0;
+                   }
 
                    ITERATE_LIST_BEGIN(p_space, list_node){
 
                        p_node = (node_t *) list_node->data;
                        printf("%s ", p_node->node_name);   
+
+                        if(IS_BIT_SET(p_node->p_space_protection_type, LINK_NODE_PROTECTION))
+                            printf("(LINK_NODE_PROTECTION)\n");
+                        else if(IS_BIT_SET(p_node->p_space_protection_type, LINK_PROTECTION))
+                            printf("(LINK_PROTECTION)\n");
+                        else
+                            printf("(LINK_PROTECTION)\n"); /*If this pspace comes from p2p_compute_p_space*/
+
                    }ITERATE_LIST_END;
 
                    /*free p-space*/
@@ -281,7 +294,7 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                }
            }
            break;
-       case CMDCODE_SHOW_INSTANCE_NODE_QSPACE:
+       case CMDCODE_DEBUG_SHOW_NODE_INTF_QSPACE:
            {
 
                for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
@@ -298,7 +311,7 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        continue;
 
                    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-                   q_space_set_t q_space = p2p_compute_q_space(node, edge, level);
+                   q_space_set_t q_space = p2p_compute_q_space(node, edge, edge->level);
                    printf("Node %s q-space : ", node->node_name);
                    ITERATE_LIST_BEGIN(q_space, list_node){
 
@@ -314,7 +327,7 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                }
            }
            break;
-       case CMDCODE_SHOW_INSTANCE_NODE_PQSPACE:
+       case CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE:
            {
                /*compute extended p-space first*/
 
@@ -336,12 +349,12 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        continue;
 
                    edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-                   ex_p_space = p2p_compute_extended_p_space(node, edge, level);
+                   ex_p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
                    break;
                }
 
                /*Compute Q space now*/
-               q_space_set_t q_space = p2p_compute_q_space(edge->to.node, edge, level);
+               q_space_set_t q_space = p2p_compute_q_space(edge->to.node, edge, edge->level);
 
 
                /*now merge extended p-space and q-space*/
@@ -421,6 +434,18 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
     switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_REMOTE_BACKUP_CALCULATION:
+            switch(enable_or_disable){
+                case CONFIG_ENABLE:
+                    node->backup_spf_options = TRUE;
+                    break;
+                case CONFIG_DISABLE:
+                    node->backup_spf_options = FALSE;
+                    break;
+                default:
+                    assert(0);
+            }
+            break;
         case CMDCODE_CONFIG_NODE_RSVPLSP:
             {
                 switch(enable_or_disable){
@@ -839,7 +864,8 @@ spf_init_dcm(){
     param_t *show   = libcli_get_show_hook();
     param_t *debug  = libcli_get_debug_hook();
     param_t *config = libcli_get_config_hook();
-    param_t *run = libcli_get_run_hook();
+    param_t *run    = libcli_get_run_hook();
+    param_t *debug_show = libcli_get_debug_show_hook();
 
     /*run commands*/
 
@@ -909,47 +935,6 @@ spf_init_dcm(){
     libcli_register_param(&instance_node_name_level, &instance_node_name_level_level);
     set_param_cmd_code(&instance_node_name_level_level, CMDCODE_SHOW_INSTANCE_NODE_LEVEL);
     
-    /*show instance node <node-name> level <level-no> pspace*/
-    static param_t instance_node_name_level_level_pspace;
-    init_param(&instance_node_name_level_level_pspace, CMD, "pspace", 0, 0, INVALID, 0, "pspace of a Node");
-    libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_pspace);
-    libcli_register_display_callback(&instance_node_name_level_level_pspace, display_instance_node_interfaces);
-
-    static param_t instance_node_name_level_level_pspace_intf;
-    init_param(&instance_node_name_level_level_pspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
-    libcli_register_param(&instance_node_name_level_level_pspace, &instance_node_name_level_level_pspace_intf);
-    set_param_cmd_code(&instance_node_name_level_level_pspace_intf, CMDCODE_SHOW_INSTANCE_NODE_PSPACE); 
-     
-    static param_t instance_node_name_level_level_qspace;
-    init_param(&instance_node_name_level_level_qspace, CMD, "qspace", 0, 0, INVALID, 0, "qspace of a Node");
-    libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_qspace);
-    libcli_register_display_callback(&instance_node_name_level_level_qspace, display_instance_node_interfaces);
-
-    static param_t instance_node_name_level_level_qspace_intf;
-    init_param(&instance_node_name_level_level_qspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
-    libcli_register_param(&instance_node_name_level_level_qspace, &instance_node_name_level_level_qspace_intf);
-    set_param_cmd_code(&instance_node_name_level_level_qspace_intf, CMDCODE_SHOW_INSTANCE_NODE_QSPACE); 
-    
-    static param_t instance_node_name_level_level_pqspace;
-    init_param(&instance_node_name_level_level_pqspace, CMD, "pqspace", 0, 0, INVALID, 0, "pqspace of a Node");
-    libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_pqspace);
-    libcli_register_display_callback(&instance_node_name_level_level_pqspace, display_instance_node_interfaces);
-
-    static param_t instance_node_name_level_level_pqspace_intf;
-    init_param(&instance_node_name_level_level_pqspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
-    libcli_register_param(&instance_node_name_level_level_pqspace, &instance_node_name_level_level_pqspace_intf);
-    set_param_cmd_code(&instance_node_name_level_level_pqspace_intf, CMDCODE_SHOW_INSTANCE_NODE_PQSPACE); 
-
-
-    static param_t instance_node_name_level_level_expspace;
-    init_param(&instance_node_name_level_level_expspace, CMD, "expspace", 0, 0, INVALID, 0, "extended pspace of a Node");
-    libcli_register_param(&instance_node_name_level_level, &instance_node_name_level_level_expspace);
-
-    static param_t instance_node_name_level_level_expspace_intf;
-    init_param(&instance_node_name_level_level_expspace_intf, LEAF, 0, show_instance_node_spaces, 0, STRING, "slot-no", "interface name ethx/y format");
-    libcli_register_param(&instance_node_name_level_level_expspace, &instance_node_name_level_level_expspace_intf);
-    set_param_cmd_code(&instance_node_name_level_level_expspace_intf, CMDCODE_SHOW_INSTANCE_NODE_EXPSPACE); 
-
     /*show spf run*/
 
     static param_t show_spf;
@@ -1026,6 +1011,14 @@ spf_init_dcm(){
         init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
         libcli_register_param(&config_node, &config_node_node_name);
 
+        /*config node <node-name> backup-spf-options*/
+        {
+            static param_t backup_spf_options;
+            init_param(&backup_spf_options, CMD, "backup-spf-options", instance_node_config_handler, 0, INVALID, 0, "Enable|Disable RLFA computation");
+            libcli_register_param(&config_node_node_name, &backup_spf_options);
+            set_param_cmd_code(&backup_spf_options, CMDCODE_CONFIG_NODE_REMOTE_BACKUP_CALCULATION);
+        }
+
         static param_t config_node_node_name_slot;
         init_param(&config_node_node_name_slot, CMD, "interface", 0, 0, INVALID, 0, "interface");
         libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
@@ -1058,21 +1051,9 @@ spf_init_dcm(){
         /*config node <node-name> [no] interface <slot-no> link-protection*/
         {
             static param_t link_protection;
-            init_param(&link_protection, CMD, "link-protection", 0, 0, INVALID, 0, "local link protection");
+            init_param(&link_protection, CMD, "link-protection", lfa_rlfa_config_handler, 0, INVALID, 0, "local link protection");
             libcli_register_param(&config_node_node_name_slot_slotname, &link_protection);
-            
-            {
-                static param_t lfa;
-                init_param(&lfa, CMD, "lfa", lfa_rlfa_config_handler, 0, INVALID, 0, "local link protection through LFAs");
-                libcli_register_param(&link_protection, &lfa);
-                set_param_cmd_code(&lfa, CMDCODE_CONFIG_INTF_LINK_PROTECTION_LFA);
-            }
-            {
-                static param_t rlfa;
-                init_param(&rlfa, CMD, "rlfa", lfa_rlfa_config_handler, 0, INVALID, 0, "local link protection through rlfa");
-                libcli_register_param(&link_protection, &rlfa);
-                set_param_cmd_code(&rlfa, CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA);
-            }
+            set_param_cmd_code(&link_protection, CMDCODE_CONFIG_INTF_LINK_PROTECTION);
         }
 
         /*config node <node-name> [no] interface <slot-no> node-link-protection*/
@@ -1324,49 +1305,84 @@ spf_init_dcm(){
         set_param_cmd_code(&mask, CMDCODE_DEBUG_INSTANCE_NODE_ROUTE);
     }
 
-#if 0
-    /* debug show rlfa source <node-name> interface <slot-no> destination <node-name>*/
+    /*debug show commands*/
+
     {
-
-        static param_t show;
-        init_param(&show, CMD, "show", 0, 0, INVALID, 0, "debug show"); 
-        libcli_register_param(debug, &show);
-
-
-        static param_t rlfa;
-        init_param(&rlfa, CMD, "rlfa", 0, 0, INVALID, 0, "Remote LFAs"); 
-        libcli_register_param(&show, &rlfa);
-
-        static param_t source;
-        init_param(&source, CMD, "source", 0, 0, INVALID, 0, "Source Node Name");
-        libcli_register_param(&rlfa, &source);
-        libcli_register_display_callback(&source, display_instance_nodes); 
-
-        static param_t src_node_name;
-        init_param(&src_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
-        libcli_register_param(&source, &src_node_name);
-
-        static param_t interface;
-        init_param(&interface, CMD, "interface", 0, 0, INVALID, 0, "interface");
-        libcli_register_param(&src_node_name, &interface);
-        libcli_register_display_callback(&src_node_name, display_instance_node_interfaces);
-
-        static param_t slot_name;
-        init_param(&slot_name, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
-        libcli_register_param(&interface, &slot_name);
-
-        static param_t destination;
-        init_param(&destination, CMD, "destination", 0, 0, INVALID, 0, "Destination Node Name");
-        libcli_register_param(&slot_name, &destination);
-        libcli_register_display_callback(&destination, display_instance_nodes);
-
-        static param_t dst_node_name;
-        init_param(&dst_node_name, LEAF, 0, lfa_rlfa_config_handler, validate_node_extistence, STRING, "destination", "Node Name");
-        libcli_register_param(&destination, &dst_node_name);
-
-        set_param_cmd_code(&dst_node_name, CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES);
+        /*debug show instance*/
+        static param_t instance;
+        init_param(&instance, CMD, "instance", 0, 0, INVALID, 0, "Network graph");
+        libcli_register_param(debug_show, &instance);
+        {
+            /*debug show instance node*/
+            static param_t instance_node;
+            init_param(&instance_node, CMD, "node", 0, 0, INVALID, 0, "node");
+            libcli_register_param(&instance, &instance_node);
+            libcli_register_display_callback(&instance_node, display_instance_nodes);
+            {
+                /*debug show instance node <node-name>*/
+                static param_t instance_node_name;
+                init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
+                libcli_register_param(&instance_node, &instance_node_name);
+                {
+                    /*debug show instance node <node-name> interface*/
+                    static param_t interface;
+                    init_param(&interface, CMD, "interface", 0, 0, INVALID, 0, "interface");
+                    libcli_register_param(&instance_node_name, &interface);
+                    libcli_register_display_callback(&interface, display_instance_node_interfaces);
+                    {
+                        /*debug show instance node <node-name> interface <slot-no>*/
+                        static param_t intf_name;
+                        init_param(&intf_name, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
+                        libcli_register_param(&interface, &intf_name);
+                        {
+                            /*debug show instance node <node-name> interface <slot-no> lfa*/
+                            static param_t lfa;
+                            init_param(&lfa, CMD, "lfa", debug_show_node_lfas, 0, INVALID, 0, "LFA(s) of a protected link");
+                            libcli_register_param(&intf_name, &lfa);
+                            set_param_cmd_code(&lfa, CMDCODE_DEBUG_SHOW_NODE_INTF_LFA);
+                        }
+                        {
+                            /*debug show instance node <node-name> interface <slot-no> pspace*/
+                            static param_t pspace;
+                            init_param(&pspace, CMD, "pspace", show_instance_node_spaces, 0, INVALID, 0, "pspace of a protected link");
+                            libcli_register_param(&intf_name, &pspace);
+                            set_param_cmd_code(&pspace, CMDCODE_DEBUG_SHOW_NODE_INTF_PSPACE);
+                        }
+                        {
+                            /*debug show instance node <node-name> interface <slot-no> qspace*/
+                            static param_t qspace;
+                            init_param(&qspace, CMD, "qspace", show_instance_node_spaces, 0, INVALID, 0, "qspace of a protected link");
+                            libcli_register_param(&intf_name, &qspace);
+                            set_param_cmd_code(&qspace, CMDCODE_DEBUG_SHOW_NODE_INTF_QSPACE);
+                        }
+                        {
+                            /*debug show instance node <node-name> interface <slot-no> pqspace*/
+                            static param_t pqspace;
+                            init_param(&pqspace, CMD, "pqspace", show_instance_node_spaces, 0, INVALID, 0, "pqspace of a protected link");
+                            libcli_register_param(&intf_name, &pqspace);
+                            set_param_cmd_code(&pqspace, CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE);
+                        }
+                        {
+                            /*debug show instance node <node-name> interface <slot-no> extended-pspace*/
+                            static param_t expspace;
+                            init_param(&expspace, CMD, "extended-pspace", show_instance_node_spaces, 0, INVALID, 0, "extended pspace of a protected link");
+                            libcli_register_param(&intf_name, &expspace);
+                            set_param_cmd_code(&expspace, CMDCODE_DEBUG_SHOW_NODE_INTF_EXPSPACE);
+                        }
+                    }
+                }
+            }           
+        }
     }
-#endif
+
+
+
+
+
+
+
+
+
     /* Added Negation support to appropriate command, post this
      * do not extend any negation supported commands*/
 
@@ -1385,7 +1401,7 @@ dump_nbrs(node_t *node, LEVEL level){
                 (node->node_type[level] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
     printf("Overloaded ? %s\n", IS_BIT_SET(node->attributes[level], OVERLOAD_BIT) ? "Yes" : "No");
 
-    ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge, level){
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(node, nbr_node, edge, level){
         printf("    Neighbor : %s, Area = %s\n", nbr_node->node_name, get_str_node_area(nbr_node->area));
         printf("    egress intf = %s(%s/%d), peer_intf  = %s(%s/%d)\n",
                     edge->from.intf_name, STR_PREFIX(edge->from.prefix[level]), 
@@ -1395,7 +1411,7 @@ dump_nbrs(node_t *node, LEVEL level){
         printf("    %s metric = %u, edge level = %s\n\n", get_str_level(level),
             edge->metric[level], get_str_level(edge->level));
     }
-    ITERATE_NODE_NBRS_END;
+    ITERATE_NODE_LOGICAL_NBRS_END;
 }
 
 void
@@ -1414,10 +1430,11 @@ dump_node_info(node_t *node){
     singly_ll_node_t *list_node = NULL;
     prefix_t *prefix = NULL;
 
-    printf("node->node_name : %s(%s), L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s\n", node->node_name, node->router_id,
+    printf("node->node_name : %s(%s), L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s, RLFA computation : %s\n", 
+            node->node_name, node->router_id,
             (node->node_type[LEVEL1] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE", 
             (node->node_type[LEVEL2] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE",
-            get_str_node_area(node->area));
+            get_str_node_area(node->area), node->backup_spf_options ? "ENABLED" : "DISABLED");
 
     printf("Slots :\n");
 
@@ -1426,15 +1443,16 @@ dump_node_info(node_t *node){
         if(!edge_end)
             break;
 
-        printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, local edge-end connected node : %s", 
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, backup protection type : %s", 
             i, edge_end->intf_name, STR_PREFIX(edge_end->prefix[LEVEL1]), PREFIX_MASK(edge_end->prefix[LEVEL1]), 
             STR_PREFIX(edge_end->prefix[LEVEL2]), PREFIX_MASK(edge_end->prefix[LEVEL2]), 
-            (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", edge_end->node->node_name);
+            (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", 
+            IS_LINK_NODE_PROTECTION_ENABLED(edge) ? "LINK_NODE_PROTECTION" : IS_LINK_PROTECTION_ENABLED(edge) ? "LINK_PROTECTION" : "None");
 
-        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-
-        printf(", L1 metric = %u, L2 metric = %u, edge level = %s, edge_status = %s\n", 
+        printf("\n          L1 metric = %u, L2 metric = %u, edge level = %s, edge_status = %s\n", 
         edge->metric[LEVEL1], edge->metric[LEVEL2], get_str_level(edge->level), edge->status ? "UP" : "DOWN");
+        printf("\n");
     }
 
     printf("\n");

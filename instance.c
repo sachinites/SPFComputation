@@ -103,6 +103,12 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     node->traversing_bit = 0;
     node->lsp_distribution_bit = 0;
 
+    /*When this node is a member of pspace, this flag denotes whether this 
+     * node provide link protection or node protection to computing router*/
+    node->p_space_protection_type = 0;
+    /*I dont think this would be required*/
+    node->q_space_protection_type = 0;
+    node->backup_spf_options = FALSE;
     add_node_to_owning_instance(instance, node);
     return node;    
 }
@@ -367,21 +373,21 @@ is_two_way_nbrship(node_t *node, node_t *node_nbr, LEVEL level){
     node_t *temp_nbr_node = NULL,
            *temp_nbr_node2 = NULL;
 
-    ITERATE_NODE_NBRS_BEGIN(node, temp_nbr_node, edge, level){
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(node, temp_nbr_node, edge, level){
 
         if(temp_nbr_node != node_nbr)
             continue;
 
-        ITERATE_NODE_NBRS_BEGIN(node_nbr, temp_nbr_node2, edge, level){
+        ITERATE_NODE_LOGICAL_NBRS_BEGIN(node_nbr, temp_nbr_node2, edge, level){
 
             if(temp_nbr_node2 != node)
                 continue;
 
             return TRUE;
         }
-        ITERATE_NODE_NBRS_END;
+        ITERATE_NODE_LOGICAL_NBRS_END;
     }
-    ITERATE_NODE_NBRS_END;
+    ITERATE_NODE_LOGICAL_NBRS_END;
     return FALSE;
 }
 
@@ -392,7 +398,7 @@ get_my_pseudonode_nbr(node_t *node, LEVEL level){
     edge_t *edge = NULL;
 
     
-    ITERATE_NODE_NBRS_BEGIN(node, nbr_node, edge, level){
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(node, nbr_node, edge, level){
         
         if(nbr_node->node_type[level] == PSEUDONODE){
                 /*Something terribly wrong with the topo, Two adjacent nodes cannot be 
@@ -401,7 +407,7 @@ get_my_pseudonode_nbr(node_t *node, LEVEL level){
                 return edge;
         }
     }
-    ITERATE_NODE_NBRS_END;
+    ITERATE_NODE_LOGICAL_NBRS_END;
     return NULL;
 }
 
@@ -546,7 +552,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
      * of multiple PNs present in between node and node_nbr*/
     
     min_metric = INFINITE_METRIC;
-    ITERATE_NODE_NBRS_BEGIN(node, PN, edge_it, level){
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(node, PN, edge_it, level){
 
         
         if(nh == LSPNH && edge_it->etype != LSP)
@@ -580,7 +586,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
             min_edge_oif = edge_end;
         }
     }
-    ITERATE_NODE_NBRS_END;
+    ITERATE_NODE_LOGICAL_NBRS_END;
 
     return min_edge_oif;
 }

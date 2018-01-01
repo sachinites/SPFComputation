@@ -329,7 +329,7 @@ is_broadcast_member_node(node_t *S, edge_t *interface, node_t *D, LEVEL level){
            *nbr_node = NULL;
 
     edge_t *edge = NULL;
-    ITERATE_NODE_NBRS_BEGIN(PN, nbr_node, edge, level){
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(PN, nbr_node, edge, level){
         
         if(nbr_node == S)
             continue;
@@ -337,7 +337,7 @@ is_broadcast_member_node(node_t *S, edge_t *interface, node_t *D, LEVEL level){
         if(nbr_node == D)
             return TRUE;
 
-    } ITERATE_NODE_NBRS_END;
+    } ITERATE_NODE_LOGICAL_NBRS_END;
     return FALSE;
 }
 

@@ -177,7 +177,8 @@ instance_t *
 build_ring_topo(){
 
 #if 0
-
+For link S---E, there should be no LFA for non ECMP dest.
+C is only PQ node.
     
                     S/-----------\E
                     /             \

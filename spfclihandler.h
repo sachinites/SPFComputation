@@ -66,4 +66,7 @@ inset_lsp_as_forward_adjacency(node_t *node, char *lsp_name, unsigned int metric
 int
 lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 
+int
+debug_show_node_lfas(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
+
 #endif /* __SPFCLIHANDLER__ */

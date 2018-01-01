@@ -39,6 +39,9 @@ param_t *
 libcli_get_debug_hook(void);
 
 param_t *
+libcli_get_debug_show_hook(void);
+
+param_t *
 libcli_get_config_hook(void);
 
 param_t *
