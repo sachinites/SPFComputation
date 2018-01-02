@@ -501,6 +501,7 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
         case CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION:
         switch(enable_or_disable){
             case CONFIG_ENABLE: 
+                SET_LINK_PROTECTION_TYPE(edge, LINK_PROTECTION);
                 SET_LINK_PROTECTION_TYPE(edge, LINK_NODE_PROTECTION);
                 break;
             case CONFIG_DISABLE:

@@ -177,7 +177,7 @@ instance_t *
 build_ring_topo(){
 
 #if 0
-For link S---E, there should be no LFA for non ECMP dest.
+For link S---E, there should be no LFA for non ECMP dest. For ECMP dest, only link protection LFA exists which is again rejected because destination has ECMP paths
 psp - AB, exp - ABC
 qsp - CD
 C is only PQ node.
