@@ -164,11 +164,12 @@ generate_lsp(instance_t *instance,
 
             sleep(propogation_delay); /*Let us introduce some delay in information propogation*/
 
-            ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge1, 
+            ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(curr_node, nbr_node, edge1, 
                                             edge2, level_it){
 
-                if(nbr_node->lsp_distribution_bit)
-                    continue;
+                if(nbr_node->lsp_distribution_bit){
+                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(curr_node, nbr_node, level_it);
+                }
 
                 sprintf(LOG, "LSP Distribution Src : %s, Des Node : %s", 
                         lsp_generator->node_name, nbr_node->node_name); TRACE();
@@ -177,7 +178,7 @@ generate_lsp(instance_t *instance,
                 nbr_node->lsp_distribution_bit = 1;
                 enqueue(q, nbr_node);
             }
-            ITERATE_NODE_PHYSICAL_NBRS_END;
+            ITERATE_NODE_PHYSICAL_NBRS_END2(curr_node, nbr_node, level_it);
         }
         assert(is_queue_empty(q));
         reuse_q(q);

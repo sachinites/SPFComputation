@@ -178,6 +178,8 @@ build_ring_topo(){
 
 #if 0
 For link S---E, there should be no LFA for non ECMP dest.
+psp - AB, exp - ABC
+qsp - CD
 C is only PQ node.
     
                     S/-----------\E

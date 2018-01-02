@@ -101,4 +101,7 @@ is_broadcast_link(edge_t *edge, LEVEL level);
 boolean
 is_broadcast_member_node(node_t *S, edge_t *interface, node_t *D, LEVEL level);
 
+unsigned int
+get_nh_count(node_t *nh_list[]);
+
 #endif /* __SPFUTIL__ */ 

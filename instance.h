@@ -292,7 +292,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
  * _edge2 - if nbr is a PN, then this is the edge connecting PN and its nbr
  * _level - LEVEL1 Or LEVEL2 but not Both*/
 
-#define ITERATE_NODE_PHYSICAL_NBRS_BEGIN(_node, _nbr_node,                 \
+#define ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(_node, _nbr_node,                \
                                    _edge1, _edge2, _level)                 \
     _nbr_node = NULL;                                                      \
     _edge1 = NULL; _edge2 = NULL;                                          \
@@ -332,10 +332,25 @@ get_min_oif(node_t *node, node_t *node_nbr,
                         continue;                                          \
                     NONPN:
             
+#define ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(_node, __nbr_node, __level)                     \
+             if(__nbr_node && __nbr_node->node_type[__level] != PSEUDONODE){                 \
+                 break; continue;                                                            \
+             }                                                                               \
+             else continue               
+                                                  
+#define ITERATE_NODE_PHYSICAL_NBRS_BREAK2(_node, __nbr_node, __level)                        \
+    __nbr_node = _node;       /* Just act as a flag*/                                        \
+    break
              
-#define ITERATE_NODE_PHYSICAL_NBRS_END   }}}while(0)
+#define ITERATE_NODE_PHYSICAL_NBRS_END2(_node, __nbr_node, __level)                          \
+                if(__nbr_node && __nbr_node->node_type[__level] != PSEUDONODE)               \
+                    break;                                                                   \
+                }                                                                            \
+                if(_node == __nbr_node) break;                                               \
+                }}while(0)
 
-              
+      
+
 void
 attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end);
 

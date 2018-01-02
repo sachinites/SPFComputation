@@ -1375,14 +1375,6 @@ spf_init_dcm(){
         }
     }
 
-
-
-
-
-
-
-
-
     /* Added Negation support to appropriate command, post this
      * do not extend any negation supported commands*/
 

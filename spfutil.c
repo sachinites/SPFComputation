@@ -255,11 +255,12 @@ get_system_id_from_router_id(node_t *ingress_lsr,
         
         curr_node = deque(q);
 
-        ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, edge1,
+        ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(curr_node, nbr_node, edge1,
                 edge2, level){
 
-            if(nbr_node->traversing_bit)
-                continue;
+            if(nbr_node->traversing_bit){
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(curr_node, nbr_node, level);
+            }
 
             if(strncmp(nbr_node->router_id, tail_end_ip, PREFIX_LEN) == 0){
                 free(q);
@@ -269,12 +270,24 @@ get_system_id_from_router_id(node_t *ingress_lsr,
             nbr_node->traversing_bit = 1;
             enqueue(q, nbr_node);
         }
-        ITERATE_NODE_PHYSICAL_NBRS_END;
+        ITERATE_NODE_PHYSICAL_NBRS_END2(curr_node, nbr_node, level);
     }
     assert(is_queue_empty(q));
     free(q);
     q = NULL;
     return NULL;
+}
+
+unsigned int
+get_nh_count(node_t *nh_list[]){
+
+    unsigned int i = 0;
+    for(; i < MAX_NXT_HOPS; i++){
+        if(nh_list[i])
+            continue;
+        break;
+    }
+    return i;
 }
 
 void
