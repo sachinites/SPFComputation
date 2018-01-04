@@ -187,7 +187,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
             ITERATE_NH_TYPE_BEGIN(nh){
 
-                copy_nh_list2(&candidate_node->next_hop2[level][nh][0], &res->next_hop2[nh][0]); 
+                copy_nh_list2(&candidate_node->next_hop[level][nh][0], &res->next_hop[nh][0]); 
                 
             } ITERATE_NH_TYPE_END;
 
@@ -261,11 +261,11 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                         sprintf(LOG, "printing %s direct_next_hop list at %s %s before copy", nbr_node->node_name, get_str_level(level),
                                       nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
 
-                        print_direct_nh_list2(&nbr_node->direct_next_hop2[level][nh][0]);
-                        copy_direct_to_nh_list2(&nbr_node->direct_next_hop2[level][nh][0], &nbr_node->next_hop2[level][nh][0]);
+                        print_direct_nh_list2(&nbr_node->direct_next_hop[level][nh][0]);
+                        copy_direct_to_nh_list2(&nbr_node->direct_next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
                         sprintf(LOG, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
                                       nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                        print_nh_list2(&nbr_node->next_hop2[level][nh][0]);
+                        print_nh_list2(&nbr_node->next_hop[level][nh][0]);
                     }
 
 
@@ -275,10 +275,10 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                         sprintf(LOG, "case 3 if My own List is not empty, then nbr should inherit my next hop list"); TRACE();
                         sprintf(LOG, "Copying %s next_hop list %s %s to %s next_hop list", candidate_node->node_name, get_str_level(level), 
                                       nh == IPNH ? "IPNH" : "LSPNH", nbr_node->node_name); TRACE();
-                        copy_nh_list2(&candidate_node->next_hop2[level][nh][0], &nbr_node->next_hop2[level][nh][0]);
+                        copy_nh_list2(&candidate_node->next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
                         sprintf(LOG, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
                                       nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                        print_nh_list2(&nbr_node->next_hop2[level][nh][0]);
+                        print_nh_list2(&nbr_node->next_hop[level][nh][0]);
                     }
 
                 } ITERATE_NH_TYPE_END;
@@ -323,19 +323,19 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                                   nbr_node->node_name, get_str_level(level), 
                             nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
 
-                    union_nh_list2(&candidate_node->next_hop2[level][nh][0]  , &nbr_node->next_hop2[level][nh][0]);
+                    union_nh_list2(&candidate_node->next_hop[level][nh][0]  , &nbr_node->next_hop[level][nh][0]);
                     sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
                                   get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                    print_nh_list2(&nbr_node->next_hop2[level][nh][0] );
+                    print_nh_list2(&nbr_node->next_hop[level][nh][0] );
                     
 #if 1
                     sprintf(LOG, "Union direct_next_hop of %s with Next hop of %s at %s %s", nbr_node->node_name, 
                                   nbr_node->node_name, get_str_level(level), 
                                   nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                    union_direct_nh_list2(&nbr_node->direct_next_hop2[level][nh][0] , &nbr_node->next_hop2[level][nh][0] );
+                    union_direct_nh_list2(&nbr_node->direct_next_hop[level][nh][0] , &nbr_node->next_hop[level][nh][0] );
                     sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
                                   get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                    print_nh_list2(&nbr_node->next_hop2[level][nh][0] );
+                    print_nh_list2(&nbr_node->next_hop[level][nh][0] );
 #endif
                 } ITERATE_NH_TYPE_END;
             }
@@ -404,10 +404,10 @@ spf_init(candidate_tree_t *ctree,
     ITERATE_NH_TYPE_BEGIN(nh){
 
         for(i = 0; i < MAX_NXT_HOPS; i++){
-            init_internal_nh_t(spf_root->next_hop2[level][nh][i]);
+            init_internal_nh_t(spf_root->next_hop[level][nh][i]);
         }
 
-        init_internal_nh_t(spf_root->direct_next_hop2[level][nh][0]);
+        init_internal_nh_t(spf_root->direct_next_hop[level][nh][0]);
 
     }ITERATE_NH_TYPE_END;
 
@@ -430,10 +430,10 @@ spf_init(candidate_tree_t *ctree,
             ITERATE_NH_TYPE_BEGIN(nh){
 
                 for(i = 0; i < MAX_NXT_HOPS; i++){
-                    init_internal_nh_t(spf_root->next_hop2[level][nh][i]);
+                    init_internal_nh_t(spf_root->next_hop[level][nh][i]);
                 }
 
-                init_internal_nh_t(spf_root->direct_next_hop2[level][nh][0]);
+                init_internal_nh_t(spf_root->direct_next_hop[level][nh][0]);
 
             } ITERATE_NH_TYPE_END;
             
@@ -468,10 +468,10 @@ spf_init(candidate_tree_t *ctree,
                     continue;
 
                 if(pn_edge->etype == LSP){
-                    intialize_internal_nh_t(pn_nbr->direct_next_hop2[level][LSPNH][0], level, edge, pn_nbr);
+                    intialize_internal_nh_t(pn_nbr->direct_next_hop[level][LSPNH][0], level, edge, pn_nbr);
                 }
                 else{
-                    intialize_internal_nh_t(pn_nbr->direct_next_hop2[level][IPNH][0], level, edge, pn_nbr);
+                    intialize_internal_nh_t(pn_nbr->direct_next_hop[level][IPNH][0], level, edge, pn_nbr);
                 }
             }
             ITERATE_NODE_LOGICAL_NBRS_END;
@@ -479,12 +479,12 @@ spf_init(candidate_tree_t *ctree,
         }
 
         if(edge->etype == LSP){
-            intialize_internal_nh_t(nbr_node->direct_next_hop2[level][LSPNH][0], level, edge, nbr_node);
-            set_next_hop_gw_pfx(pn_nbr->direct_next_hop2[level][LSPNH][0], "0.0.0.0");
+            intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
+            set_next_hop_gw_pfx(pn_nbr->direct_next_hop[level][LSPNH][0], "0.0.0.0");
         }
         else{
-            intialize_internal_nh_t(nbr_node->direct_next_hop2[level][IPNH][0], level, edge, nbr_node);
-            set_next_hop_gw_pfx(nbr_node->direct_next_hop2[level][IPNH][0], edge->to.prefix[level]->prefix);
+            intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
+            set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][0], edge->to.prefix[level]->prefix);
         }
     }
     ITERATE_NODE_LOGICAL_NBRS_END;

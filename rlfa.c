@@ -509,10 +509,10 @@ p2p_compute_link_node_protection_rlfas(node_t *S,
         
         if(D == S) continue;
 
-        E = D_res->next_hop2[IPNH][0].node;
+        E = D_res->next_hop[IPNH][0].node;
 
         /*Now if S reaches D via E through protected link, then D's LFA needs to be computed*/
-        S_E_oif_for_D =  D_res->next_hop2[IPNH][0].oif;
+        S_E_oif_for_D =  D_res->next_hop[IPNH][0].oif;
 
         sprintf(LOG, "Node : %s : OIF from node= %s to Nbr %s is %s",
                 S->node_name,  S->node_name, E->node_name, S_E_oif_for_D->intf_name); TRACE();
@@ -827,7 +827,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
            if(D == S) continue;
             
             ITERATE_NH_TYPE_BEGIN(nh){
-                nh_count += get_nh_count(&(D_res->next_hop2[nh][0]));
+                nh_count += get_nh_count(&(D_res->next_hop[nh][0]));
             }ITERATE_NH_TYPE_END;
 
             /* Early return check*/
@@ -849,10 +849,10 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
            
            
            /*Dest D is impacted if atleast its one primary nexthop is a nbr of PN*/
-           E = D_res->next_hop2[IPNH][0].node;
+           E = D_res->next_hop[IPNH][0].node;
            
            /*Now if S reaches D via E through protected link, then D's LFA needs to be computed*/
-           S_E_oif_for_D = D_res->next_hop2[IPNH][0].oif;
+           S_E_oif_for_D = D_res->next_hop[IPNH][0].oif;
 
            sprintf(LOG, "Node : %s : OIF from node= %s to Nbr %s is %s",  
                         S->node_name,  S->node_name, E->node_name, S_E_oif_for_D->intf_name); TRACE();
@@ -1115,7 +1115,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                     S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
 
             ITERATE_NH_TYPE_BEGIN(nh){
-                nh_count += get_nh_count(&(D_res->next_hop2[nh][0]));
+                nh_count += get_nh_count(&(D_res->next_hop[nh][0]));
             }ITERATE_NH_TYPE_END;
 
             if(nh_count > 1 && 
@@ -1129,10 +1129,10 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
             /* If to reach D from S , primary nexthop is not E, then skip D*/
             for(i = 0; i < MAX_NXT_HOPS; i++){
-                prim_nh = D_res->next_hop2[IPNH][i].node;
+                prim_nh = D_res->next_hop[IPNH][i].node;
                 if(!prim_nh) break;
                 if(prim_nh == E){
-                    S_E_oif_for_D = D_res->next_hop2[IPNH][i].oif;
+                    S_E_oif_for_D = D_res->next_hop[IPNH][i].oif;
                     S_E_oif_edge_for_D = GET_EGDE_PTR_FROM_EDGE_END(S_E_oif_for_D);
                     if(S_E_oif_edge_for_D == protected_link){
                         sprintf(LOG, "Node : %s : Dest %s IMPACTED", S->node_name, D->node_name); TRACE();
@@ -1200,7 +1200,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
                 ITERATE_NH_TYPE_BEGIN(nh){
                     for(i = 0; i < MAX_NXT_HOPS; i++){
-                        prim_nh = D_res->next_hop2[nh][i].node;
+                        prim_nh = D_res->next_hop[nh][i].node;
                         if(!prim_nh) break;     
                         dist_N_E = DIST_X_Y(N, prim_nh, level);
                         dist_E_D = DIST_X_Y(prim_nh, D, level);

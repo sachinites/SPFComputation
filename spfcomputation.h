@@ -97,10 +97,7 @@ typedef struct spf_result_{
     struct _node_t *node; /* Next hop details are stored in the node itself*/
     unsigned int spf_metric;
     unsigned int lsp_metric;
-    /*to be deprecated*/
-    struct _node_t *next_hop[NH_MAX][MAX_NXT_HOPS];
-    /*new ones*/
-    internal_nh_t next_hop2[NH_MAX][MAX_NXT_HOPS];
+    internal_nh_t next_hop[NH_MAX][MAX_NXT_HOPS];
 } spf_result_t;
 
 /* spf result of a node wrt to spf_root */

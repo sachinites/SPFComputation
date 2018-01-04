@@ -82,15 +82,15 @@ merge_route_primary_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh
      
     for( ; i < MAX_NXT_HOPS ; i++){
 
-        if(is_internal_nh_t_empty(result->next_hop2[nh][i]))
+        if(is_internal_nh_t_empty(result->next_hop[nh][i]))
             break;
 
         int_nxt_hop = calloc(1, sizeof(internal_nh_t));
-        copy_internal_nh_t(result->next_hop2[nh][i], *int_nxt_hop);
+        copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->primary_nh_list[nh], int_nxt_hop);
         sprintf(LOG, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
                      route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                     result->next_hop2[nh][i].node->node_name); TRACE();
+                     result->next_hop[nh][i].node->node_name); TRACE();
     }
 
     assert(GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]) <= MAX_NXT_HOPS);
@@ -530,13 +530,13 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
             ROUTE_FLUSH_PRIMARY_NH_LIST(route, nh);
             ROUTE_FLUSH_BACKUP_NH_LIST(route); /*Not supported*/ 
             for(i = 0 ; i < MAX_NXT_HOPS; i++){
-                if(!is_internal_nh_t_empty(result->next_hop2[nh][i])){
+                if(!is_internal_nh_t_empty(result->next_hop[nh][i])){
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
-                    copy_internal_nh_t(result->next_hop2[nh][i], *int_nxt_hop);
+                    copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
                     ROUTE_ADD_PRIMARY_NH(route->primary_nh_list[nh], int_nxt_hop);   
                     sprintf(LOG, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
                             route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                            result->next_hop2[nh][i].node->node_name); TRACE();
+                            result->next_hop[nh][i].node->node_name); TRACE();
                 }
                 else
                     break;
@@ -717,13 +717,13 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         ITERATE_NH_TYPE_BEGIN(nh){ 
 
             for(i = 0; i < MAX_NXT_HOPS; i++){
-                if(!is_internal_nh_t_empty(result->next_hop2[nh][i])){
+                if(!is_internal_nh_t_empty(result->next_hop[nh][i])){
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
-                    copy_internal_nh_t(result->next_hop2[nh][i], *int_nxt_hop);
+                    copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
                     ROUTE_ADD_PRIMARY_NH(route->primary_nh_list[nh], int_nxt_hop);   
                     sprintf(LOG, "Node : %s : route : %s/%u Next hop added : %s|%s at %s", 
                             GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask ,
-                            result->next_hop2[nh][i].node->node_name, nh == IPNH ? "IPNH":"LSPNH", get_str_level(level)); TRACE();
+                            result->next_hop[nh][i].node->node_name, nh == IPNH ? "IPNH":"LSPNH", get_str_level(level)); TRACE();
                 }
                 else
                     break;

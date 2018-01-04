@@ -55,7 +55,7 @@ is_all_nh_list_empty2(node_t *node, LEVEL level){
 
     ITERATE_NH_TYPE_BEGIN(nh){
 
-        if(!is_nh_list_empty2(&node->next_hop2[level][nh][0]))
+        if(!is_nh_list_empty2(&node->next_hop[level][nh][0]))
             return FALSE;
     } ITERATE_NH_TYPE_END;
     return TRUE;
