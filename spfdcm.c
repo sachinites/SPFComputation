@@ -68,17 +68,17 @@ show_spf_results(node_t *spf_root, LEVEL level){
         ITERATE_NH_TYPE_BEGIN(nh){
 
             for( i = 0; i < MAX_NXT_HOPS; i++){
-                if(res->next_hop[nh][i] == NULL)
+                if(is_nh_list_empty2(&res->next_hop2[nh][i]))
                     break;
 
-                oif = get_min_oif(spf_root, res->next_hop[nh][i], level, NULL, nh);
+                oif = res->next_hop2[nh][i].oif;
                 if(i == 0){
-                    printf("%s|%-8s       OIF : %-7s\n", res->next_hop[nh][i]->node_name, 
+                    printf("%s|%-8s       OIF : %-7s\n", res->next_hop2[nh][i].node->node_name, 
                             nh == LSPNH ? "LSPNH" : "IPNH", 
                             oif->intf_name);
                 }
                 else{
-                    printf("                                              : %s|%-8s       OIF : %-7s\n", res->next_hop[nh][i]->node_name, 
+                    printf("                                              : %s|%-8s       OIF : %-7s\n", res->next_hop2[nh][i].node->node_name, 
                             nh == LSPNH ? "LSPNH" : "IPNH", 
                             oif->intf_name);
                 }

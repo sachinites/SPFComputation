@@ -41,7 +41,7 @@ typedef struct nh_t_{
     nh_type_t nh_type;
     char oif[IF_NAME_SIZE];
     char nh_name[NODE_NAME_SIZE];
-    char gwip[16];
+    char gwip[PREFIX_LEN + 1];
 }nh_t;
 
 typedef struct rttable_entry_{

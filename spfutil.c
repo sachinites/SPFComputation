@@ -40,44 +40,47 @@
 extern instance_t *instance;
 
 void
-copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
+copy_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list){
     
     unsigned int i = 0;
     for(; i < MAX_NXT_HOPS; i++){
-        dst_nh_list[i] = src_nh_list[i];
+        memcpy(&dst_nh_list[i], &src_nh_list[i], sizeof(internal_nh_t));
     }
 }
 
 boolean
-is_all_nh_list_empty(node_t *node, LEVEL level){
+is_all_nh_list_empty2(node_t *node, LEVEL level){
 
     nh_type_t nh;
 
     ITERATE_NH_TYPE_BEGIN(nh){
 
-        if(!is_nh_list_empty(&node->next_hop[level][nh][0]))
+        if(!is_nh_list_empty2(&node->next_hop2[level][nh][0]))
             return FALSE;
     } ITERATE_NH_TYPE_END;
     return TRUE;
 }
 
 void
-copy_direct_to_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]){
+copy_direct_to_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list){
     
     unsigned int i = 0;
     for(; i < MAX_NXT_HOPS; i++){
-        dst_nh_list[i] = NULL;
+        init_internal_nh_t(dst_nh_list[i]);
     }
-    dst_nh_list[0] = src_direct_nh_list[0];
+    dst_nh_list->level = src_direct_nh_list->level;
+    dst_nh_list->node = src_direct_nh_list->node;
+    dst_nh_list->oif = src_direct_nh_list->oif;
+    set_next_hop_gw_pfx((*dst_nh_list), src_direct_nh_list->gw_prefix);
 }
 
 boolean 
-is_present(node_t *list[], node_t *node){
+is_present2(internal_nh_t *list, internal_nh_t *nh){
 
     unsigned int i = 0;
     for(; i < MAX_NXT_HOPS; i++){
-        if(list[i]){
-            if(list[i] == node)
+        if(!is_nh_list_empty2(&list[i])){
+            if(is_internal_nh_t_equal(list[i], (*nh)))
                 return TRUE;
             continue;
         }
@@ -87,12 +90,12 @@ is_present(node_t *list[], node_t *node){
 }
 
 void
-union_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
+union_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list){
 
     unsigned int i = 0, j = 0;
 
     for(; i < MAX_NXT_HOPS; i++){
-        if(dst_nh_list[i])
+        if(!is_nh_list_empty2(&dst_nh_list[i]))
             continue;
         break;
     }
@@ -102,9 +105,9 @@ union_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
 
     for(; i < MAX_NXT_HOPS; i++){
 
-        if(src_nh_list[j]){
-            if(!is_present(&dst_nh_list[0], src_nh_list[j])){
-                dst_nh_list[i] = src_nh_list[j];
+        if(!is_nh_list_empty2(&src_nh_list[j])){
+            if(!is_present2(&dst_nh_list[0], &src_nh_list[j])){
+                copy_internal_nh_t(src_nh_list[j], dst_nh_list[i]);
             }
             j++;
             continue;
@@ -113,16 +116,17 @@ union_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]){
     }
 }
 
+
 void
-union_direct_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]){
+union_direct_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list){
 
     unsigned int i = 0;
 
-    if(is_present(&dst_nh_list[0], src_direct_nh_list[0]))
+    if(is_present2(&dst_nh_list[0], &src_direct_nh_list[0]))
         return;
 
     for(; i < MAX_NXT_HOPS; i++){
-        if(dst_nh_list[i])
+        if(!is_nh_list_empty2(&dst_nh_list[i]))
             continue;
         break;
     }
@@ -130,22 +134,13 @@ union_direct_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]){
     if(i == MAX_NXT_HOPS)
         return;
 
-    dst_nh_list[i] = src_direct_nh_list[0];
+    copy_internal_nh_t(src_direct_nh_list[0], dst_nh_list[i]);
 }
 
-void
-flush_nh_list(node_t *nh_list[]){
+boolean
+is_nh_list_empty2(internal_nh_t *nh_list){
 
-    unsigned int i = 0;
-
-    for(; i < MAX_NXT_HOPS; i++)
-        nh_list[i] = NULL;
-}
-
-int
-is_nh_list_empty(node_t *nh_list[]){
-
-    return (nh_list[0] == NULL);
+    return (nh_list->node == NULL && nh_list->oif == NULL);
 }
 
 char *
@@ -279,11 +274,11 @@ get_system_id_from_router_id(node_t *ingress_lsr,
 }
 
 unsigned int
-get_nh_count(node_t *nh_list[]){
+get_nh_count(internal_nh_t *nh_list){
 
     unsigned int i = 0;
     for(; i < MAX_NXT_HOPS; i++){
-        if(nh_list[i])
+        if(!is_nh_list_empty2(&nh_list[i]))
             continue;
         break;
     }
@@ -291,7 +286,7 @@ get_nh_count(node_t *nh_list[]){
 }
 
 void
-print_nh_list(node_t *nh_list[]){
+print_nh_list2(internal_nh_t *nh_list){
 
     unsigned int i = 0;
     
@@ -299,20 +294,19 @@ print_nh_list(node_t *nh_list[]){
 
     for(; i < MAX_NXT_HOPS; i++){
 
-        if(!nh_list[i])
-            return;
-
-        sprintf(LOG, "%s", nh_list[i]->node_name); TRACE();
+        if(is_nh_list_empty2(&nh_list[i])) return;
+        
+        sprintf(LOG, "oif = %s, NH =  %s , Level = %s", 
+            nh_list[i].oif->intf_name, nh_list[i].node->node_name, get_str_level(nh_list[i].level)); TRACE();
     }
 }
 
-
 void
-print_direct_nh_list(node_t *nh_list[]){
+print_direct_nh_list2(internal_nh_t *nh_list){
 
     sprintf(LOG, "printing direct next hop list"); TRACE();
-    if(nh_list[0]){
-        sprintf(LOG, "%s", nh_list[0]->node_name); TRACE();
+    if(!is_nh_list_empty2(nh_list)){
+        sprintf(LOG, "%s", nh_list->node->node_name); TRACE();
     }
     else{
         sprintf(LOG, "Nil"); TRACE();

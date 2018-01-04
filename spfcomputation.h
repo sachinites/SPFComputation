@@ -44,12 +44,63 @@ typedef struct edge_end_ edge_end_t;
 /*We need to enhance this structure more to persistently store all spf result run
   for each node in the network at spf_root only*/
 
+/*Internal nexthop data structure - more or less same as nh_t*/
+
+typedef struct internal_nh_t_{
+    LEVEL level;
+    edge_end_t *oif;    /*caching oif is enough to keep track of primary nexthops and backup LFAs*/
+    node_t *node;       /*This info is valid if this structure represents RLFAs*/
+    char gw_prefix[PREFIX_LEN + 1];
+} internal_nh_t;
+
+/*macros to operate on above internal_nh_t DS*/
+
+#define next_hop_type(_internal_nh_t)                \
+    ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->etype)
+
+#define next_hop_node(_internal_nh_t)                \
+    (_internal_nh_t.node)
+
+#define next_hop_gateway_pfx_mask(_internal_nh_t)    \
+    ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->to.prefix[_internal_nh_t.level]->mask
+
+#define next_hop_oif_name(_internal_nh_t)            \
+    (_internal_nh_t.oif->intf_name)
+
+#define set_next_hop_gw_pfx(_internal_nh_t, pfx)            \
+    (strncpy(_internal_nh_t.gw_prefix, pfx, PREFIX_LEN));   \
+    _internal_nh_t.gw_prefix[PREFIX_LEN] = '\0'
+
+#define init_internal_nh_t(_internal_nh_t)           \
+    memset(&_internal_nh_t, 0, sizeof(internal_nh_t))
+
+#define intialize_internal_nh_t(_internal_nh_t, _level, _oif_edge, _node)  \
+    _internal_nh_t.level = _level;                                         \
+    _internal_nh_t.oif   = &_oif_edge->from;                               \
+    _internal_nh_t.node  = _node;
+
+#define copy_internal_nh_t(_src, _dst)    \
+    (_dst).level = (_src).level;          \
+    (_dst).oif   = (_src).oif;            \
+    (_dst).node  = (_src).node;           \
+    set_next_hop_gw_pfx((_dst), (_src).gw_prefix)
+
+#define is_internal_nh_t_equal(_nh1, _nh2)  \
+    (_nh1.level == _nh2.level && _nh1.node == _nh2.node && _nh1.oif == _nh2.oif)
+
+#define is_internal_nh_t_empty(_nh) \
+    (_nh.node == NULL && _nh.oif == NULL)
+
+
 typedef struct spf_result_{
 
     struct _node_t *node; /* Next hop details are stored in the node itself*/
     unsigned int spf_metric;
     unsigned int lsp_metric;
+    /*to be deprecated*/
     struct _node_t *next_hop[NH_MAX][MAX_NXT_HOPS];
+    /*new ones*/
+    internal_nh_t next_hop2[NH_MAX][MAX_NXT_HOPS];
 } spf_result_t;
 
 /* spf result of a node wrt to spf_root */

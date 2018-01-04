@@ -78,11 +78,22 @@ route_set_key(routes_t *route, char *ipv4_addr, char mask);
 void
 free_route(routes_t *route);
 
-#define ROUTE_ADD_PRIMARY_NH(_route_nh_list, nodeptr)     \
-    singly_ll_add_node_by_val(_route_nh_list, nodeptr)
+#define ROUTE_ADD_PRIMARY_NH(_route_nh_list, _internal_nh_t_ptr)     \
+    singly_ll_add_node_by_val(_route_nh_list, _internal_nh_t_ptr)
 
-#define ROUTE_FLUSH_PRIMARY_NH_LIST(routeptr, _nh)       \
-    delete_singly_ll(routeptr->primary_nh_list[_nh])
+static inline void
+ROUTE_FLUSH_PRIMARY_NH_LIST(routes_t *route, nh_type_t nh){
+
+    singly_ll_node_t *list_node = NULL;
+    ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
+
+        free(list_node->data);
+        list_node->data = NULL;
+    } ITERATE_LIST_END;
+
+    delete_singly_ll(route->primary_nh_list[nh]);
+}
+
 
 #define ROUTE_ADD_BACKUP_NH(routeptr, nodeptr)      \
     singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr)
@@ -133,7 +144,7 @@ typedef struct nh_t_ nh_t;
 
 void
 prepare_new_nxt_hop_template(node_t *computing_node, /*Computing node running SPF*/
-        node_t *nxt_hop_node,                        /*Nbr node*/
+        internal_nh_t *nxt_hop_node,                        /*Nbr node*/
         nh_t *nh_template,
         LEVEL level, nh_type_t nh);                  /*SPF run level*/
 

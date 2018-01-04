@@ -39,40 +39,37 @@
 #define SET_LEVEL(input_level, level)       ((input_level) |= (level))
 
 void
-print_nh_list(node_t *nh_list[]);
+print_nh_list2(internal_nh_t *nh_list);
 
 boolean
-is_present(node_t *list[], node_t *node);
+is_present2(internal_nh_t *list, internal_nh_t *nh);
 
 void
-print_direct_nh_list(node_t *direct_nh_list[]);
+print_direct_nh_list2(internal_nh_t *nh_list);
 
 void
-copy_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]);
+copy_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list);
 
-int
-is_nh_list_empty(node_t *nh_list[]);
-
-void
-union_direct_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]);
+boolean
+is_nh_list_empty2(internal_nh_t *nh_list);
 
 void
-copy_direct_to_nh_list(node_t *src_direct_nh_list[], node_t *dst_nh_list[]);
+union_direct_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list);
+
+void
+copy_direct_to_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list);
 
 char *
 get_str_level(LEVEL level);
 
 void
-union_nh_list(node_t *src_nh_list[], node_t *dst_nh_list[]);
-
-void
-flush_nh_list(node_t *nh_list[]);
+union_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list);
 
 char*
 get_str_node_area(AREA area);
 
 boolean
-is_all_nh_list_empty(node_t *node, LEVEL level);
+is_all_nh_list_empty2(node_t *node, LEVEL level);
 
 void
 spf_determine_multi_area_attachment(spf_info_t *spf_info,
@@ -102,6 +99,6 @@ boolean
 is_broadcast_member_node(node_t *S, edge_t *interface, node_t *D, LEVEL level);
 
 unsigned int
-get_nh_count(node_t *nh_list[]);
+get_nh_count(internal_nh_t *nh_list);
 
 #endif /* __SPFUTIL__ */ 
