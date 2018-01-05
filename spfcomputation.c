@@ -325,16 +325,19 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     union_nh_list2(&candidate_node->next_hop[level][nh][0]  , &nbr_node->next_hop[level][nh][0]);
                     sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
                             get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                    print_nh_list2(&nbr_node->next_hop[level][nh][0] );
-#if 1
-                    sprintf(LOG, "Union direct_next_hop of %s with Next hop of %s at %s %s", nbr_node->node_name, 
-                            nbr_node->node_name, get_str_level(level), 
-                            nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                    union_direct_nh_list2(&nbr_node->direct_next_hop[level][nh][0] , &nbr_node->next_hop[level][nh][0] );
-                    sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
-                            get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
                     print_nh_list2(&nbr_node->next_hop[level][nh][0]);
-#endif
+                    
+                    /* If we reach a node D via PN Or Source S later with same cost, then direct nexthops also
+                     * need to be added to nexthop list of D. See topo build_ecmp_topo2 for Detail*/
+                    if(is_nh_list_empty2(&candidate_node->next_hop[level][nh][0])){
+                        sprintf(LOG, "Union direct_next_hop of %s with Next hop of %s at %s %s", nbr_node->node_name, 
+                                nbr_node->node_name, get_str_level(level), 
+                                nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                        union_direct_nh_list2(&nbr_node->direct_next_hop[level][nh][0] , &nbr_node->next_hop[level][nh][0] );
+                        sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
+                                get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                        print_nh_list2(&nbr_node->next_hop[level][nh][0]);
+                    }
                 } ITERATE_NH_TYPE_END;
             }
             else{

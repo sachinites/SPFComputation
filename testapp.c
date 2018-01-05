@@ -47,6 +47,7 @@ extern instance_t * overload_router_topo();
 extern instance_t * pseudonode_ecmp_topo();
 extern instance_t * lsp_ecmp_topo();
 extern instance_t * broadcast_link_protecting_lfa();
+extern instance_t * build_ecmp_topo2();
 
 /*Globals */
 instance_t *instance = NULL;
@@ -61,8 +62,9 @@ main(int argc, char **argv){
     //instance = build_linear_topo();
     //instance = pseudonode_ecmp_topo();
     //instance = lsp_ecmp_topo();
-    // instance = build_multi_area_topo();
-    instance = build_ring_topo();
+    //instance = build_multi_area_topo();
+    //instance = build_ring_topo();
+      instance = build_ecmp_topo2();
     //instance = build_cisco_example_topo();
     //instance = broadcast_link_protecting_lfa();
     //instance = overload_router_topo();

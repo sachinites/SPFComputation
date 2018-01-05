@@ -32,6 +32,90 @@
 
 #include "instance.h"
 
+
+instance_t *
+build_ecmp_topo2(){
+
+/*                         +--------+
+                6      0/0 |        |0/1       1
+         +-----------------+   B    +-------------------+      
+         |      10.1.1.2/24|        |50.1.1.1/24        |
+         |                 +--------+                   |
+         |                                              |
+         |                                              |
+         |0/0                                           |0/1
+ *       |10.1.1.1/24                                   |50.1.1.2/24
+ *  +----+----+              +-------+              +---+---+
+ *  |         |0/1    5   0/1|       |0/2    2    .2|       |
+ *  |   S     +--------------|   E   +--------------+  D    |
+ *  |         |20.1.1.1/24 .2|       |30.1.1.1   0/2|       |
+ *  |         |              |       |              +---+---+
+ *  +----+----+              +-------+                  |40.1.1.2/24
+ *       |40.1.1.1/24                                   |0/3
+ *       |0/2                                           |
+ *       |                                              |
+ *       |                                              |
+ *       |                                              |
+ *       |               +----------+                   |
+         |               |          |                   |
+         |         8     |   PN     |      0            |
+         +---------------+          +-------------------+
+                      0/2|          |0/3
+                         +----------+
+
+*/
+
+    instance_t *instance = get_new_instance();
+
+    node_t *S = create_new_node(instance, "S", AREA1, "192.168.0.1");
+    node_t *E = create_new_node(instance, "E", AREA1, "192.168.0.2");
+    node_t *B = create_new_node(instance, "B", AREA1, "192.168.0.3");
+    node_t *PN = create_new_node(instance, "PN", AREA1, "0.0.0.0");
+    node_t *D = create_new_node(instance, "D", AREA1, "192.168.0.4");
+
+    prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_30_1_1_1_24 = create_new_prefix("30.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_30_1_1_2_24 = create_new_prefix("30.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_40_1_1_1_24 = create_new_prefix("40.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_40_1_1_2_24 = create_new_prefix("40.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_50_1_1_1_24 = create_new_prefix("50.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_50_1_1_2_24 = create_new_prefix("50.1.1.2", 24, LEVEL1);
+    
+
+    edge_t *S_B_edge = create_new_edge("eth0/0", "eth0/0", 6,
+            prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL1);
+
+    edge_t *S_E_edge = create_new_edge("eth0/1", "eth0/1", 5,
+            prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL1);
+
+    edge_t *S_PN_edge = create_new_edge("eth0/2", "eth0/2", 8,
+            prefix_40_1_1_1_24, 0, LEVEL1);
+
+    edge_t *PN_D_edge = create_new_edge("eth0/3", "eth0/3", 0,
+            0, prefix_40_1_1_2_24, LEVEL1);
+    
+    edge_t *E_D_edge = create_new_edge("eth0/2", "eth0/2", 2,
+            prefix_30_1_1_1_24, prefix_30_1_1_2_24, LEVEL1);
+    
+    edge_t *B_D_edge = create_new_edge("eth0/1", "eth0/1", 1,
+            prefix_50_1_1_1_24, prefix_50_1_1_2_24, LEVEL1);
+
+    insert_edge_between_2_nodes(S_B_edge, S, B, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(S_E_edge, S, E, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(S_PN_edge, S, PN, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(PN_D_edge, PN, D, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(E_D_edge, E, D, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(B_D_edge, B, D, BIDIRECTIONAL);
+    mark_node_pseudonode(PN, LEVEL1);
+    set_instance_root(instance, S);
+    return instance;
+}
+
+
+
 instance_t *
 build_linear_topo(){
 

@@ -60,9 +60,14 @@ void
 copy_direct_to_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list){
     
     unsigned int i = 0;
+
     for(; i < MAX_NXT_HOPS; i++){
         init_internal_nh_t(dst_nh_list[i]);
     }
+    
+    if(is_nh_list_empty2(src_direct_nh_list))
+        return;
+
     dst_nh_list->level = src_direct_nh_list->level;
     dst_nh_list->node = src_direct_nh_list->node;
     dst_nh_list->oif = src_direct_nh_list->oif;
