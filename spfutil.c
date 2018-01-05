@@ -49,15 +49,10 @@ copy_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list){
 }
 
 boolean
-is_all_nh_list_empty2(node_t *node, LEVEL level){
+is_all_nh_list_empty2(node_t *node, LEVEL level, nh_type_t nh){
 
-    nh_type_t nh;
-
-    ITERATE_NH_TYPE_BEGIN(nh){
-
-        if(!is_nh_list_empty2(&node->next_hop[level][nh][0]))
-            return FALSE;
-    } ITERATE_NH_TYPE_END;
+    if(!is_nh_list_empty2(&node->next_hop[level][nh][0]))
+        return FALSE;
     return TRUE;
 }
 
@@ -121,6 +116,9 @@ void
 union_direct_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list){
 
     unsigned int i = 0;
+
+    if(is_nh_list_empty2(src_direct_nh_list))
+        return;
 
     if(is_present2(&dst_nh_list[0], &src_direct_nh_list[0]))
         return;

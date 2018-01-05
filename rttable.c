@@ -59,7 +59,6 @@ void
 set_backup_nh(rttable_entry_t *rt_entry, nh_t *bck_nh){
 
     rt_entry->backup_nh = *bck_nh;
-
 }
 
 rttable_entry_t *

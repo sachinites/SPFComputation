@@ -69,7 +69,7 @@ char*
 get_str_node_area(AREA area);
 
 boolean
-is_all_nh_list_empty2(node_t *node, LEVEL level);
+is_all_nh_list_empty2(node_t *node, LEVEL level, nh_type_t nh);
 
 void
 spf_determine_multi_area_attachment(spf_info_t *spf_info,
