@@ -73,14 +73,14 @@ show_spf_results(node_t *spf_root, LEVEL level){
 
                 oif = res->next_hop[nh][i].oif;
                 if(i == 0){
-                    printf("%s|%-8s       OIF : %-7s\n", res->next_hop[nh][i].node->node_name, 
-                            nh == LSPNH ? "LSPNH" : "IPNH", 
-                            oif->intf_name);
+                    printf("%s|%-8s       OIF : %-7s    gateway : %s\n", 
+                            res->next_hop[nh][i].node->node_name, nh == LSPNH ? "LSPNH" : "IPNH", 
+                            oif->intf_name, res->next_hop[nh][i].gw_prefix);
                 }
                 else{
-                    printf("                                              : %s|%-8s       OIF : %-7s\n", res->next_hop[nh][i].node->node_name, 
-                            nh == LSPNH ? "LSPNH" : "IPNH", 
-                            oif->intf_name);
+                    printf("                                              : %s|%-8s       OIF : %-7s    gateway : %s\n", 
+                            res->next_hop[nh][i].node->node_name, nh == LSPNH ? "LSPNH" : "IPNH", 
+                            oif->intf_name, res->next_hop[nh][i].gw_prefix);
                 }
             }
         } ITERATE_NH_TYPE_END;
@@ -183,12 +183,12 @@ show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
              node_name = tlv->value;
-    }
+    } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     show_routing_table(node->spf_info.rttable);
     return 0;
-} TLV_LOOP_END;
+} 
 
 static int
 show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){

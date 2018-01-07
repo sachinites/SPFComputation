@@ -315,8 +315,8 @@ print_nh_list2(internal_nh_t *nh_list){
 
         if(is_nh_list_empty2(&nh_list[i])) return;
         
-        sprintf(LOG, "oif = %s, NH =  %s , Level = %s", 
-            nh_list[i].oif->intf_name, nh_list[i].node->node_name, get_str_level(nh_list[i].level)); TRACE();
+        sprintf(LOG, "oif = %s, NH =  %s , Level = %s, gw_prefix = %s", 
+            nh_list[i].oif->intf_name, nh_list[i].node->node_name, get_str_level(nh_list[i].level), nh_list[i].gw_prefix); TRACE();
     }
 }
 

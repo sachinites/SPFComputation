@@ -478,6 +478,7 @@ spf_init(candidate_tree_t *ctree,
                 }
                 else{
                     intialize_internal_nh_t(pn_nbr->direct_next_hop[level][IPNH][0], level, edge, pn_nbr);
+                    set_next_hop_gw_pfx(pn_nbr->direct_next_hop[level][IPNH][0], pn_edge->to.prefix[level]->prefix);
                 }
             }
             ITERATE_NODE_LOGICAL_NBRS_END;
