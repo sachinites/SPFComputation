@@ -385,8 +385,7 @@ spf_init(candidate_tree_t *ctree,
     /*step 1 : Purge NH list of all nodes in the topo*/
 
     unsigned int i = 0;
-    node_t *pn_nbr = NULL,
-           *nbr_node = NULL,
+    node_t *nbr_node = NULL,
            *curr_node = NULL;
 
     edge_t *edge = NULL, *pn_edge = NULL;
@@ -464,38 +463,18 @@ spf_init(candidate_tree_t *ctree,
      * nbrs of directly connected PN as own nbrs, which is infact the concept
      * of pseudonode. Again, do not compute direct next hops of PN*/
 
-    ITERATE_NODE_LOGICAL_NBRS_BEGIN(spf_root, nbr_node, edge, level){
-
-        if(nbr_node->node_type[level] == PSEUDONODE){
-
-            ITERATE_NODE_LOGICAL_NBRS_BEGIN(nbr_node, pn_nbr, pn_edge, level){
-
-                if(pn_nbr == spf_root)
-                    continue;
-
-                if(pn_edge->etype == LSP){
-                    intialize_internal_nh_t(pn_nbr->direct_next_hop[level][LSPNH][0], level, edge, pn_nbr);
-                }
-                else{
-                    intialize_internal_nh_t(pn_nbr->direct_next_hop[level][IPNH][0], level, edge, pn_nbr);
-                    set_next_hop_gw_pfx(pn_nbr->direct_next_hop[level][IPNH][0], pn_edge->to.prefix[level]->prefix);
-                }
-            }
-            ITERATE_NODE_LOGICAL_NBRS_END;
-            continue;
-        }
-
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(spf_root, nbr_node, edge, pn_edge, level){
+    
         if(edge->etype == LSP){
             intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
             set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], "0.0.0.0");
         }
         else{
             intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
-            set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][0], edge->to.prefix[level]->prefix);
+            set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][0], pn_edge->to.prefix[level]->prefix);
         }
-    }
-    ITERATE_NODE_LOGICAL_NBRS_END;
-
+    } ITERATE_NODE_PHYSICAL_NBRS_END2(spf_root, nbr_node, level);;
+    
 
     /*Step 4 : Initialize candidate tree with root*/
     INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
