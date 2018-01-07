@@ -69,7 +69,7 @@ char*
 get_str_node_area(AREA area);
 
 boolean
-is_all_nh_list_empty2(node_t *node, LEVEL level, nh_type_t nh);
+is_all_nh_list_empty2(node_t *node, LEVEL level);
 
 void
 spf_determine_multi_area_attachment(spf_info_t *spf_info,
@@ -100,5 +100,8 @@ is_broadcast_member_node(node_t *S, edge_t *interface, node_t *D, LEVEL level);
 
 unsigned int
 get_nh_count(internal_nh_t *nh_list);
+
+void
+empty_nh_list(node_t *node, LEVEL level, nh_type_t nh);
 
 #endif /* __SPFUTIL__ */ 

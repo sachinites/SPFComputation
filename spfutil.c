@@ -49,12 +49,28 @@ copy_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list){
 }
 
 boolean
-is_all_nh_list_empty2(node_t *node, LEVEL level, nh_type_t nh){
+is_all_nh_list_empty2(node_t *node, LEVEL level){
 
-    if(!is_nh_list_empty2(&node->next_hop[level][nh][0]))
-        return FALSE;
+    nh_type_t nh;
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+
+        if(!is_nh_list_empty2(&node->next_hop[level][nh][0]))
+            return FALSE;
+
+    } ITERATE_NH_TYPE_END;
+
     return TRUE;
 }
+
+void
+empty_nh_list(node_t *node, LEVEL level, nh_type_t nh){
+
+    unsigned int i = 0;
+    for(i=0; i < MAX_NXT_HOPS; i++){
+        init_internal_nh_t(node->next_hop[level][nh][i]);    
+    }
+} 
 
 void
 copy_direct_to_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list){
