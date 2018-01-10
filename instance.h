@@ -130,6 +130,7 @@ typedef struct _edge_t{
     struct _edge_t *inv_edge;
     edge_type_t etype;
     char status;/* 0 down, 1 up*/
+    unsigned int bandwidth; /*bandwidth for WECMP in mpbs*/
 } edge_t;
 
 typedef struct instance_{
@@ -284,22 +285,25 @@ get_min_oif(node_t *node, node_t *node_nbr,
              
 #define ITERATE_NODE_LOGICAL_NBRS_END   }}while(0)
              
-/*This macro iterates over all physical nbrs of a node. Physical nbrs includes
+/* This macro iterates over all physical nbrs of a node. Physical nbrs includes
  * P2P nbrs and nbrs of directly connected PN. PN itself do not count as a nbr
  * of a _node
  * _egde1 - edge connecting _node and its nbr which could be PN
  * _edge2 - if nbr is a PN, then this is the edge connecting PN and its nbr
- * _level - LEVEL1 Or LEVEL2 but not Both*/
+ * _level - LEVEL1 Or LEVEL2 but not Both
+ *
+ * _nbr_node -- real physical nbr, could be direct real nbr or nbr connected through PN
+ * __nbr_node -- logical nbr (always direct nbr)*/
 
-#define ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(_node, _nbr_node,                \
+#define ITERATE_NODE_PHYSICAL_NBRS_BEGIN(_node, _nbr_node, __nbr_node,     \
                                    _edge1, _edge2, _level)                 \
     _nbr_node = NULL;                                                      \
     _edge1 = NULL; _edge2 = NULL;                                          \
     assert(_level != LEVEL12);                                             \
     do{                                                                    \
         __label__ NONPN;                                                   \
-        unsigned int _i = 0;                                               \
-        node_t *__nbr_node = 0;                                            \
+        unsigned int _i = 0, _j =0;                                        \
+        __nbr_node = 0;                                                    \
         edge_t *__edge = 0;                                                \
         edge_end_t *_edge_end = 0;                                         \
         for(_i = 0; _i < MAX_NODE_INTF_SLOTS; _i++){                       \
@@ -316,7 +320,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
             _edge1 = __edge;                                               \
             _edge2 = _edge1;                                               \
             if(__nbr_node->node_type[_level] != PSEUDONODE) goto NONPN;    \
-                unsigned int _j = 0;                                       \
+                _j = 0;                                                    \
                 for(_j = 0; _j < MAX_NODE_INTF_SLOTS; _j++){               \
                     _edge_end = __nbr_node->edges[_j];                     \
                     if(!_edge_end) break;                                  \
@@ -330,25 +334,23 @@ get_min_oif(node_t *node, node_t *node_nbr,
                     if(_nbr_node == _node)                                 \
                         continue;                                          \
                     NONPN:
-            
-#define ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(_node, __nbr_node, __level)                     \
+
+#define ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(_node, _nbr_node, __nbr_node, __level)           \
              if(__nbr_node && __nbr_node->node_type[__level] != PSEUDONODE){                 \
                  break; continue;                                                            \
              }                                                                               \
              else continue               
-                                                  
-#define ITERATE_NODE_PHYSICAL_NBRS_BREAK2(_node, __nbr_node, __level)                        \
+                                                                  
+#define ITERATE_NODE_PHYSICAL_NBRS_BREAK(_node, _nbr_node, __nbr_node, __level)              \
     __nbr_node = _node;       /* Just act as a flag*/                                        \
     break
              
-#define ITERATE_NODE_PHYSICAL_NBRS_END2(_node, __nbr_node, __level)                          \
+#define ITERATE_NODE_PHYSICAL_NBRS_END(_node, _nbr_node, __nbr_node, __level)                \
                 if(__nbr_node && __nbr_node->node_type[__level] != PSEUDONODE)               \
                     break;                                                                   \
                 }                                                                            \
                 if(_node == __nbr_node) break;                                               \
                 }}while(0)
-
-      
 
 void
 attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end);

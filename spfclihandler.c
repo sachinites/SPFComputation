@@ -530,3 +530,21 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     } 
     return 0;
 }
+
+void
+show_spf_initialization(node_t *spf_root, LEVEL level){
+
+   node_t *phy_nbr = NULL, 
+          *logical_nbr = NULL;
+   edge_t *edge = NULL, *pn_edge = NULL;
+   
+   ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, phy_nbr, logical_nbr, edge, pn_edge, level){ 
+       
+        printf("Nbr = %s, IP Direct NH count = %u, LSP Direct NH count = %u, metric = %u\n", 
+                phy_nbr->node_name, get_nh_count(&phy_nbr->direct_next_hop[level][IPNH][0]), 
+                get_nh_count(&phy_nbr->direct_next_hop[level][LSPNH][0]),
+                !is_nh_list_empty2(&phy_nbr->direct_next_hop[level][IPNH][0]) ? 
+                    get_direct_next_hop_metric(phy_nbr->direct_next_hop[level][IPNH][0], level) :
+                    get_direct_next_hop_metric(phy_nbr->direct_next_hop[level][LSPNH][0], level));
+   } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, phy_nbr, logical_nbr, level);
+}

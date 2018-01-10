@@ -386,7 +386,8 @@ spf_init(candidate_tree_t *ctree,
 
     unsigned int i = 0;
     node_t *nbr_node = NULL,
-           *curr_node = NULL;
+           *curr_node = NULL,
+           *pn_node = NULL;
 
     edge_t *edge = NULL, *pn_edge = NULL;
 
@@ -454,7 +455,7 @@ spf_init(candidate_tree_t *ctree,
     free(q);
     q = NULL;
 
-    /*step 3 : Initialize direct nexthops.
+    /* step 3 : Initialize direct nexthops.
      * Iterate over real physical nbrs of root (that is skip PNs)
      * and initialize their direct next hop list. Also, pls note that
      * directly PN's nbrs are also direct next hops to root. In Production
@@ -463,18 +464,63 @@ spf_init(candidate_tree_t *ctree,
      * nbrs of directly connected PN as own nbrs, which is infact the concept
      * of pseudonode. Again, do not compute direct next hops of PN*/
 
-    ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(spf_root, nbr_node, edge, pn_edge, level){
-    
-        if(edge->etype == LSP){
-            intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
-            set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], "0.0.0.0");
+    unsigned int direct_nh_min_metric = 0,
+                 nh_index = 0;
+
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, nbr_node, pn_node, edge, pn_edge, level){
+
+        if(is_nh_list_empty2(&nbr_node->direct_next_hop[level][IPNH][0]) &&
+                is_nh_list_empty2(&nbr_node->direct_next_hop[level][LSPNH][0])){
+            if(edge->etype == LSP){
+                intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], "0.0.0.0");
+            }
+            else{
+                intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][0], pn_edge->to.prefix[level]->prefix);
+            }
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(spf_root, nbr_node, pn_node, level);
         }
-        else{
-            intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
-            set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][0], pn_edge->to.prefix[level]->prefix);
+
+        direct_nh_min_metric = !is_nh_list_empty2(&nbr_node->direct_next_hop[level][IPNH][0]) ? 
+                               get_direct_next_hop_metric(nbr_node->direct_next_hop[level][IPNH][0], level) : 
+                               get_direct_next_hop_metric(nbr_node->direct_next_hop[level][LSPNH][0], level);
+
+        if(edge->metric[level] < direct_nh_min_metric){
+            ITERATE_NH_TYPE_BEGIN(nh){
+                empty_direct_nh_list(nbr_node, level, nh);
+            } ITERATE_NH_TYPE_END;
+            if(edge->etype == LSP){
+                intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], "0.0.0.0");
+            }
+            else{
+                intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][0], pn_edge->to.prefix[level]->prefix);
+            }
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(spf_root, nbr_node, pn_node, level);
         }
-    } ITERATE_NODE_PHYSICAL_NBRS_END2(spf_root, nbr_node, level);;
-    
+
+        if(edge->metric[level] == direct_nh_min_metric){
+            nh = edge->etype == UNICAST ? IPNH : LSPNH;
+            nh_index = get_nh_count(&nbr_node->direct_next_hop[level][nh][0]);
+            
+            if(nh_index == MAX_NXT_HOPS){
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(spf_root, nbr_node, pn_node, level);
+            }
+            
+            if(edge->etype == LSP){
+                intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][nh_index], level, edge, nbr_node);
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][nh_index], "0.0.0.0");
+            }
+            else{
+                intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][nh_index], level, edge, nbr_node);
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][nh_index], pn_edge->to.prefix[level]->prefix);
+            }
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(spf_root, nbr_node, pn_node, level);
+        }
+    } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, nbr_node, pn_node, level);
+
 
     /*Step 4 : Initialize candidate tree with root*/
     INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
@@ -491,6 +537,18 @@ spf_init(candidate_tree_t *ctree,
     ITERATE_NODE_LOGICAL_NBRS_END;
 }
 
+void
+spf_only_intitialization(node_t *spf_root, LEVEL level){
+
+    if(level != LEVEL1 && level != LEVEL2){
+        printf("%s() : Error : invalid level specified\n", __FUNCTION__);
+        return;
+    }
+
+    RE_INIT_CANDIDATE_TREE(&instance->ctree);
+
+    spf_init(&instance->ctree, spf_root, level);
+}
 
 void
 spf_computation(node_t *spf_root, 

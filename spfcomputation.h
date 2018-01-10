@@ -58,6 +58,9 @@ typedef struct internal_nh_t_{
 #define next_hop_type(_internal_nh_t)                \
     ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->etype)
 
+#define get_direct_next_hop_metric(_internal_nh_t, _level)  \
+    ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->metric[_level])
+
 #define next_hop_node(_internal_nh_t)                \
     (_internal_nh_t.node)
 
@@ -174,5 +177,9 @@ partial_spf_run(node_t *spf_root, LEVEL level);
 
 unsigned int 
 DIST_X_Y(node_t *X, node_t *Y, LEVEL _level);
+
+void
+spf_only_intitialization(node_t *spf_root, LEVEL level);
+
 
 #endif /* __SPFCOMPUTATION__ */

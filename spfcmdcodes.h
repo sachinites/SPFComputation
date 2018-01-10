@@ -53,7 +53,6 @@
 #define CMDCODE_SHOW_SPF_RUN_PRC                            20  /*show spf run level <level-no>* [root <node-name>] prc*/
 #define CMDCODE_CONFIG_NODE_RSVPLSP                         21  /*config node <node-name> lsp <lsp-name> metric <metric-value> to <tail-end-ip>*/
 #define CMDCODE_RUN_INSTANCE_SYNC                           22  /*run instance sync*/
-
 /*Administrative tag support*/
 #define CMDCODE_CONFIG_INSTANCE_NODE_TAG_PRIORITY           23  /*config node <node-name> tag <tag-value> priority <high | medium | low>*/
 #define CMDCODE_CONFIG_NODE_SLOT_TAG_VALUE                  24  /*config node <node-name> [no] interface <slot-name> tag <tag-value>*/
@@ -77,4 +76,5 @@
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_QSPACE                 37 /*debug show instance node <node-name> interface <slot-no> qspace*/
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE                38 /*debug show instance node <node-name> interface <slot-no> pqspace*/
 
+#define CMDCODE_SHOW_SPF_RUN_INIT                           39 /*show spf run level <level-no> [root <node-name>] init*/
 #endif /* __SPFCMDCODES__H */

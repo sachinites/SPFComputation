@@ -104,4 +104,7 @@ get_nh_count(internal_nh_t *nh_list);
 void
 empty_nh_list(node_t *node, LEVEL level, nh_type_t nh);
 
+void
+empty_direct_nh_list(node_t *node, LEVEL level, nh_type_t nh);
+
 #endif /* __SPFUTIL__ */ 

@@ -72,14 +72,15 @@ void
 Compute_PHYSICAL_Neighbor_SPFs(node_t *spf_root, LEVEL level){
 
     
-    node_t *nbr_node = NULL;
+    node_t *nbr_node = NULL,
+           *pn_node = NULL;
     edge_t *edge1 = NULL, *edge2 = NULL;
 
-    ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(spf_root, nbr_node, edge1, edge2, level){
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, nbr_node, pn_node, edge1, edge2, level){
 
         Compute_and_Store_Forward_SPF(nbr_node, level);
     }
-    ITERATE_NODE_PHYSICAL_NBRS_END2(spf_root, nbr_node, level);
+    ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, nbr_node, pn_node, level);
 }
 
 void
@@ -166,7 +167,9 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
      * and union it. Remove duplicates from union*/
 
     node_t *nbr_node = NULL,
-           *E = NULL; 
+           *E = NULL,
+           *pn_node = NULL;
+
     edge_t *edge1 = NULL, *edge2 = NULL;
     p_space_set_t ex_p_space = NULL;
     singly_ll_node_t *list_node1 = NULL;
@@ -223,22 +226,22 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
 
         d_S_to_y = spf_result_y->spf_metric;
 
-        ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(S, nbr_node, edge1, edge2, level){
+        ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, nbr_node, pn_node, edge1, edge2, level){
 
             /*skip E */
             if(edge1 == failed_edge){
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, nbr_node, level);
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
             }
 
             /*RFC 7490 section 5.4 : skip neighbors in computation of PQ nodes(extended p space) 
              * which are either overloaded or reachable through infinite metric*/
 
             if(edge1->metric[level] >= INFINITE_METRIC){
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, nbr_node, level);
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
             }
 
             if(IS_OVERLOADED(nbr_node, level)){
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, nbr_node, level);
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
             }
 
             /* RFC : Remote-LFA Node Protection and Manageability
@@ -258,7 +261,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
                 sprintf(LOG, "Node : %s : Nbr node %s is skipped because it traverses the failed edge from %s", 
                         S->node_name, nbr_node->node_name, S->node_name); TRACE();
                 sprintf(LOG, "Above ECMP inequality failed for nbr %s", nbr_node->node_name); TRACE();
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, nbr_node, level);
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
             }
 
             sprintf(LOG, "Above ECMP inequality passed"); TRACE();
@@ -271,7 +274,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
                  * in case of node protection we skip E altogether*/
 
                 if(nbr_node == E){
-                   ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, nbr_node, level);
+                   ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
                 }
 
                 /*If node protection is enabled*/
@@ -304,7 +307,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
                     }
                     
                     SET_BIT(spf_result_y->node->p_space_protection_type, LINK_NODE_PROTECTION);
-                    ITERATE_NODE_PHYSICAL_NBRS_BREAK2(S, nbr_node, level); /* We are done with spf_result_y->node, check for next*/
+                    ITERATE_NODE_PHYSICAL_NBRS_BREAK(S, nbr_node, pn_node, level); /* We are done with spf_result_y->node, check for next*/
                 }else{
                     sprintf(LOG, "Node : %s : Above inequality failed", S->node_name); TRACE();
                 }
@@ -337,7 +340,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
                     sprintf(LOG, "Node : %s : Above inequality failed",  S->node_name); TRACE();
                 }
             }
-        } ITERATE_NODE_PHYSICAL_NBRS_END2(S, nbr_node, level);
+        } ITERATE_NODE_PHYSICAL_NBRS_END(S, nbr_node, pn_node, level);
     } ITERATE_LIST_END;
     return ex_p_space;
 }   
@@ -761,7 +764,8 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
     node_t *PN = NULL, 
     *N = NULL, 
     *D = NULL,
-    *E = NULL;
+    *E = NULL,
+    *pn_node = NULL;
 
     edge_t *edge1 = NULL, 
             *edge2 = NULL;
@@ -794,10 +798,10 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
     PN = protected_link->to.node;
     Compute_and_Store_Forward_SPF(PN, level);  
 
-    ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(S, N, edge1, edge2, level){
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, pn_node, edge1, edge2, level){
 
         if(edge1 == protected_link){
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, N, level);
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
         }
 
         sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature",/*Strange : adding edge2 in log solves problem of this macro looping*/ 
@@ -805,7 +809,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
         if(IS_OVERLOADED(N, level)){
             sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, N, level);
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
         }
 
         dist_N_S = DIST_X_Y(N, S, level);
@@ -1036,7 +1040,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
             }
         } ITERATE_LIST_END;
     }
-    ITERATE_NODE_PHYSICAL_NBRS_END2(S, N, level); 
+    ITERATE_NODE_PHYSICAL_NBRS_END(S, N, pn_node, level); 
 
     if(GET_NODE_COUNT_SINGLY_LL(lfa->lfa) == 0){
         free_lfa(lfa);
@@ -1091,7 +1095,8 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
     node_t *E = NULL, 
            *N = NULL, 
            *D = NULL,
-           *prim_nh = NULL;
+           *prim_nh = NULL,
+           *pn_node = NULL;
 
     edge_t *edge1 = NULL, *edge2 = NULL,
            *S_E_oif_edge_for_D = NULL;
@@ -1122,7 +1127,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
     lfa->protected_link = &protected_link->from;
 
-      ITERATE_NODE_PHYSICAL_NBRS_BEGIN2(S, N, edge1, edge2, level){
+      ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, pn_node, edge1, edge2, level){
 
         sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s, edge2 = %s for LFA candidature",
                 S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
@@ -1131,12 +1136,12 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
         if(N == E && edge1 == protected_link){
             sprintf(LOG, "Node : %s : Nbr %s with OIF %s is same as protected link %s, skipping this nbr from LFA candidature", 
                     S->node_name, N->node_name, edge1->from.intf_name, protected_link->from.intf_name); TRACE();
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, N, level);
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
         }
 
         if(IS_OVERLOADED(N, level)){
             sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, N, level);
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
         }
 
         dist_N_S = DIST_X_Y(N, S, level);
@@ -1197,7 +1202,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
             /* Apply inequality 1*/
             if(!(dist_N_D < dist_N_S + dist_S_D)){
                 sprintf(LOG, "Node : %s : Inequality 1 failed", S->node_name); TRACE();
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, N, level);
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
             }
 
             sprintf(LOG, "Node : %s : Inequality 1 passed", S->node_name); TRACE();
@@ -1222,7 +1227,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
                 if(!(dist_N_D < dist_S_D)){
                     sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
-                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE2(S, N, level);
+                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
                 }
 
                 sprintf(LOG, "Node : %s : Inequality 2 passed", S->node_name); TRACE(); 
@@ -1287,7 +1292,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
         sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature Done", 
                 S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
 
-    } ITERATE_NODE_PHYSICAL_NBRS_END2(S, N, level);
+    } ITERATE_NODE_PHYSICAL_NBRS_END(S, N, pn_node, level);
 
     if(GET_NODE_COUNT_SINGLY_LL(lfa->lfa) == 0){
         free_lfa(lfa);

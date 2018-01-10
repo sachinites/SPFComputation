@@ -69,4 +69,7 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
 int
 debug_show_node_lfas(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 
+void
+show_spf_initialization(node_t *spf_root, LEVEL level);
+
 #endif /* __SPFCLIHANDLER__ */

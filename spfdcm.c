@@ -792,6 +792,10 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             inverse_topology(instance, level);
             show_spf_results(spf_root, level);
             break;
+        case CMDCODE_SHOW_SPF_RUN_INIT:
+            spf_only_intitialization(spf_root, level);
+            show_spf_initialization(spf_root, level);
+            break;
         default:
             assert(0);
     }
@@ -956,6 +960,14 @@ spf_init_dcm(){
     libcli_register_param(&show_spf_run_level, &show_spf_run_level_N);
     set_param_cmd_code(&show_spf_run_level_N, CMDCODE_SHOW_SPF_RUN);
 
+    /*show spf run level <level no> init*/
+    {
+        static param_t init;
+        init_param(&init, CMD, "init", show_spf_run_handler, 0, INVALID, 0, "show spf initialization");
+        libcli_register_param(&show_spf_run_level_N, &init);
+        set_param_cmd_code(&init, CMDCODE_SHOW_SPF_RUN_INIT);
+    }
+        
     /* show spf run level <Level NO> prc*/
     {
         static param_t prc;

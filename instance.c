@@ -158,6 +158,7 @@ create_new_edge(char *from_ifname,
     edge->status    = 1;
     edge->inv_edge  = NULL;
     edge->etype = UNICAST;
+    edge->bandwidth = DEFAULT_LINK_BW;
     return edge;
 }
 

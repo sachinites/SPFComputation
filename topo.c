@@ -382,7 +382,6 @@ build_cisco_example_topo(){
                                 R5, R6, BIDIRECTIONAL);
 
     mark_node_pseudonode(R5, LEVEL1);
-    //mark_node_pseudonode(R2, LEVEL1);
     set_instance_root(instance, R1);
     return instance;
 }
@@ -456,7 +455,7 @@ broadcast_link_protecting_lfa(){
                                 PN, N, BIDIRECTIONAL);
 
     mark_node_pseudonode(PN, LEVEL1); 
-    set_instance_root(instance, S);                                        
+    set_instance_root(instance, N);                                        
     return instance;                                                        
 }                                                                           
 
