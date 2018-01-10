@@ -411,10 +411,8 @@ spf_init(candidate_tree_t *ctree,
 
         for(i = 0; i < MAX_NXT_HOPS; i++){
             init_internal_nh_t(spf_root->next_hop[level][nh][i]);
+            init_internal_nh_t(spf_root->direct_next_hop[level][nh][i]);
         }
-
-        init_internal_nh_t(spf_root->direct_next_hop[level][nh][0]);
-
     }ITERATE_NH_TYPE_END;
 
     spf_root->spf_metric[level] = 0;
@@ -437,10 +435,8 @@ spf_init(candidate_tree_t *ctree,
 
                 for(i = 0; i < MAX_NXT_HOPS; i++){
                     init_internal_nh_t(nbr_node->next_hop[level][nh][i]);
+                    init_internal_nh_t(nbr_node->direct_next_hop[level][nh][i]);
                 }
-
-                init_internal_nh_t(nbr_node->direct_next_hop[level][nh][0]);
-
             } ITERATE_NH_TYPE_END;
             
             nbr_node->spf_metric[level] = INFINITE_METRIC;

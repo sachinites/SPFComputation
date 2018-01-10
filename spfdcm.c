@@ -55,7 +55,7 @@ show_spf_results(node_t *spf_root, LEVEL level){
 
     singly_ll_node_t *list_node = NULL;
     spf_result_t *res = NULL;
-    unsigned int i = 0;
+    unsigned int i = 0, j = 0;
     edge_end_t *oif = NULL;
     nh_type_t nh;
     printf("\nSPF run results for LEVEL%u, ROOT = %s\n", level, spf_root->node_name);
@@ -65,14 +65,15 @@ show_spf_results(node_t *spf_root, LEVEL level){
         printf("DEST : %-10s spf_metric : %-6u", res->node->node_name, res->spf_metric);
         printf(" Nxt Hop : ");
 
+        j = 0;
         ITERATE_NH_TYPE_BEGIN(nh){
 
-            for( i = 0; i < MAX_NXT_HOPS; i++){
+            for( i = 0; i < MAX_NXT_HOPS; i++, j++){
                 if(is_nh_list_empty2(&res->next_hop[nh][i]))
                     break;
 
                 oif = res->next_hop[nh][i].oif;
-                if(i == 0){
+                if(j == 0){
                     printf("%s|%-8s       OIF : %-7s    gateway : %s\n", 
                             res->next_hop[nh][i].node->node_name, nh == LSPNH ? "LSPNH" : "IPNH", 
                             oif->intf_name, res->next_hop[nh][i].gw_prefix);
