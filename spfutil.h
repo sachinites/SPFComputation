@@ -45,9 +45,6 @@ boolean
 is_present2(internal_nh_t *list, internal_nh_t *nh);
 
 void
-print_direct_nh_list2(internal_nh_t *nh_list);
-
-void
 copy_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list);
 
 boolean
@@ -55,9 +52,6 @@ is_nh_list_empty2(internal_nh_t *nh_list);
 
 void
 union_direct_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list);
-
-void
-copy_direct_to_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list);
 
 char *
 get_str_level(LEVEL level);
@@ -103,8 +97,5 @@ get_nh_count(internal_nh_t *nh_list);
 
 void
 empty_nh_list(node_t *node, LEVEL level, nh_type_t nh);
-
-void
-empty_direct_nh_list(node_t *node, LEVEL level, nh_type_t nh);
 
 #endif /* __SPFUTIL__ */ 

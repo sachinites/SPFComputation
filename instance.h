@@ -58,7 +58,7 @@ typedef struct _node_t{
     internal_nh_t old_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     internal_nh_t backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     internal_nh_t old_backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
-    internal_nh_t direct_next_hop[MAX_LEVEL][NH_MAX][1];
+    internal_nh_t direct_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
 
     edge_end_t *pn_intf[MAX_LEVEL];
 
@@ -342,8 +342,8 @@ get_min_oif(node_t *node, node_t *node_nbr,
              else continue               
                                                                   
 #define ITERATE_NODE_PHYSICAL_NBRS_BREAK(_node, _nbr_node, __nbr_node, __level)              \
-    __nbr_node = _node;       /* Just act as a flag*/                                        \
-    break
+    {__nbr_node = _node;       /* Just act as a flag*/                                        \
+    break;}
              
 #define ITERATE_NODE_PHYSICAL_NBRS_END(_node, _nbr_node, __nbr_node, __level)                \
                 if(__nbr_node && __nbr_node->node_type[__level] != PSEUDONODE)               \

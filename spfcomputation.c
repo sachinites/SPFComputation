@@ -263,8 +263,8 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     sprintf(LOG, "printing %s direct_next_hop list at %s %s before copy", nbr_node->node_name, get_str_level(level),
                             nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
 
-                    print_direct_nh_list2(&nbr_node->direct_next_hop[level][nh][0]);
-                    copy_direct_to_nh_list2(&nbr_node->direct_next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
+                    print_nh_list2(&nbr_node->direct_next_hop[level][nh][0]);
+                    copy_nh_list2(&nbr_node->direct_next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
                     sprintf(LOG, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
                             nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
                     print_nh_list2(&nbr_node->next_hop[level][nh][0]);
@@ -488,7 +488,7 @@ spf_init(candidate_tree_t *ctree,
 
         if(edge->metric[level] < direct_nh_min_metric){
             ITERATE_NH_TYPE_BEGIN(nh){
-                empty_direct_nh_list(nbr_node, level, nh);
+                empty_nh_list(nbr_node, level, nh);
             } ITERATE_NH_TYPE_END;
             if(edge->etype == LSP){
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);

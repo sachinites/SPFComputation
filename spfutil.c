@@ -39,15 +39,6 @@
 
 extern instance_t *instance;
 
-void
-copy_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list){
-    
-    unsigned int i = 0;
-    for(; i < MAX_NXT_HOPS; i++){
-        memcpy(&dst_nh_list[i], &src_nh_list[i], sizeof(internal_nh_t));
-    }
-}
-
 boolean
 is_all_nh_list_empty2(node_t *node, LEVEL level){
 
@@ -73,16 +64,7 @@ empty_nh_list(node_t *node, LEVEL level, nh_type_t nh){
 } 
 
 void
-empty_direct_nh_list(node_t *node, LEVEL level, nh_type_t nh){
-
-    unsigned int i = 0;
-    for(i=0; i < MAX_NXT_HOPS; i++){
-        init_internal_nh_t(node->direct_next_hop[level][nh][i]);    
-    }
-}
- 
-void
-copy_direct_to_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list){
+copy_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list){
     
     unsigned int i = 0;
 
@@ -93,10 +75,12 @@ copy_direct_to_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh
     if(is_nh_list_empty2(src_direct_nh_list))
         return;
 
-    dst_nh_list->level = src_direct_nh_list->level;
-    dst_nh_list->node = src_direct_nh_list->node;
-    dst_nh_list->oif = src_direct_nh_list->oif;
-    set_next_hop_gw_pfx((*dst_nh_list), src_direct_nh_list->gw_prefix);
+    for(i = 0; i < MAX_NXT_HOPS; i++){
+        if(is_internal_nh_t_empty(src_direct_nh_list[i]))
+            return;
+        copy_internal_nh_t(src_direct_nh_list[i], dst_nh_list[i]);
+        set_next_hop_gw_pfx((dst_nh_list[i]), src_direct_nh_list[i].gw_prefix);
+    }
 }
 
 boolean 
@@ -327,18 +311,6 @@ print_nh_list2(internal_nh_t *nh_list){
         
         sprintf(LOG, "oif = %s, NH =  %s , Level = %s, gw_prefix = %s", 
             nh_list[i].oif->intf_name, nh_list[i].node->node_name, get_str_level(nh_list[i].level), nh_list[i].gw_prefix); TRACE();
-    }
-}
-
-void
-print_direct_nh_list2(internal_nh_t *nh_list){
-
-    sprintf(LOG, "printing direct next hop list"); TRACE();
-    if(!is_nh_list_empty2(nh_list)){
-        sprintf(LOG, "%s", nh_list->node->node_name); TRACE();
-    }
-    else{
-        sprintf(LOG, "Nil"); TRACE();
     }
 }
 

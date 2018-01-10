@@ -826,7 +826,7 @@ show_instance_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_dis
     switch(CMDCODE){
         
         case CMDCODE_SHOW_INSTANCE_LEVEL:
-            printf("Graph root : %s\n", instance->instance_root->node_name);
+            printf("Graph root : %s(0x%x)\n", instance->instance_root->node_name, (unsigned int)instance->instance_root);
             ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
                 dump_nbrs(list_node->data, level);
             }ITERATE_LIST_END;
@@ -1401,7 +1401,7 @@ dump_nbrs(node_t *node, LEVEL level){
 
     node_t *nbr_node = NULL;
     edge_t *edge = NULL;
-    printf("Node : %s(%s) (%s : %s)\n", node->node_name, node->router_id, get_str_level(level), 
+    printf("Node : %s(0x%x)(%s) (%s : %s)\n", node->node_name, (unsigned int)node, node->router_id, get_str_level(level), 
                 (node->node_type[level] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
     printf("Overloaded ? %s\n", IS_BIT_SET(node->attributes[level], OVERLOAD_BIT) ? "Yes" : "No");
 
