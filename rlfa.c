@@ -60,6 +60,21 @@ init_back_up_computation(node_t *S, LEVEL level){
 }
 
 
+static boolean
+p2p_is_destination_impacted(node_t *S, edge_t *failed_edge, node_t *D){
+
+    /*case 1 : Destination has only 1 next hop through failed_edge, return TRUE*/
+   
+    /*case 2 : Destination has multiple nexthops, but all nexthops has same nexthop node E
+     * AND node protection is desired, return TRUE*/
+
+    /*case 3 : Destination has multiple nexthops, AND only link protection is desired, return FALSE*/
+
+    /*case 4 : Destination has multiple nexthops, and atleast there exist atleast one nexthop node
+     * which do not traverses the failed_edge, return FALSE*/
+    return FALSE;
+}
+
 void
 Compute_and_Store_Forward_SPF(node_t *spf_root,
                               LEVEL level){
@@ -174,7 +189,6 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
     p_space_set_t ex_p_space = NULL;
     singly_ll_node_t *list_node1 = NULL;
 
-    /* self - computing router*/
     unsigned int d_nbr_to_y = 0,
                  d_nbr_to_S = 0,
                  d_nbr_to_E = 0,
@@ -196,118 +210,101 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
 
     boolean is_node_protection_enabled = 
         IS_LINK_NODE_PROTECTION_ENABLED(failed_edge);
-
     boolean is_link_protection_enabled = 
         IS_LINK_PROTECTION_ENABLED(failed_edge);
 
     /*run spf on self*/
     Compute_and_Store_Forward_SPF(S, level); 
-
     /*Run SPF on all logical nbrs of S*/
     Compute_PHYSICAL_Neighbor_SPFs(S, level);
 
     /*iterate over entire network. Note that node->spf_run_result list
      * carries all nodes of the network reachable from source at level l.
      * We deem this list as the "entire network"*/ 
-
     E = failed_edge->to.node;
-
     d_S_to_E = DIST_X_Y(S, E, level);
 
-    ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node1){
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, nbr_node, pn_node, edge1, edge2, level){
 
-        spf_result_y = (spf_result_t *)list_node1->data;
+        /*skip E */
+        if(edge1 == failed_edge){
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
+        }
 
-        if(spf_result_y->node == S)
-            continue;
+        /*RFC 7490 section 5.4 : skip neighbors in computation of PQ nodes(extended p space) 
+         * which are either overloaded or reachable through infinite metric*/
+        if(edge1->metric[level] >= INFINITE_METRIC){
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
+        }
+        if(IS_OVERLOADED(nbr_node, level)){
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
+        }
+        /* RFC : Remote-LFA Node Protection and Manageability
+         * draft-ietf-rtgwg-rlfa-node-protection-13 - section 2.2.1*/
+        d_S_to_nbr = DIST_X_Y(S, nbr_node, level);
+        d_E_to_nbr = DIST_X_Y(E, nbr_node, level);
 
-        if(IS_OVERLOADED(spf_result_y->node, level))
-            continue;
+        /*Testing ECMP equality : Nbr should not be reachable from S through ECMP path
+         * which traverses S---E link*/
+        sprintf(LOG, "Node : %s : Testing ECMP inequality For nbr %s from Source node %s : d_S_to_nbr(%u) < d_S_to_E(%u) + d_E_to_nbr(%u)",
+                S->node_name, nbr_node->node_name, S->node_name, d_S_to_nbr, d_S_to_E, d_E_to_nbr); TRACE();
 
-        d_S_to_y = spf_result_y->spf_metric;
+        if(!(d_S_to_nbr < (d_S_to_E + d_E_to_nbr))){
 
-        ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, nbr_node, pn_node, edge1, edge2, level){
+            sprintf(LOG, "Node : %s : Nbr node %s is skipped because it traverses the failed edge from %s", 
+                    S->node_name, nbr_node->node_name, S->node_name); TRACE();
+            sprintf(LOG, "Above ECMP inequality failed for nbr %s", nbr_node->node_name); TRACE();
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
+        }
 
-            /*skip E */
-            if(edge1 == failed_edge){
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
-            }
+        sprintf(LOG, "Above ECMP inequality passed"); TRACE();
+        d_nbr_to_E = DIST_X_Y(nbr_node, E, level);
 
-            /*RFC 7490 section 5.4 : skip neighbors in computation of PQ nodes(extended p space) 
-             * which are either overloaded or reachable through infinite metric*/
+        ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node1){
 
-            if(edge1->metric[level] >= INFINITE_METRIC){
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
-            }
+            spf_result_y = (spf_result_t *)list_node1->data;
+            if(spf_result_y->node == S)
+                continue;
+            if(IS_OVERLOADED(spf_result_y->node, level))
+                continue;
 
-            if(IS_OVERLOADED(nbr_node, level)){
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
-            }
-
-            /* RFC : Remote-LFA Node Protection and Manageability
-             * draft-ietf-rtgwg-rlfa-node-protection-13 - section 2.2.1*/
-
-            d_S_to_nbr = DIST_X_Y(S, nbr_node, level);
-            d_E_to_nbr = DIST_X_Y(E, nbr_node, level);
-
-            /*Testing ECMP equality : Nbr should not be reachable from S through ECMP path
-             * which traverses S---E link*/
-            sprintf(LOG, "Node : %s : Testing ECMP inequality For nbr %s from Source node %s : d_S_to_nbr(%u) < d_S_to_E(%u) + d_E_to_nbr(%u)",
-                            S->node_name, nbr_node->node_name, S->node_name, d_S_to_nbr, d_S_to_E, d_E_to_nbr); TRACE();
-
-            
-            if(!(d_S_to_nbr < (d_S_to_E + d_E_to_nbr))){
-
-                sprintf(LOG, "Node : %s : Nbr node %s is skipped because it traverses the failed edge from %s", 
-                        S->node_name, nbr_node->node_name, S->node_name); TRACE();
-                sprintf(LOG, "Above ECMP inequality failed for nbr %s", nbr_node->node_name); TRACE();
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
-            }
-
-            sprintf(LOG, "Above ECMP inequality passed"); TRACE();
-
+            d_S_to_y = spf_result_y->spf_metric;
             d_nbr_to_y = DIST_X_Y(nbr_node, spf_result_y->node, level);
 
             if(is_node_protection_enabled == TRUE){
 
                 /*In case of link protection, we skip S---E link but not E, 
                  * in case of node protection we skip E altogether*/
-
-                if(nbr_node == E){
-                   ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
-                }
-
+                if(nbr_node == E) break;
+                
                 /*If node protection is enabled*/
-                d_nbr_to_E = DIST_X_Y(nbr_node, E, level);
+                
                 d_E_to_y = DIST_X_Y(E, spf_result_y->node, level);
 
                 /*condition for node protection RLFA - RFC : 
                  * draft-ietf-rtgwg-rlfa-node-protection-13 - section 2.2.6.2*/
-
                 sprintf(LOG, "Node : %s : Testing node protection inequality : S = %s, nbr = %s, Y = %s, E = %s",
-                                S->node_name, S->node_name, nbr_node->node_name, spf_result_y->node->node_name, E->node_name); TRACE();
-
+                        S->node_name, S->node_name, nbr_node->node_name, spf_result_y->node->node_name, E->node_name); TRACE();
                 sprintf(LOG, "Node : %s : d_nbr_to_y(%u) < d_nbr_to_E(%u) + d_E_to_y(%u)", 
-                            S->node_name, d_nbr_to_y, d_nbr_to_E, d_E_to_y); TRACE();
+                        S->node_name, d_nbr_to_y, d_nbr_to_E, d_E_to_y); TRACE();
 
                 if(d_nbr_to_y < (d_nbr_to_E + d_E_to_y)){
 
                     sprintf(LOG, "Node : %s : Above inequality passed", S->node_name); TRACE();
+                    
                     /*Node has been added to extended p-space, no need to check for link protection
                      * as node-protecting node in extended pspace is automatically link protecting node for P2P links*/
-                    
                     if(IS_BIT_SET(spf_result_y->node->p_space_protection_type, LINK_PROTECTION)){
                         sprintf(LOG, "Node : %s : P node %s promoted from LINK_PROTECTION to LINK_NODE_PROTECTION through nbr %s", 
-                            S->node_name, spf_result_y->node->node_name, nbr_node->node_name); TRACE();
+                                S->node_name, spf_result_y->node->node_name, nbr_node->node_name); TRACE();
                     }
                     else{
                         sprintf(LOG, "Node : %s : P node %s status set to LINK_NODE_PROTECTION through nbr  %s",
-                            S->node_name, spf_result_y->node->node_name, nbr_node->node_name); TRACE();
+                                S->node_name, spf_result_y->node->node_name, nbr_node->node_name); TRACE();
                         singly_ll_add_node_by_val(ex_p_space, spf_result_y->node);
                     }
-                    
                     SET_BIT(spf_result_y->node->p_space_protection_type, LINK_NODE_PROTECTION);
-                    ITERATE_NODE_PHYSICAL_NBRS_BREAK(S, nbr_node, pn_node, level); /* We are done with spf_result_y->node, check for next*/
+                    continue;
                 }else{
                     sprintf(LOG, "Node : %s : Above inequality failed", S->node_name); TRACE();
                 }
@@ -315,35 +312,137 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S, edge_t *failed_edge
 
             /*Apply RFC 5286 Inequality 1 - loop free*/
             if(is_link_protection_enabled == TRUE){
-                 
+
                 /*Only link protection is enabled*/
                 d_nbr_to_S = DIST_X_Y(nbr_node, S, level);
-
                 sprintf(LOG, "Node : %s : Checking link protection inequality: S = %s, nbr = %s, Y = %s",
-                             S->node_name, S->node_name, nbr_node->node_name, spf_result_y->node->node_name); TRACE();
+                        S->node_name, S->node_name, nbr_node->node_name, spf_result_y->node->node_name); TRACE();
 
                 if(d_nbr_to_y < (d_nbr_to_S + d_S_to_y)){
-               
                     sprintf(LOG, "Node : %s : Above inequality passed",  S->node_name); TRACE();
-                     
                     SET_BIT(spf_result_y->node->p_space_protection_type, LINK_PROTECTION);
-
                     sprintf(LOG, "Node : %s : P-space node %s status set to LINK_PROTECTION through nbr  %s",
                             S->node_name, spf_result_y->node->node_name, nbr_node->node_name); TRACE();
                     singly_ll_add_node_by_val(ex_p_space, spf_result_y->node);
-                
-                    /* IF node protection is not enabled, spf_result_y->node will never be promoted to
-                     * node protecting PQ node through any nbr, hence, check for next node*/
-                    if(is_node_protection_enabled == FALSE) break;
                 }
                 else{
                     sprintf(LOG, "Node : %s : Above inequality failed",  S->node_name); TRACE();
                 }
             }
-        } ITERATE_NODE_PHYSICAL_NBRS_END(S, nbr_node, pn_node, level);
-    } ITERATE_LIST_END;
+        } ITERATE_LIST_END;
+    } ITERATE_NODE_PHYSICAL_NBRS_END(S, nbr_node, pn_node, level);
     return ex_p_space;
 }   
+
+
+/*As of now - premature code*/
+q_space_set_t
+p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *failed_edge, 
+                                          LEVEL level, p_space_set_t ex_p_space){
+
+    unsigned int d_S_to_E = 0,
+                 d_p_to_S = 0,
+                 d_p_to_E = 0,
+                 d_p_to_D = 0,
+                 d_E_to_D = 0,
+                 i        = 0;
+
+    node_t *E = failed_edge->to.node,
+           *p_node = NULL;
+
+    spf_result_t *D_res = NULL;
+    singly_ll_node_t *list_node = NULL,
+                     *list_node1 = NULL;
+
+    edge_end_t *S_E_oif_for_D = NULL;
+    assert(!is_broadcast_link(failed_edge, level));
+    
+    q_space_set_t pq_space = init_singly_ll();
+    singly_ll_set_comparison_fn(pq_space, instance_node_comparison_fn);
+    
+    /*Compute reverse SPF for nodes S and E as roots*/
+    inverse_topology(instance, level);
+    Compute_and_Store_Forward_SPF(S, level);
+    Compute_and_Store_Forward_SPF(E, level);
+    inverse_topology(instance, level);
+
+    d_S_to_E = DIST_X_Y(E, S, level);
+    
+    ITERATE_LIST_BEGIN(ex_p_space, list_node){
+        p_node = list_node->data;
+
+        assert(IS_BIT_SET(p_node->p_space_protection_type, LINK_PROTECTION) &&
+              IS_BIT_SET(p_node->p_space_protection_type, LINK_NODE_PROTECTION));
+
+        if(IS_BIT_SET(p_node->p_space_protection_type, LINK_PROTECTION)){
+            /*This node cannot provide node protection, check only link protection*/
+            d_p_to_S = DIST_X_Y(S, p_node, level); 
+            d_p_to_E = DIST_X_Y(E, p_node, level);
+            if(!(d_p_to_E < d_p_to_S + d_S_to_E)){
+                /*p node fails to provide link protection, this do not qualifies to be pq node*/
+                continue;    
+            }
+                /*Doesnt matter if p_node qualifies node protection criteria, it will be link protecting only*/
+                singly_ll_add_node_by_val(pq_space, p_node);
+                continue;
+        }
+
+        assert(IS_BIT_SET(p_node->p_space_protection_type, LINK_NODE_PROTECTION));
+        /*For node protection, Run the Forward SPF run on PQ nodes*/
+        Compute_and_Store_Forward_SPF(p_node, level);
+        /*Now inspect all Destinations which are impacted by the link*/
+        boolean is_dest_impacted = FALSE;
+        nh_type_t nh;
+
+        ITERATE_LIST_BEGIN( S->spf_run_result[level], list_node1){
+            is_dest_impacted = FALSE;
+            D_res = list_node1->data;
+            /*Check if this is impacted destination*/
+            if(is_all_nh_list_empty2(D_res->node, level))
+                continue;
+
+            ITERATE_NH_TYPE_BEGIN(nh){
+                for(i = 0; i < MAX_NXT_HOPS; i++){
+                    if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
+                        break;
+                    S_E_oif_for_D = D_res->next_hop[nh][i].oif;
+                    if(S_E_oif_for_D == &failed_edge->from){
+                        is_dest_impacted = TRUE;
+                        break;
+                    }
+                }
+                if(is_dest_impacted) break;
+            } ITERATE_NH_TYPE_END;
+
+            if(is_dest_impacted == FALSE)
+                continue;
+
+            /*Check if p_node provides node protection*/
+            d_p_to_D = DIST_X_Y(p_node, D_res->node, level);
+            d_E_to_D = DIST_X_Y(E, D_res->node, level);
+            if(d_p_to_D < d_p_to_E + d_E_to_D){
+                /*This node provides node protection to Destination D*/
+                singly_ll_add_node_by_val(pq_space, p_node);   
+                continue;
+            }
+
+            /*p_node fails to provide node protection, demote the p_node to LINK_PROTECTION
+             * if it provides atleast link protection to Destination D*/
+            d_p_to_S = DIST_X_Y(S, p_node, level);
+            d_p_to_E = DIST_X_Y(E, p_node, level);  
+            if(!(d_p_to_E < d_p_to_S + d_S_to_E)){
+                continue;
+            }
+
+            UNSET_BIT(p_node->p_space_protection_type, LINK_NODE_PROTECTION);
+            SET_BIT(p_node->p_space_protection_type, LINK_PROTECTION);
+            singly_ll_add_node_by_val(pq_space, p_node);
+        }ITERATE_LIST_END;
+    } ITERATE_LIST_END;
+    return pq_space; 
+}
+
+
 
 /* Note : here node is E, not S*/
 q_space_set_t
@@ -692,6 +791,22 @@ get_new_lfa(){
     lfa->protected_link = NULL;
     lfa->lfa = init_singly_ll();
     return lfa;
+}
+
+lfa_node_t *
+get_new_lfa_node(){
+
+    lfa_node_t *lfa_info = calloc(1, sizeof(lfa_node_t));
+    lfa_info->dst_lst = init_singly_ll();
+    return lfa_info;
+}
+
+void
+free_lfa_node(lfa_node_t *lfa_node){
+
+    delete_singly_ll(lfa_node->dst_lst);
+    free(lfa_node);
+    lfa_node = NULL;
 }
 
 void
@@ -1391,4 +1506,50 @@ compute_rlfa(node_t * S, edge_t *protected_link,
      else
          return broadcast_compute_link_node_protection_rlfas(S, protected_link, level, TRUE);
 }
+
+/*Comparison function for search*/
+
+boolean
+dst_lfa_db_t_search_comparison_fn(void *dst_lfa_db, void *dst){
+
+    if(((dst_lfa_db_t *)dst_lfa_db)->dst == (node_t *)dst)  return TRUE;
+    return FALSE;
+}
+
+
+dst_lfa_db_t *get_new_dst_lfa_db_node(){
+
+    dst_lfa_db_t *dst_lfa_db = calloc(1, sizeof(dst_lfa_db_t));
+    dst_lfa_db->alternates.lfas = init_singly_ll();
+    return dst_lfa_db;
+}
+
+void drain_dst_lfa_db_node(dst_lfa_db_t *dst_lfa_db){
+
+     singly_ll_node_t *list_node = NULL;
+     alt_node_t *alt_node = NULL;
+
+     ITERATE_LIST_BEGIN(dst_lfa_db->alternates.lfas, list_node){
+        alt_node = list_node->data;   
+        free(alt_node);
+        alt_node = NULL;
+     } ITERATE_LIST_END;
+}
+
+alt_node_t *get_new_alt_node(){
+
+    alt_node_t *alt_node = calloc(1, sizeof(alt_node_t));
+    return alt_node;
+}
+
+void collect_destination_lfa(dst_lfa_db_t *dst, alt_node_t *lfa){
+    singly_ll_add_node_by_val(dst->alternates.lfas, lfa);
+}
+
+
+void collect_destination_rlfa(dst_lfa_db_t *dst, alt_node_t *rlfa){
+    singly_ll_add_node_by_val(dst->alternates.rlfas, rlfa);
+}
+
+
 

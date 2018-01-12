@@ -151,7 +151,15 @@ create_new_edge(char *from_ifname,
         BIND_PREFIX(edge->from.prefix[LEVEL2], from_prefix);
         BIND_PREFIX(edge->to.prefix[LEVEL2], to_prefix);
     }
-
+    
+    if(IS_LEVEL_SET(level, LEVEL1)){
+        edge->from.lfas[level]  = NULL;
+        edge->from.rlfas[level] = NULL;
+    }
+    if(IS_LEVEL_SET(level, LEVEL2)){
+        edge->from.lfas[level]  = NULL;
+        edge->from.rlfas[level] = NULL;
+    }
     edge->level     = level;
     edge->from.dirn = EDGE_END_DIRN_UNKNOWN;
     edge->to.dirn   = EDGE_END_DIRN_UNKNOWN;

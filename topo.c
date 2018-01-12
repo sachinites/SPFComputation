@@ -121,7 +121,7 @@ build_multi_link_topo(){
 
 /*
  *                                                                +----------------+                  +------------+
- *+--------------+0/0 10.1.1.1          10           0/1 10.1.1.2 |                | 0/2      20.1.1.2|            |
+ *+--------------+0/0 10.1.1.1          8            0/1 10.1.1.2 |                | 0/2      20.1.1.2|            |
  *|              +------------------------------------------------+                +----------10------+            |
  *|              |                                                |                |20.1.1.1       0/0|     R2     |
  *|     R0       |                                                |      R1        |                  |            |
@@ -147,7 +147,7 @@ build_multi_link_topo(){
     prefix_t *prefix_30_1_1_1_24 = create_new_prefix("30.1.1.1", 24, LEVEL1);
     prefix_t *prefix_30_1_1_2_24 = create_new_prefix("30.1.1.2", 24, LEVEL1);
 
-    edge_t *R0_R1_edge1 = create_new_edge("eth0/0", "eth0/1", 10,
+    edge_t *R0_R1_edge1 = create_new_edge("eth0/0", "eth0/1", 8,
             prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL1);
 
     edge_t *R0_R1_edge2 = create_new_edge("eth0/1", "eth0/0", 10,

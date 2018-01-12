@@ -45,6 +45,7 @@ void singly_ll_set_order_comparison_fn(ll_t *ll, int (*order_comparison_fn)(void
 void * singly_ll_search_by_key(ll_t *ll, void *key);
 void copy_singly_ll(ll_t *src, ll_t *dst);
 ll_t * union_singly_ll(ll_t *list1, ll_t *list2);
+void singly_ll_delete_data_by_key(ll_t *list, void *key);
 
 /* delete safe loop*/
 #define ITERATE_LIST_BEGIN(list_ptr, node_ptr)                              \

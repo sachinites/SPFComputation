@@ -114,6 +114,8 @@ struct edge_end_{
     prefix_t * prefix[MAX_LEVEL];
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
     FLAG edge_config_flags;
+    ll_t *lfas[MAX_LEVEL];  /*Holds list of LFAs protecting this link*/
+    ll_t *rlfas[MAX_LEVEL]; /*Holds list of RLFAs protecting this link*/
 };
 
 typedef enum {
@@ -342,15 +344,15 @@ get_min_oif(node_t *node, node_t *node_nbr,
              else continue               
                                                                   
 #define ITERATE_NODE_PHYSICAL_NBRS_BREAK(_node, _nbr_node, __nbr_node, __level)              \
-    {__nbr_node = _node;       /* Just act as a flag*/                                        \
-    break;}
+            {__nbr_node = _node;       /* Just act as a flag*/                               \
+            break;}
              
 #define ITERATE_NODE_PHYSICAL_NBRS_END(_node, _nbr_node, __nbr_node, __level)                \
-                if(__nbr_node && __nbr_node->node_type[__level] != PSEUDONODE)               \
-                    break;                                                                   \
-                }                                                                            \
-                if(_node == __nbr_node) break;                                               \
-                }}while(0)
+            if(__nbr_node && __nbr_node->node_type[__level] != PSEUDONODE)                   \
+                break;                                                                       \
+            }                                                                                \
+            if(_node == __nbr_node) break;                                                   \
+            }}while(0)
 
 void
 attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end);

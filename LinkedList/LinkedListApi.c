@@ -330,3 +330,24 @@ singly_ll_delete_node_by_data_ptr(ll_t *ll, void *data){
     free(list_node);
     list_node = NULL;
 }
+
+#if 0
+void singly_ll_delete_data_by_key(ll_t *list, void *key){
+
+    singly_ll_node_t *list_node = NULL;
+    singly_ll_node_t *list_node_prev = NULL;
+    void *data = NULL;
+
+    ITERATE_LIST_BEGIN(list, list_node){
+        data = list_node->data;
+        if(list->comparison_fn(data, key) == 0){
+            list_node_prev = list_node;        
+            continue;
+        }
+
+        
+    }ITERATE_LIST_END;
+}
+#endif
+
+
