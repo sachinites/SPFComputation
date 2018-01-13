@@ -548,3 +548,66 @@ show_spf_initialization(node_t *spf_root, LEVEL level){
                     get_direct_next_hop_metric(phy_nbr->direct_next_hop[level][LSPNH][0], level));
    } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, phy_nbr, logical_nbr, level);
 }
+
+int
+debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+  node_t *node = NULL;
+  char *intf_name = NULL,
+       *node_name = NULL;
+  int i = 0;
+  edge_t *edge = NULL;
+  edge_end_t *edge_end = NULL;
+  tlv_struct_t *tlv = NULL;
+  LEVEL level_it = MAX_LEVEL; 
+
+  TLV_LOOP_BEGIN(tlv_buf, tlv){
+      if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+          node_name = tlv->value;
+      else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
+          intf_name = tlv->value;
+      else
+          assert(0);
+  } TLV_LOOP_END;
+  
+  node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+  
+  for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+      edge_end = node->edges[i];
+      if(!edge_end){
+          printf("%s() : Error : Interface %s do not exist\n", __FUNCTION__, intf_name);
+          return 0;
+      }
+
+      if(edge_end->dirn != OUTGOING)
+          continue;
+
+      if(strncmp(intf_name, edge_end->intf_name, strlen(edge_end->intf_name)))
+          continue;
+
+      edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+      break;
+  }
+
+  spf_result_t *D_res = NULL;
+  singly_ll_node_t *list_node = NULL;
+  char impact_reason[256];
+  boolean is_impacted;
+
+  for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+    
+    printf("Destinations Impact result for %s, PLR = %s, protected link = %s\n", 
+        get_str_level(level_it), node->node_name, edge_end->intf_name);
+
+    printf("Destination          Is Impacted             Reason\n");
+    printf("===============================================\n");
+    ITERATE_LIST_BEGIN(node->spf_run_result[level_it], list_node){
+        D_res = list_node->data;
+        memset(impact_reason , 0 , 256);
+        is_impacted = is_destination_impacted(node, edge, D_res->node, level_it, impact_reason);
+        printf(" %-20s     %-15s   %s\n", D_res->node->node_name, is_impacted ? "IMPACTED" : "NOT IMPACTED", impact_reason);
+    }ITERATE_LIST_END;
+    printf("\n");    
+  }
+  return 0;
+}

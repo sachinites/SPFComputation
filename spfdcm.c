@@ -1347,6 +1347,19 @@ spf_init_dcm(){
                         static param_t intf_name;
                         init_param(&intf_name, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
                         libcli_register_param(&interface, &intf_name);
+                        /* debug show instance node <node-name> interface <slot-no> impacted*/
+                        {
+                            static param_t impacted;
+                            init_param(&impacted, CMD, "impacted", 0, 0, INVALID, 0, "impacted");
+                            libcli_register_param(&intf_name, &impacted);
+                            /* debug show instance node <node-name> interface <slot-no> impacted destinations*/
+                            {
+                                static param_t destinations;
+                                init_param(&destinations, CMD, "destinations", debug_show_node_impacted_destinations, 0, INVALID, 0, "Destinations");
+                                libcli_register_param(&impacted, &destinations);
+                                set_param_cmd_code(&destinations, CMDCODE_DEBUG_SHOW_IMPACTED_DESTINATIONS);     
+                            }
+                        }
                         {
                             /*debug show instance node <node-name> interface <slot-no> lfa*/
                             static param_t lfa;

@@ -357,6 +357,87 @@ C is only PQ node.
 
 
 instance_t *
+build_ring_topo_7nodes(){
+
+#if 0
+For link S---E, there should be no LFA for non ECMP dest. For ECMP dest, only link protection LFA exists which is again rejected because destination has ECMP paths
+psp - AB, exp - ABC
+qsp - CD
+C is only PQ node.
+            
+               +----------+                              +----------+
+               |          |eth0/0                  eth0/1|          |
+               |          +------------------------------+          |
+               |    R0    |                              |   R1     |
+               |          |                              |          |
+               +----+-----+                              |          |
+                    |0/1                                 +---+------+
+                    |                                  eth0/0|
+                    |                                        |
+                    |                                        |
+                    |                                        |
+                    |                                        |    
+                    |0/0                                     |
+               +----+-----+                            eth0/1|
+               |          |                            +-----+-------+
+               |    R6    |                            |             |
+               |          |                            |             |
+               |          |                            |      R2     |
+               +----+-----+                            |             |
+                    |0/1                               |             |
+                    |                                  +------+------+
+                    |                                  eth0/0 |
+                    |                                         |
+                    |                                         |
+                    |                                         |
+                    |                                         |
+                    |                                         |eth0/1
+                    |0/0                                    +-+------+
+              +-----+----+         +-------+                |        |
+              |          |      0/0|       |eth0/1    eth0/0|        |
+              |   R5     +---------+  R4   +----------------+   R3   |
+              |          |0/1      |       |                |        |
+              |          |         |       |                |        |
+              +----------+         +-------+                +--------+
+
+#endif    
+
+    instance_t *instance = get_new_instance();
+
+    node_t *R0 = create_new_node(instance, "R0", AREA1, "192.168.0.1");
+    node_t *R1 = create_new_node(instance, "R1", AREA1, "192.168.0.2");
+    node_t *R2 = create_new_node(instance, "R2", AREA1, "192.168.0.3");
+    node_t *R3 = create_new_node(instance, "R3", AREA1, "192.168.0.4");
+    node_t *R4 = create_new_node(instance, "R4", AREA1, "192.168.0.5");
+    node_t *R5 = create_new_node(instance, "R5", AREA1, "192.168.0.6");
+    node_t *R6 = create_new_node(instance, "R6", AREA1, "192.168.0.7");
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30, LEVEL1), create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R0, R1, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("20.1.1.1", 30, LEVEL1), create_new_prefix("20.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R1, R2, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("30.1.1.1", 30, LEVEL1), create_new_prefix("30.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R2, R3, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("40.1.1.1", 30, LEVEL1), create_new_prefix("40.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R3, R4, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("50.1.1.1", 30, LEVEL1), create_new_prefix("50.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R4, R5, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("60.1.1.1", 30, LEVEL1), create_new_prefix("60.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R5, R6, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("60.1.1.1", 30, LEVEL1), create_new_prefix("60.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R6, R0, BIDIRECTIONAL);
+
+    set_instance_root(instance, R0);
+    return instance;
+}
+
+instance_t *
 build_cisco_example_topo(){
 
     /* https://www.cisco.com/c/en/us/support/docs/multiprotocol-label-switching-mpls/mpls/200370-Remote-Loop-Free-Alternate-Path-with-OSP.html*/

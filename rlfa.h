@@ -145,6 +145,9 @@ typedef struct alt_node_{
     edge_end_t *oif_to_lfa2;    /* In case proxy nbr is through PN : LFA - oif from PN to LFA, RLFA - oif from PN to nbr which is proxy for pq node*/
     node_t *pq_node_proxy;
     unsigned int root_metric;
+    char *rejection_reason;
+    char *policy_selection_reason;
+    boolean is_lfa_enabled;
 } alt_node_t;
 
 dst_lfa_db_t *get_new_dst_lfa_db_node();
@@ -274,5 +277,10 @@ compute_lfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down
 
 lfa_t *
 compute_rlfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
+
+boolean
+is_destination_impacted(node_t *S, edge_t *failed_edge,
+        node_t *D, LEVEL level,
+        char impact_reason[]);
 
 #endif /* __RLFA__ */

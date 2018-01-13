@@ -77,4 +77,6 @@
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE                38 /*debug show instance node <node-name> interface <slot-no> pqspace*/
 
 #define CMDCODE_SHOW_SPF_RUN_INIT                           39 /*show spf run level <level-no> [root <node-name>] init*/
+#define CMDCODE_DEBUG_SHOW_IMPACTED_DESTINATIONS            40 /*debug show instance node <node-name> interface <slot-no> impacted destination*/
+
 #endif /* __SPFCMDCODES__H */
