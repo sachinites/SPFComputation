@@ -599,8 +599,8 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
     printf("Destinations Impact result for %s, PLR = %s, protected link = %s\n", 
         get_str_level(level_it), node->node_name, edge_end->intf_name);
 
-    printf("Destination          Is Impacted             Reason\n");
-    printf("===============================================\n");
+    printf("Destination                 Is Impacted             Reason\n");
+    printf("=============================================================\n");
     ITERATE_LIST_BEGIN(node->spf_run_result[level_it], list_node){
         D_res = list_node->data;
         memset(impact_reason , 0 , 256);

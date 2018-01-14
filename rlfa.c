@@ -83,18 +83,14 @@ is_destination_impacted(node_t *S, edge_t *failed_edge,
     }ITERATE_NH_TYPE_END;
 
     if(nh_count == 0){
-        sprintf(LOG, "Node : %s, Dest %s has no Primary Nexthops. Not Impacted", S->node_name, D->node_name); TRACE();
         sprintf(impact_reason, "Dest %s has no Primary Nexthops", D->node_name);
         return FALSE;
     }
 
-    primary_nh = is_nh_list_empty2(&(D_res->next_hop[IPNH][0])) ? &(D_res->next_hop[LSPNH][0]):
-                 &(D_res->next_hop[IPNH][0]);
-
     if(nh_count == 1){
+        primary_nh = is_nh_list_empty2(&(D_res->next_hop[IPNH][0])) ? &(D_res->next_hop[LSPNH][0]):
+                                            &(D_res->next_hop[IPNH][0]);
         if(primary_nh->oif == &failed_edge->from){
-            sprintf(LOG, "Node : %s, Dest %s only primary nxt hop oif(%s) = failed_edge(%s). Impacted", 
-                S->node_name, D->node_name, primary_nh->oif->intf_name, failed_edge->from.intf_name); TRACE(); 
             sprintf(impact_reason, "Dest %s only primary nxt hop oif(%s) = failed_edge(%s)", 
                     D->node_name, primary_nh->oif->intf_name, failed_edge->from.intf_name);
             return TRUE;
@@ -103,8 +99,6 @@ is_destination_impacted(node_t *S, edge_t *failed_edge,
         if(IS_LINK_PROTECTION_ENABLED(failed_edge) &&
            !IS_LINK_NODE_PROTECTION_ENABLED(failed_edge)){
             /*D 's only primary nexthop is different from failed_edge*/
-            sprintf(LOG, "Node : %s, Dest %s only primary nxt hop oif(%s) != failed_edge(%s) AND Only LINK_PROTECTION Enabled. Not Impacted",
-                S->node_name, D->node_name, primary_nh->oif->intf_name, failed_edge->from.intf_name); TRACE();
             sprintf(impact_reason, "Dest %s only primary nxt hop oif(%s) != failed_edge(%s) AND Only LINK_PROTECTION Enabled",
                 D->node_name, primary_nh->oif->intf_name, failed_edge->from.intf_name);
             return FALSE;
@@ -114,8 +108,6 @@ is_destination_impacted(node_t *S, edge_t *failed_edge,
          * should not traverse E*/
         if(IS_LINK_NODE_PROTECTION_ENABLED(failed_edge)){
             if(primary_nh->node == E){
-                sprintf(LOG, "Node : %s, Dest %s only primary nxt hop node(%s) = failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled. Impacted",
-                    S->node_name, D->node_name, primary_nh->node->node_name, E->node_name); TRACE();
                 sprintf(impact_reason, "Dest %s only primary nxt hop node(%s) = failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
                     D->node_name, primary_nh->node->node_name, E->node_name);
                 return TRUE;
@@ -126,15 +118,11 @@ is_destination_impacted(node_t *S, edge_t *failed_edge,
             d_E_to_D = DIST_X_Y(E, D, level);
 
             if(d_prim_nh_to_D < d_prim_nh_to_E + d_E_to_D){
-                sprintf(LOG, "Node : %s, Dest %s only primary nxt hop node(%s) do not traverse failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled. Not Impacted",
-                    S->node_name, D->node_name, primary_nh->node->node_name, E->node_name); TRACE();
                 sprintf(impact_reason, "Dest %s only primary nxt hop node(%s) do not traverse failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
                     D->node_name, primary_nh->node->node_name, E->node_name);
                 return FALSE;
             }
             else{
-                sprintf(LOG, "Node : %s, Dest %s only primary nxt hop node(%s) traverses failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled. Not Impacted",
-                    S->node_name, D->node_name, primary_nh->node->node_name, E->node_name); TRACE();
                 sprintf(impact_reason, "Dest %s only primary nxt hop node(%s) traverses failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
                     D->node_name, primary_nh->node->node_name, E->node_name);
                 return TRUE;    
@@ -145,9 +133,7 @@ is_destination_impacted(node_t *S, edge_t *failed_edge,
     if(nh_count > 1){
         if(IS_LINK_PROTECTION_ENABLED(failed_edge) &&
                 !IS_LINK_NODE_PROTECTION_ENABLED(failed_edge)){
-            sprintf(LOG, "Node : %s, Dest %s has ECMP primary nxt hop count = %u AND Only LINK_PROTECTION Enabled. Not Impacted",
-                         S->node_name, D->node_name, nh_count); TRACE();
-            sprintf(impact_reason, "DDest %s has ECMP primary nxt hop count = %u AND Only LINK_PROTECTION Enabled",
+            sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u AND Only LINK_PROTECTION Enabled",
                         D->node_name, nh_count);
             return FALSE;/*ECMP case with only link protection*/
                 
@@ -157,23 +143,19 @@ is_destination_impacted(node_t *S, edge_t *failed_edge,
             ITERATE_NH_TYPE_BEGIN(nh){
                 for(i = 0; i < MAX_NXT_HOPS; i++){
                     primary_nh = &D_res->next_hop[nh][i];
-                    if(is_nh_list_empty2(&(D_res->next_hop[IPNH][i])))
+                    if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
                         break;
                     d_prim_nh_to_D = DIST_X_Y(primary_nh->node, D, level);
                     d_prim_nh_to_E = DIST_X_Y(primary_nh->node, E, level);
                     d_E_to_D = DIST_X_Y(E, D, level);
                     /*Atleast one primary nxt hop do not traverse E, ECMP case*/
                     if(d_prim_nh_to_D < d_prim_nh_to_E + d_E_to_D){
-                        sprintf(LOG, "Node : %s, Dest %s has ECMP primary nxt hop count = %u, but primary nxt hop node(%s) do not traverse failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled. Not Impacted",
-                             S->node_name, D->node_name, nh_count, primary_nh->node->node_name, E->node_name); TRACE();
                         sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u, but primary nxt hop node(%s) do not traverse failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
                             D->node_name, nh_count, primary_nh->node->node_name, E->node_name);
                         return FALSE;
                     }
                 }
             }ITERATE_NH_TYPE_END;
-            sprintf(LOG, "Node : %s, Dest %s has ECMP primary nxt hop count = %u, but all primary nxt hop nodes traverses failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled. Impacted",
-                S->node_name, D->node_name, nh_count, E->node_name); TRACE();
             sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u, but all primary nxt hop nodes traverses failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
                 D->node_name, nh_count, E->node_name);
             return TRUE;
