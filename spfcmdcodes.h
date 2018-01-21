@@ -79,4 +79,5 @@
 #define CMDCODE_SHOW_SPF_RUN_INIT                           39 /*show spf run level <level-no> [root <node-name>] init*/
 #define CMDCODE_DEBUG_SHOW_IMPACTED_DESTINATIONS            40 /*debug show instance node <node-name> interface <slot-no> impacted destination*/
 
+#define CMDCODE_CONFIG_NODE_LINK_DEGRADATION                41 /*config node <node-name> backup-spf-options node-link-degradation*/
 #endif /* __SPFCMDCODES__H */

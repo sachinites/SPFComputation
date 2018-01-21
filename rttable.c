@@ -216,8 +216,8 @@ show_routing_table(rttable *rttable){
                  total_nx_hops = 0;
 
     printf("Table %s\n", rttable->table_name);
-    printf("Destination           Version        Metric       Level   Gateway          Nxt-Hop          OIF         Backup\n");
-    printf("----------------------------------------------------------------------------------------------------------------\n");
+    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop        OIF         Backup Score\n");
+    printf("------------------------------------------------------------------------------------------------------------------------\n");
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 

@@ -77,6 +77,14 @@ is_destination_impacted(node_t *S, edge_t *failed_edge,
                  d_E_to_D       = 0,
                  i = 0;
 
+    assert(IS_LEVEL_SET(failed_edge->level, level));
+
+    if(!IS_LINK_PROTECTION_ENABLED(failed_edge) &&
+            !IS_LINK_NODE_PROTECTION_ENABLED(failed_edge)){
+        printf("No protection enabled on the link\n");
+        return FALSE;
+    }
+
     D_res = GET_SPF_RESULT((&S->spf_info), D, level);
     ITERATE_NH_TYPE_BEGIN(nh){
         nh_count += get_nh_count(&(D_res->next_hop[nh][0]));

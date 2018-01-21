@@ -1025,11 +1025,25 @@ spf_init_dcm(){
         libcli_register_param(&config_node, &config_node_node_name);
 
         /*config node <node-name> backup-spf-options*/
+        
         {
             static param_t backup_spf_options;
-            init_param(&backup_spf_options, CMD, "backup-spf-options", instance_node_config_handler, 0, INVALID, 0, "Enable|Disable RLFA computation");
+            init_param(&backup_spf_options, CMD, "backup-spf-options", 0, 0, INVALID, 0, "Configure backup spf options");
             libcli_register_param(&config_node_node_name, &backup_spf_options);
-            set_param_cmd_code(&backup_spf_options, CMDCODE_CONFIG_NODE_REMOTE_BACKUP_CALCULATION);
+            {
+                /*config node <node-name> backup-spf-options remote_backup_calculation*/
+                static param_t remote_backup_calculation;
+                init_param(&remote_backup_calculation, CMD, "remote-backup-calculation", instance_node_config_handler, 0, INVALID, 0, "Enable|Disable RLFA computation");
+                libcli_register_param(&backup_spf_options, &remote_backup_calculation);
+                set_param_cmd_code(&remote_backup_calculation, CMDCODE_CONFIG_NODE_REMOTE_BACKUP_CALCULATION);
+            }
+            {
+                /*config node <node-name> backup-spf-options node-link-degradation*/
+                static param_t node_link_degradation;
+                init_param(&node_link_degradation, CMD, "node-link-degradation", instance_node_config_handler, 0, INVALID, 0, "Enable|Disable Node link Degradation");
+                libcli_register_param(&backup_spf_options, &node_link_degradation);
+                set_param_cmd_code(&node_link_degradation, CMDCODE_CONFIG_NODE_LINK_DEGRADATION);
+            }
         }
 
         static param_t config_node_node_name_slot;

@@ -595,7 +595,9 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
   boolean is_impacted;
 
   for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
-    
+
+    if(!IS_LEVEL_SET(edge->level, level_it)) continue;
+
     printf("Destinations Impact result for %s, PLR = %s, protected link = %s\n", 
         get_str_level(level_it), node->node_name, edge_end->intf_name);
 
@@ -607,7 +609,6 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
         is_impacted = is_destination_impacted(node, edge, D_res->node, level_it, impact_reason);
         printf(" %-20s     %-15s   %s\n", D_res->node->node_name, is_impacted ? "IMPACTED" : "NOT IMPACTED", impact_reason);
     }ITERATE_LIST_END;
-    printf("\n");    
   }
   return 0;
 }
