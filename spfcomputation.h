@@ -33,6 +33,7 @@
 #ifndef __SPFCOMPUTATION__
 #define __SPFCOMPUTATION__
 
+#include "instanceconst.h"
 
 /*-----------------------------------------------------------------------------
  *  Do not #include graph.h in this file, as it will create circular dependency.
@@ -48,15 +49,21 @@ typedef struct edge_end_ edge_end_t;
 
 typedef struct internal_nh_t_{
     LEVEL level;
-    edge_end_t *oif;    /*caching oif is enough to keep track of primary nexthops and backup LFAs*/
-    node_t *node;       /*This info is valid if this structure represents RLFAs*/
+    edge_end_t *oif;    
+    node_t *node; 
     char gw_prefix[PREFIX_LEN + 1];
+    nh_type_t nh_type;
+    /*Fields valid if nexthop is a LFA/RLFA*/
+    lfa_type_t lfa_type;
+    node_t *proxy_nbr;
+    node_t *rlfa;
+    unsigned int ldplabel;
 } internal_nh_t;
 
 /*macros to operate on above internal_nh_t DS*/
 
 #define next_hop_type(_internal_nh_t)                \
-    ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->etype)
+    (_internal_nh_t.nh_type)
 
 #define get_direct_next_hop_metric(_internal_nh_t, _level)  \
     ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->metric[_level])
@@ -80,16 +87,29 @@ typedef struct internal_nh_t_{
 #define intialize_internal_nh_t(_internal_nh_t, _level, _oif_edge, _node)  \
     _internal_nh_t.level = _level;                                         \
     _internal_nh_t.oif   = &_oif_edge->from;                               \
-    _internal_nh_t.node  = _node;
+    _internal_nh_t.node  = _node;                                          \
+    _internal_nh_t.nh_type = _oif_edge->etype;                             \
+    _internal_nh_t.lfa_type = UNKNOWN_LFA_TYPE;                            \
+    _internal_nh_t.proxy_nbr = NULL;                                       \
+    _internal_nh_t.rlfa = NULL;                                            \
+    _internal_nh_t.ldplabel = 0
 
 #define copy_internal_nh_t(_src, _dst)    \
     (_dst).level = (_src).level;          \
     (_dst).oif   = (_src).oif;            \
     (_dst).node  = (_src).node;           \
-    set_next_hop_gw_pfx((_dst), (_src).gw_prefix)
+    set_next_hop_gw_pfx((_dst), (_src).gw_prefix);      \
+    (_dst).nh_type = (_src).nh_type;                    \
+    (_dst).lfa_type = (_src).lfa_type;                  \
+    (_dst).proxy_nbr = (_src).proxy_nbr;                \
+    (_dst).rlfa = (_src).rlfa;                          \
+    (_dst).ldplabel = (_src).ldplabel
 
-#define is_internal_nh_t_equal(_nh1, _nh2)  \
-    (_nh1.level == _nh2.level && _nh1.node == _nh2.node && _nh1.oif == _nh2.oif)
+#define is_internal_nh_t_equal(_nh1, _nh2)                   \
+    (_nh1.level == _nh2.level && _nh1.node == _nh2.node &&   \
+    _nh1.oif == _nh2.oif && _nh1.nh_type == _nh2.nh_type &&  \
+    _nh1.lfa_type == _nh2.lfa_type && _nh1.proxy_nbr && _nh2.proxy_nbr && \
+    _nh1.rlfa == _nh2.rlfa && _nh1.ldplabel == _nh2.ldplabel)
 
 #define is_internal_nh_t_empty(_nh) \
     (_nh.node == NULL && _nh.oif == NULL)

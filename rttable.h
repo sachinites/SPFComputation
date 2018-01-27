@@ -42,6 +42,10 @@ typedef struct nh_t_{
     char oif[IF_NAME_SIZE];
     char nh_name[NODE_NAME_SIZE];
     char gwip[PREFIX_LEN + 1];
+    lfa_type_t lfa_type;
+    char proxy_nbr_name[NODE_NAME_SIZE];
+    char rlfa_name[NODE_NAME_SIZE];
+    unsigned int ldplabel;
 }nh_t;
 
 typedef struct rttable_entry_{

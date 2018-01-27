@@ -234,21 +234,13 @@ is_same_next_hop(internal_nh_t *nxt_hop, nh_t *nh){
     /*Compare the fields of internal nexthop with what is installed in routing table*/
 
     nh_type_t nh_type;
-    edge_type_t etype;
 
     if(strncmp(next_hop_oif_name((*nxt_hop)), nh->oif, IF_NAME_SIZE))
         return FALSE;
     if(strncmp(nxt_hop->node->node_name, nh->nh_name, NODE_NAME_SIZE))
         return FALSE;
     
-    etype = next_hop_type((*nxt_hop));
-
-    if(etype == UNICAST)
-        nh_type = IPNH;
-    else if(etype == LSP)
-        nh_type = LSPNH;
-    else
-        assert(0);
+    nh_type = next_hop_type((*nxt_hop));
 
     if(nh_type != nh->nh_type)
         return FALSE;

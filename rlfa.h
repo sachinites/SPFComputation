@@ -44,31 +44,6 @@ typedef ll_t * pq_space_set_t;
 typedef struct _node_t node_t;
 typedef struct _edge_t edge_t;
 
-typedef enum{
-
-    /* when protected link is P2P*/
-    LINK_PROTECTION_LFA,    /*Ineq 1 only*/
-    LINK_PROTECTION_LFA_DOWNSTREAM, /*Ineq 1 and 2 only*/
-    LINK_AND_NODE_PROTECTION_LFA, /*Ineq 1 2 and 3 only*/
-
-    /*When protected Link is Broadcast Link*/
-    BROADCAST_LINK_PROTECTION_LFA, /*Ineq 1 and 4*/
-    BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM,/*Ineq 1 2 and 4*/
-    BROADCAST_ONLY_NODE_PROTECTION_LFA, /*Ineq 1 2 and 3 and N is reachable from S through protected link, this LFA is not loop free wrt to LAN segment it can pump the traffic back into LAN segment*/
-    BROADCAST_LINK_AND_NODE_PROTECTION_LFA,/*(Ineq 1 2 and 3 and N is reachable from S from link other than protected link) OR (Ineq 1 2 3 4)*/
-
-    /*RLFA cases*/
-    LINK_PROTECTION_RLFA,
-    LINK_PROTECTION_RLFA_DOWNSTREAM,
-    LINK_AND_NODE_PROTECTION_RLFA,
-    
-    /*When protected Link is Broadcast Link*/
-    BROADCAST_LINK_PROTECTION_RLFA,
-    BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM,
-    BROADCAST_LINK_AND_NODE_PROTECTION_RLFA,
-    UNKNOWN_LFA_TYPE
-} lfa_type_t;
-
 /*Flags to enable the type of protection enabled on protected link*/
 #define LINK_PROTECTION         0
 #define LINK_NODE_PROTECTION    1
