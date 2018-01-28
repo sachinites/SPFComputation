@@ -57,6 +57,8 @@ init_back_up_computation(node_t *S, LEVEL level){
        res->node->p_space_protection_type = 0;
        res->node->q_space_protection_type = 0;
    } ITERATE_LIST_END;
+
+   clear_lfa_result(S, level);
 }
 
 /*It should work for both broadcast and non-broadcast links*/
@@ -1307,19 +1309,54 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
     lfa->protected_link = &protected_link->from;
 
       ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, pn_node, edge1, edge2, level){
+    
+        loop_free_alt_t *lfa_data = calloc(1, sizeof(loop_free_alt_t));
+        lfa_data->protected_link = &protected_link->from;
+        lfa_data->backup_nxt_hop = calloc(1, sizeof(internal_nh_t));
 
         sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s, edge2 = %s for LFA candidature",
                 S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
 
         /*Do not consider the link being protected to find LFA*/
-        if(N == E && edge1 == protected_link){
+        if(edge1 == protected_link){
             sprintf(LOG, "Node : %s : Nbr %s with OIF %s is same as protected link %s, skipping this nbr from LFA candidature", 
                     S->node_name, N->node_name, edge1->from.intf_name, protected_link->from.intf_name); TRACE();
+            
+            strncpy(lfa_data->rejection_reason, "LFA is same as Primary next hop", sizeof(lfa_data->rejection_reason));
+            lfa_data->is_lfa_enabled = FALSE;
+            lfa_data->destination = NULL;
+            lfa_data->backup_nxt_hop->level = level;
+            lfa_data->backup_nxt_hop->oif = &edge1->from;
+            lfa_data->backup_nxt_hop->node = N;
+            set_next_hop_gw_pfx((*lfa_data->backup_nxt_hop), edge2->to.prefix[level]->prefix);
+            lfa_data->backup_nxt_hop->nh_type = edge2->etype == UNICAST ? IPNH : LSPNH; 
+            lfa_data->backup_nxt_hop->lfa_type = NO_LFA;
+            lfa_data->backup_nxt_hop->proxy_nbr = NULL;
+            lfa_data->backup_nxt_hop->rlfa = NULL;
+            lfa_data->backup_nxt_hop->root_metric = DIST_X_Y(S, N, level);
+            lfa_data->backup_nxt_hop->dest_metric = 0;/*Not possible to compute here*/
+            lfa_data->backup_nxt_hop->ldplabel = 0;
+            RECORD_LFA(S, lfa_data, level);
             ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
         }
 
         if(IS_OVERLOADED(N, level)){
             sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
+            strncpy(lfa_data->rejection_reason, "Overload", strlen("Overload"));
+            lfa_data->is_lfa_enabled = FALSE;
+            lfa_data->destination = NULL;
+            lfa_data->backup_nxt_hop->level = level;
+            lfa_data->backup_nxt_hop->oif = &edge1->from;
+            lfa_data->backup_nxt_hop->node = N;
+            set_next_hop_gw_pfx((*lfa_data->backup_nxt_hop), edge2->to.prefix[level]->prefix);
+            lfa_data->backup_nxt_hop->nh_type = edge2->etype == UNICAST ? IPNH : LSPNH; 
+            lfa_data->backup_nxt_hop->lfa_type = NO_LFA;
+            lfa_data->backup_nxt_hop->proxy_nbr = NULL;
+            lfa_data->backup_nxt_hop->rlfa = NULL;
+            lfa_data->backup_nxt_hop->root_metric = DIST_X_Y(S, N, level);
+            lfa_data->backup_nxt_hop->dest_metric = 0;/*Not possible to compute here*/
+            lfa_data->backup_nxt_hop->ldplabel = 0;
+            RECORD_LFA(S, lfa_data, level);
             ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
         }
 
@@ -1507,32 +1544,23 @@ print_lfa_info(lfa_t *lfa){
 }
 
 void
-clear_lfa_result(node_t *node){
+clear_lfa_result(node_t *node, LEVEL level){
 
-    singly_ll_node_t *list_node = NULL,
-                     *list_node1 = NULL;
-    lfa_dest_pair_t *lfa_dest_pair = NULL;
-    lfa_t *lfa = NULL;
+    singly_ll_node_t *list_node = NULL;
+    loop_free_alt_t *lfa = NULL;
 
-    ITERATE_LIST_BEGIN(node->link_protection_lfas, list_node){
+    ITERATE_LIST_BEGIN(node->lfa_list[level], list_node){
 
         lfa = list_node->data;
-
-        ITERATE_LIST_BEGIN(lfa->lfa, list_node1){
-
-            lfa_dest_pair = list_node1->data;
-            free(lfa_dest_pair);
-            lfa_dest_pair = NULL;
-        } ITERATE_LIST_END;
-
-        delete_singly_ll(lfa->lfa);
-        free(lfa->lfa);
+        free(lfa->backup_nxt_hop);
+        lfa->backup_nxt_hop = NULL;
+        free(lfa);
+        lfa = NULL;
     } ITERATE_LIST_END;
 
-    delete_singly_ll(node->link_protection_lfas);
-    free(node->link_protection_lfas);
-    node->link_protection_lfas = NULL;
+    delete_singly_ll(node->lfa_list[level]);
 }
+
 
 lfa_t *
 compute_lfa(node_t * S, edge_t *protected_link,

@@ -85,6 +85,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
         node->self_spf_result[level] = init_singly_ll();
         singly_ll_set_comparison_fn(node->self_spf_result[level], 
                         self_spf_run_result_comparison_fn);
+        node->lfa_list[level] = init_singly_ll();
     }
 
     node->spf_info.routes_list = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/

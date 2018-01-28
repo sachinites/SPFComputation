@@ -591,7 +591,7 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
 
   spf_result_t *D_res = NULL;
   singly_ll_node_t *list_node = NULL;
-  char impact_reason[256];
+  char impact_reason[STRING_REASON_LEN];
   boolean is_impacted;
 
   for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){

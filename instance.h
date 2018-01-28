@@ -59,7 +59,7 @@ typedef struct _node_t{
     internal_nh_t backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     internal_nh_t old_backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     internal_nh_t direct_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
-
+    ll_t *lfa_list[MAX_LEVEL];
     edge_end_t *pn_intf[MAX_LEVEL];
 
     ll_t *local_prefix_list[MAX_LEVEL];

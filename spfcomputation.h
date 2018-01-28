@@ -58,6 +58,8 @@ typedef struct internal_nh_t_{
     node_t *proxy_nbr;
     node_t *rlfa;
     unsigned int ldplabel;
+    unsigned int root_metric;
+    unsigned int dest_metric;
 } internal_nh_t;
 
 /*macros to operate on above internal_nh_t DS*/

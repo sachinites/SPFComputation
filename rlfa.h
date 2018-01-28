@@ -137,11 +137,26 @@ boolean dst_lfa_db_t_search_comparison_fn(void *dst_lfa_db, void *dst);
 
 /*Attemp 3 end*/
 
+/*Attempt 4*/
+typedef struct loop_free_alt_{
+    char rejection_reason[STRING_REASON_LEN];
+    boolean is_lfa_enabled;
+    edge_end_t *protected_link;
+    node_t *destination;
+    internal_nh_t *backup_nxt_hop;
+} loop_free_alt_t;
+
+#define GET_LFA_NODE_FROM_BACKUP_NH(internal_nh_t_ptr)  \
+    (loop_free_alt_t *)((char *)internal_nh_t_ptr - (char *)&((loop_free_alt_t *)0->backup))
+
+#define RECORD_LFA(node_ptr, loop_free_alt_t_ptr, _lvl)   \
+    singly_ll_add_node_by_val(node_ptr->lfa_list[_lvl], loop_free_alt_t_ptr)
+
 void
 free_lfa_node(lfa_node_t *lfa_node);
 
 void
-clear_lfa_result(node_t *node);
+clear_lfa_result(node_t *node, LEVEL level);
 
 void
 free_lfa();
