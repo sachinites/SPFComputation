@@ -160,13 +160,17 @@ is_destination_impacted(node_t *S, edge_t *failed_edge,
                     d_E_to_D = DIST_X_Y(E, D, level);
                     /*Atleast one primary nxt hop do not traverse E, ECMP case*/
                     if(d_prim_nh_to_D < d_prim_nh_to_E + d_E_to_D){
-                        sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u, but primary nxt hop node(%s) do not traverse failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
+                        sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u," 
+                            "but primary nxt hop node(%s) do not traverse failed_edge next hop"
+                            "node (%s) AND LINK_NODE_PROTECTION Enabled",
                             D->node_name, nh_count, primary_nh->node->node_name, E->node_name);
                         return FALSE;
                     }
                 }
             }ITERATE_NH_TYPE_END;
-            sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u, but all primary nxt hop nodes traverses failed_edge next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
+            sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u,"
+                    "but all primary nxt hop nodes traverses failed_edge next hop"
+                    "node (%s) AND LINK_NODE_PROTECTION Enabled",
                 D->node_name, nh_count, E->node_name);
             return TRUE;
         }
@@ -966,358 +970,34 @@ get_str_lfa_type(lfa_type_t lfa_type){
     }
 }
 
-static boolean
-is_nbr_reachable_via_same_broadcast_link(node_t *S, 
-                                        node_t *nbr, 
-                                        edge_t *broadcast_link){
-    nh_type_t nh;
-    unsigned int i = 0;
-    spf_result_t *nbr_res = NULL; 
-    LEVEL level = broadcast_link->level;
-    edge_end_t *oif = NULL;
-
-    nbr_res = GET_SPF_RESULT((&S->spf_info), nbr, level);
-
-    ITERATE_NH_TYPE_BEGIN(nh){
-        for(i = 0; i < MAX_NXT_HOPS; i++){
-            if(is_nh_list_empty2(&(nbr_res->next_hop[nh][i])))
-                break;
-            oif = nbr_res->next_hop[nh][i].oif;
-            if(broadcast_link->to.node == oif->node)
-                return TRUE;
-        }
-    } ITERATE_NH_TYPE_END;
-    return FALSE;
-}
-
 /* In case of LFAs, the LFA is promoted to Node protecting LFA if they
  * meet the node protecting criteria*/
 
-/* Algorithm
+/* Algorithm revised
  
  * if N is node protecting LFA (ineq 1 2 and 3)
- *   if N is not reachable via same PN
+ *   N is BROADCAST_ONLY_NODE_PROTECTION_LFA
+ *   if N satisfies ineq 4 and N do not traverse PN from S
  *      N is BROADCAST_LINK_AND_NODE_PROTECTION_LFA
  *      return
  *   else
- *      if N  loop free with res to PN (ineq 4)
- *          N is BROADCAST_LINK_AND_NODE_PROTECTION_LFA
- *          return
- *      else
- *          N is BROADCAST_ONLY_NODE_PROTECTION_LFA
- *          return
+ *      N BROADCAST_ONLY_NODE_PROTECTION_LFA 
+ *      return
  * else
- *      if LINK PROTECTION is not enabled
- *          N is not LFA
- *          return
- *      if N satisfies inequality 1 and 4
- *         N is BROADCAST_LINK_PROTECTION_LFA
- *         if N satisfies inequality 2
- *              N is BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM
- *         return
- *      else
- *         N is not LFA
- *         return
+ *   if LINK PROTECTION is not enabled
+ *      N is not LFA
+ *      return
+ *   if N satisfies ineq 4 and N do not traverse PN from S
+ *      N is BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM
+ *      return
+ *   else
+ *      N is not LFA
+ *      return 
+ *
  * */
 
-static lfa_t *
-broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link, 
-                           LEVEL level, 
-                           boolean strict_down_stream_lfa){
-
-
-    node_t *PN = NULL, 
-    *N = NULL, 
-    *D = NULL,
-    *E = NULL,
-    *pn_node = NULL;
-
-    edge_t *edge1 = NULL, 
-            *edge2 = NULL;
-
-    spf_result_t *D_res = NULL;
-    singly_ll_node_t *list_node = NULL;
-    boolean LFA_reach_via_broadcast_link = FALSE,
-            is_node_protection_qualified = TRUE;
-    edge_end_t *S_E_oif_for_D = NULL;
-
-    nh_type_t nh = NH_MAX;
-
-    unsigned int dist_N_D  = 0, 
-                 dist_N_S  = 0, 
-                 dist_S_D  = 0,
-                 dist_PN_D = 0,
-                 dist_N_PN = 0,
-                 dist_N_E  = 0,
-                 dist_E_D  = 0,
-                 nh_count = 0,
-                 i = 0;
-
-    lfa_dest_pair_t *lfa_dest_pair = NULL;
-
-    assert(is_broadcast_link(protected_link, level));
-    boolean is_dest_impacted = FALSE;
-    lfa_t *lfa = get_new_lfa();
-    lfa->protected_link = &protected_link->from;
-
-    PN = protected_link->to.node;
-    Compute_and_Store_Forward_SPF(PN, level);  
-
-    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, pn_node, edge1, edge2, level){
-
-        if(edge1 == protected_link){
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-        }
-
-        sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature",/*Strange : adding edge2 in log solves problem of this macro looping*/ 
-                S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
-
-        if(IS_OVERLOADED(N, level)){
-            sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-        }
-
-        dist_N_S = DIST_X_Y(N, S, level);
-        dist_N_PN =  DIST_X_Y(N, PN, level);
-
-        /* Note : This needs attention, this is incomplete test*/
-        if(is_broadcast_member_node(S, protected_link, N , level))
-            LFA_reach_via_broadcast_link = TRUE;
-
-        sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s reachability via broadcast link : %s",
-                S->node_name,  S->node_name, N->node_name, LFA_reach_via_broadcast_link ? "TRUE": "FALSE"); TRACE(); 
-
-        ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node){
-
-            D_res = list_node->data;
-            D = D_res->node;
-
-            if(D == S) continue;
-
-            ITERATE_NH_TYPE_BEGIN(nh){
-                nh_count += get_nh_count(&(D_res->next_hop[nh][0]));
-            }ITERATE_NH_TYPE_END;
-
-            /* Early return check*/
-            if(nh_count > 1 && 
-                    IS_LINK_PROTECTION_ENABLED(protected_link)   && 
-                    !IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-
-                sprintf(LOG, "Node : %s : Dest %s has %u ECMP nexthops and only LINK_PROTECTION is enabled, "
-                        "link protection LFA will not be computed for this Dest", S->node_name, D->node_name, nh_count); TRACE();
-                continue;
-            }
-
-            is_dest_impacted = FALSE;
-
-            sprintf(LOG, "Node : %s : Checking if Destination %s is impacted by protected link %s",
-                    S->node_name, D->node_name, protected_link->from.intf_name); TRACE();
-
-            ITERATE_NH_TYPE_BEGIN(nh){
-                for(i = 0; i < MAX_NXT_HOPS; i++){
-                    if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
-                        break;
-                    S_E_oif_for_D = D_res->next_hop[nh][i].oif; 
-                    if(S_E_oif_for_D == &protected_link->from){
-                        is_dest_impacted = TRUE;
-                        break;
-                    }
-                }
-                if(is_dest_impacted) break;
-            } ITERATE_NH_TYPE_END;
-
-            if(is_dest_impacted == FALSE){
-                sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, NOT IMPACTED, skipping this Destination", 
-                        S->node_name, S->node_name, N->node_name, D->node_name); TRACE();
-                continue;
-            }
-
-            E = D_res->next_hop[nh][i].node;
-            sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = %s(IMPACTED)", 
-                    S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
-
-            dist_N_D = DIST_X_Y(N, D, level);
-            dist_S_D = D_res->spf_metric;
-
-            /* Apply inequality 1*/
-            sprintf(LOG, "Node : %s : Testing inequality 1 : dist_N_D(%u) < dist_N_S(%u) + dist_S_D(%u)",
-                    S->node_name, dist_N_D, dist_N_S, dist_S_D); TRACE();
-
-            if(!(dist_N_D < dist_N_S + dist_S_D)){
-                sprintf(LOG, "Node : %s : Inequality 1 failed", S->node_name); TRACE();
-                continue;
-            }
-
-            sprintf(LOG, "Node : %s : Inequality 1 passed", S->node_name); TRACE();
-
-            dist_PN_D = DIST_X_Y(PN, D, level);
-
-            sprintf(LOG, "Node : %s : Testing inequality 4 : dist_N_D(%u) < dist_N_PN(%u) + dist_PN_D(%u)",
-                    S->node_name, dist_N_D, dist_N_PN, dist_PN_D); TRACE();
-
-            /*Apply inequality 4*/
-            if(dist_N_D < dist_N_PN + dist_PN_D){
-                sprintf(LOG, "Node : %s : Inequality 4 passed, LFA created with %s", 
-                        S->node_name, get_str_lfa_type(BROADCAST_LINK_PROTECTION_LFA)); TRACE();
-
-                lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
-                lfa_dest_pair->lfa_type = BROADCAST_LINK_PROTECTION_LFA;
-                lfa_dest_pair->lfa = N;
-                lfa_dest_pair->oif_to_lfa = &edge1->from;
-                lfa_dest_pair->dest = D;
-
-                /*Record the LFA*/
-                singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
-
-                /*Apply inequality 2*/
-
-                /* Inequality 2 has been controlled by additon boolean argument because, inequality should be
-                 * explicitely applied under administrator's control. Inequality 2 has following drawbacks :
-                 * 1. It drastically reduces the LFA coverage
-                 * 2. It helps in avoid microloops only when multiple link fails at the same time, What is the probablity when multiple link
-                 * failures happen at the same time
-                 * 3. It helps in avoid microloops when node completely fails, and in specific topologies
-                 *
-                 * I feel the drawbacks of this inequality weighs far more than benefits we get from it. We are not totally discarding this
-                 * inequality from implementation, but giving explitely knob if admin wants to harness the advantages Or disadvantages
-                 * of this inequality at his own will
-                 * */
-
-                if(strict_down_stream_lfa){
-                    /* 4. Narrow down the subset further using inequality 2 */
-
-                    sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
-                            S->node_name, dist_N_D, dist_S_D); TRACE();
-
-                    if(!(dist_N_D < dist_S_D)){
-                        sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
-                        continue;
-                    }
-
-                    sprintf(LOG, "Node : %s : Inequality 2 passed, LFA promoted from %s to %s", S->node_name, 
-                            get_str_lfa_type(lfa_dest_pair->lfa_type), get_str_lfa_type(BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM)); TRACE(); 
-                    lfa_dest_pair->lfa_type = BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM;
-
-
-                    /* Inequality 3 : Node protecting LFA  - this inequality should be satisfied by all 
-                     * ECMP next hops E of Destination D*/
-
-                    is_node_protection_qualified = TRUE;
-
-                    if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-
-                        ITERATE_NH_TYPE_BEGIN(nh){
-                            for(i = 0; i < MAX_NXT_HOPS; i++){
-                                if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
-                                    break;
-                                E = D_res->next_hop[nh][i].node;
-                                dist_N_E = DIST_X_Y(N, E, level);
-                                dist_E_D = DIST_X_Y(E, D, level); 
-                                sprintf(LOG, "Node : %s : Testing inequality 3 with primary nh E = %s, D = %s, Nbr(LFA) = %s : dist_N_D(%u) < dist_N_E(%u) + dist_E_D(%u)",
-                                        S->node_name, E->node_name, D->node_name, N->node_name, 
-                                        dist_N_D, dist_N_E, dist_E_D); TRACE();
-
-                                if(dist_N_D < dist_N_E + dist_E_D){
-                                    sprintf(LOG, "Node : %s : Above inequality 3 Passed", S->node_name); TRACE();
-                                }else{
-                                    sprintf(LOG, "Node : %s : Above inequality 3 Failed, D = %s not node protected by LFA %s", 
-                                            S->node_name, D->node_name, N->node_name); TRACE();
-                                    is_node_protection_qualified = FALSE;
-                                    break;
-                                }
-                            }
-                            if(is_node_protection_qualified == FALSE) break;
-                        } ITERATE_NH_TYPE_END;
-
-                        if(is_node_protection_qualified){
-                            sprintf(LOG, "Node : %s : inequality 3 Passed for all ECMP nxthops for D = %s, LFA = %s promoted from %s to %s",
-                                    S->node_name, D->node_name, N->node_name, 
-                                    get_str_lfa_type(lfa_dest_pair->lfa_type), 
-                                    get_str_lfa_type(BROADCAST_LINK_AND_NODE_PROTECTION_LFA)); TRACE();
-                            lfa_dest_pair->lfa_type = BROADCAST_LINK_AND_NODE_PROTECTION_LFA;
-                        }
-                    }
-                    else{
-                        sprintf(LOG, "Node : %s : Testing inequality 3 skipped as node protection is not enabled on the protected link %s",
-                                S->node_name, protected_link->from.intf_name); TRACE();
-                    }
-                }
-            }
-            else{
-                sprintf(LOG, "Node : %s : Inequality 4 failed", S->node_name); TRACE(); 
-                if(strict_down_stream_lfa){
-                    /* 4. Narrow down the subset further using inequality 2 */
-
-                    sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
-                            S->node_name, dist_N_D, dist_S_D); TRACE();
-
-                    if(!(dist_N_D < dist_S_D)){
-                        sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
-                        continue;
-                    }
-
-                    sprintf(LOG, "Node : %s : Inequality 2 passed", S->node_name); TRACE(); 
-
-                    /* Inequality 3 : Node protecting LFA  - this inequality should be satisfied by all 
-                     * ECMP next hops E of Destination D*/
-
-                    is_node_protection_qualified = TRUE;
-
-                    if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-
-                        ITERATE_NH_TYPE_BEGIN(nh){
-                            for(i = 0; i < MAX_NXT_HOPS; i++){
-                                if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
-                                    break;
-                                E = D_res->next_hop[nh][i].node;
-                                dist_N_E = DIST_X_Y(N, E, level);
-                                dist_E_D = DIST_X_Y(E, D, level); 
-                                sprintf(LOG, "Node : %s : Testing inequality 3 with primary nh E = %s," 
-                                             "D = %s, Nbr(LFA) = %s : dist_N_D(%u) < dist_N_E(%u) + dist_E_D(%u)",
-                                        S->node_name, E->node_name, D->node_name, N->node_name, 
-                                        dist_N_D, dist_N_E, dist_E_D); TRACE();
-
-                                if(dist_N_D < dist_N_E + dist_E_D){
-                                    sprintf(LOG, "Node : %s : Above inequality 3 Passed", S->node_name); TRACE();
-                                }else{
-                                    sprintf(LOG, "Node : %s : Above inequality 3 Failed, D = %s not node protected by LFA %s", 
-                                            S->node_name, D->node_name, N->node_name); TRACE();
-                                    is_node_protection_qualified = FALSE;
-                                    break;
-                                }
-                            }
-                            if(is_node_protection_qualified == FALSE) break;
-                        } ITERATE_NH_TYPE_END;
-
-                        if(is_node_protection_qualified){
-                            sprintf(LOG, "Node : %s : inequality 3 Passed for all ECMP nxthops for D = %s, LFA = %s promoted from %s to %s",
-                                    S->node_name, D->node_name, N->node_name, 
-                                    get_str_lfa_type(lfa_dest_pair->lfa_type), 
-                                    get_str_lfa_type(BROADCAST_LINK_AND_NODE_PROTECTION_LFA)); TRACE();
-                            lfa_dest_pair->lfa_type = BROADCAST_LINK_AND_NODE_PROTECTION_LFA;
-                        }
-                    }
-                    else{
-                        sprintf(LOG, "Node : %s : Testing inequality 3 skipped as node protection is not enabled on the protected link %s",
-                                S->node_name, protected_link->from.intf_name); TRACE();
-                    }
-                }
-            }
-        } ITERATE_LIST_END;
-    }
-    ITERATE_NODE_PHYSICAL_NBRS_END(S, N, pn_node, level); 
-
-    if(GET_NODE_COUNT_SINGLY_LL(lfa->lfa) == 0){
-        free_lfa(lfa);
-        return NULL;
-    }
-
-    return lfa;
-}
-
-#if 0
-/* In case of LFAs, the LFA is promoted to Node protecting LFA if they
- * meet the node protecting criteria*/
+/* Reading RFC 5286, I still dont get why LFA must not traverse PN from S. I have not put this check
+ * while finding out LFAs*/
 
 static lfa_t *
 broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link, 
@@ -1328,19 +1008,20 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
     node_t *PN = NULL, 
     *N = NULL, 
     *D = NULL,
-    *E = NULL,
-    *pn_node = NULL;
+    *pn_node = NULL,
+    *prim_nh = NULL;
 
     edge_t *edge1 = NULL, 
             *edge2 = NULL;
 
     spf_result_t *D_res = NULL;
     singly_ll_node_t *list_node = NULL;
-    boolean LFA_reach_via_broadcast_link = FALSE,
-            is_node_protection_qualified = TRUE;
-    edge_end_t *S_E_oif_for_D = NULL;
+
+    lfa_type_t lfa_type = UNKNOWN_LFA_TYPE,
+               old_lfa_type = UNKNOWN_LFA_TYPE;
 
     nh_type_t nh = NH_MAX;
+    char impact_reason[STRING_REASON_LEN];
 
     unsigned int dist_N_D  = 0, 
                  dist_N_S  = 0, 
@@ -1349,262 +1030,194 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                  dist_N_PN = 0,
                  dist_N_E  = 0,
                  dist_E_D  = 0,
-                 nh_count = 0,
                  i = 0;
 
     lfa_dest_pair_t *lfa_dest_pair = NULL;
 
     assert(is_broadcast_link(protected_link, level));
     boolean is_dest_impacted = FALSE;
+
     lfa_t *lfa = get_new_lfa();
     lfa->protected_link = &protected_link->from;
 
     PN = protected_link->to.node;
     Compute_and_Store_Forward_SPF(PN, level);  
 
-    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, pn_node, edge1, edge2, level){
+    ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node){
 
-        if(edge1 == protected_link){
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-        }
+        D_res = list_node->data;
+        D = D_res->node;
+        if(D == S) continue;
 
-        sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature",/*Strange : adding edge2 in log solves problem of this macro looping*/ 
-                S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
+        memset(impact_reason, 0, STRING_REASON_LEN);
 
-        if(IS_OVERLOADED(N, level)){
-            sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-        }
+        sprintf(LOG, "Node : %s : LFA computation for Destination %s begin", S->node_name, D->node_name); TRACE();
+        
+        is_dest_impacted = is_destination_impacted(S, protected_link, D, level, impact_reason);
+        sprintf(LOG, "Dest = %s Impact result = %s\n    reason : %s", D->node_name, 
+                    is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); TRACE();
 
-        dist_N_S = DIST_X_Y(N, S, level);
-        dist_N_PN =  DIST_X_Y(N, PN, level);
+        if(is_dest_impacted == FALSE) continue;
+        
 
-        /* Note : This needs attention, this is incomplete test*/
-        if(is_broadcast_member_node(S, protected_link, N , level))
-            LFA_reach_via_broadcast_link = TRUE;
+        dist_S_D = D_res->spf_metric;
+        dist_PN_D = DIST_X_Y(PN, D, level);
 
-        sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s reachability via broadcast link : %s",
-                S->node_name,  S->node_name, N->node_name, LFA_reach_via_broadcast_link ? "TRUE": "FALSE"); TRACE(); 
+        ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, pn_node, edge1, edge2, level){
+            
+            lfa_type = UNKNOWN_LFA_TYPE;
+            sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s, edge2 = %s for LFA candidature",
+                    S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
 
-        ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node){
-
-            D_res = list_node->data;
-            D = D_res->node;
-
-            if(D == S) continue;
-
-            ITERATE_NH_TYPE_BEGIN(nh){
-                nh_count += get_nh_count(&(D_res->next_hop[nh][0]));
-            }ITERATE_NH_TYPE_END;
-
-            /* Early return check*/
-            if(nh_count > 1 && 
-                    IS_LINK_PROTECTION_ENABLED(protected_link)   && 
-                    !IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-
-                sprintf(LOG, "Node : %s : Dest %s has %u ECMP nexthops and only LINK_PROTECTION is enabled, "
-                        "link protection LFA will not be computed for this Dest", S->node_name, D->node_name, nh_count); TRACE();
-                continue;
+            /*Do not consider the link being protected to find LFA*/
+            if(edge1 == protected_link){
+                sprintf(LOG, "Node : %s : Nbr %s with OIF %s is same as protected link %s, skipping this nbr from LFA candidature", 
+                        S->node_name, N->node_name, edge1->from.intf_name, protected_link->from.intf_name); TRACE();
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
             }
 
-            is_dest_impacted = FALSE;
-
-            sprintf(LOG, "Node : %s : Checking if Destination %s is impacted by protected link %s",
-                    S->node_name, D->node_name, protected_link->from.intf_name); TRACE();
-
-            ITERATE_NH_TYPE_BEGIN(nh){
-                for(i = 0; i < MAX_NXT_HOPS; i++){
-                    if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
-                        break;
-                    S_E_oif_for_D = D_res->next_hop[nh][i].oif; 
-                    if(S_E_oif_for_D == &protected_link->from){
-                        is_dest_impacted = TRUE;
-                        break;
-                    }
-                }
-                if(is_dest_impacted) break;
-            } ITERATE_NH_TYPE_END;
-
-            if(is_dest_impacted == FALSE){
-                sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, NOT IMPACTED, skipping this Destination", 
-                        S->node_name, S->node_name, N->node_name, D->node_name); TRACE();
-                continue;
+            if(IS_OVERLOADED(N, level)){
+                sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
             }
 
-            E = D_res->next_hop[nh][i].node;
-            sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = %s(IMPACTED)", 
-                    S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
+            dist_N_S = DIST_X_Y(N, S, level);
+            sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s", 
+                    S->node_name, S->node_name, N->node_name, D->node_name); TRACE();
 
             dist_N_D = DIST_X_Y(N, D, level);
-            dist_S_D = D_res->spf_metric;
-
-            /* Apply inequality 1*/
             sprintf(LOG, "Node : %s : Testing inequality 1 : dist_N_D(%u) < dist_N_S(%u) + dist_S_D(%u)",
                     S->node_name, dist_N_D, dist_N_S, dist_S_D); TRACE();
 
+            /* Apply inequality 1*/
             if(!(dist_N_D < dist_N_S + dist_S_D)){
                 sprintf(LOG, "Node : %s : Inequality 1 failed", S->node_name); TRACE();
-                continue;
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
             }
 
             sprintf(LOG, "Node : %s : Inequality 1 passed", S->node_name); TRACE();
+             
+            /* Inequality 3 : Node protecting LFA 
+             * All primary nexthop MUST qualify node protection inequality # 3*/
+            if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
 
-            dist_PN_D = DIST_X_Y(PN, D, level);
+                sprintf(LOG, "Node : %s : Testing node protecting inequality 3 with primary nexthops of %s through potential LFA %s",
+                        S->node_name, D->node_name, N->node_name); TRACE();
 
+                /*N is node protecting LFA if it could send traffic to D without passing
+                 * through ALL primary next hops of D*/
+                old_lfa_type = lfa_type;
+
+                ITERATE_NH_TYPE_BEGIN(nh){
+                    for(i = 0; i < MAX_NXT_HOPS; i++){
+                        prim_nh = D_res->next_hop[nh][i].node;
+                        if(!prim_nh) break;     
+                        dist_N_E = DIST_X_Y(N, prim_nh, level);
+                        dist_E_D = DIST_X_Y(prim_nh, D, level);
+
+                        if(dist_N_D < dist_N_E + dist_E_D){
+                            lfa_type = BROADCAST_ONLY_NODE_PROTECTION_LFA;  
+                            sprintf(LOG, "Node : %s : inequality 3 Passed with #%u next hop %s(%s)",
+                                    S->node_name, i, prim_nh->node_name, nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                        }else{
+                            lfa_type = old_lfa_type;
+                            sprintf(LOG, "Node : %s : inequality 3 Failed with #%u next hop %s(%s), ", 
+                                    S->node_name, i, prim_nh->node_name, nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                            break;
+                        }
+                    }
+                    if(lfa_type == old_lfa_type) break;
+                } ITERATE_NH_TYPE_END;
+            }
+
+            if(lfa_type == BROADCAST_ONLY_NODE_PROTECTION_LFA){
+                lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
+                lfa_dest_pair->lfa_type = lfa_type;
+                lfa_dest_pair->lfa = N;
+                lfa_dest_pair->oif_to_lfa = &edge1->from; 
+                lfa_dest_pair->dest = D;
+
+                /*Record the LFA*/ 
+                singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
+
+                sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s, lfa_type = %s," 
+                              "looking to promote it to BROADCAST_LINK_AND_NODE_PROTECTION_LFA", N->node_name, 
+                        lfa_dest_pair->oif_to_lfa->intf_name, D->node_name, 
+                        get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();
+
+                /*Check for Link protection criteria*/
+
+                sprintf(LOG, "Node : %s : Testing inequality 4 : dist_N_D(%u) < dist_N_PN(%u) + dist_PN_D(%u)",
+                        S->node_name, dist_N_D, dist_N_PN, dist_PN_D); TRACE();
+
+                /*Apply inequality 4*/
+                dist_N_PN = DIST_X_Y(N, PN, level);
+                if(!(dist_N_D < dist_N_PN + dist_PN_D)){
+                    sprintf(LOG, "Node : %s : Inequality 4 failed, LFA not promoted to BROADCAST_LINK_AND_NODE_PROTECTION_LFA", S->node_name); TRACE();
+
+                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
+                }
+                sprintf(LOG, "Node : %s : Inequality 4 passed, LFA %s(OIF = %s) , Dest = %s promoted from %s to %s", 
+                        S->node_name, N->node_name, lfa_dest_pair->oif_to_lfa->intf_name, D->node_name,
+                        get_str_lfa_type(lfa_dest_pair->lfa_type),
+                        get_str_lfa_type(BROADCAST_LINK_AND_NODE_PROTECTION_LFA)); TRACE();
+
+                lfa_dest_pair->lfa_type = BROADCAST_LINK_AND_NODE_PROTECTION_LFA;
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
+            }
+
+            /*We are here because LFA is not node protecting, try for link protection LFA only*/
+            if(!IS_LINK_PROTECTION_ENABLED(protected_link)){
+                sprintf(LOG, "Node : %s : Node-link-degradation Disabled, Nbr %s not considered for link protection LFA", 
+                        S->node_name, N->node_name); TRACE();
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
+            }
+            
+            if(strict_down_stream_lfa){
+                /* 4. Narrow down the subset further using inequality 2 */
+                sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
+                        S->node_name, dist_N_D, dist_S_D); TRACE();
+
+                if(!(dist_N_D < dist_S_D)){
+                    sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
+                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
+                }
+                sprintf(LOG, "Node : %s : Inequality 2 passed, lfa promoted from %s to %s", S->node_name, 
+                                get_str_lfa_type(lfa_type), get_str_lfa_type(LINK_PROTECTION_LFA_DOWNSTREAM)); TRACE(); 
+            }
+
+            /*Now check inequality 4*/ 
+            dist_N_PN = DIST_X_Y(N, PN, level);
             sprintf(LOG, "Node : %s : Testing inequality 4 : dist_N_D(%u) < dist_N_PN(%u) + dist_PN_D(%u)",
                     S->node_name, dist_N_D, dist_N_PN, dist_PN_D); TRACE();
 
             /*Apply inequality 4*/
-            if(dist_N_D < dist_N_PN + dist_PN_D){
-                sprintf(LOG, "Node : %s : Inequality 4 passed, LFA created with %s", 
-                        S->node_name, get_str_lfa_type(BROADCAST_LINK_PROTECTION_LFA)); TRACE();
+            if(!(dist_N_D < dist_N_PN + dist_PN_D)){
+                sprintf(LOG, "Node : %s : Inequality 4 failed, LFA candidature failed for nbr %s, Dest = %s",
+                              S->node_name, N->node_name, D->node_name); TRACE();
 
-                lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
-                lfa_dest_pair->lfa_type = BROADCAST_LINK_PROTECTION_LFA;
-                lfa_dest_pair->lfa = N;
-                lfa_dest_pair->oif_to_lfa = &edge1->from;
-                lfa_dest_pair->dest = D;
-
-                /*Record the LFA*/
-                singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
-
-                /*Apply inequality 2*/
-
-                /* Inequality 2 has been controlled by additon boolean argument because, inequality should be
-                 * explicitely applied under administrator's control. Inequality 2 has following drawbacks :
-                 * 1. It drastically reduces the LFA coverage
-                 * 2. It helps in avoid microloops only when multiple link fails at the same time, What is the probablity when multiple link
-                 * failures happen at the same time
-                 * 3. It helps in avoid microloops when node completely fails, and in specific topologies
-                 *
-                 * I feel the drawbacks of this inequality weighs far more than benefits we get from it. We are not totally discarding this
-                 * inequality from implementation, but giving explitely knob if admin wants to harness the advantages Or disadvantages
-                 * of this inequality at his own will
-                 * */
-
-                if(strict_down_stream_lfa){
-                    /* 4. Narrow down the subset further using inequality 2 */
-
-                    sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
-                            S->node_name, dist_N_D, dist_S_D); TRACE();
-
-                    if(!(dist_N_D < dist_S_D)){
-                        sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
-                        continue;
-                    }
-
-                    sprintf(LOG, "Node : %s : Inequality 2 passed, LFA promoted from %s to %s", S->node_name, 
-                            get_str_lfa_type(lfa_dest_pair->lfa_type), get_str_lfa_type(BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM)); TRACE(); 
-                    lfa_dest_pair->lfa_type = BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM;
-
-
-                    /* Inequality 3 : Node protecting LFA  - this inequality should be satisfied by all 
-                     * ECMP next hops E of Destination D*/
-
-                    is_node_protection_qualified = TRUE;
-
-                    if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-
-                        ITERATE_NH_TYPE_BEGIN(nh){
-                            for(i = 0; i < MAX_NXT_HOPS; i++){
-                                if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
-                                    break;
-                                E = D_res->next_hop[nh][i].node;
-                                dist_N_E = DIST_X_Y(N, E, level);
-                                dist_E_D = DIST_X_Y(E, D, level); 
-                                sprintf(LOG, "Node : %s : Testing inequality 3 with primary nh E = %s, D = %s, Nbr(LFA) = %s : dist_N_D(%u) < dist_N_E(%u) + dist_E_D(%u)",
-                                        S->node_name, E->node_name, D->node_name, N->node_name, 
-                                        dist_N_D, dist_N_E, dist_E_D); TRACE();
-
-                                if(dist_N_D < dist_N_E + dist_E_D){
-                                    sprintf(LOG, "Node : %s : Above inequality 3 Passed", S->node_name); TRACE();
-                                }else{
-                                    sprintf(LOG, "Node : %s : Above inequality 3 Failed, D = %s not node protected by LFA %s", 
-                                            S->node_name, D->node_name, N->node_name); TRACE();
-                                    is_node_protection_qualified = FALSE;
-                                    break;
-                                }
-                            }
-                            if(is_node_protection_qualified == FALSE) break;
-                        } ITERATE_NH_TYPE_END;
-
-                        if(is_node_protection_qualified){
-                            sprintf(LOG, "Node : %s : inequality 3 Passed for all ECMP nxthops for D = %s, LFA = %s promoted from %s to %s",
-                                    S->node_name, D->node_name, N->node_name, 
-                                    get_str_lfa_type(lfa_dest_pair->lfa_type), 
-                                    get_str_lfa_type(BROADCAST_LINK_AND_NODE_PROTECTION_LFA)); TRACE();
-                            lfa_dest_pair->lfa_type = BROADCAST_LINK_AND_NODE_PROTECTION_LFA;
-                        }
-                    }
-                    else{
-                        sprintf(LOG, "Node : %s : Testing inequality 3 skipped as node protection is not enabled on the protected link %s",
-                                S->node_name, protected_link->from.intf_name); TRACE();
-                    }
-                }
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
             }
-            else{
-                sprintf(LOG, "Node : %s : Inequality 4 failed", S->node_name); TRACE(); 
-                if(strict_down_stream_lfa){
-                    /* 4. Narrow down the subset further using inequality 2 */
 
-                    sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
-                            S->node_name, dist_N_D, dist_S_D); TRACE();
+            sprintf(LOG, "Node : %s : Inequality 4 passed for Nbr %s is LFA for Dest =  %s",
+                        S->node_name, N->node_name, D->node_name); TRACE();
 
-                    if(!(dist_N_D < dist_S_D)){
-                        sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
-                        continue;
-                    }
+            lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
+            lfa_dest_pair->lfa_type = strict_down_stream_lfa ? BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM :
+                        BROADCAST_LINK_PROTECTION_LFA;
+            lfa_dest_pair->lfa = N;
+            lfa_dest_pair->oif_to_lfa = &edge1->from; 
+            lfa_dest_pair->dest = D;
 
-                    sprintf(LOG, "Node : %s : Inequality 2 passed", S->node_name); TRACE(); 
+            /*Record the LFA*/ 
+            singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
+            sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s, lfa_type = %s", N->node_name, 
+                    lfa_dest_pair->oif_to_lfa->intf_name, D->node_name, 
+                    get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();
 
-                    /* Inequality 3 : Node protecting LFA  - this inequality should be satisfied by all 
-                     * ECMP next hops E of Destination D*/
-
-                    is_node_protection_qualified = TRUE;
-
-                    if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-
-                        ITERATE_NH_TYPE_BEGIN(nh){
-                            for(i = 0; i < MAX_NXT_HOPS; i++){
-                                if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
-                                    break;
-                                E = D_res->next_hop[nh][i].node;
-                                dist_N_E = DIST_X_Y(N, E, level);
-                                dist_E_D = DIST_X_Y(E, D, level); 
-                                sprintf(LOG, "Node : %s : Testing inequality 3 with primary nh E = %s," 
-                                             "D = %s, Nbr(LFA) = %s : dist_N_D(%u) < dist_N_E(%u) + dist_E_D(%u)",
-                                        S->node_name, E->node_name, D->node_name, N->node_name, 
-                                        dist_N_D, dist_N_E, dist_E_D); TRACE();
-
-                                if(dist_N_D < dist_N_E + dist_E_D){
-                                    sprintf(LOG, "Node : %s : Above inequality 3 Passed", S->node_name); TRACE();
-                                }else{
-                                    sprintf(LOG, "Node : %s : Above inequality 3 Failed, D = %s not node protected by LFA %s", 
-                                            S->node_name, D->node_name, N->node_name); TRACE();
-                                    is_node_protection_qualified = FALSE;
-                                    break;
-                                }
-                            }
-                            if(is_node_protection_qualified == FALSE) break;
-                        } ITERATE_NH_TYPE_END;
-
-                        if(is_node_protection_qualified){
-                            sprintf(LOG, "Node : %s : inequality 3 Passed for all ECMP nxthops for D = %s, LFA = %s promoted from %s to %s",
-                                    S->node_name, D->node_name, N->node_name, 
-                                    get_str_lfa_type(lfa_dest_pair->lfa_type), 
-                                    get_str_lfa_type(BROADCAST_LINK_AND_NODE_PROTECTION_LFA)); TRACE();
-                            lfa_dest_pair->lfa_type = BROADCAST_LINK_AND_NODE_PROTECTION_LFA;
-                        }
-                    }
-                    else{
-                        sprintf(LOG, "Node : %s : Testing inequality 3 skipped as node protection is not enabled on the protected link %s",
-                                S->node_name, protected_link->from.intf_name); TRACE();
-                    }
-                }
-            }
-        } ITERATE_LIST_END;
-    }
-    ITERATE_NODE_PHYSICAL_NBRS_END(S, N, pn_node, level); 
+        } ITERATE_NODE_PHYSICAL_NBRS_END(S, N, pn_node, level);
+        
+    } ITERATE_LIST_END;
 
     if(GET_NODE_COUNT_SINGLY_LL(lfa->lfa) == 0){
         free_lfa(lfa);
@@ -1613,7 +1226,6 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
     return lfa;
 }
-#endif
 
 /* In case of LFAs, the LFA is promoted to Node protecting LFA if they
  * meet the node protecting criteria*/
@@ -1664,7 +1276,12 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
         if(D == S) continue; 
         memset(impact_reason, 0, STRING_REASON_LEN);
 
+        sprintf(LOG, "Node : %s : LFA computation for Destination %s begin", S->node_name, D->node_name); TRACE();
+        
         is_dest_impacted = is_destination_impacted(S, protected_link, D, level, impact_reason);
+        sprintf(LOG, "Dest = %s Impact result = %s\n    reason : %s", D->node_name, 
+                    is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); TRACE();
+                    
         if(is_dest_impacted == FALSE) continue;
 
         dist_S_D = D_res->spf_metric;
@@ -1687,12 +1304,10 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
             }
 
             dist_N_S = DIST_X_Y(N, S, level);
-
             sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = %s", 
                     S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
 
             dist_N_D = DIST_X_Y(N, D, level);
-
             sprintf(LOG, "Node : %s : Testing inequality 1 : dist_N_D(%u) < dist_N_S(%u) + dist_S_D(%u)",
                     S->node_name, dist_N_D, dist_N_S, dist_S_D); TRACE();
 
@@ -1703,34 +1318,6 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
             }
 
             sprintf(LOG, "Node : %s : Inequality 1 passed", S->node_name); TRACE();
-
-            /* Inequality 2 has been controlled by additon boolean argument because, inequality should be
-             * explicitely applied under administrator's control. Inequality 2 has following drawbacks :
-             * 1. It drastically reduces the LFA coverage
-             * 2. It helps in avoid microloops only when multiple link fails at the same time, What is the probablity when multiple link
-             * failures happen at the same time
-             * 3. It helps in avoid microloops when node completely fails, and in specific topologies
-             *
-             * I feel the drawbacks of this inequality weighs far more than benefits we get from it. We are not totally discarding this
-             * inequality from implementation, but giving explitely knob if admin wants to harness the advantages Or disadvantages
-             * of this inequality at his own will
-             * */
-
-            if(strict_down_stream_lfa){
-                /* 4. Narrow down the subset further using inequality 2 */
-
-                sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
-                        S->node_name, dist_N_D, dist_S_D); TRACE();
-
-                if(!(dist_N_D < dist_S_D)){
-                    sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
-                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-                }
-
-                sprintf(LOG, "Node : %s : Inequality 2 passed", S->node_name); TRACE(); 
-            }
-
-            lfa_type = strict_down_stream_lfa ? LINK_PROTECTION_LFA_DOWNSTREAM : LINK_PROTECTION_LFA; 
             
             /* Inequality 3 : Node protecting LFA 
              * All primary nexthop MUST qualify node protection inequality # 3*/
@@ -1786,6 +1373,32 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                 ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
             }
           
+            /* Inequality 2 has been controlled by additon boolean argument because, inequality should be
+             * explicitely applied under administrator's control. Inequality 2 has following drawbacks :
+             * 1. It drastically reduces the LFA coverage
+             * 2. It helps in avoid microloops only when multiple link fails at the same time, What is the probablity when multiple link
+             * failures happen at the same time
+             * 3. It helps in avoid microloops when node completely fails, and in specific topologies
+             *
+             * I feel the drawbacks of this inequality weighs far more than benefits we get from it. We are not totally discarding this
+             * inequality from implementation, but giving explitely knob if admin wants to harness the advantages Or disadvantages
+             * of this inequality at his own will
+             * */
+
+            if(strict_down_stream_lfa){
+                /* 4. Narrow down the subset further using inequality 2 */
+                sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
+                        S->node_name, dist_N_D, dist_S_D); TRACE();
+
+                if(!(dist_N_D < dist_S_D)){
+                    sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
+                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
+                }
+                sprintf(LOG, "Node : %s : Inequality 2 passed, lfa prmoted from %s to %s", S->node_name, 
+                                get_str_lfa_type(lfa_type), get_str_lfa_type(LINK_PROTECTION_LFA_DOWNSTREAM)); TRACE(); 
+                lfa_type = LINK_PROTECTION_LFA_DOWNSTREAM;
+            }
+            
             /*We are here because inequality 1 and 2 passed, but 3 fails*/ 
             lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
             lfa_dest_pair->lfa_type = lfa_type;
@@ -1810,267 +1423,8 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
         free_lfa(lfa);
         return NULL;
     }
-
     return lfa;
 }
-
-#if 0
-/* In case of LFAs, the LFA is promoted to Node protecting LFA if they
- * meet the node protecting criteria*/
-
-static lfa_t *
-_p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link, 
-                            LEVEL level, 
-                            boolean strict_down_stream_lfa){
-
-    node_t *E = NULL, 
-           *N = NULL, 
-           *D = NULL,
-           *prim_nh = NULL,
-           *pn_node = NULL;
-
-    edge_t *edge1 = NULL, *edge2 = NULL,
-           *S_E_oif_edge_for_D = NULL;
-
-    edge_end_t *S_E_oif_for_D = NULL;
-    
-    boolean is_dest_impacted = FALSE;
-
-    spf_result_t *D_res = NULL;
-    singly_ll_node_t *list_node = NULL;
-
-    unsigned int dist_N_D = 0, 
-                 dist_N_S = 0, 
-                 dist_S_D = 0,
-                 dist_N_E = 0,
-                 dist_E_D = 0,
-                 nh_count = 0,
-                 i = 0;
-
-    nh_type_t nh = NH_MAX;
-    lfa_dest_pair_t *lfa_dest_pair = NULL;
-    lfa_type_t lfa_type = UNKNOWN_LFA_TYPE;
-     
-    lfa_t *lfa = get_new_lfa(); 
-
-    /* 3. Filter nbrs of S using inequality 1 */
-    E = protected_link->to.node;
-
-    lfa->protected_link = &protected_link->from;
-
-      ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, pn_node, edge1, edge2, level){
-    
-        loop_free_alt_t *lfa_data = calloc(1, sizeof(loop_free_alt_t));
-        lfa_data->protected_link = &protected_link->from;
-        lfa_data->backup_nxt_hop = calloc(1, sizeof(internal_nh_t));
-
-        sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s, edge2 = %s for LFA candidature",
-                S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
-
-        /*Do not consider the link being protected to find LFA*/
-        if(edge1 == protected_link){
-            sprintf(LOG, "Node : %s : Nbr %s with OIF %s is same as protected link %s, skipping this nbr from LFA candidature", 
-                    S->node_name, N->node_name, edge1->from.intf_name, protected_link->from.intf_name); TRACE();
-            
-            strncpy(lfa_data->rejection_reason, "LFA is same as Primary next hop", sizeof(lfa_data->rejection_reason));
-            lfa_data->is_lfa_enabled = FALSE;
-            lfa_data->destination = NULL;
-            lfa_data->backup_nxt_hop->level = level;
-            lfa_data->backup_nxt_hop->oif = &edge1->from;
-            lfa_data->backup_nxt_hop->node = N;
-            set_next_hop_gw_pfx((*lfa_data->backup_nxt_hop), edge2->to.prefix[level]->prefix);
-            lfa_data->backup_nxt_hop->nh_type = edge2->etype == UNICAST ? IPNH : LSPNH; 
-            lfa_data->backup_nxt_hop->lfa_type = NO_LFA;
-            lfa_data->backup_nxt_hop->proxy_nbr = NULL;
-            lfa_data->backup_nxt_hop->rlfa = NULL;
-            lfa_data->backup_nxt_hop->root_metric = DIST_X_Y(S, N, level);
-            lfa_data->backup_nxt_hop->dest_metric = 0;/*Not possible to compute here*/
-            lfa_data->backup_nxt_hop->ldplabel = 0;
-            RECORD_LFA(S, lfa_data, level);
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-        }
-
-        if(IS_OVERLOADED(N, level)){
-            sprintf(LOG, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); TRACE();
-            strncpy(lfa_data->rejection_reason, "Overload", strlen("Overload"));
-            lfa_data->is_lfa_enabled = FALSE;
-            lfa_data->destination = NULL;
-            lfa_data->backup_nxt_hop->level = level;
-            lfa_data->backup_nxt_hop->oif = &edge1->from;
-            lfa_data->backup_nxt_hop->node = N;
-            set_next_hop_gw_pfx((*lfa_data->backup_nxt_hop), edge2->to.prefix[level]->prefix);
-            lfa_data->backup_nxt_hop->nh_type = edge2->etype == UNICAST ? IPNH : LSPNH; 
-            lfa_data->backup_nxt_hop->lfa_type = NO_LFA;
-            lfa_data->backup_nxt_hop->proxy_nbr = NULL;
-            lfa_data->backup_nxt_hop->rlfa = NULL;
-            lfa_data->backup_nxt_hop->root_metric = DIST_X_Y(S, N, level);
-            lfa_data->backup_nxt_hop->dest_metric = 0;/*Not possible to compute here*/
-            lfa_data->backup_nxt_hop->ldplabel = 0;
-            RECORD_LFA(S, lfa_data, level);
-            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-        }
-
-        dist_N_S = DIST_X_Y(N, S, level);
-        ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node){
-
-            D_res = list_node->data;
-            D = D_res->node;
-            S_E_oif_edge_for_D = NULL;
-            is_dest_impacted = FALSE;
-
-            if(D == S)  continue;
-
-            sprintf(LOG, "Node : %s : Source(S) = %s, probable LFA(N) = %s, DEST(D) = %s, Primary NH(E) = %s", 
-                    S->node_name, S->node_name, N->node_name, D->node_name, E->node_name); TRACE();
-
-            nh_count = 0;
-            ITERATE_NH_TYPE_BEGIN(nh){
-                nh_count += get_nh_count(&(D_res->next_hop[nh][0]));
-            }ITERATE_NH_TYPE_END;
-
-            if(nh_count > 1 && 
-               IS_LINK_PROTECTION_ENABLED(protected_link)   && 
-               !IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-
-                sprintf(LOG, "Node : %s : Dest %s has %u ECMP nexthops and only LINK_PROTECTION is enabled, "
-                        "link protection LFA will not be computed for this Dest", S->node_name, D->node_name, nh_count); TRACE();
-                continue;
-            }
-
-            /* If to reach D from S , primary nexthop is not E, then skip D*/
-            /*Thats wrong criteria to detect impactness. Suppose D has nexthop other than E
-             * and next hop sends the traffic to D through E, and node protection is enabled, then 
-             * D is impacted, but by this criteria, it will not be*/
-            for(i = 0; i < MAX_NXT_HOPS; i++){
-                prim_nh = D_res->next_hop[IPNH][i].node;
-                if(!prim_nh) break;
-                if(prim_nh == E){
-                    S_E_oif_for_D = D_res->next_hop[IPNH][i].oif;
-                    S_E_oif_edge_for_D = GET_EGDE_PTR_FROM_EDGE_END(S_E_oif_for_D);
-                    if(S_E_oif_edge_for_D == protected_link){
-                        sprintf(LOG, "Node : %s : Dest %s IMPACTED", S->node_name, D->node_name); TRACE();
-                        is_dest_impacted = TRUE;
-                    }
-                    else{
-                    sprintf(LOG, "Node : %s : skipping Dest %s as E = %s(OIF = %s) is its primary nexthop which is different",
-                            S->node_name, D->node_name, E->node_name, S_E_oif_for_D->intf_name); TRACE();
-                       is_dest_impacted = FALSE;
-                    }
-                    break;
-                }
-            }
-
-            if(is_dest_impacted == FALSE) continue;
-
-            dist_N_D = DIST_X_Y(N, D, level);
-            dist_S_D = D_res->spf_metric;
-
-            sprintf(LOG, "Node : %s : Testing inequality 1 : dist_N_D(%u) < dist_N_S(%u) + dist_S_D(%u)",
-                    S->node_name, dist_N_D, dist_N_S, dist_S_D); TRACE();
-
-            /* Apply inequality 1*/
-            if(!(dist_N_D < dist_N_S + dist_S_D)){
-                sprintf(LOG, "Node : %s : Inequality 1 failed", S->node_name); TRACE();
-                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-            }
-
-            sprintf(LOG, "Node : %s : Inequality 1 passed", S->node_name); TRACE();
-
-            /* Inequality 2 has been controlled by additon boolean argument because, inequality should be
-             * explicitely applied under administrator's control. Inequality 2 has following drawbacks :
-             * 1. It drastically reduces the LFA coverage
-             * 2. It helps in avoid microloops only when multiple link fails at the same time, What is the probablity when multiple link
-             * failures happen at the same time
-             * 3. It helps in avoid microloops when node completely fails, and in specific topologies
-             *
-             * I feel the drawbacks of this inequality weighs far more than benefits we get from it. We are not totally discarding this
-             * inequality from implementation, but giving explitely knob if admin wants to harness the advantages Or disadvantages
-             * of this inequality at his own will
-             * */
-
-            if(strict_down_stream_lfa){
-                /* 4. Narrow down the subset further using inequality 2 */
-
-                sprintf(LOG, "Node : %s : Testing inequality 2 : dist_N_D(%u) < dist_S_D(%u)", 
-                        S->node_name, dist_N_D, dist_S_D); TRACE();
-
-                if(!(dist_N_D < dist_S_D)){
-                    sprintf(LOG, "Node : %s : Inequality 2 failed", S->node_name); TRACE();
-                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, N, pn_node, level);
-                }
-
-                sprintf(LOG, "Node : %s : Inequality 2 passed", S->node_name); TRACE(); 
-            }
-
-            lfa_type = strict_down_stream_lfa ? LINK_PROTECTION_LFA_DOWNSTREAM : LINK_PROTECTION_LFA; 
-
-            /* Inequality 3 : Node protecting LFA 
-             * All primary nexthop MUST qualify node protection inequality # 3*/
-            if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-
-                sprintf(LOG, "Node : %s : Testing node protecting inequality for Destination %s with %u primary nexthops",
-                        S->node_name, D->node_name, nh_count); TRACE();
-
-                ITERATE_NH_TYPE_BEGIN(nh){
-                    for(i = 0; i < MAX_NXT_HOPS; i++){
-                        prim_nh = D_res->next_hop[nh][i].node;
-                        if(!prim_nh) break;     
-                        dist_N_E = DIST_X_Y(N, prim_nh, level);
-                        dist_E_D = DIST_X_Y(prim_nh, D, level);
-
-                        if(dist_N_D < dist_N_E + dist_E_D){
-                            lfa_type = LINK_AND_NODE_PROTECTION_LFA;  
-                            sprintf(LOG, "Node : %s : inequality 3 Passed with #%u next hop %s(%s), Link protecting LFA promoted to node-protecting LFA",
-                                    S->node_name, i, prim_nh->node_name, nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                        }else{
-                            lfa_type = strict_down_stream_lfa ? LINK_PROTECTION_LFA_DOWNSTREAM : LINK_PROTECTION_LFA;
-                            sprintf(LOG, "Node : %s : inequality 3 Failed with #%u next hop %s(%s), Link protecting LFA demoted to link-protection only", 
-                                    S->node_name, i, prim_nh->node_name, nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
-                            break;
-                        }
-                    }
-                } ITERATE_NH_TYPE_END;
-            }
-
-            /*If Destination has multiple ECMP primary nexthops, no need to compute LFA for D which provides only
-             * link protection*/
-            if((nh_count > 1) && 
-                    ((lfa_type == LINK_PROTECTION_LFA ||
-                      lfa_type ==  LINK_PROTECTION_LFA_DOWNSTREAM))){
-
-                        sprintf(LOG, "Node : %s : Dest %s has %u ECMP nexthops, protection type provided by nbr %s = %s, "
-                            "This LFA is not recorded", S->node_name, D->node_name, nh_count, 
-                            N->node_name, get_str_lfa_type(lfa_type)); TRACE();
-                        continue;
-             }
-
-            lfa_dest_pair = calloc(1, sizeof(lfa_dest_pair_t));
-            lfa_dest_pair->lfa_type = lfa_type;
-            lfa_dest_pair->lfa = N;
-            lfa_dest_pair->oif_to_lfa = &edge1->from; 
-            lfa_dest_pair->dest = D;
-
-            /*Record the LFA*/ 
-            singly_ll_add_node_by_val(lfa->lfa, lfa_dest_pair);
-            sprintf(LOG, "lfa pair computed : %s(OIF = %s),%s, lfa_type = %s", N->node_name, 
-                    lfa_dest_pair->oif_to_lfa->intf_name, D->node_name, 
-                    get_str_lfa_type(lfa_dest_pair->lfa_type)); TRACE();
-
-        } ITERATE_LIST_END;
-
-        sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature Done", 
-                S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
-
-    } ITERATE_NODE_PHYSICAL_NBRS_END(S, N, pn_node, level);
-
-    if(GET_NODE_COUNT_SINGLY_LL(lfa->lfa) == 0){
-        free_lfa(lfa);
-        return NULL;
-    }
-
-    return lfa;
-}
-#endif
 
 void
 print_lfa_info(lfa_t *lfa){
