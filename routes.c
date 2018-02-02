@@ -537,7 +537,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
 }
 
 static void
-link_prefix_to_route_prefix_list(routes_t *route, prefix_t *new_prefix,
+link_prefix_to_route(routes_t *route, prefix_t *new_prefix,
                                  unsigned int prefix_hosting_node_metric, spf_info_t *spf_info){
 
     singly_ll_node_t *list_node_prev = NULL,
@@ -727,7 +727,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         if(linkage){
             route_prefix = calloc(1, sizeof(prefix_t));
             memcpy(route_prefix, prefix, sizeof(prefix_t));
-            link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+            link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
         }
 
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
@@ -765,7 +765,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 if(linkage){
                     route_prefix = calloc(1, sizeof(prefix_t));
                     memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                    link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                 }
                 return;
             }
@@ -781,7 +781,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 if(linkage){
                     route_prefix = calloc(1, sizeof(prefix_t));
                     memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                    link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                 }
                 return;
             }
@@ -829,7 +829,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     if(linkage){
                         route_prefix = calloc(1, sizeof(prefix_t));
                         memcpy(route_prefix, prefix, sizeof(prefix_t));
-                        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                        link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                     }
                     return;
 
@@ -862,7 +862,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     if(linkage){
                         route_prefix = calloc(1, sizeof(prefix_t));
                         memcpy(route_prefix, prefix, sizeof(prefix_t));
-                        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                        link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                     }
                     return;
                 }
@@ -903,7 +903,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 if(linkage){
                     route_prefix = calloc(1, sizeof(prefix_t));
                     memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                    link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                 }
                 return;
             }
@@ -919,7 +919,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 if(linkage){
                     route_prefix = calloc(1, sizeof(prefix_t));
                     memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                    link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                 }
                 return;
             }
@@ -966,7 +966,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     if(linkage){
                         route_prefix = calloc(1, sizeof(prefix_t));
                         memcpy(route_prefix, prefix, sizeof(prefix_t));
-                        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                        link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                     }
                     return;
 
@@ -999,7 +999,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     if(linkage){
                         route_prefix = calloc(1, sizeof(prefix_t));
                         memcpy(route_prefix, prefix, sizeof(prefix_t));
-                        link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                        link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                     }
                     return;
 
@@ -1029,7 +1029,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             if(linkage){
                 route_prefix = calloc(1, sizeof(prefix_t));
                 memcpy(route_prefix, prefix, sizeof(prefix_t));
-                link_prefix_to_route_prefix_list(route, route_prefix, result->spf_metric, spf_info);
+                link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
             }
         }
     }
