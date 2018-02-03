@@ -261,7 +261,10 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        p_space = p2p_compute_p_space(node, edge, edge->level);
                    else{
                        init_back_up_computation(node, edge->level);
-                       p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
+                       if(is_broadcast_link(edge, edge->level))
+                           p_space = broadcast_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
+                       else 
+                           p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
                    }
 
                    if(cmdcode == CMDCODE_DEBUG_SHOW_NODE_INTF_PSPACE)
@@ -334,6 +337,7 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
            {
                /*compute extended p-space first*/
                p_space_set_t ex_p_space = NULL;
+               q_space_set_t pq_space = NULL;
                edge_t *edge = NULL;
                for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
 
@@ -353,9 +357,14 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                    break;
                }
                init_back_up_computation(node, edge->level);
-               ex_p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
-               /*Compute Q space now*/
-               q_space_set_t pq_space = p2p_filter_select_pq_nodes_from_ex_pspace(node, edge, edge->level, ex_p_space);
+               if(is_broadcast_link(edge, edge->level)){
+                   ex_p_space = broadcast_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
+                   pq_space = broadcast_filter_select_pq_nodes_from_ex_pspace(node, edge, edge->level, ex_p_space);
+               }
+               else{
+                   ex_p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
+                   pq_space = p2p_filter_select_pq_nodes_from_ex_pspace(node, edge, edge->level, ex_p_space);
+               }
                printf("Node %s pq-space : ", node->node_name);
                ITERATE_LIST_BEGIN(pq_space, list_node){
 

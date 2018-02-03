@@ -47,6 +47,7 @@ typedef struct _edge_t edge_t;
 /*Flags to enable the type of protection enabled on protected link*/
 #define LINK_PROTECTION         0
 #define LINK_NODE_PROTECTION    1
+#define ONLY_NODE_PROTECTION    2
 
 #define SET_LINK_PROTECTION_TYPE(edge_ptr, protection_bit)      \
     (SET_BIT(edge_ptr->from.edge_config_flags, protection_bit))
@@ -180,6 +181,9 @@ p2p_compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
 p_space_set_t 
 p2p_compute_link_node_protecting_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
+p_space_set_t 
+broadcast_compute_link_node_protecting_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
+
 q_space_set_t
 p2p_compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
@@ -191,6 +195,12 @@ p2p_compute_rlfa_for_given_dest(node_t *node, LEVEL level, edge_t *failed_edge, 
 
 q_space_set_t
 p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S, 
+                                          edge_t *failed_edge, 
+                                          LEVEL level, 
+                                          p_space_set_t ex_p_space);
+
+q_space_set_t
+broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, 
                                           edge_t *failed_edge, 
                                           LEVEL level, 
                                           p_space_set_t ex_p_space);
