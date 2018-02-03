@@ -259,8 +259,10 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
                    if(cmdcode == CMDCODE_DEBUG_SHOW_NODE_INTF_PSPACE)
                        p_space = p2p_compute_p_space(node, edge, edge->level);
-                   else
+                   else{
+                       init_back_up_computation(node, edge->level);
                        p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
+                   }
 
                    if(cmdcode == CMDCODE_DEBUG_SHOW_NODE_INTF_PSPACE)
                        printf("Node %s p-space : \n", node->node_name);
@@ -331,10 +333,8 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
        case CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE:
            {
                /*compute extended p-space first*/
-
                p_space_set_t ex_p_space = NULL;
                edge_t *edge = NULL;
-
                for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ) {
 
                    edge_end = node->edges[i];
@@ -350,30 +350,26 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        continue;
 
                    edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-                   ex_p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
                    break;
                }
-
+               init_back_up_computation(node, edge->level);
+               ex_p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
                /*Compute Q space now*/
-               q_space_set_t q_space = p2p_compute_q_space(edge->to.node, edge, edge->level);
-
-
-               /*now merge extended p-space and q-space*/
-
-               pq_space_set_t pq_space = Intersect_Extended_P_and_Q_Space(ex_p_space, q_space);
-               ex_p_space = NULL;
-               q_space = NULL;
-
+               q_space_set_t pq_space = p2p_filter_select_pq_nodes_from_ex_pspace(node, edge, edge->level, ex_p_space);
                printf("Node %s pq-space : ", node->node_name);
                ITERATE_LIST_BEGIN(pq_space, list_node){
 
                    pq_node = (node_t *) list_node->data;
-                   printf("%s ", pq_node->node_name);   
+                   printf("%s (%s)\n", pq_node->node_name, IS_BIT_SET(pq_node->q_space_protection_type, \
+                           LINK_NODE_PROTECTION) ? "LINK_NODE_PROTECTION" : "LINK_PROTECTION");   
                }ITERATE_LIST_END;
 
                delete_singly_ll(pq_space);
                free(pq_space);
                pq_space = NULL;
+               delete_singly_ll(ex_p_space);
+               free(ex_p_space);
+               ex_p_space = NULL;
            }
            break;
           default:

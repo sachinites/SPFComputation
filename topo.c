@@ -312,7 +312,8 @@ build_ring_topo(){
 For link S---E, there should be no LFA for non ECMP dest. For ECMP dest, only link protection LFA exists which is again rejected because destination has ECMP paths
 psp - AB, exp - ABC
 qsp - CD
-C is only PQ node.
+C is only PQ node for Dest E
+B is the only PQ node for Dest D
     
                     S/-----------\E
                     /             \

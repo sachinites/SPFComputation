@@ -478,6 +478,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_link,
             /*Doesnt matter if p_node qualifies node protection criteria, it will be link protecting only*/
             sprintf(LOG, "Node : %s : Link protected p-node %s qualify as link protection Q node",
                             S->node_name, p_node->node_name); TRACE();
+            SET_BIT(p_node->q_space_protection_type, LINK_PROTECTION);
             singly_ll_add_node_by_val(pq_space, p_node);
             continue;
         }
@@ -507,6 +508,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_link,
                 /*This node provides node protection to Destination D*/
                 sprintf(LOG, "Node : %s : Node protected p-node %s qualify as node protection Q node for for Dest %s",
                         S->node_name, p_node->node_name, D_res->node->node_name); TRACE();
+                SET_BIT(p_node->q_space_protection_type, LINK_NODE_PROTECTION); 
                 singly_ll_add_node_by_val(pq_space, p_node);   
                 continue;
             }
@@ -523,7 +525,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_link,
                 continue;
             }
             UNSET_BIT(p_node->p_space_protection_type, LINK_NODE_PROTECTION);
-            SET_BIT(p_node->p_space_protection_type, LINK_PROTECTION);
+            SET_BIT(p_node->q_space_protection_type, LINK_PROTECTION);
             sprintf(LOG, "Node : %s : Node protected p-node %s qualify as link protection Q node"
                     "Demoted from LINK_NODE_PROTECTION to LINK_PROTECTION PQ node for Dest %s", 
                      S->node_name, p_node->node_name, D_res->node->node_name); TRACE();
@@ -627,6 +629,45 @@ broadcast_compute_link_node_protection_rlfas(node_t *S,
     return NULL;
 }
 
+static lfa_t *
+p2p_compute_link_node_protection_rlfas(node_t *S, 
+                                  edge_t *protected_link,  
+                                  LEVEL level,
+                                  boolean strict_down_stream_lfa){
+
+    singly_ll_node_t *list_node = NULL;
+    node_t *pq_node = NULL;
+    assert(!is_broadcast_link(protected_link, level));
+
+    p_space_set_t ex_p_space = p2p_compute_link_node_protecting_extended_p_space(S, protected_link, level);
+    sprintf(LOG, "No of nodes in ex_p_space = %u", GET_NODE_COUNT_SINGLY_LL(ex_p_space)); TRACE();
+    
+    if(GET_NODE_COUNT_SINGLY_LL(ex_p_space) == 0){
+        free(ex_p_space);
+        return NULL;
+    }
+
+    /*This PQ space will not contain overloaded nodes*/
+    pq_space_set_t pq_space  = p2p_filter_select_pq_nodes_from_ex_pspace(S, protected_link, 
+                                                                         level, ex_p_space);
+    sprintf(LOG, "No of nodes in pq_space = %u", GET_NODE_COUNT_SINGLY_LL(pq_space)); TRACE();
+
+    if(GET_NODE_COUNT_SINGLY_LL(pq_space) == 0){
+        free(pq_space);
+        return NULL;
+    }
+
+    printf("PQ nodes : \n");
+    ITERATE_LIST_BEGIN(pq_space, list_node){
+        pq_node = list_node->data;
+        printf("%s (%s)\n", pq_node->node_name, IS_BIT_SET(pq_node->q_space_protection_type, \
+                LINK_NODE_PROTECTION) ? "LINK_NODE_PROTECTION" : "LINK_PROTECTION"); 
+    } ITERATE_LIST_END;
+
+    return NULL;
+}
+
+#if 0
 static lfa_t *
 p2p_compute_link_node_protection_rlfas(node_t *S, 
                                   edge_t *protected_link,  
@@ -805,6 +846,7 @@ p2p_compute_link_node_protection_rlfas(node_t *S,
     }
     return lfa;
 }
+#endif
 
 /*Routine to compute RLFA of node S, wrt to failed link 
  * protected_link at given level for destination dest. Note that
