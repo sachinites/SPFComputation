@@ -129,24 +129,16 @@ union_nh_list2(internal_nh_t *src_nh_list, internal_nh_t *dst_nh_list){
 void
 union_direct_nh_list2(internal_nh_t *src_direct_nh_list, internal_nh_t *dst_nh_list){
 
-    unsigned int i = 0;
+    unsigned int nh_count = 0;
 
     if(is_nh_list_empty2(src_direct_nh_list))
         return;
 
-    if(is_present2(&dst_nh_list[0], &src_direct_nh_list[0]))
-        return;
-
-    for(; i < MAX_NXT_HOPS; i++){
-        if(!is_nh_list_empty2(&dst_nh_list[i]))
-            continue;
-        break;
-    }
-
-    if(i == MAX_NXT_HOPS)
-        return;
-
-    copy_internal_nh_t(src_direct_nh_list[0], dst_nh_list[i]);
+    nh_count = get_nh_count(&dst_nh_list[0]);
+    if(nh_count == MAX_NXT_HOPS)
+        return; 
+    
+    union_nh_list2(&src_direct_nh_list[0], &dst_nh_list[0]);
 }
 
 boolean
@@ -347,5 +339,14 @@ is_broadcast_member_node(node_t *S, edge_t *interface, node_t *D, LEVEL level){
 
     } ITERATE_NODE_LOGICAL_NBRS_END;
     return FALSE;
+}
+
+void
+add_to_nh_list(internal_nh_t *nh_list, internal_nh_t *nh){
+
+    unsigned int nh_count = get_nh_count(nh_list);
+    if(nh_count == MAX_NXT_HOPS)
+        return;
+    memcpy(&nh_list[nh_count], nh, sizeof(internal_nh_t));
 }
 

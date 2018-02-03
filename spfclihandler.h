@@ -75,4 +75,7 @@ show_spf_initialization(node_t *spf_root, LEVEL level);
 int
 debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 
+int
+debug_show_node_back_up_spf_results(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
+
 #endif /* __SPFCLIHANDLER__ */

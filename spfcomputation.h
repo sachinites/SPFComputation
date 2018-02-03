@@ -60,6 +60,7 @@ typedef struct internal_nh_t_{
     unsigned int ldplabel;
     unsigned int root_metric;
     unsigned int dest_metric;
+    boolean is_eligible;
 } internal_nh_t;
 
 /*macros to operate on above internal_nh_t DS*/
@@ -77,24 +78,27 @@ typedef struct internal_nh_t_{
     ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->to.prefix[_internal_nh_t.level]->mask
 
 #define next_hop_oif_name(_internal_nh_t)            \
-    (_internal_nh_t.oif->intf_name)
+    ((_internal_nh_t).oif->intf_name)
 
-#define set_next_hop_gw_pfx(_internal_nh_t, pfx)            \
-    (strncpy(_internal_nh_t.gw_prefix, pfx, PREFIX_LEN));   \
-    _internal_nh_t.gw_prefix[PREFIX_LEN] = '\0'
+#define set_next_hop_gw_pfx(_internal_nh_t, pfx)              \
+    (strncpy((_internal_nh_t).gw_prefix, pfx, PREFIX_LEN));   \
+    (_internal_nh_t).gw_prefix[PREFIX_LEN] = '\0'
 
 #define init_internal_nh_t(_internal_nh_t)           \
     memset(&_internal_nh_t, 0, sizeof(internal_nh_t))
 
 #define intialize_internal_nh_t(_internal_nh_t, _level, _oif_edge, _node)  \
-    _internal_nh_t.level = _level;                                         \
-    _internal_nh_t.oif   = &_oif_edge->from;                               \
-    _internal_nh_t.node  = _node;                                          \
-    _internal_nh_t.nh_type = _oif_edge->etype;                             \
-    _internal_nh_t.lfa_type = UNKNOWN_LFA_TYPE;                            \
-    _internal_nh_t.proxy_nbr = NULL;                                       \
-    _internal_nh_t.rlfa = NULL;                                            \
-    _internal_nh_t.ldplabel = 0
+    (_internal_nh_t).level = _level;                                         \
+    (_internal_nh_t).oif   = &_oif_edge->from;                               \
+    (_internal_nh_t).node  = _node;                                          \
+    (_internal_nh_t).nh_type = _oif_edge->etype;                             \
+    (_internal_nh_t).lfa_type = UNKNOWN_LFA_TYPE;                            \
+    (_internal_nh_t).proxy_nbr = NULL;                                       \
+    (_internal_nh_t).rlfa = NULL;                                            \
+    (_internal_nh_t).ldplabel = 0;                                           \
+    (_internal_nh_t).root_metric = 0;                                        \
+    (_internal_nh_t).dest_metric = 0;                                        \
+    (_internal_nh_t).is_eligible = FALSE
 
 #define copy_internal_nh_t(_src, _dst)    \
     (_dst).level = (_src).level;          \
@@ -105,17 +109,21 @@ typedef struct internal_nh_t_{
     (_dst).lfa_type = (_src).lfa_type;                  \
     (_dst).proxy_nbr = (_src).proxy_nbr;                \
     (_dst).rlfa = (_src).rlfa;                          \
-    (_dst).ldplabel = (_src).ldplabel
+    (_dst).ldplabel = (_src).ldplabel;                  \
+    (_dst).root_metric = (_src).root_metric;            \
+    (_dst).dest_metric = (_src).dest_metric;            \
+    (_dst).is_eligible = (_src).is_eligible
 
 #define is_internal_nh_t_equal(_nh1, _nh2)                   \
     (_nh1.level == _nh2.level && _nh1.node == _nh2.node &&   \
     _nh1.oif == _nh2.oif && _nh1.nh_type == _nh2.nh_type &&  \
-    _nh1.lfa_type == _nh2.lfa_type && _nh1.proxy_nbr && _nh2.proxy_nbr && \
-    _nh1.rlfa == _nh2.rlfa && _nh1.ldplabel == _nh2.ldplabel)
+    _nh1.lfa_type == _nh2.lfa_type && _nh1.proxy_nbr == _nh2.proxy_nbr && \
+    _nh1.rlfa == _nh2.rlfa && _nh1.ldplabel == _nh2.ldplabel && \
+    _nh1.root_metric == _nh2.root_metric &&                     \
+    _nh1.dest_metric == _nh2.dest_metric)
 
 #define is_internal_nh_t_empty(_nh) \
     (_nh.node == NULL && _nh.oif == NULL)
-
 
 typedef struct spf_result_{
 

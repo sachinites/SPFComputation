@@ -612,3 +612,83 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
   }
   return 0;
 }
+
+#if 0
+static void 
+dump_next_hop(internal_nh_t *nh){
+
+    //printf("\tLevel       = %s\n", get_str_level(nh->level));
+    printf("\toif         = %s\n", nh->oif->intf_name);
+    printf("\tNode        = %s\n", nh->node->node_name);
+    printf("\tgw_prefix   = %s\n", nh->gw_prefix);
+    printf("\tnh_type     = %s\n", nh->nh_type == IPNH ? "IPNH" : "LSPNH"); 
+    printf("\tlfa_type    = %s\n", get_str_lfa_type(nh->lfa_type));
+    printf("\tproxy_nbr   = %s\n", nh->proxy_nbr->node_name);
+    printf("\trlfa        = %s\n", nh->rlfa->node_name);
+    printf("\tldplabel    = %u\n", nh->ldplabel);
+    printf("\troot_metric = %u\n", nh->root_metric);
+    printf("\tdest_metric = %u\n", nh->dest_metric);
+    printf("\tis_eligible = %s\n", nh->is_eligible ? "TRUE" : "FALSE");
+}
+#endif
+static void 
+dump_next_hop(internal_nh_t *nh){
+
+    //printf("\tLevel       = %s\n", get_str_level(nh->level));
+    printf("\toif = %-10s", nh->oif->intf_name);
+    printf("Node = %-16s", nh->node->node_name);
+    printf("gw_prefix = %-16s\n", nh->gw_prefix);
+    printf("\tnh_type = %-6s", nh->nh_type == IPNH ? "IPNH" : "LSPNH"); 
+    printf("lfa_type = %-25s\n", get_str_lfa_type(nh->lfa_type));
+    printf("\tproxy_nbr = %-16s", nh->proxy_nbr->node_name);
+    printf("rlfa = %-16s\n", nh->rlfa->node_name);
+    printf("\tldplabel = %-17u", nh->ldplabel);
+    printf("root_metric = %-8u", nh->root_metric);
+    printf("dest_metric = %-8u", nh->dest_metric);
+    printf("is_eligible = %-6s\n", nh->is_eligible ? "TRUE" : "FALSE");
+}
+
+int
+debug_show_node_back_up_spf_results(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    node_t *node = NULL,
+           *D = NULL;
+    tlv_struct_t *tlv = NULL;
+    LEVEL level_it = MAX_LEVEL;
+    char *node_name = NULL;
+    nh_type_t nh = NH_MAX;
+    singly_ll_node_t *list_node = NULL;
+    spf_result_t *D_res = NULL;
+    unsigned int i = 0,
+                 nh_count = 0,
+                 j = 0;
+
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+    } TLV_LOOP_END;
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
+    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+        printf("\n%s backup spf results\n\n", get_str_level(level_it));
+        ITERATE_LIST_BEGIN(node->spf_run_result[level_it], list_node){
+            D_res = list_node->data;
+            D = D_res->node;
+            printf("Dest : %s (#IP back-ups = %u, #LSP back-ups = %u)\n", 
+                    D->node_name, 
+                    get_nh_count(D->backup_next_hop[level_it][IPNH]),
+                    get_nh_count(D->backup_next_hop[level_it][LSPNH]));
+            j = 1;
+            ITERATE_NH_TYPE_BEGIN(nh){
+                nh_count = get_nh_count(D->backup_next_hop[level_it][nh]);
+                for( i = 0; i < nh_count; i++){
+                    printf("Nh# %u. ", j++);
+                    dump_next_hop(&(D->backup_next_hop[level_it][nh][i]));
+                    printf("\n");           
+                }
+            } ITERATE_NH_TYPE_END;
+        } ITERATE_LIST_END;
+    }
+    return 0;
+}

@@ -196,8 +196,7 @@ p2p_compute_rlfa_for_given_dest(node_t *node, LEVEL level, edge_t *failed_edge, 
 q_space_set_t
 p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S, 
                                           edge_t *failed_edge, 
-                                          LEVEL level, 
-                                          p_space_set_t ex_p_space);
+                                          LEVEL level); 
 
 q_space_set_t
 broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, 

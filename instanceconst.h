@@ -122,6 +122,7 @@ typedef enum{
 typedef enum{
 
     /* when protected link is P2P*/
+    NO_LFA,
     LINK_PROTECTION_LFA,    /*Ineq 1 only*/
     LINK_PROTECTION_LFA_DOWNSTREAM, /*Ineq 1 and 2 only*/
     LINK_AND_NODE_PROTECTION_LFA, /*Ineq 1 2 and 3 only*/
@@ -141,8 +142,7 @@ typedef enum{
     BROADCAST_LINK_PROTECTION_RLFA,
     BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM,
     BROADCAST_LINK_AND_NODE_PROTECTION_RLFA,
-    UNKNOWN_LFA_TYPE,
-    NO_LFA
+    UNKNOWN_LFA_TYPE
 } lfa_type_t;
 
 

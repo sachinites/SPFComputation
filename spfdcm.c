@@ -362,23 +362,10 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                    pq_space = broadcast_filter_select_pq_nodes_from_ex_pspace(node, edge, edge->level, ex_p_space);
                }
                else{
-                   ex_p_space = p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
-                   pq_space = p2p_filter_select_pq_nodes_from_ex_pspace(node, edge, edge->level, ex_p_space);
+                   p2p_compute_link_node_protecting_extended_p_space(node, edge, edge->level);
+                   p2p_filter_select_pq_nodes_from_ex_pspace(node, edge, edge->level);
                }
-               printf("Node %s pq-space : ", node->node_name);
-               ITERATE_LIST_BEGIN(pq_space, list_node){
-
-                   pq_node = (node_t *) list_node->data;
-                   printf("%s (%s)\n", pq_node->node_name, IS_BIT_SET(pq_node->q_space_protection_type, \
-                           LINK_NODE_PROTECTION) ? "LINK_NODE_PROTECTION" : "LINK_PROTECTION");   
-               }ITERATE_LIST_END;
-
-               delete_singly_ll(pq_space);
-               free(pq_space);
-               pq_space = NULL;
-               delete_singly_ll(ex_p_space);
-               free(ex_p_space);
-               ex_p_space = NULL;
+               printf("Node %s pq-space computed.\n", node->node_name);
            }
            break;
           default:
@@ -854,12 +841,13 @@ show_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_o
     tlv_struct_t *tlv = NULL;
     char *node_name = NULL;
     node_t *node = NULL;
-
+    
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         node_name = tlv->value;
     } TLV_LOOP_END;
 
     node =  (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+    
     dump_node_info(node); 
     return 0;
 }
@@ -1344,6 +1332,7 @@ spf_init_dcm(){
         static param_t instance;
         init_param(&instance, CMD, "instance", 0, 0, INVALID, 0, "Network graph");
         libcli_register_param(debug_show, &instance);
+
         {
             /*debug show instance node*/
             static param_t instance_node;
@@ -1353,8 +1342,32 @@ spf_init_dcm(){
             {
                 /*debug show instance node <node-name>*/
                 static param_t instance_node_name;
-                init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
+                init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, 
+                    validate_node_extistence, STRING, "node-name", "Node Name");
                 libcli_register_param(&instance_node, &instance_node_name);
+                {
+                   /*debug show instance node <node-name> backup-spf_results */
+                   static param_t backup_spf_results;
+                   init_param(&backup_spf_results, CMD, "backup-spf-results", 
+                        debug_show_node_back_up_spf_results, 0, INVALID, 0, "Back up Results");  
+                   libcli_register_param(&instance_node_name, &backup_spf_results);
+                   set_param_cmd_code(&backup_spf_results, CMDCODE_DEBUG_SHOW_BACKUP_SPF_RESULTS);
+                   /*debug show instance node <node-name> backup-spf_results destination <dest-name>*/
+#if 0
+                   {
+                       static param_t destination;
+                       init_param(&destination, CMD, "destination", 0, 0, INVALID, 0, "Destination");
+                       libcli_register_param(&backup_spf_results, &destination);
+                       {
+                           static param_t dest_name;
+                           init_param(&dest_name, LEAF, 0, debug_show_node_back_up_spf_results, 
+                                   validate_node_extistence, STRING, "dst-name", "Destination Name");
+                           libcli_register_param(&destination, &dest_name);
+                           set_param_cmd_code(&dest_name, CMDCODE_DEBUG_SHOW_BACKUP_SPF_RESULTS_PER_DEST);
+                       }
+                   }
+#endif
+                }
                 {
                     /*debug show instance node <node-name> interface*/
                     static param_t interface;
