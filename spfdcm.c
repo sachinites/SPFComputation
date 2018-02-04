@@ -211,6 +211,9 @@ show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     return 0; 
 }
 
+extern void
+dump_next_hop(internal_nh_t *nh);
+
 static int
 show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
@@ -219,11 +222,14 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
     unsigned int i = 0;
     tlv_struct_t *tlv = NULL;
     node_t *node = NULL, *p_node = NULL,
-            *q_node = NULL, *pq_node = NULL;
+            *q_node = NULL, *pq_node = NULL,
+            *D = NULL;
 
     edge_end_t *edge_end = NULL;
     singly_ll_node_t *list_node = NULL;
     int cmdcode = -1;
+    LEVEL level_it ;
+    spf_result_t *D_res = NULL;
 
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
@@ -277,7 +283,22 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        printf("Empty.");
                        return 0;
                    }
+                   unsigned int j = 0, nh_count = 0;
+                   nh_type_t nh;
+                   internal_nh_t *p_node = NULL;
 
+                   for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+                       printf("\nextended p-space at %s: \n", get_str_level(level_it));
+                       nh_count = get_nh_count(node->pq_nodes[level_it]);
+                       for(j = 0; j < nh_count; j++){
+                            p_node = &node->pq_nodes[level_it][j];
+                            dump_next_hop(p_node);
+                            printf("\n");
+                       }
+                   }
+
+
+#if 0
                    ITERATE_LIST_BEGIN(p_space, list_node){
 
                        p_node = (node_t *) list_node->data;
@@ -291,7 +312,7 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                             printf("(LINK_PROTECTION)\n"); /*If this pspace comes from p2p_compute_p_space*/
 
                    }ITERATE_LIST_END;
-
+#endif
                    /*free p-space*/
                    delete_singly_ll(p_space);
                    free(p_space);

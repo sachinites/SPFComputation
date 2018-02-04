@@ -631,7 +631,8 @@ dump_next_hop(internal_nh_t *nh){
     printf("\tis_eligible = %s\n", nh->is_eligible ? "TRUE" : "FALSE");
 }
 #endif
-static void 
+
+void 
 dump_next_hop(internal_nh_t *nh){
 
     //printf("\tLevel       = %s\n", get_str_level(nh->level));
