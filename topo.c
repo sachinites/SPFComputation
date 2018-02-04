@@ -305,6 +305,83 @@ build_multi_area_topo(){
     return instance;
 }
 
+
+instance_t *
+build_rlfa_topo(){
+
+#if 0
+For link A---B, for Dest E, G and D should be RLFA 
+                                                      |A
+                                                0/11 /|\0/0
+                                        15.1.1.2/30 / | \10.1.1.1/30
+                                                   / 0/2 \
+                                                  /1.1.1.1\
+                                                 /   /30   \
+                                                /     |     \
+                                          0/10 /      |      \0/1 10.1.1.2/30
+                                  15.1.1.1/30 /       |       \C 
+                                             F        |        |0/2 11.1.1.1/30
+                                          0/9|       0/0       |
+                                  14.1.1.2/30|    1.1.1.2/30   |
+                                             |        B        |
+                                             |       0/1       |
+                                             |    16.1.1.1/30  |
+                                         0/8 |        |        |
+                                  14.1.1.1/30|        |        |
+                                            G|        |        |0/3 11.1.1.2/30
+                                          0/7\        |       /D 
+                                   13.1.1.2/30\       |      /0/4 12.1.1.1/30  
+                                               \      |     /   
+                                                \     |    /
+                                                 \16.1.1.2/
+                                                  \  /30 /
+                                                   \ 0/0/
+                                                    \ |/
+                                                 0/6 \/0/5
+                                          13.1.1.1/30 E 12.1.1.2/30
+
+
+#endif    
+
+    instance_t *instance = get_new_instance();
+
+    node_t *A = create_new_node(instance, "A", AREA1, "192.168.0.1");
+    node_t *C = create_new_node(instance, "C", AREA1, "192.168.0.2");
+    node_t *D = create_new_node(instance, "D", AREA1, "192.168.0.3");
+    node_t *E = create_new_node(instance, "E", AREA1, "192.168.0.4");
+    node_t *G = create_new_node(instance, "G", AREA1, "192.168.0.5");
+    node_t *F = create_new_node(instance, "F", AREA1, "192.168.0.6");
+    node_t *B = create_new_node(instance, "B", AREA1, "192.168.0.7");
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30, LEVEL1), create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
+                                A, C, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/3", 10, create_new_prefix("11.1.1.1", 30, LEVEL1), create_new_prefix("11.1.1.2", 30, LEVEL1), LEVEL1)),
+                                C, D, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/4", "eth0/5", 10, create_new_prefix("12.1.1.1", 30, LEVEL1), create_new_prefix("12.1.1.2", 30, LEVEL1), LEVEL1)),
+                                D, E, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/6", "eth0/7", 10, create_new_prefix("13.1.1.1", 30, LEVEL1), create_new_prefix("13.1.1.2", 30, LEVEL1), LEVEL1)),
+                                E, G, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/8", "eth0/9", 10, create_new_prefix("14.1.1.1", 30, LEVEL1), create_new_prefix("14.1.1.2", 30, LEVEL1), LEVEL1)),
+                                G, F, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/10", "eth0/11", 10, create_new_prefix("15.1.1.1", 30, LEVEL1), create_new_prefix("15.1.1.2", 30, LEVEL1), LEVEL1)),
+                                F, A, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/0", 10, create_new_prefix("1.1.1.1", 30, LEVEL1), create_new_prefix("1.1.1.2", 30, LEVEL1), LEVEL1)),
+                                A, B, BIDIRECTIONAL);
+    
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/0", 10, create_new_prefix("16.1.1.1", 30, LEVEL1), create_new_prefix("16.1.1.2", 30, LEVEL1), LEVEL1)),
+                                B, E, BIDIRECTIONAL);
+
+    set_instance_root(instance, A);
+    return instance;
+}
+
+
 instance_t *
 build_ring_topo(){
 

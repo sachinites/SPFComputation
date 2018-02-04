@@ -80,7 +80,8 @@ init_back_up_computation(node_t *S, LEVEL level){
 boolean
 is_destination_impacted(node_t *S, edge_t *protected_link, 
                         node_t *D, LEVEL level, 
-                        char impact_reason[]){
+                        char impact_reason[],
+                        boolean *IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED){
 
     /*case 1 : Destination has only 1 next hop through protected_link, return TRUE*/
     unsigned int nh_count = 0;
@@ -95,6 +96,7 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
                  i = 0;
 
     assert(IS_LEVEL_SET(protected_link->level, level));
+    *IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE;
 
     if(!IS_LINK_PROTECTION_ENABLED(protected_link) &&
             !IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
@@ -161,7 +163,6 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
             sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u AND Only LINK_PROTECTION Enabled",
                         D->node_name, nh_count);
             return FALSE;/*ECMP case with only link protection*/
-                
         }
         if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
             /*None of primary next hops should traverse the E*/
@@ -183,10 +184,13 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
                     }
                 }
             }ITERATE_NH_TYPE_END;
+            /* ToDo : We must not compute Link protection LFA/RLFA for such destination, only node
+             * protection back up is needed*/
             sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u,"
                     "but all primary nxt hop nodes traverses protected_link next hop"
-                    "node (%s) AND LINK_NODE_PROTECTION Enabled",
-                D->node_name, nh_count, E->node_name);
+                    "node (%s) AND LINK_NODE_PROTECTION Enabled. No only-link protecting backup needed",
+                    D->node_name, nh_count, E->node_name);
+            *IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = FALSE;
             return TRUE;
         }
     }
@@ -604,7 +608,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                                     rlfa->proxy_nbr = nbr_node;
                                     rlfa->rlfa = P_node;
                                     rlfa->ldplabel = 1;
-                                    rlfa->root_metric = d_S_to_p_node;
+                                    rlfa->root_metric = edge1->metric[level] + d_nbr_to_p_node;
                                     rlfa->dest_metric = 0; /*Not known yet*/ 
                                     rlfa->is_eligible = TRUE; /*Not known yet*/
                                 }
@@ -661,7 +665,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                             rlfa->proxy_nbr = nbr_node;
                             rlfa->rlfa = P_node;
                             rlfa->ldplabel = 1;
-                            rlfa->root_metric = d_S_to_p_node;
+                            rlfa->root_metric = edge1->metric[level] + d_nbr_to_p_node;
                             rlfa->dest_metric = 0; /*Not known yet*/ 
                             rlfa->is_eligible = TRUE; /*Not known yet*/
                         }
@@ -693,7 +697,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                                 rlfa->proxy_nbr = nbr_node;
                                 rlfa->rlfa = P_node;
                                 rlfa->ldplabel = 1;
-                                rlfa->root_metric = d_S_to_p_node;
+                                rlfa->root_metric = edge1->metric[level] + d_nbr_to_p_node;
                                 rlfa->dest_metric = 0; /*Not known yet*/ 
                                 rlfa->is_eligible = TRUE; /*Not known yet*/
                             }
@@ -723,7 +727,7 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
     char impact_reason[STRING_REASON_LEN];
     node_t *E = protected_link->to.node,
            *p_node = NULL;
-
+    
     spf_result_t *D_res = NULL;
     singly_ll_node_t *list_node = NULL,
                      *list_node1 = NULL;
@@ -751,7 +755,8 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
         /*For node protection, Run the Forward SPF run on PQ nodes*/
         Compute_and_Store_Forward_SPF(p_node, level);
         /*Now inspect all Destinations which are impacted by the link*/
-        boolean is_dest_impacted = FALSE;
+        boolean is_dest_impacted = FALSE,
+                 IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE; 
 
         ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node1){
             is_dest_impacted = FALSE;
@@ -760,11 +765,16 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
             /*if RLFA's proxy nbr itself is a destination, then no need to find
              * PQ node for such a destination. p_node->proxy_nbr will surely quality to be
              * LFA for such a destination*/
+#if 0
             if(p_node->proxy_nbr == D_res->node)
                 continue;
+#endif
             /*Check if this is impacted destination*/
             memset(impact_reason, 0, STRING_REASON_LEN);
-            is_dest_impacted = is_destination_impacted(S, protected_link, D_res->node, level, impact_reason);
+
+            IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE;
+            is_dest_impacted = is_destination_impacted(S, protected_link, D_res->node, 
+                        level, impact_reason, &IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED);
             sprintf(LOG, "Dest = %s Impact result = %s\n    reason : %s", D_res->node->node_name, 
                     is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); TRACE();
 
@@ -773,6 +783,11 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
             if(IS_BIT_SET(p_node->p_space_protection_type, LINK_PROTECTION)){
                 /*This node cannot provide node protection, check only link protection
                  * p_node should be loop free wrt to PN*/
+                if(IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED == FALSE){
+                    sprintf(LOG, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
+                            S->node_name, p_node->node_name, D_res->node->node_name); TRACE();
+                    continue;
+                }
                 d_p_to_E = DIST_X_Y(E, p_node, level);
                 d_p_to_D = DIST_X_Y(p_node, D_res->node, level);
                 d_E_to_D = DIST_X_Y(E, D_res->node, level);
@@ -809,6 +824,11 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
                 S->node_name, p_node->node_name, D_res->node->node_name); TRACE();
             /*p_node fails to provide node protection, demote the p_node to LINK_PROTECTION
              * if it provides atleast link protection to Destination D*/
+            if(IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED == FALSE){
+                sprintf(LOG, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
+                        S->node_name, p_node->node_name, D_res->node->node_name); TRACE();
+                continue;
+            }
             d_p_to_D = DIST_X_Y(p_node, D_res->node, level);
             d_p_to_E = DIST_X_Y(E, p_node, level);
             d_E_to_D = DIST_X_Y(E, D_res->node, level);
@@ -846,7 +866,6 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
 
     spf_result_t *D_res = NULL;
     singly_ll_node_t *list_node1 = NULL;
-
     assert(!is_broadcast_link(protected_link, level));
 
     /*Compute reverse SPF for nodes S and E as roots*/
@@ -883,7 +902,8 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
         /*For node protection, Run the Forward SPF run on PQ nodes*/
         Compute_and_Store_Forward_SPF(p_node->rlfa, level);
         /*Now inspect all Destinations which are impacted by the link*/
-        boolean is_dest_impacted = FALSE;
+        boolean is_dest_impacted = FALSE,
+                IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE;
 
         ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node1){
             is_dest_impacted = FALSE;
@@ -897,7 +917,9 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
 
             /*Check if this is impacted destination*/
             memset(impact_reason, 0, STRING_REASON_LEN);
-            is_dest_impacted = is_destination_impacted(S, protected_link, D_res->node, level, impact_reason);
+            IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE;
+            is_dest_impacted = is_destination_impacted(S, protected_link, D_res->node, 
+                    level, impact_reason, &IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED);
             sprintf(LOG, "Dest = %s Impact result = %s\n    reason : %s", D_res->node->node_name, 
                     is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); TRACE();
 
@@ -925,6 +947,12 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
                     sprintf(LOG, "Node : %s : node link degradation is not enabled", S->node_name);
                     continue;
                 }
+
+                if(IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED == FALSE){
+                    sprintf(LOG, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
+                            S->node_name, p_node->rlfa->node_name, D_res->node->node_name); TRACE();
+                    continue;
+                }
                 d_p_to_S = DIST_X_Y(S, p_node->rlfa, level);
                 d_p_to_E = DIST_X_Y(E, p_node->rlfa, level);              
                 if(!(d_p_to_D < d_p_to_S + protected_link->metric[level])){
@@ -942,6 +970,11 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
             }else if(p_node->lfa_type == LINK_PROTECTION_RLFA ||
                     p_node->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM){
                 if(!IS_LINK_PROTECTION_ENABLED(protected_link)){
+                    continue;
+                }
+                if(IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED == FALSE){
+                    sprintf(LOG, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
+                            S->node_name, p_node->rlfa->node_name, D_res->node->node_name); TRACE();
                     continue;
                 }
                 d_p_to_S = DIST_X_Y(S, p_node->rlfa, level);
@@ -1319,7 +1352,8 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
     lfa_dest_pair_t *lfa_dest_pair = NULL;
 
     assert(is_broadcast_link(protected_link, level));
-    boolean is_dest_impacted = FALSE;
+    boolean is_dest_impacted = FALSE,
+             IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE;
 
     lfa_t *lfa = get_new_lfa();
     lfa->protected_link = &protected_link->from;
@@ -1337,13 +1371,14 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
         sprintf(LOG, "Node : %s : LFA computation for Destination %s begin", S->node_name, D->node_name); TRACE();
         
-        is_dest_impacted = is_destination_impacted(S, protected_link, D, level, impact_reason);
+        IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE;
+        is_dest_impacted = is_destination_impacted(S, protected_link, D, level, impact_reason,
+                            &IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED);
         sprintf(LOG, "Dest = %s Impact result = %s\n    reason : %s", D->node_name, 
                     is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); TRACE();
 
         if(is_dest_impacted == FALSE) continue;
         
-
         dist_S_D = D_res->spf_metric;
         dist_PN_D = DIST_X_Y(PN, D, level);
 
@@ -1471,6 +1506,12 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                         S->node_name, N->node_name); TRACE();
                 goto NBR_PROCESSING_DONE;
             }
+           
+            if(IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED == FALSE){
+                sprintf(LOG, "Node : %s : Nbr %s not considered for link protection LFA as it has ECMP",
+                            S->node_name, N->node_name); TRACE();
+                goto NBR_PROCESSING_DONE;
+            }
             
             if(strict_down_stream_lfa){
                 /* 4. Narrow down the subset further using inequality 2 */
@@ -1562,7 +1603,8 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
     edge_t *edge1 = NULL, *edge2 = NULL;
 
-    boolean is_dest_impacted = FALSE;
+    boolean is_dest_impacted = FALSE,
+            IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE;
     char impact_reason[STRING_REASON_LEN];
 
     spf_result_t *D_res = NULL;
@@ -1596,7 +1638,9 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
         sprintf(LOG, "Node : %s : LFA computation for Destination %s begin", S->node_name, D->node_name); TRACE();
         
-        is_dest_impacted = is_destination_impacted(S, protected_link, D, level, impact_reason);
+        IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = TRUE;
+        is_dest_impacted = is_destination_impacted(S, protected_link, D, level, impact_reason, 
+                             &IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED);
         sprintf(LOG, "Dest = %s Impact result = %s\n    reason : %s", D->node_name, 
                     is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); TRACE();
                     
@@ -1720,6 +1764,11 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
              * inequality from implementation, but giving explitely knob if admin wants to harness the advantages Or disadvantages
              * of this inequality at his own will
              * */
+            if(IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED == FALSE){
+                sprintf(LOG, "Node : %s : Nbr %s not considered for link protection LFA as it has ECMP",
+                            S->node_name, N->node_name); TRACE();
+                goto NBR_PROCESSING_DONE;
+            }
 
             if(strict_down_stream_lfa){
                 /* 4. Narrow down the subset further using inequality 2 */

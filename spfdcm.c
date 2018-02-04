@@ -221,15 +221,13 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
          *slot_name = NULL;
     unsigned int i = 0;
     tlv_struct_t *tlv = NULL;
-    node_t *node = NULL, *p_node = NULL,
-            *q_node = NULL, *pq_node = NULL,
-            *D = NULL;
+    node_t *node = NULL, 
+            *q_node = NULL;
 
     edge_end_t *edge_end = NULL;
     singly_ll_node_t *list_node = NULL;
     int cmdcode = -1;
     LEVEL level_it ;
-    spf_result_t *D_res = NULL;
 
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
@@ -284,7 +282,6 @@ show_instance_node_spaces(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or
                        return 0;
                    }
                    unsigned int j = 0, nh_count = 0;
-                   nh_type_t nh;
                    internal_nh_t *p_node = NULL;
 
                    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){

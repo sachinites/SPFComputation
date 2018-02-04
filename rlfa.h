@@ -280,6 +280,7 @@ compute_rlfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_dow
 boolean
 is_destination_impacted(node_t *S, edge_t *failed_edge,
         node_t *D, LEVEL level,
-        char impact_reason[]);
+        char impact_reason[],
+        boolean *IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED);
 
 #endif /* __RLFA__ */
