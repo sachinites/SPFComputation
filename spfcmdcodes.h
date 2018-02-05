@@ -67,13 +67,9 @@
 #define CMDCODE_CONFIG_ALL_INTERFACE_LINK_PROTECTION        30 /*config node <node-name> interface all link-protection*/
 #define CMDCODE_CONFIG_ALL_INTERFACE_NODE_LINK_PROTECTION   31 /*config node <node-name> interface all node-link-protection*/
 
-#define CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES        32 /*debug instance node <node-name> interface <ifname> destination <dest-node-name> pqnodes (YET TO IMPLEMENT)*/
 #define CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA            33 /*config node <node-name> interface <ifname> link-protection rlfa*/ 
 
-#define CMDCODE_DEBUG_SHOW_NODE_INTF_LFA                    34 /*debug show instance node <node-name> interface <slot-no> lfa*/
-#define CMDCODE_DEBUG_SHOW_NODE_INTF_PSPACE                 35 /*debug show instance node <node-name> interface <slot-no> pspace*/
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_EXPSPACE               36 /*debug show instance node <node-name> interface <slot-no> expspace*/
-#define CMDCODE_DEBUG_SHOW_NODE_INTF_QSPACE                 37 /*debug show instance node <node-name> interface <slot-no> qspace*/
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE                38 /*debug show instance node <node-name> interface <slot-no> pqspace*/
 
 #define CMDCODE_SHOW_SPF_RUN_INIT                           39 /*show spf run level <level-no> [root <node-name>] init*/

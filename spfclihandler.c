@@ -372,76 +372,15 @@ inset_lsp_as_forward_adjacency(node_t *ingress_lsr_node,
 }
 
 int
-debug_show_node_lfas(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
-
-    char *node_name = NULL;
-    char *intf_name = NULL;
-    int cmd_code = -1, i = 0;
-    node_t *node = NULL;
-    edge_end_t *edge_end = NULL;
-    edge_t *edge = NULL;
-    lfa_t *lfa = NULL;
-    tlv_struct_t *tlv = NULL;
-
-    cmd_code = EXTRACT_CMD_CODE(tlv_buf);
-
-    TLV_LOOP_BEGIN(tlv_buf, tlv){
-        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
-            node_name = tlv->value;
-        else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
-            intf_name = tlv->value;
-        else
-            assert(0);
-    } TLV_LOOP_END;
-
-    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-
-    for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
-        edge_end = node->edges[i];
-        if(!edge_end){
-            printf("%s() : Error : Interface %s do not exist\n", __FUNCTION__, intf_name);
-            return 0;
-        }
-
-        if(edge_end->dirn != OUTGOING)
-            continue;
-
-        if(strncmp(intf_name, edge_end->intf_name, strlen(edge_end->intf_name)))
-            continue;
-
-        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-        break;
-    }
-
-    switch(cmd_code){
-        case CMDCODE_DEBUG_SHOW_NODE_INTF_LFA:
-            lfa = compute_lfa(node, edge, edge->level, TRUE);
-            if(!lfa){
-                printf("No LFAs");
-                return 0;
-            }
-            print_lfa_info(lfa);
-            free_lfa(lfa);
-            break;
-        default:
-            assert(0);
-    }
-    return 0;
-}
-
-int
 lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
-    node_t *node = NULL,
-           *dest_node = NULL;
-    char *node_name = NULL,
-         *dest_name = NULL;
+    node_t *node = NULL;
+    char *node_name = NULL;
     char *intf_name = NULL; 
     int cmd_code = -1, i = 0;
     tlv_struct_t *tlv = NULL;
     edge_t *edge = NULL;
     edge_end_t *edge_end = NULL;
-    LEVEL level = LEVEL_UNKNOWN;
 
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
@@ -451,19 +390,12 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
             intf_name = tlv->value;
-        else if(strncmp(tlv->leaf_id, "level", strlen("level")) ==0)
-            level = atoi(tlv->value);
-        else if(strncmp(tlv->leaf_id, "destination", strlen("destination")) ==0)
-            dest_name = tlv->value;
-
     } TLV_LOOP_END;
 
     if(node_name == NULL)
         node = instance->instance_root;
     else
         node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-
-    dest_node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, dest_name);
 
     for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
@@ -510,23 +442,13 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
         break;
         case CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA:
         {
-            lfa_t *lfa_l1 = NULL, *lfa_l2 = NULL;
-
             if(IS_LEVEL_SET(edge->level, LEVEL1))
-                lfa_l1 = compute_rlfa(node, edge, LEVEL1, TRUE);
+                compute_rlfa(node, edge, LEVEL1, TRUE);
             
             if(IS_LEVEL_SET(edge->level, LEVEL2))
-                lfa_l2 = compute_rlfa(node, edge, LEVEL2, TRUE);
-
-            print_lfa_info(lfa_l1);
-            print_lfa_info(lfa_l2); 
-            free_lfa(lfa_l1);
-            free_lfa(lfa_l2);
+                compute_rlfa(node, edge, LEVEL2, TRUE);
         }
         break;
-        case CMDCODE_DEBUG_SHOW_DESTINATION_SPEC_PQ_NODES:
-            p2p_compute_rlfa_for_given_dest(node, level, edge, dest_node);
-            break;
     } 
     return 0;
 }

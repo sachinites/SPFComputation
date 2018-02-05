@@ -424,10 +424,8 @@ spf_init(candidate_tree_t *ctree,
     while(!is_queue_empty(q)){
 
         curr_node = deque(q);
-
-        ITERATE_NODE_LOGICAL_NBRS_BEGIN(curr_node, nbr_node, edge,
-                level){
-
+        ITERATE_NODE_LOGICAL_NBRS_BEGIN(curr_node, nbr_node, edge, level){
+            
             if(nbr_node->traversing_bit)
                 continue;
 
@@ -579,13 +577,13 @@ spf_computation(node_t *spf_root,
     if(spf_type == FULL_RUN){
         spf_info->spf_level_info[level].version++;
     }
-
+    
     run_dijkastra(spf_root, level, &instance->ctree);
 
     /* Route Building After SPF computation*/
     /*We dont build routing table for reverse spf run*/
     if(spf_type == FULL_RUN){
-        sprintf(LOG, "Route building starts After SPF skeleton run"); TRACE();
+        sprintf(LOG, "Route building starts After SPF FORWARD run"); TRACE();
         spf_postprocessing(spf_info, spf_root, level);
     }
 }
@@ -593,7 +591,8 @@ spf_computation(node_t *spf_root,
 static void
 init_prc_run(node_t *spf_root, LEVEL level){
 
-    mark_all_routes_stale(&spf_root->spf_info, level);
+    //mark_all_routes_stale(&spf_root->spf_info, level);
+    spf_root->spf_info.spf_level_info[level].version++;
     spf_root->spf_info.spf_level_info[level].spf_type = PRC_RUN;
 }
 

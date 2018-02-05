@@ -373,18 +373,15 @@ mark_all_routes_stale_except_direct_routes(spf_info_t *spf_info, LEVEL level){
 
            /*Delete all prefixes except the local prefixes*/
            ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
-             
+             /*This is a bug. Deletion of list nodes while traversing the list
+              * will leave holes in the list. Hence memory leak*/ 
              prefix = list_node1->data;
-             
              if(prefix->hosting_node != GET_SPF_INFO_NODE(spf_info, level)){
                 free(list_node1->data);
                 free(list_node1);
              }
-
            } ITERATE_LIST_END;
-
            //delete_singly_ll(route->like_prefix_list);
-
    }ITERATE_LIST_END;
 }
 
@@ -689,6 +686,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         route->flags = prefix->prefix_flags;
 
+
         route->level = level;
         route->hosting_node = prefix->hosting_node;
 
@@ -873,7 +871,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         /* RTE_UPDATED route only*/ 
         if(route->version == spf_info->spf_level_info[level].version){
 
-
             /* Comparison Block Start*/
 
             prefix_pref = route_preference(prefix->prefix_flags, prefix->level);
@@ -884,15 +881,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         prefix->prefix, prefix->mask, prefix_pref.pref_str); TRACE();
                 return;
             }
-
-            /*If prc run, then set route->install_state = RTE_UPDATED else it would stay set to RTE_STALE;
-             * */
-            if(SPF_RUN_TYPE(GET_SPF_INFO_NODE(spf_info, level), level) == PRC_RUN){
-                route->install_state = RTE_UPDATED;
-                sprintf(LOG, "Node : %s : PRC route : %s/%u %s STATE set to %s", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                        route->rt_key.prefix, route->rt_key.mask, get_str_level(level), route_intall_status_str(RTE_UPDATED)); TRACE();
-            }
-
+            
             if(route_pref.pref < prefix_pref.pref){
 
                 /* if existing route is better*/ 
@@ -1002,7 +991,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
                     }
                     return;
-
                 }
             }
             /* Comparison Block Ends*/
@@ -1010,7 +998,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         }
         else/*This else should not hit for prc run*/
         {
-            /*route is from prev run and exists. This code hits only once per given route*/
+            /*prefix is from prev run and exists. This code hits only once per given route*/
             sprintf(LOG, "route : %s/%u, updated route(?)", 
                     route->rt_key.prefix, route->rt_key.mask); TRACE();
             route->install_state = RTE_UPDATED;

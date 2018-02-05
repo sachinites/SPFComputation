@@ -37,10 +37,6 @@
 #include "instanceconst.h"
 #include "spfcomputation.h"
 
-typedef ll_t * p_space_set_t;
-typedef ll_t * q_space_set_t;
-typedef ll_t * pq_space_set_t;
-
 typedef struct _node_t node_t;
 typedef struct _edge_t edge_t;
 
@@ -64,108 +60,6 @@ typedef struct _edge_t edge_t;
 char *
 get_str_lfa_type(lfa_type_t lfa_type);
 
-typedef struct lfa_dest_pair_{
-    node_t *lfa;
-    edge_end_t *oif_to_lfa;
-    node_t *dest;
-    lfa_type_t lfa_type;
-} lfa_dest_pair_t;
-
-typedef struct lfa_{
-    edge_end_t *protected_link;
-    ll_t *lfa;
-} lfa_t;
-
-/*New Unified Data structures used for both LFAs and RLFAs*/
-
-typedef struct lfa_dst_info_{
-    node_t *dst;               /* Destination protected*/
-    lfa_type_t lfa_type;       /* protection type provided to this Destination*/
-    unsigned int dst_metric;   /* Distance of this Dest from LFA|RLFA*/
-} lfa_dst_info_t;
-
-typedef struct lfa_node_{
-    union{
-    node_t *pq_node;            /*RLFA - pq node*/
-    node_t *lfa;                /*LFA - Immediate nbr*/
-    } lfa_node;
-    edge_end_t *oif_to_lfa1;    /*LFA - oif to LFA, RLFA - oif to nbr which is proxy for pq node*/
-    edge_end_t *oif_to_lfa2;    /* In case proxy nbr is through PN : LFA - oif to LFA, RLFA - oif to nbr which is proxy for pq node*/
-    unsigned int root_metric;   /*LFA - metric of oif_to_lfa, RLFA -  Root metric of this PQ node*/
-    ll_t *dst_lst;
-} lfa_node_t;
-
-lfa_t *
-get_new_lfa();
-
-lfa_node_t *
-get_new_lfa_node();
-
-/*Attempt 3 */
-typedef struct dst_lfa_db_{
-
-    node_t *dst;
-    union{
-        ll_t *lfas;
-        ll_t *rlfas;
-    } alternates;
-    unsigned int dst_metric;
-} dst_lfa_db_t;
-
-typedef struct alt_node_{
-    union{
-        node_t *lfa;
-        node_t *pq_node;
-    } u;
-    edge_end_t *oif_to_lfa1;    /*LFA - oif to LFA, RLFA - oif to nbr which is proxy for pq node*/
-    edge_end_t *oif_to_lfa2;    /* In case proxy nbr is through PN : LFA - oif from PN to LFA, RLFA - oif from PN to nbr which is proxy for pq node*/
-    node_t *pq_node_proxy;
-    unsigned int root_metric;
-    char *rejection_reason;
-    char *policy_selection_reason;
-    boolean is_lfa_enabled;
-} alt_node_t;
-
-dst_lfa_db_t *get_new_dst_lfa_db_node();
-void drain_dst_lfa_db_node(dst_lfa_db_t *dst_lfa_db);
-alt_node_t *get_new_alt_node();
-void collect_destination_lfa(dst_lfa_db_t *dst, alt_node_t *lfa);
-void collect_destination_rlfa(dst_lfa_db_t *dst, alt_node_t *lfa);
-//void delete_destination_lfa(dst_lfa_db_t *dst, node_t *lfa);
-//void delete_destination_rlfa(dst_lfa_db_t *dst, node_t *pq_node, node_t *pq_node_proxy);
-dst_lfa_db_t *get_dst_lfa_db_node(edge_end_t *protected_link, node_t *dst);
-boolean dst_lfa_db_t_search_comparison_fn(void *dst_lfa_db, void *dst);
-
-/*Attemp 3 end*/
-
-/*Attempt 4*/
-typedef struct loop_free_alt_{
-    char rejection_reason[STRING_REASON_LEN];
-    boolean is_lfa_enabled;
-    edge_end_t *protected_link;
-    node_t *destination;
-    internal_nh_t *backup_nxt_hop;
-} loop_free_alt_t;
-
-#define GET_LFA_NODE_FROM_BACKUP_NH(internal_nh_t_ptr)  \
-    (loop_free_alt_t *)((char *)internal_nh_t_ptr - (char *)&((loop_free_alt_t *)0->backup))
-
-#define RECORD_LFA(node_ptr, loop_free_alt_t_ptr, _lvl)   \
-    singly_ll_add_node_by_val(node_ptr->lfa_list[_lvl], loop_free_alt_t_ptr)
-
-void
-free_lfa_node(lfa_node_t *lfa_node);
-
-void
-clear_lfa_result(node_t *node, LEVEL level);
-
-void
-free_lfa();
-
-
-void
-print_lfa_info(lfa_t *lfa);
-
 void
 Compute_and_Store_Forward_SPF(node_t *spf_root,
                               LEVEL level);
@@ -175,34 +69,21 @@ Compute_PHYSICAL_Neighbor_SPFs(node_t *spf_root, LEVEL level);
 void
 Compute_LOGICAL_Neighbor_SPFs(node_t *spf_root, LEVEL level);
 
-p_space_set_t 
-p2p_compute_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
-
-p_space_set_t 
+void 
 p2p_compute_link_node_protecting_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
-p_space_set_t 
+void
 broadcast_compute_link_node_protecting_extended_p_space(node_t *node, edge_t *failed_edge, LEVEL level);
 
-q_space_set_t
-p2p_compute_q_space(node_t *node, edge_t *failed_edge, LEVEL level);
-
-pq_space_set_t
-Intersect_Extended_P_and_Q_Space(p_space_set_t pset, q_space_set_t qset);
-
 void
-p2p_compute_rlfa_for_given_dest(node_t *node, LEVEL level, edge_t *failed_edge, node_t *dest);
-
-q_space_set_t
 p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S, 
                                           edge_t *failed_edge, 
                                           LEVEL level); 
 
-q_space_set_t
+void
 broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, 
                                           edge_t *failed_edge, 
-                                          LEVEL level, 
-                                          p_space_set_t ex_p_space);
+                                          LEVEL level);
 /*
 LFA Link/Link-and-node Protection
 ====================================
@@ -271,10 +152,10 @@ STEPS : To compute LFA, do the following steps
 void
 init_back_up_computation(node_t *S, LEVEL level);
 
-lfa_t *
+void
 compute_lfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
 
-lfa_t *
+void
 compute_rlfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
 
 boolean
