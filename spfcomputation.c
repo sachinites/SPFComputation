@@ -390,9 +390,7 @@ spf_init(candidate_tree_t *ctree,
            *pn_node = NULL;
 
     edge_t *edge = NULL, *pn_edge = NULL;
-
     nh_type_t nh;
-
     /*Drain off results list for level */
     spf_clear_result(spf_root, level);
 
@@ -402,7 +400,6 @@ spf_init(candidate_tree_t *ctree,
 
     Queue_t *q = initQ();
     init_instance_traversal(instance);
-
     spf_root->traversing_bit = 1;
 
     /*step 1 :Initialize spf root*/

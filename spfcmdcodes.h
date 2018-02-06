@@ -60,13 +60,13 @@
 /*LFAs*/
 #define CMDCODE_CONFIG_INTF_LINK_PROTECTION                 25 /*config node <node-name> interface <ifname> link-protection*/ 
 #define CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION            26 /*config node <node-name> interface <ifname> node-link-protection*/
-#define CMDCODE_CONFIG_NODE_REMOTE_BACKUP_CALCULATION       27 /*config node <node-name> backup-spf-options*/
+#define CMDCODE_CONFIG_NODE_REMOTE_BACKUP_CALCULATION       27 /*config node <node-name> backup-spf-options remote-backup-calculation*/
 
 #define CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP              28 /*config node <node-name> interface <ifname> no-eligible-backup */ 
 #define CMDCODE_CONFIG_RSVPLSP_AS_BACKUP                    29 /*config node <node-name> lsp <lsp-name> backup to <tail-end ip address>*/
 #define CMDCODE_CONFIG_ALL_INTERFACE_LINK_PROTECTION        30 /*config node <node-name> interface all link-protection*/
 #define CMDCODE_CONFIG_ALL_INTERFACE_NODE_LINK_PROTECTION   31 /*config node <node-name> interface all node-link-protection*/
-
+#define CMDCODE_CONFIG_NODE_SPF_BACKUP_OPTIONS              32 /*config node <node-name> spf-backup-options */
 #define CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA            33 /*config node <node-name> interface <ifname> link-protection rlfa*/ 
 
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_EXPSPACE               36 /*debug show instance node <node-name> interface <slot-no> expspace*/

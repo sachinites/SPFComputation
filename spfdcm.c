@@ -375,13 +375,39 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     
     switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_SPF_BACKUP_OPTIONS:
+            switch(enable_or_disable){
+                case CONFIG_ENABLE:
+                    SET_BIT(node->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED);
+                    break;
+                case CONFIG_DISABLE:
+                    UNSET_BIT(node->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED);
+                    UNSET_BIT(node->backup_spf_options, SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION);
+                    UNSET_BIT(node->backup_spf_options, SPF_BACKUP_OPTIONS_NODE_LINK_DEG);
+                    break;
+                default:
+                    assert(0);
+            }
+            break;
         case CMDCODE_CONFIG_NODE_REMOTE_BACKUP_CALCULATION:
             switch(enable_or_disable){
                 case CONFIG_ENABLE:
-                    node->backup_spf_options = TRUE;
+                    SET_BIT(node->backup_spf_options, SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION);
                     break;
                 case CONFIG_DISABLE:
-                    node->backup_spf_options = FALSE;
+                    UNSET_BIT(node->backup_spf_options, SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION);
+                    break;
+                default:
+                    assert(0);
+            }
+            break;
+        case CMDCODE_CONFIG_NODE_LINK_DEGRADATION:
+            switch(enable_or_disable){
+                case CONFIG_ENABLE:
+                    SET_BIT(node->backup_spf_options, SPF_BACKUP_OPTIONS_NODE_LINK_DEG);
+                    break;
+                case CONFIG_DISABLE:
+                    UNSET_BIT(node->backup_spf_options, SPF_BACKUP_OPTIONS_NODE_LINK_DEG);
                     break;
                 default:
                     assert(0);
@@ -969,8 +995,9 @@ spf_init_dcm(){
         
         {
             static param_t backup_spf_options;
-            init_param(&backup_spf_options, CMD, "backup-spf-options", 0, 0, INVALID, 0, "Configure backup spf options");
+            init_param(&backup_spf_options, CMD, "backup-spf-options", instance_node_config_handler, 0, INVALID, 0, "Configure backup spf options");
             libcli_register_param(&config_node_node_name, &backup_spf_options);
+            set_param_cmd_code(&backup_spf_options, CMDCODE_CONFIG_NODE_SPF_BACKUP_OPTIONS);
             {
                 /*config node <node-name> backup-spf-options remote_backup_calculation*/
                 static param_t remote_backup_calculation;
@@ -1407,14 +1434,21 @@ dump_node_info(node_t *node){
     singly_ll_node_t *list_node = NULL;
     prefix_t *prefix = NULL;
 
-    printf("node->node_name : %s(%s), L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s, RLFA computation : %s\n", 
+    printf("node->node_name : %s(%s), L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s\n",
             node->node_name, node->router_id,
             (node->node_type[LEVEL1] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE", 
             (node->node_type[LEVEL2] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE",
-            get_str_node_area(node->area), node->backup_spf_options ? "ENABLED" : "DISABLED");
-
+            get_str_node_area(node->area));
+    printf("backup-spf-options : %s\n", IS_BIT_SET(node->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED) ? \
+        "ENABLED" : "DISABLED");
+    if(IS_BIT_SET(node->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED)){
+        printf("\tremote-backup-calculation : %s\n", IS_BIT_SET(node->backup_spf_options, SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION) ? \
+            "ENABLED" : "DISABLED");
+        printf("\tnode-link-degradation : %s\n", IS_BIT_SET(node->backup_spf_options, SPF_BACKUP_OPTIONS_NODE_LINK_DEG) ? \
+            "ENABLED" : "DISABLED");
+    }
+    
     printf("Slots :\n");
-
     for(; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
         if(!edge_end)

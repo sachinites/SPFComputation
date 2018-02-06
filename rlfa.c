@@ -1506,7 +1506,6 @@ compute_lfa(node_t * S, edge_t *protected_link,
 
      /* 1. Run SPF on S to know DIST(S,D) */
      Compute_and_Store_Forward_SPF(S, level);
-    
      /* 2. Run SPF on all nbrs of S to know DIST(N,D) and DIST(N,S)*/
      Compute_PHYSICAL_Neighbor_SPFs(S, level); 
      init_back_up_computation(S, level);

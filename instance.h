@@ -91,7 +91,7 @@ typedef struct _node_t{
     FLAG p_space_protection_type;
     FLAG q_space_protection_type;
     internal_nh_t pq_nodes[MAX_LEVEL][MAX_NXT_HOPS];
-    boolean backup_spf_options;    /*TRUE- means RLFA computation is enabled*/
+    unsigned int backup_spf_options;
 
 } node_t;
 

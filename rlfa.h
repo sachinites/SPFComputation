@@ -57,6 +57,15 @@ typedef struct _edge_t edge_t;
 #define IS_LINK_NODE_PROTECTION_ENABLED(edge_ptr)               \
     (IS_BIT_SET(edge_ptr->from.edge_config_flags, LINK_NODE_PROTECTION))
 
+/*Back up SPF options */
+
+/*config node <node-name> backup-spf-options*/
+#define SPF_BACKUP_OPTIONS_ENABLED     0 
+/*config node <node-name> backup-spf-options remote-backup-calculation*/
+#define SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION    1 
+/*config node <node-name> backup-spf-options node-link-degradation*/
+#define SPF_BACKUP_OPTIONS_NODE_LINK_DEG    2
+
 char *
 get_str_lfa_type(lfa_type_t lfa_type);
 
