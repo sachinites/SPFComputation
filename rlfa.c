@@ -115,12 +115,13 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
     if(nh_count == 1){
         primary_nh = is_nh_list_empty2(&(D_res->next_hop[IPNH][0])) ? &(D_res->next_hop[LSPNH][0]):
                                             &(D_res->next_hop[IPNH][0]);
-        if(primary_nh->oif == &protected_link->from){
-            sprintf(impact_reason, "Dest %s only primary nxt hop oif(%s) = protected_link(%s)", 
+        if(primary_nh->oif != &protected_link->from){
+            sprintf(impact_reason, "Dest %s only primary nxt hop oif(%s) != protected_link(%s)", 
                     D->node_name, primary_nh->oif->intf_name, protected_link->from.intf_name);
-            return TRUE;
+            return FALSE;
         }
-
+        return TRUE;
+#if 0
         if(IS_LINK_PROTECTION_ENABLED(protected_link) &&
            !IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
             /*D 's only primary nexthop is different from protected_link*/
@@ -153,6 +154,7 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
                 return TRUE;    
             }
         }
+#endif
     }
 
     if(nh_count > 1){
