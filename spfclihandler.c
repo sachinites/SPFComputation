@@ -233,9 +233,10 @@ static void
 dump_route_info(routes_t *route){
 
     singly_ll_node_t *list_node = NULL;
-    node_t *node = NULL;
     prefix_t *prefix = NULL;
     nh_type_t nh;
+    internal_nh_t *nxthop = NULL;
+
     prefix_pref_data_t prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, 
                                       "ROUTE_UNKNOWN_PREFERENCE"};
 
@@ -265,18 +266,21 @@ dump_route_info(routes_t *route){
     printf("Install state : %s\n", route_intall_status_str(route->install_state));
 
     ITERATE_NH_TYPE_BEGIN(nh){
-        
         printf("%s Primary Nxt Hops count : %u\n",
                 nh == IPNH ? "IPNH" : "LSPNH", GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]));
-
         ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
-
-            node = (node_t *)list_node->data;
-            printf(" %s ", node->node_name);
+            nxthop = (internal_nh_t *)list_node->data;
+            PRINT_ONE_LINER_NXT_HOP(nxthop);
         }ITERATE_LIST_END;
-
-        printf("\n");
-
+    } ITERATE_NH_TYPE_END;
+    
+    ITERATE_NH_TYPE_BEGIN(nh){
+        printf("%s Backup Nxt Hops count : %u\n",
+                nh == IPNH ? "IPNH" : "LSPNH", GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh]));
+        ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+            nxthop = (internal_nh_t *)list_node->data;
+            PRINT_ONE_LINER_NXT_HOP(nxthop);
+        }ITERATE_LIST_END;
     } ITERATE_NH_TYPE_END;
 }
 
@@ -315,6 +319,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
 
                 route = (routes_t *)list_node->data;
                 dump_route_info(route);
+                printf("\n");
             }ITERATE_LIST_END;
         break;
         case CMDCODE_DEBUG_INSTANCE_NODE_ROUTE:
@@ -552,32 +557,12 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
   return 0;
 }
 
-#if 0
-static void 
-dump_next_hop(internal_nh_t *nh){
-
-    //printf("\tLevel       = %s\n", get_str_level(nh->level));
-    printf("\toif         = %s\n", nh->oif->intf_name);
-    printf("\tNode        = %s\n", nh->node->node_name);
-    printf("\tgw_prefix   = %s\n", nh->gw_prefix);
-    printf("\tnh_type     = %s\n", nh->nh_type == IPNH ? "IPNH" : "LSPNH"); 
-    printf("\tlfa_type    = %s\n", get_str_lfa_type(nh->lfa_type));
-    printf("\tproxy_nbr   = %s\n", nh->proxy_nbr->node_name);
-    printf("\trlfa        = %s\n", nh->rlfa->node_name);
-    printf("\tldplabel    = %u\n", nh->ldplabel);
-    printf("\troot_metric = %u\n", nh->root_metric);
-    printf("\tdest_metric = %u\n", nh->dest_metric);
-    printf("\tis_eligible = %s\n", nh->is_eligible ? "TRUE" : "FALSE");
-}
-#endif
-
 void 
 dump_next_hop(internal_nh_t *nh){
 
-    //printf("\tLevel       = %s\n", get_str_level(nh->level));
     printf("\toif = %-10s", nh->oif->intf_name);
-    printf("Node = %-16s", nh->node->node_name);
-    printf("gw_prefix = %-16s\n", nh->gw_prefix);
+    printf("gw_prefix = %-16s", nh->gw_prefix);
+    printf(" Node = %-16s\n", nh->node->node_name);
     printf("\tnh_type = %-6s", nh->nh_type == IPNH ? "IPNH" : "LSPNH"); 
     printf("lfa_type = %-25s\n", get_str_lfa_type(nh->lfa_type));
     printf("\tproxy_nbr = %-16s", nh->proxy_nbr->node_name);
@@ -592,10 +577,12 @@ int
 debug_show_node_back_up_spf_results(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     node_t *node = NULL,
-           *D = NULL;
+           *D = NULL,
+           *dst_filter = NULL;
     tlv_struct_t *tlv = NULL;
     LEVEL level_it = MAX_LEVEL;
-    char *node_name = NULL;
+    char *node_name = NULL, 
+         *dst_name = NULL;
     nh_type_t nh = NH_MAX;
     singly_ll_node_t *list_node = NULL;
     spf_result_t *D_res = NULL;
@@ -606,9 +593,49 @@ debug_show_node_back_up_spf_results(param_t *param, ser_buff_t *tlv_buf, op_mode
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "dst-name", strlen("dst-name")) ==0)
+            dst_name = tlv->value;
+        else
+            assert(0);
     } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+    if(dst_name)
+        dst_filter = (node_t *)singly_ll_search_by_key(instance->instance_node_list, dst_name);
+    
+    internal_nh_t *nxthop = NULL;
+
+    if(dst_filter){
+        D = dst_filter;
+        for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
+            printf("\n%s backup spf results\n\n", get_str_level(level_it));
+            printf("Dest : %s (#IP back-ups = %u, #LSP back-ups = %u)\n", 
+                    D->node_name, 
+                    get_nh_count(D->backup_next_hop[level_it][IPNH]),
+                    get_nh_count(D->backup_next_hop[level_it][LSPNH]));
+
+            D_res = GET_SPF_RESULT((&node->spf_info), D, level_it);
+            if(!D_res) return 0;
+
+            ITERATE_NH_TYPE_BEGIN(nh){
+                nh_count = get_nh_count(&(D_res->next_hop[nh][0]));
+                for( i = 0; i < nh_count; i++){
+                    nxthop = &(D_res->next_hop[nh][i]);
+                    PRINT_ONE_LINER_NXT_HOP(nxthop);
+                }
+            } ITERATE_NH_TYPE_END;
+            j = 1;
+            ITERATE_NH_TYPE_BEGIN(nh){
+                nh_count = get_nh_count(D->backup_next_hop[level_it][nh]);
+                for( i = 0; i < nh_count; i++){
+                    printf("Nh# %u. ", j++);
+                    dump_next_hop(&(D->backup_next_hop[level_it][nh][i]));
+                    printf("\n");           
+                }
+            } ITERATE_NH_TYPE_END;
+        }
+        return 0;
+    }
 
     for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
         printf("\n%s backup spf results\n\n", get_str_level(level_it));
@@ -620,6 +647,13 @@ debug_show_node_back_up_spf_results(param_t *param, ser_buff_t *tlv_buf, op_mode
                     get_nh_count(D->backup_next_hop[level_it][IPNH]),
                     get_nh_count(D->backup_next_hop[level_it][LSPNH]));
             j = 1;
+            ITERATE_NH_TYPE_BEGIN(nh){
+                nh_count = get_nh_count(&(D_res->next_hop[nh][0]));
+                for( i = 0; i < nh_count; i++){
+                    nxthop = &(D_res->next_hop[nh][i]);
+                    PRINT_ONE_LINER_NXT_HOP(nxthop);
+                }
+            } ITERATE_NH_TYPE_END;
             ITERATE_NH_TYPE_BEGIN(nh){
                 nh_count = get_nh_count(D->backup_next_hop[level_it][nh]);
                 for( i = 0; i < nh_count; i++){

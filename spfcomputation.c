@@ -541,15 +541,56 @@ spf_only_intitialization(node_t *spf_root, LEVEL level){
     spf_init(&instance->ctree, spf_root, level);
 }
 
-void
-spf_computation(node_t *spf_root, 
-                spf_info_t *spf_info, 
-                LEVEL level, spf_type_t spf_type){
+static void
+compute_backup_routine(node_t *spf_root, LEVEL level){
 
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
    
+    if(!IS_BIT_SET(spf_root->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED))
+        return;
+
+    sprintf(LOG, "Begin SPF back up calculation"); TRACE();
+    boolean strict_down_stream_lfa = FALSE;
+    init_back_up_computation(spf_root, level); 
+
+    for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+        edge_end = spf_root->edges[i];
+        if(!edge_end) break;
+        if(IS_BIT_SET(edge_end->edge_config_flags, NO_ELIGIBLE_BACK_UP))
+            continue;
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        if(edge->etype == LSP)
+            continue;
+        if(!IS_LINK_NODE_PROTECTION_ENABLED(edge) &&
+            !IS_LINK_PROTECTION_ENABLED(edge))
+            continue;
+       strict_down_stream_lfa = TRUE;
+      
+       compute_lfa(spf_root, edge, level, strict_down_stream_lfa);
+       
+       if(!IS_BIT_SET(spf_root->backup_spf_options, 
+            SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION))
+           continue;
+
+       if(is_broadcast_link(edge, level) == FALSE){
+           p2p_compute_link_node_protecting_extended_p_space(spf_root, edge, level);
+           p2p_filter_select_pq_nodes_from_ex_pspace(spf_root, edge, level);
+       }
+       else{
+           broadcast_compute_link_node_protecting_extended_p_space(spf_root, edge, level);
+           broadcast_filter_select_pq_nodes_from_ex_pspace(spf_root, edge, level);
+       }
+    }
+    sprintf(LOG, "END of SPF back up calculation"); TRACE();
+}
+
+void
+spf_computation(node_t *spf_root, 
+                spf_info_t *spf_info, 
+                LEVEL level, spf_type_t spf_type){
+
     if(level != LEVEL1 && level != LEVEL2){
         printf("%s() : Error : invalid level specified\n", __FUNCTION__);
         return;
@@ -580,6 +621,11 @@ spf_computation(node_t *spf_root,
     }
     
     run_dijkastra(spf_root, level, &instance->ctree);
+    
+    if(spf_type == FORWARD_RUN)
+        return;
+
+    compute_backup_routine(spf_root, level);
 
     /* Route Building After SPF computation*/
     /*We dont build routing table for reverse spf run*/
@@ -587,47 +633,6 @@ spf_computation(node_t *spf_root,
         sprintf(LOG, "Route building starts After SPF FORWARD run"); TRACE();
         spf_postprocessing(spf_info, spf_root, level);
     }
-
-    if(spf_type == FORWARD_RUN)
-        return;
-
-    /*backup calculation should not be part of regular
-     * SPF computation*/
-    
-    if(!IS_BIT_SET(spf_root->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED))
-        return;
-
-    sprintf(LOG, "Begin SPF back up calculation"); TRACE();
-    boolean strict_down_stream_lfa = FALSE;
-
-    for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
-        edge_end = spf_root->edges[i];
-        if(!edge_end) break;
-        if(IS_BIT_SET(edge_end->edge_config_flags, NO_ELIGIBLE_BACK_UP))
-            continue;
-        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
-        if(edge->etype == LSP)
-            continue;
-        if(!IS_LINK_NODE_PROTECTION_ENABLED(edge) &&
-            !IS_LINK_PROTECTION_ENABLED(edge))
-            continue;
-       strict_down_stream_lfa = TRUE;
-       
-       compute_lfa(spf_root, edge, level, strict_down_stream_lfa);
-       
-       if(!IS_BIT_SET(spf_root->backup_spf_options, 
-            SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION))
-           return;
-       if(is_broadcast_link(edge, level) == FALSE){
-           p2p_compute_link_node_protecting_extended_p_space(spf_root, edge, level);
-           p2p_filter_select_pq_nodes_from_ex_pspace(spf_root, edge, level);
-       }
-       else{
-           broadcast_compute_link_node_protecting_extended_p_space(spf_root, edge, level);
-           broadcast_filter_select_pq_nodes_from_ex_pspace(spf_root, edge, level);
-       }
-    }
-    sprintf(LOG, "END of SPF back up calculation"); TRACE();
 }
 
 static void
@@ -653,6 +658,7 @@ partial_spf_run(node_t *spf_root, LEVEL level){
 
     init_prc_run(spf_root, level);
     spf_postprocessing(&spf_root->spf_info, spf_root, level);
+    compute_backup_routine(spf_root, level);
     spf_root->spf_info.spf_level_info[level].spf_type = FULL_RUN;
 }
 
@@ -667,23 +673,34 @@ unsigned int
 DIST_X_Y(node_t *X, node_t *Y, LEVEL _level){
 
     assert(_level == LEVEL1 || _level == LEVEL2);
+    
+    spf_result_t *res = NULL;
+    self_spf_result_t *self_res = NULL;
 
     if(X->node_type[_level] != PSEUDONODE &&
             Y->node_type[_level] != PSEUDONODE){
-        return ((spf_result_t *)(GET_SPF_RESULT((&(X->spf_info)), Y, _level)))->spf_metric;
+        res =  (GET_SPF_RESULT((&(X->spf_info)), Y, _level));
+        if(!res)
+            return INFINITE_METRIC;
+        return res->spf_metric;
     }
 
     if(X->node_type[_level] == PSEUDONODE &&
             Y->node_type[_level] != PSEUDONODE){
-        return ((spf_result_t *)(GET_SPF_RESULT((&(X->spf_info)), Y, _level)))->spf_metric;
+        res =  (GET_SPF_RESULT((&(X->spf_info)), Y, _level));
+        if(!res) 
+            return INFINITE_METRIC;
+        return res->spf_metric;
     }
-
 
     if(X->node_type[_level] != PSEUDONODE &&
             Y->node_type[_level] == PSEUDONODE){
-        return ((self_spf_result_t *)(singly_ll_search_by_key(Y->self_spf_result[_level], X)))->res->spf_metric;
+        self_res = (self_spf_result_t *)(singly_ll_search_by_key(Y->self_spf_result[_level], X));
+        if(!self_res) return INFINITE_METRIC;
+        res = ((self_spf_result_t *)(singly_ll_search_by_key(Y->self_spf_result[_level], X)))->res;
+        if(!res) return INFINITE_METRIC;
+        return res->spf_metric;
     }
-
     assert(0);
 }
 

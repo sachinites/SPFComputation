@@ -80,33 +80,10 @@ typedef struct _node_t{
     char traversing_bit;                                    /*This bit is only used to traverse the instance, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
     char lsp_distribution_bit;
 
-    /* LFA related Data structures*/
-    ll_t *link_protection_lfas;
-    ll_t *link_protection_rlfas;
-
-    /* 0th bit set if this node is a member of extended p space
-     * of some computing router and provides only link protection.
-     * Ist bit is set if this node is a member of extended p space
-     * of some computing router and provides link-node protection*/
-    FLAG p_space_protection_type;
-    FLAG q_space_protection_type;
     internal_nh_t pq_nodes[MAX_LEVEL][MAX_NXT_HOPS];
     unsigned int backup_spf_options;
 
 } node_t;
-
-static inline unsigned int 
-next_hop_count(node_t **nh_array){
-
-    unsigned int i = 0;
-    for(; i < MAX_NXT_HOPS; i++){
-
-        if(nh_array[i])
-            continue;
-        break;
-    }
-    return i;
-}
 
 struct edge_end_{
     node_t *node;

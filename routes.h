@@ -58,12 +58,11 @@ typedef struct routes_{
 
     /* NH lists*//*ToDo : Convert it into arrays*/
     ll_t *primary_nh_list[NH_MAX];/*Taking it as a list to accomodate ECMP*/
-    ll_t *backup_nh_list; /*List of node_t pointers*/
+    ll_t *backup_nh_list[NH_MAX]; /*List of node_t pointers*/
 
     /*same subnet prefix lists*/
     ll_t *like_prefix_list; 
     route_intall_status install_state; 
-
 } routes_t;
 
 routes_t *route_malloc();
@@ -78,7 +77,7 @@ route_set_key(routes_t *route, char *ipv4_addr, char mask);
 void
 free_route(routes_t *route);
 
-#define ROUTE_ADD_PRIMARY_NH(_route_nh_list, _internal_nh_t_ptr)     \
+#define ROUTE_ADD_NH(_route_nh_list, _internal_nh_t_ptr)     \
     singly_ll_add_node_by_val(_route_nh_list, _internal_nh_t_ptr)
 
 static inline void
@@ -94,12 +93,21 @@ ROUTE_FLUSH_PRIMARY_NH_LIST(routes_t *route, nh_type_t nh){
     delete_singly_ll(route->primary_nh_list[nh]);
 }
 
+static inline void
+ROUTE_FLUSH_BACKUP_NH_LIST(routes_t *route, nh_type_t nh){
+
+    singly_ll_node_t *list_node = NULL;
+    ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+
+        free(list_node->data);
+        list_node->data = NULL;
+    } ITERATE_LIST_END;
+
+    delete_singly_ll(route->backup_nh_list[nh]);
+}
 
 #define ROUTE_ADD_BACKUP_NH(routeptr, nodeptr)      \
     singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr)
-
-#define ROUTE_FLUSH_BACKUP_NH_LIST(routeptr)   \
-    delete_singly_ll(routeptr->backup_nh_list)
 
 #define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr)    \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
@@ -156,5 +164,8 @@ mark_all_routes_stale(spf_info_t *spf_info, LEVEL level);
 
 void
 delete_all_application_routes(node_t *node, LEVEL level);
+
+internal_nh_t *
+backup_selection_policy(routes_t *route);
 
 #endif /* __ROUTES__ */

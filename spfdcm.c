@@ -881,6 +881,21 @@ spf_init_dcm(){
     static param_t instance_node_name;
     init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
     libcli_register_param(&instance_node, &instance_node_name);
+    
+    {
+        /*show instance node <node-name> backup-spf_results */
+        static param_t backup_spf_results;
+        init_param(&backup_spf_results, CMD, "backup-spf-results", 
+                debug_show_node_back_up_spf_results, 0, INVALID, 0, "Back up Results");  
+        libcli_register_param(&instance_node_name, &backup_spf_results);
+        set_param_cmd_code(&backup_spf_results, CMDCODE_SHOW_BACKUP_SPF_RESULTS);
+        {
+            static param_t dest;
+            init_param(&dest, LEAF, 0, debug_show_node_back_up_spf_results, validate_node_extistence, STRING, "dst-name", "Destination Name");
+            libcli_register_param(&backup_spf_results, &dest);
+            set_param_cmd_code(&dest, CMDCODE_SHOW_BACKUP_SPF_RESULTS);      
+        }
+    }
 
     /*show instance node <node-name> traceroute <prefix>*/
 
@@ -1320,14 +1335,6 @@ spf_init_dcm(){
                 init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, 
                     validate_node_extistence, STRING, "node-name", "Node Name");
                 libcli_register_param(&instance_node, &instance_node_name);
-                {
-                   /*debug show instance node <node-name> backup-spf_results */
-                   static param_t backup_spf_results;
-                   init_param(&backup_spf_results, CMD, "backup-spf-results", 
-                        debug_show_node_back_up_spf_results, 0, INVALID, 0, "Back up Results");  
-                   libcli_register_param(&instance_node_name, &backup_spf_results);
-                   set_param_cmd_code(&backup_spf_results, CMDCODE_DEBUG_SHOW_BACKUP_SPF_RESULTS);
-                }
                 {
                     /*debug show instance node <node-name> interface*/
                     static param_t interface;

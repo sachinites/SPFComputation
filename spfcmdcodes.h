@@ -76,5 +76,5 @@
 #define CMDCODE_DEBUG_SHOW_IMPACTED_DESTINATIONS            40 /*debug show instance node <node-name> interface <slot-no> impacted destination*/
 
 #define CMDCODE_CONFIG_NODE_LINK_DEGRADATION                41 /*config node <node-name> backup-spf-options node-link-degradation*/
-#define CMDCODE_DEBUG_SHOW_BACKUP_SPF_RESULTS               42 /*debug show instance node <node-name> backup-spf-results*/
+#define CMDCODE_SHOW_BACKUP_SPF_RESULTS                     42 /*show instance node <node-name> backup-spf-results*/
 #endif /* __SPFCMDCODES__H */

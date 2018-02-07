@@ -66,7 +66,7 @@ typedef struct internal_nh_t_{
 /*macros to operate on above internal_nh_t DS*/
 
 #define next_hop_type(_internal_nh_t)                \
-    (_internal_nh_t.nh_type)
+    ((_internal_nh_t).nh_type)
 
 #define get_direct_next_hop_metric(_internal_nh_t, _level)  \
     ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->metric[_level])
@@ -76,6 +76,9 @@ typedef struct internal_nh_t_{
 
 #define next_hop_gateway_pfx_mask(_internal_nh_t)    \
     ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->to.prefix[_internal_nh_t.level]->mask
+
+#define next_hop_gateway_pfx(_internal_nh_t_ptr)         \
+    ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t_ptr->oif))->to.prefix[_internal_nh_t_ptr->level]->prefix)
 
 #define next_hop_oif_name(_internal_nh_t)            \
     ((_internal_nh_t).oif->intf_name)
@@ -123,7 +126,15 @@ typedef struct internal_nh_t_{
     _nh1.dest_metric == _nh2.dest_metric)
 
 #define is_internal_nh_t_empty(_nh) \
-    (_nh.node == NULL && _nh.oif == NULL)
+    ((_nh).node == NULL && (_nh).oif == NULL)
+
+
+#define PRINT_ONE_LINER_NXT_HOP(_internal_nh_t_ptr)                                                                 \
+    printf("\t%s----%s---->%-s(%s(%s))\n", nxthop->oif->intf_name,                                                  \
+            next_hop_type(*_internal_nh_t_ptr) == IPNH ? "IPNH" : "LSPNH",                                          \
+            next_hop_type(*_internal_nh_t_ptr) == IPNH ? next_hop_gateway_pfx(_internal_nh_t_ptr) : "",             \
+            _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->node_name : _internal_nh_t_ptr->rlfa->node_name,   \
+            _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->router_id : _internal_nh_t_ptr->rlfa->router_id)  
 
 typedef struct spf_result_{
 

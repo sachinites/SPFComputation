@@ -102,12 +102,6 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
 
     node->traversing_bit = 0;
     node->lsp_distribution_bit = 0;
-
-    /*When this node is a member of pspace, this flag denotes whether this 
-     * node provide link protection or node protection to computing router*/
-    node->p_space_protection_type = 0;
-    /*I dont think this would be required*/
-    node->q_space_protection_type = 0;
     node->backup_spf_options = 0;
     add_node_to_owning_instance(instance, node);
     return node;    

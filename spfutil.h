@@ -98,6 +98,9 @@ get_nh_count(internal_nh_t *nh_list);
 void
 empty_nh_list(node_t *node, LEVEL level, nh_type_t nh);
 
+boolean
+is_empty_internal_nh(internal_nh_t *nh);
+
 void
 add_to_nh_list(internal_nh_t *nh_list, internal_nh_t *nh);
 

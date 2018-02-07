@@ -147,6 +147,11 @@ is_nh_list_empty2(internal_nh_t *nh_list){
     return (nh_list->node == NULL && nh_list->oif == NULL);
 }
 
+boolean
+is_empty_internal_nh(internal_nh_t *nh){
+    return is_nh_list_empty2(nh);
+}
+
 char *
 get_str_level(LEVEL level){
 

@@ -55,12 +55,6 @@ add_primary_nh(rttable_entry_t *rt_entry, nh_t *nh){
     rt_entry->primary_nh_count[nh->nh_type]++;
 }
 
-void
-set_backup_nh(rttable_entry_t *rt_entry, nh_t *bck_nh){
-
-    rt_entry->backup_nh = *bck_nh;
-}
-
 rttable_entry_t *
 rt_route_lookup(rttable *rttable, char *prefix, char mask){
 
@@ -149,7 +143,9 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
         
     } ITERATE_NH_TYPE_END;
 
-    rt_entry1->backup_nh = rt_entry->backup_nh;
+    for(i = 0; i < MAX_NXT_HOPS*2; i++){
+        memcpy(&rt_entry1->backup_nh[i], &rt_entry->backup_nh[i], sizeof(nh_t));
+    }
     return 1;
 }
 
@@ -216,8 +212,8 @@ show_routing_table(rttable *rttable){
                  total_nx_hops = 0;
 
     printf("Table %s\n", rttable->table_name);
-    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop        OIF         Backup Score\n");
-    printf("------------------------------------------------------------------------------------------------------------------------\n");
+    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF         Backup Score\n");
+    printf("------------------------------------------------------------------------------------------------------------------------------------\n");
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
@@ -231,7 +227,7 @@ show_routing_table(rttable *rttable){
                 rt_entry->primary_nh_count[LSPNH] == 0){
 
             sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
-            printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-22s      %s\n",
+            printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-12s      %s\n",
                     subnet, rt_entry->version, rt_entry->cost, 
                     IS_BIT_SET(rt_entry->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT", 
                     rt_entry->level, 
@@ -252,15 +248,42 @@ show_routing_table(rttable *rttable){
         ITERATE_NH_TYPE_BEGIN(nh){
             
             for(i = 0; i < rt_entry->primary_nh_count[nh]; i++, j++){
-                printf("%-15s    %-s|%-8s   %-22s      %s\n", 
+                printf("%-15s    %-s|%-22s   %-12s        \n", 
                         nh == IPNH ? rt_entry->primary_nh[nh][i].gwip : "--",  
                         rt_entry->primary_nh[nh][i].nh_name,
                         rt_entry->primary_nh[nh][i].nh_type == IPNH ? "IPNH" : "LSPNH",
-                        rt_entry->primary_nh[nh][i].oif, rt_entry->backup_nh.nh_name);
+                        rt_entry->primary_nh[nh][i].oif);
                         if(j < total_nx_hops -1)
                             printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
             }
         } ITERATE_NH_TYPE_END;
+
+        /*print the back up here*/
+        for(i = 0; i < rt_entry->backup_nh_count; i++){     
+            printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
+            nh = rt_entry->backup_nh[i].nh_type;
+            /*print the back as per its type*/
+            switch(nh){
+                case IPNH:
+                    printf("%-15s    %s|%-22s   %-12s   %u\n", 
+                            rt_entry->backup_nh[i].gwip,
+                            rt_entry->backup_nh[i].nh_name,
+                            "IPNH",
+                            rt_entry->backup_nh[i].oif,
+                            5000);
+                    break;
+                case LSPNH:
+                    printf("%-15s    LDP->%-s|%-17s   %-12s   %u\n",
+                            "",
+                            rt_entry->backup_nh[i].rlfa_name,
+                            rt_entry->backup_nh[i].router_id,
+                            rt_entry->backup_nh[i].oif,
+                            6000);
+                    break;
+                default:
+                    assert(0);
+            }
+        }
     }ITERATE_LIST_END;
 }
 

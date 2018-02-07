@@ -38,14 +38,16 @@
 typedef struct LL ll_t;
 
 typedef struct nh_t_{
-    nh_type_t nh_type;
     char oif[IF_NAME_SIZE];
     char nh_name[NODE_NAME_SIZE];
     char gwip[PREFIX_LEN + 1];
-    lfa_type_t lfa_type;
+    nh_type_t nh_type;
     char proxy_nbr_name[NODE_NAME_SIZE];
     char rlfa_name[NODE_NAME_SIZE];
     unsigned int ldplabel;
+    char router_id[PREFIX_LEN];
+    //unsigned int root_metric;
+    //unsigned int dest_metric;
 }nh_t;
 
 typedef struct rttable_entry_{
@@ -60,9 +62,9 @@ typedef struct rttable_entry_{
     int cost; 
     int primary_nh_count[NH_MAX]; 
     nh_t primary_nh[NH_MAX][MAX_NXT_HOPS];
-    nh_t backup_nh;
+    int backup_nh_count;
+    nh_t backup_nh[MAX_NXT_HOPS*2];
     FLAG flags;
-
 } rttable_entry_t;
 
 typedef struct rttable_{
