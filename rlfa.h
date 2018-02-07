@@ -44,6 +44,7 @@ typedef struct _edge_t edge_t;
 #define LINK_PROTECTION         0
 #define LINK_NODE_PROTECTION    1
 #define ONLY_NODE_PROTECTION    2
+#define NO_ELIGIBLE_BACK_UP     3
 
 #define SET_LINK_PROTECTION_TYPE(edge_ptr, protection_bit)      \
     (SET_BIT(edge_ptr->from.edge_config_flags, protection_bit))

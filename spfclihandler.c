@@ -449,6 +449,20 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
                 compute_rlfa(node, edge, LEVEL2, TRUE);
         }
         break;
+        case CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP:
+        {
+            switch(enable_or_disable){
+                case CONFIG_ENABLE:
+                    SET_BIT(edge_end->edge_config_flags, NO_ELIGIBLE_BACK_UP);
+                    break;
+                case CONFIG_DISABLE:
+                    UNSET_BIT(edge_end->edge_config_flags, NO_ELIGIBLE_BACK_UP);
+                    break;
+                default:
+                    ;
+            }
+        }
+        break;
     } 
     return 0;
 }

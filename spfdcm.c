@@ -1327,21 +1327,6 @@ spf_init_dcm(){
                         debug_show_node_back_up_spf_results, 0, INVALID, 0, "Back up Results");  
                    libcli_register_param(&instance_node_name, &backup_spf_results);
                    set_param_cmd_code(&backup_spf_results, CMDCODE_DEBUG_SHOW_BACKUP_SPF_RESULTS);
-                   /*debug show instance node <node-name> backup-spf_results destination <dest-name>*/
-#if 0
-                   {
-                       static param_t destination;
-                       init_param(&destination, CMD, "destination", 0, 0, INVALID, 0, "Destination");
-                       libcli_register_param(&backup_spf_results, &destination);
-                       {
-                           static param_t dest_name;
-                           init_param(&dest_name, LEAF, 0, debug_show_node_back_up_spf_results, 
-                                   validate_node_extistence, STRING, "dst-name", "Destination Name");
-                           libcli_register_param(&destination, &dest_name);
-                           set_param_cmd_code(&dest_name, CMDCODE_DEBUG_SHOW_BACKUP_SPF_RESULTS_PER_DEST);
-                       }
-                   }
-#endif
                 }
                 {
                     /*debug show instance node <node-name> interface*/
@@ -1458,7 +1443,8 @@ dump_node_info(node_t *node){
         printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, backup protection type : %s", 
             i, edge_end->intf_name, STR_PREFIX(edge_end->prefix[LEVEL1]), PREFIX_MASK(edge_end->prefix[LEVEL1]), 
             STR_PREFIX(edge_end->prefix[LEVEL2]), PREFIX_MASK(edge_end->prefix[LEVEL2]), 
-            (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING", 
+            (edge_end->dirn == OUTGOING) ? "OUTGOING" : "INCOMING",
+            IS_BIT_SET(edge_end->edge_config_flags, NO_ELIGIBLE_BACK_UP) ? "NO_ELIGIBLE_BACK_UP" : 
             IS_LINK_NODE_PROTECTION_ENABLED(edge) ? "LINK_NODE_PROTECTION" : IS_LINK_PROTECTION_ENABLED(edge) ? "LINK_PROTECTION" : "None");
 
         printf("\n          L1 metric = %u, L2 metric = %u, edge level = %s, edge_status = %s\n", 
@@ -1489,16 +1475,12 @@ dump_node_info(node_t *node){
     for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
         
-        if(!edge_end)
-            break;
-        
-        if(edge_end->dirn != OUTGOING)
-            continue;
+        if(!edge_end) break;
+        if(edge_end->dirn != OUTGOING) continue;
 
         for(level = LEVEL1; level <= LEVEL2; level++){
-            
-        if(edge_end->prefix[level] && edge_end->prefix[level]->metric == INFINITE_METRIC)
-            printf("%s(%s)\n", edge_end->intf_name, get_str_level(level));
+            if(edge_end->prefix[level] && edge_end->prefix[level]->metric == INFINITE_METRIC)
+                printf("%s(%s)\n", edge_end->intf_name, get_str_level(level));
         }
     }
 }

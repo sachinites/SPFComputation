@@ -546,6 +546,10 @@ spf_computation(node_t *spf_root,
                 spf_info_t *spf_info, 
                 LEVEL level, spf_type_t spf_type){
 
+    unsigned int i = 0;
+    edge_end_t *edge_end = NULL;
+    edge_t *edge = NULL;
+   
     if(level != LEVEL1 && level != LEVEL2){
         printf("%s() : Error : invalid level specified\n", __FUNCTION__);
         return;
@@ -583,6 +587,47 @@ spf_computation(node_t *spf_root,
         sprintf(LOG, "Route building starts After SPF FORWARD run"); TRACE();
         spf_postprocessing(spf_info, spf_root, level);
     }
+
+    if(spf_type == FORWARD_RUN)
+        return;
+
+    /*backup calculation should not be part of regular
+     * SPF computation*/
+    
+    if(!IS_BIT_SET(spf_root->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED))
+        return;
+
+    sprintf(LOG, "Begin SPF back up calculation"); TRACE();
+    boolean strict_down_stream_lfa = FALSE;
+
+    for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+        edge_end = spf_root->edges[i];
+        if(!edge_end) break;
+        if(IS_BIT_SET(edge_end->edge_config_flags, NO_ELIGIBLE_BACK_UP))
+            continue;
+        edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        if(edge->etype == LSP)
+            continue;
+        if(!IS_LINK_NODE_PROTECTION_ENABLED(edge) &&
+            !IS_LINK_PROTECTION_ENABLED(edge))
+            continue;
+       strict_down_stream_lfa = TRUE;
+       
+       compute_lfa(spf_root, edge, level, strict_down_stream_lfa);
+       
+       if(!IS_BIT_SET(spf_root->backup_spf_options, 
+            SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION))
+           return;
+       if(is_broadcast_link(edge, level) == FALSE){
+           p2p_compute_link_node_protecting_extended_p_space(spf_root, edge, level);
+           p2p_filter_select_pq_nodes_from_ex_pspace(spf_root, edge, level);
+       }
+       else{
+           broadcast_compute_link_node_protecting_extended_p_space(spf_root, edge, level);
+           broadcast_filter_select_pq_nodes_from_ex_pspace(spf_root, edge, level);
+       }
+    }
+    sprintf(LOG, "END of SPF back up calculation"); TRACE();
 }
 
 static void
