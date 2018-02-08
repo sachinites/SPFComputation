@@ -107,6 +107,8 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
     }
     
     dist_info_hdr_t dist_info_hdr;
+    node_t *nbr_node = edge->to.node;
+    unsigned int old_nbr_node_spf_version = 0;
 
     for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
         if(!IS_LEVEL_SET(edge->level, level_it))
@@ -114,13 +116,9 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
         memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
         dist_info_hdr.info_dist_level = level_it;
         dist_info_hdr.advert_id = TLV2;
+        old_nbr_node_spf_version = nbr_node->spf_info.spf_level_info[level_it].version;
         generate_lsp(instance, node, lsp_distribution_routine, &dist_info_hdr);
-    }
-
-    node_t *nbr_node = edge->to.node;
-
-    for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
-        if(!IS_LEVEL_SET(edge->level, level_it))
+        if(old_nbr_node_spf_version < nbr_node->spf_info.spf_level_info[level_it].version)
             continue;
         memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
         dist_info_hdr.info_dist_level = level_it;

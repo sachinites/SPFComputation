@@ -216,15 +216,12 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
             /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
              * not consider the node for SPF computation if we find 2-way nbrship is broken. */
-
             if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
-
                 sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
                 continue;
             }
 
             sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
-
             if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
                         ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) < (unsigned long long)nbr_node->spf_metric[level]){
 
@@ -234,11 +231,9 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 TRACE();
 
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
-
                 if(candidate_node == spf_root && nbr_node->node_type[level] == PSEUDONODE){
                     sprintf(LOG, "case 1 if I am root and and nbr is Pseuodnode , do nothing"); TRACE();
                 }
-
                 /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
                 if((candidate_node == spf_root && nbr_node->node_type[level] == NON_PSEUDONODE) || 
                         (candidate_node->node_type[level] == PSEUDONODE && is_all_nh_list_empty2(candidate_node, level))){

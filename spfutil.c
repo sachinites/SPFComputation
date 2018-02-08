@@ -355,3 +355,24 @@ add_to_nh_list(internal_nh_t *nh_list, internal_nh_t *nh){
     memcpy(&nh_list[nh_count], nh, sizeof(internal_nh_t));
 }
 
+char* 
+hrs_min_sec_format(unsigned int seconds){
+
+    static char time_f[16];
+    unsigned int hrs = 0, 
+                 min =0, sec = 0;
+
+    if(seconds > 3600){
+        min = seconds/60;
+        sec = seconds%60;
+        hrs = min/60;
+        min = min%60;
+    }
+    else{
+        min = seconds/60;
+        sec = seconds%60;
+    }
+    memset(time_f, 0, sizeof(time_f));
+    sprintf(time_f, "%u::%u::%u", hrs, min, sec);
+    return time_f;
+}

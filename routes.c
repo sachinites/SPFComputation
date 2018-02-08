@@ -163,19 +163,23 @@ prepare_new_nxt_hop_template(node_t *computing_node,
     assert(computing_node);
 
     edge_end_t *oif = NULL;
-  
-    if(nxt_hop_node && nxt_hop_node->node){ 
-        if(nh == LSPNH){ /*It is forward Adjacency next hop*/
-            strncpy(nh_template->proxy_nbr_name, 
-                    nxt_hop_node->node->node_name, NODE_NAME_SIZE);
+
+    if(nxt_hop_node){
+        if(nxt_hop_node->node){
+            /*If nxt_hop_node is IPNH Or FA*/
+            strncpy(nh_template->nh_name, nxt_hop_node->node->node_name, NODE_NAME_SIZE);
         }
-        else {
-            strncpy(nh_template->nh_name, 
-                    nxt_hop_node->node->node_name, NODE_NAME_SIZE);
+        else{
+            /*RLFA case*/
+            strncpy(nh_template->nh_name, nxt_hop_node->rlfa->node_name, NODE_NAME_SIZE);
         }
     }
-    else
+    else{
+        /*if nxt_hop_node is NULL*/
         strncpy(nh_template->nh_name, computing_node->node_name, NODE_NAME_SIZE);
+    }
+    
+    nh_template->nh_name[NODE_NAME_SIZE - 1] = '\0';
 
     /*Get the router id if nxt_hop_node is Forward Adjacency Or LDP Nexthop*/
     if(nxt_hop_node){
@@ -189,9 +193,6 @@ prepare_new_nxt_hop_template(node_t *computing_node,
             strncpy(nh_template->router_id, nxt_hop_node->rlfa->router_id, PREFIX_LEN);
         }
     }
-
-    nh_template->nh_name[NODE_NAME_SIZE - 1] = '\0';
-
     /*oif can be NULL if computing_node == nxt_hop_node. It will happen
      * for local prefixes */
     oif = nxt_hop_node ? nxt_hop_node->oif : NULL;
@@ -217,10 +218,12 @@ prepare_new_nxt_hop_template(node_t *computing_node,
         strncpy(nh_template->proxy_nbr_name, nxt_hop_node->proxy_nbr->node_name, NODE_NAME_SIZE);
         nh_template->proxy_nbr_name[NODE_NAME_SIZE - 1] = '\0';
     }
+#if 1
     if(nxt_hop_node->rlfa){
         strncpy(nh_template->rlfa_name, nxt_hop_node->rlfa->node_name, NODE_NAME_SIZE);
         nh_template->rlfa_name[NODE_NAME_SIZE - 1] = '\0';
     }
+#endif
     nh_template->ldplabel = nxt_hop_node->ldplabel;
 }
 
@@ -267,10 +270,25 @@ is_same_next_hop(internal_nh_t *nxt_hop, nh_t *nh){
     /*Compare the fields of internal nexthop with what is installed in routing table*/
 
     nh_type_t nh_type;
+   
+    /*If routing table entry do not have any backups, but applcation
+     * route has new backups*/ 
+    if(nxt_hop && strlen(nh->oif) == 0)
+        return FALSE;
 
     if(strncmp(next_hop_oif_name((*nxt_hop)), nh->oif, IF_NAME_SIZE))
         return FALSE;
-    if(strncmp(nxt_hop->node->node_name, nh->nh_name, NODE_NAME_SIZE))
+    
+    /*For RLFA nexthops: nxt_hop->node is NULL*/
+    if(!nxt_hop->node){
+        if(strncmp(nxt_hop->proxy_nbr->node_name, nh->proxy_nbr_name, NODE_NAME_SIZE))
+            return FALSE;
+        if(strncmp(nxt_hop->rlfa->node_name, nh->rlfa_name, NODE_NAME_SIZE))
+            return FALSE;
+    }
+
+    if(nxt_hop->node && 
+            strncmp(nxt_hop->node->node_name, nh->nh_name, NODE_NAME_SIZE))
         return FALSE;
     
     nh_type = next_hop_type((*nxt_hop));
@@ -284,6 +302,16 @@ is_same_next_hop(internal_nh_t *nxt_hop, nh_t *nh){
     if(strncmp(nxt_hop->gw_prefix, nh->gwip, PREFIX_LEN))
         return FALSE;
 
+    /*Add more fields to compare*/
+    if(nxt_hop->proxy_nbr){
+        if(strncmp(nxt_hop->proxy_nbr->node_name, nh->proxy_nbr_name, NODE_NAME_SIZE))
+            return FALSE;
+    }
+
+    if(nxt_hop->rlfa){
+        if(strncmp(nxt_hop->rlfa->node_name, nh->rlfa_name, NODE_NAME_SIZE))
+            return FALSE;
+    }
     return TRUE;
 }
 
@@ -297,7 +325,6 @@ route_rib_same_next_hops(rttable_entry_t *rt_entry, /*We need to compare the nex
     internal_nh_t *nxt_hop = NULL;
 
     ITERATE_NH_TYPE_BEGIN(nh){
-        
         ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
             nxt_hop = list_node->data; /*This is nbr node of computing node*/
             if(is_same_next_hop(nxt_hop, &rt_entry->primary_nh[nh][i++]) == FALSE)
@@ -305,6 +332,14 @@ route_rib_same_next_hops(rttable_entry_t *rt_entry, /*We need to compare the nex
         }ITERATE_LIST_END;
     }ITERATE_NH_TYPE_END;
 
+    i = 0;
+    ITERATE_NH_TYPE_BEGIN(nh){
+        ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+            nxt_hop = list_node->data; /*This is nbr node of computing node*/
+            if(is_same_next_hop(nxt_hop, &rt_entry->backup_nh[i++]) == FALSE)
+                return FALSE;
+        }ITERATE_LIST_END;
+    }ITERATE_NH_TYPE_END;
     return TRUE;
 }
 
@@ -314,42 +349,20 @@ is_changed_route(spf_info_t *spf_info,
                  routes_t *route,           /*route from our SPF*/
                  spf_type_t spf_type, LEVEL level){
 
-    nh_type_t nh;
-    /* If spf_type == FULL_RUN, we will not consider back_up nexthop field to
-     * evaluate whether the route we have has changed against what is installed in RIB because
-     * the backup we have now are stale backups (from previous spf runs). If the 
-     * route is changed we will  install the changed route in RIB without backup 
-     * because the old  backup will be stale and do not guarantee microloop 
-     * free alternate path. It is better to have no backup than to have unpromising backup.
-     *
-     * If spf_type == FORWARD_RUN, it means, we are in second phase, that we are 
-     * done with computing our main routes and now comuting backups only. Whatever 
-     * backup we have at this point, we will install backups only against the corresponging
-     * route. 
-     */
-   
-   /* We should only feed route with RTE_UPDATED status in this fn, because these are the
-    * routes which were present in prev spf runs, and in current spf runs as well, and we
-    * are not sure yet whether they are same or something changed*/
-
    assert(route->install_state == RTE_UPDATED);
-   
    switch(spf_type){
-
        case FULL_RUN:
        case PRC_RUN:
-           ITERATE_NH_TYPE_BEGIN(nh){
-
-               if((strncmp(rt_entry->dest.prefix, route->rt_key.prefix, PREFIX_LEN + 1) == 0)  &&
-                       (rt_entry->dest.mask == route->rt_key.mask)                             &&
-                       //(rt_entry->cost == route->spf_metric)                                 &&
-                       (rt_entry->primary_nh_count[nh] == ROUTE_GET_PR_NH_CNT(route, nh))      && 
+               if((strncmp(rt_entry->dest.prefix, route->rt_key.prefix, PREFIX_LEN + 1) == 0)   &&
+                       (rt_entry->dest.mask == route->rt_key.mask)                              &&
+                       (rt_entry->primary_nh_count[IPNH] == ROUTE_GET_PR_NH_CNT(route, IPNH))   && 
+                       (rt_entry->primary_nh_count[LSPNH] == ROUTE_GET_PR_NH_CNT(route, LSPNH)) &&
+                       (rt_entry->backup_nh_count == GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[IPNH])
+                                + GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[LSPNH]))       && 
                        (route_rib_same_next_hops(rt_entry, route) == TRUE))
                    return FALSE;
                return TRUE; 
-           } ITERATE_NH_TYPE_END;
            break;
-
        case FORWARD_RUN:
            break;
        default:
@@ -422,27 +435,24 @@ mark_all_routes_stale_except_direct_routes(spf_info_t *spf_info, LEVEL level){
 void
 mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
 
-   singly_ll_node_t* list_node = NULL,
-                     *list_node1 = NULL;
-   routes_t *route = NULL;
-   
-   ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
-           
-       route = list_node->data;
-       
-       if(!IS_LEVEL_SET(route->level, level))
-           continue;
-      
-           route->install_state = RTE_STALE;
+    singly_ll_node_t* list_node = NULL,
+        *list_node1 = NULL;
+    routes_t *route = NULL;
 
-           ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
+    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
 
-             free(list_node1->data);
-           } ITERATE_LIST_END;
+        route = list_node->data;
+        if(!IS_LEVEL_SET(route->level, level))
+            continue;
 
-           delete_singly_ll(route->like_prefix_list);
+        route->install_state = RTE_STALE;
+        ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
 
-   }ITERATE_LIST_END;
+            free(list_node1->data);
+        } ITERATE_LIST_END;
+
+        delete_singly_ll(route->like_prefix_list);
+    }ITERATE_LIST_END;
 }
 
 /* This routine delete all routes from protocol as well as RIB
@@ -1229,11 +1239,6 @@ start_route_installation(spf_info_t *spf_info,
                     spf_info->spf_level_info[level].version); 
 
             ITERATE_NH_TYPE_BEGIN(nh){        
-                sprintf(LOG, "Template for route : %s/%u, rt_entry_template->primary_nh_count = %u(%s), cost = %u", 
-                        rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
-                        rt_entry_template->primary_nh_count[nh], 
-                        nh == IPNH ? "IPNH" : "LSPNH", rt_entry_template->cost); TRACE();
-
                 /*if rt_entry_template->primary_nh_count is zero, it means, it is a local prefix or leaked prefix*/
                 if(rt_entry_template->primary_nh_count[nh] == 0){
 
@@ -1277,6 +1282,16 @@ start_route_installation(spf_info_t *spf_info,
 #endif
             /*rt_entry_template is now ready to be installed in RIB*/
         }
+        
+        ITERATE_NH_TYPE_BEGIN(nh){
+            sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->primary_nh_count = %u(%s), cost = %u", 
+                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
+                    rt_entry_template->primary_nh_count[nh], 
+                    nh == IPNH ? "IPNH" : "LSPNH", rt_entry_template->cost); TRACE();
+        } ITERATE_NH_TYPE_END;
+        sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->backup_nh_count = %u",
+                rt_entry_template->dest.prefix, rt_entry_template->dest.mask, rt_entry_template->backup_nh_count); TRACE();
+
         sprintf(LOG, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
                 route->level, route->spf_metric, route_intall_status_str(route->install_state)); TRACE();
@@ -1413,6 +1428,10 @@ build_routing_table(spf_info_t *spf_info,
             route->install_state = RTE_CHANGED;
         else
             route->install_state = RTE_NO_CHANGE;
+        sprintf(LOG, "Route : %s/%u is Marked as %s at %s", 
+                route->rt_key.prefix, route->rt_key.mask, 
+                route_intall_status_str(route->install_state),
+                get_str_level(level)); TRACE();
     }ITERATE_LIST_END;
 }
 

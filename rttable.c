@@ -77,7 +77,8 @@ rt_route_install(rttable *rttable, rttable_entry_t *rt_entry){
 
     sprintf(LOG, "Added route %s/%d to Routing table for level%d", 
         rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
-
+    /*Refresh time before adding an enntry*/
+    time(&rt_entry->last_refresh_time);
     singly_ll_add_node_by_val(GET_RT_TABLE(rttable), rt_entry);
     return 1;
 }
@@ -116,17 +117,18 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
 
     int i = 0;
     nh_type_t nh;
-    
-    rttable_entry_t *rt_entry1 = rt_route_lookup(rttable, rt_entry->dest.prefix, rt_entry->dest.mask);
-    
+
+    rttable_entry_t *rt_entry1 = 
+        rt_route_lookup(rttable, rt_entry->dest.prefix, rt_entry->dest.mask);
+
     if(!rt_entry1){
         printf("%s() : Warning route for %s/%d not found in routing table\n", 
-                    __FUNCTION__, rt_entry->dest.prefix, rt_entry->dest.mask);
+                __FUNCTION__, rt_entry->dest.prefix, rt_entry->dest.mask);
         return -1;
     }
-    
+
     sprintf(LOG, "Updated route %s/%d to Routing table for level%d", 
-        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
+            rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
 
     memcpy(rt_entry1->dest.prefix, rt_entry->dest.prefix, PREFIX_LEN + 1); 
     rt_entry1->dest.mask   = rt_entry->dest.mask;
@@ -135,17 +137,16 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
     rt_entry1->level       = rt_entry->level;
 
     ITERATE_NH_TYPE_BEGIN(nh){
-        
         rt_entry1->primary_nh_count[nh] = rt_entry->primary_nh_count[nh];
-
         for(i = 0; i < MAX_NXT_HOPS; i++)
             rt_entry1->primary_nh[nh][i] = rt_entry->primary_nh[nh][i];
-        
     } ITERATE_NH_TYPE_END;
 
-    for(i = 0; i < MAX_NXT_HOPS*2; i++){
-        memcpy(&rt_entry1->backup_nh[i], &rt_entry->backup_nh[i], sizeof(nh_t));
-    }
+    rt_entry1->backup_nh_count = rt_entry->backup_nh_count;
+    for(i = 0; i < MAX_NXT_HOPS*2; i++)
+        rt_entry1->backup_nh[i] = rt_entry->backup_nh[i];
+
+    rt_entry1->last_refresh_time = time(NULL);
     return 1;
 }
 
@@ -211,9 +212,11 @@ show_routing_table(rttable *rttable){
                  j = 0, 
                  total_nx_hops = 0;
 
+    time_t curr_time = time(NULL);
+
     printf("Table %s\n", rttable->table_name);
-    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF         Backup Score\n");
-    printf("------------------------------------------------------------------------------------------------------------------------------------\n");
+    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF         Backup Score       Age\n");
+    printf("-----------------------------------------------------------------------------------------------------------------------------------------------\n");
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
@@ -227,12 +230,13 @@ show_routing_table(rttable *rttable){
                 rt_entry->primary_nh_count[LSPNH] == 0){
 
             sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
-            printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-12s      %s\n",
+            printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-12s      %-16s          %s\n",
                     subnet, rt_entry->version, rt_entry->cost, 
                     IS_BIT_SET(rt_entry->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT", 
                     rt_entry->level, 
                     "Direct", rt_entry->primary_nh[IPNH][0].nh_name, 
-                    "--", "--", "");
+                    "--", "--", "", 
+                    hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)));
             continue;
         }
 
@@ -248,11 +252,12 @@ show_routing_table(rttable *rttable){
         ITERATE_NH_TYPE_BEGIN(nh){
             
             for(i = 0; i < rt_entry->primary_nh_count[nh]; i++, j++){
-                printf("%-15s    %-s|%-22s   %-12s        \n", 
+                printf("%-15s    %-s|%-22s   %-22s        %s\n", 
                         nh == IPNH ? rt_entry->primary_nh[nh][i].gwip : "--",  
                         rt_entry->primary_nh[nh][i].nh_name,
                         rt_entry->primary_nh[nh][i].nh_type == IPNH ? "IPNH" : "LSPNH",
-                        rt_entry->primary_nh[nh][i].oif);
+                        rt_entry->primary_nh[nh][i].oif,
+                        i == 0 ? hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)) : "");
                         if(j < total_nx_hops -1)
                             printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
             }
@@ -287,6 +292,7 @@ show_routing_table(rttable *rttable){
     }ITERATE_LIST_END;
 }
 
+#if 0
 static void
 mark_all_rttables_unvisited(){
 
@@ -301,6 +307,7 @@ mark_all_rttables_unvisited(){
         UNMARK_RT_TABLE_VISITED(rt_table);
     } ITERATE_LIST_END;
 }
+#endif
 
 /*-----------------------------------------------------------------------------
  *  Path trace for Destination dst_prefix is invoked on node node_name
@@ -320,7 +327,6 @@ show_traceroute(char *node_name, char *dst_prefix){
     unsigned int i = 1, j = 0;
 
     nh_type_t nh ;
-    mark_all_rttables_unvisited();
      
     printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
 
@@ -349,12 +355,12 @@ show_traceroute(char *node_name, char *dst_prefix){
         }
 
         if(rt_entry->primary_nh_count[IPNH] == 1 && rt_entry->primary_nh_count[LSPNH] == 0){
-            printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[IPNH][0].oif, 
+            printf("%u. %s(%s)--IPNH-->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[IPNH][0].oif, 
                 rt_entry->primary_nh[IPNH][0].gwip, rt_entry->primary_nh[IPNH][0].nh_name);
              node_name = rt_entry->primary_nh[IPNH][0].nh_name;
         }
         else if(rt_entry->primary_nh_count[IPNH] == 0 && rt_entry->primary_nh_count[LSPNH] == 1){
-            printf("%u. %s(%s)--->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[LSPNH][0].oif, 
+            printf("%u. %s(%s)--TUNN-->(%s)%s\n", i++, node->node_name, rt_entry->primary_nh[LSPNH][0].oif, 
                 rt_entry->primary_nh[LSPNH][0].gwip, rt_entry->primary_nh[LSPNH][0].nh_name);
             node_name = rt_entry->primary_nh[LSPNH][0].nh_name;
         }
@@ -365,16 +371,60 @@ show_traceroute(char *node_name, char *dst_prefix){
                  * ECMP paths. Currently only the last ecmp path is traced completely*/
 
                 for(j = 0 ; j < rt_entry->primary_nh_count[nh]; j++){
-                    printf("ECMP : %u. %s(%s)--->(%s)%s\n", i, node->node_name, rt_entry->primary_nh[nh][j].oif, 
+                    printf("ECMP : %u. %s(%s)--%s-->(%s)%s\n", i, node->node_name, rt_entry->primary_nh[nh][j].oif, 
+                            rt_entry->primary_nh[nh][j].nh_type == IPNH ? "IPNH" : "TUNN",
                             rt_entry->primary_nh[nh][j].gwip, rt_entry->primary_nh[nh][j].nh_name);
                     node_name = rt_entry->primary_nh[nh][j].nh_name;
                 }
             } ITERATE_NH_TYPE_END;
             i++;
         }
-        MARK_RT_TABLE_VISITED(node->spf_info.rttable);
     }
     while(1);
+}
+
+
+int
+show_backup_traceroute(char *node_name, char *dst_prefix){
+
+    node_t *node = NULL;
+    rttable_entry_t * rt_entry = NULL;
+
+    printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
+    if(IS_RT_TABLE_VISITED(node->spf_info.rttable)){
+        printf("Node %s : encountered again. Loop Detected\n", node_name);
+        return 1;
+    }
+
+    rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
+    if(!rt_entry){
+        printf("Node %s : No route to prefix : %s\n", node_name, dst_prefix);
+        return -1;
+    }
+    /*IF the best route present in routing table is the local route
+     * means destination has arrived*/
+    if(rt_entry->primary_nh_count[IPNH] == 0 &&
+            rt_entry->primary_nh_count[LSPNH] == 0){
+        printf("Trace Complete\n");
+        return 0;
+    }
+
+    if(rt_entry->backup_nh_count == 0){
+        printf("Node %s : No back up route to prefix : %s\n", node_name, dst_prefix);
+        return 0;
+    }
+    /*Lets choose first backup only*/
+    nh_t *backup = &rt_entry->backup_nh[0];
+    printf("BCKUP. %s(%s)--%s-->(%s)%s\n", node->node_name, backup->oif, 
+            backup->nh_type == IPNH ? "IPNH" : "TUNN",
+            backup->nh_type == IPNH ? backup->gwip : backup->router_id,
+            backup->nh_type == IPNH ? backup->nh_name : backup->rlfa_name);
+
+    node_name = backup->nh_type == IPNH ? backup->nh_name: backup->rlfa_name;
+    show_traceroute(node_name, dst_prefix);
+    return 0;
 }
 
 void

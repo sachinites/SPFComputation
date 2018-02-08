@@ -197,7 +197,9 @@ show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     char *node_name = NULL;
     char *prefix = NULL;
     tlv_struct_t *tlv = NULL;
-
+    
+    int cmdcode = EXTRACT_CMD_CODE(tlv_buf);
+     
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
              node_name = tlv->value;
@@ -206,8 +208,16 @@ show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
         else
             assert(0);
     } TLV_LOOP_END;
-
-    show_traceroute(node_name, prefix);
+    switch(cmdcode){
+        case CMDCODE_SHOW_NODE_TRACEROUTE_PRIMARY:
+            show_traceroute(node_name, prefix);
+            break;
+        case CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP:
+            show_backup_traceroute(node_name, prefix);
+            break;
+        default:
+            assert(0);
+    }
     return 0; 
 }
 
@@ -906,6 +916,14 @@ spf_init_dcm(){
     static param_t traceroute_prefix;
     init_param(&traceroute_prefix, LEAF, 0, show_traceroute_handler, 0, IPV4, "prefix", "Destination address (ipv4)");
     libcli_register_param(&traceroute, &traceroute_prefix);
+    set_param_cmd_code(&traceroute_prefix, CMDCODE_SHOW_NODE_TRACEROUTE_PRIMARY);
+        /*show instance node <node-name> traceroute <prefix> backup*/
+    {
+        static param_t backup;
+        init_param(&backup, CMD, "backup", show_traceroute_handler, 0, INVALID, 0, "trace backup route");
+        libcli_register_param(&traceroute_prefix, &backup);
+        set_param_cmd_code(&backup, CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP);
+    }
 
     /*show instance node <node-name> route*/
     static param_t route;

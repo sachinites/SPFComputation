@@ -55,18 +55,16 @@ typedef struct _node_t{
     unsigned int lsp_metric[MAX_LEVEL];
 
     internal_nh_t next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
-    internal_nh_t old_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
+    //internal_nh_t old_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     internal_nh_t backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
-    internal_nh_t old_backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
+    //internal_nh_t old_backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     internal_nh_t direct_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
-    ll_t *lfa_list[MAX_LEVEL];
     edge_end_t *pn_intf[MAX_LEVEL];
 
     ll_t *local_prefix_list[MAX_LEVEL];
     ll_t *self_spf_result[MAX_LEVEL];                       /*Used for LFA and RLFA computation*/ 
     /*For SPF computation only*/ 
     ll_t *spf_run_result[MAX_LEVEL];                        /*List of nodes of instance which contain result of SPF skeleton run*/
-    
     char attached;                                          /*Set if the router is L1L2 router. Admin responsibility to configure it as per the topology*/
 
     /*Every node in production has its own spf_info and 
@@ -79,7 +77,6 @@ typedef struct _node_t{
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
     char traversing_bit;                                    /*This bit is only used to traverse the instance, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
     char lsp_distribution_bit;
-
     internal_nh_t pq_nodes[MAX_LEVEL][MAX_NXT_HOPS];
     unsigned int backup_spf_options;
 

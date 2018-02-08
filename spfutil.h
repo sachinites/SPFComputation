@@ -104,6 +104,9 @@ is_empty_internal_nh(internal_nh_t *nh);
 void
 add_to_nh_list(internal_nh_t *nh_list, internal_nh_t *nh);
 
+char *
+hrs_min_sec_format(unsigned int seconds);
+
 #define get_next_hop_empty_slot(internal_nhlist_ptr) \
         (&(internal_nhlist_ptr[get_nh_count(internal_nhlist_ptr)]))
 

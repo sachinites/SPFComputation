@@ -68,7 +68,8 @@
 #define CMDCODE_CONFIG_ALL_INTERFACE_NODE_LINK_PROTECTION   31 /*config node <node-name> interface all node-link-protection*/
 #define CMDCODE_CONFIG_NODE_SPF_BACKUP_OPTIONS              32 /*config node <node-name> spf-backup-options */
 #define CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA            33 /*config node <node-name> interface <ifname> link-protection rlfa*/ 
-
+#define CMDCODE_SHOW_NODE_TRACEROUTE_PRIMARY                34 /*show instance node <node-name> traceroute <destination prefix>*/
+#define CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP                 35 /*show instance node <node-name> traceroute <destination prefix> backup*/
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_EXPSPACE               36 /*debug show instance node <node-name> interface <slot-no> expspace*/
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE                38 /*debug show instance node <node-name> interface <slot-no> pqspace*/
 

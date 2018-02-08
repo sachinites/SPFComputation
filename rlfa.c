@@ -64,8 +64,10 @@ init_back_up_computation(node_t *S, LEVEL level){
        
        res = (spf_result_t *)list_node->data;
        ITERATE_NH_TYPE_BEGIN(nh){
+#if 0
         copy_nh_list2(res->node->backup_next_hop[level][nh], 
             res->node->old_backup_next_hop[level][nh]); 
+#endif
         for(i=0; i < MAX_NXT_HOPS; i++){
             init_internal_nh_t(res->node->backup_next_hop[level][nh][i]);    
         }
@@ -120,6 +122,9 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
                     D->node_name, primary_nh->oif->intf_name, protected_link->from.intf_name);
             return FALSE;
         }
+
+        sprintf(impact_reason, "Dest %s only primary nxt hop oif(%s) = protected_link(%s)",
+                    D->node_name, primary_nh->oif->intf_name, protected_link->from.intf_name);
         return TRUE;
 #if 0
         if(IS_LINK_PROTECTION_ENABLED(protected_link) &&

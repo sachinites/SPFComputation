@@ -34,18 +34,19 @@
 #define __RTTABLE__
 
 #include "instanceconst.h"
+#include <time.h>
 
 typedef struct LL ll_t;
 
 typedef struct nh_t_{
     char oif[IF_NAME_SIZE];
-    char nh_name[NODE_NAME_SIZE];
-    char gwip[PREFIX_LEN + 1];
-    nh_type_t nh_type;
-    char proxy_nbr_name[NODE_NAME_SIZE];
-    char rlfa_name[NODE_NAME_SIZE];
+    char nh_name[NODE_NAME_SIZE]; /*IPNH | FA | RLFA*/
+    char gwip[PREFIX_LEN + 1];    /*IPNH only, else 0.0.0.0*/
+    nh_type_t nh_type;            /*IPNH | LSPNH*/
+    char proxy_nbr_name[NODE_NAME_SIZE];    /*RLFAs only*/
+    char rlfa_name[NODE_NAME_SIZE]; /*same as nh_name in case of RLFA*/
     unsigned int ldplabel;
-    char router_id[PREFIX_LEN];
+    char router_id[PREFIX_LEN]; /*FA| RLFA only*/
     //unsigned int root_metric;
     //unsigned int dest_metric;
 }nh_t;
@@ -65,6 +66,7 @@ typedef struct rttable_entry_{
     int backup_nh_count;
     nh_t backup_nh[MAX_NXT_HOPS*2];
     FLAG flags;
+    time_t last_refresh_time;
 } rttable_entry_t;
 
 typedef struct rttable_{
@@ -135,6 +137,9 @@ show_routing_table(rttable *rttable);
 
 int
 show_traceroute(char *node_name, char *dst_prefix);
+
+int
+show_backup_traceroute(char *node_name, char *dst_prefix);
 
 void
 rt_route_remove_backup_nh(rttable *rttable, char *prefix, char mask);
