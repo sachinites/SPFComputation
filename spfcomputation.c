@@ -627,6 +627,11 @@ spf_computation(node_t *spf_root,
     if(spf_type == FULL_RUN){
         sprintf(LOG, "Route building starts After SPF FORWARD run"); TRACE();
         spf_postprocessing(spf_info, spf_root, level);
+        if(IS_BIT_SET(spf_root->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED)){
+            /*Clean the result so that other nodes to not export these results into
+             * their route calculation*/
+            init_back_up_computation(spf_root, level);
+        }
     }
 }
 
@@ -652,9 +657,15 @@ partial_spf_run(node_t *spf_root, LEVEL level){
     }
 
     init_prc_run(spf_root, level);
-    spf_postprocessing(&spf_root->spf_info, spf_root, level);
     compute_backup_routine(spf_root, level);
+    spf_postprocessing(&spf_root->spf_info, spf_root, level);
     spf_root->spf_info.spf_level_info[level].spf_type = FULL_RUN;
+    if(IS_BIT_SET(spf_root->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED)){
+        /*Clean the result so that other nodes to not export these results into
+         * their route calculation*/
+        init_back_up_computation(spf_root, level);
+    }
+
 }
 
 /*This macro should work as follows :

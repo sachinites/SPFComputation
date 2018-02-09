@@ -579,7 +579,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
                     copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
                     ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
-                    sprintf(LOG, "route : %s/%u backup next hop is merged with %s's next hop node %s", 
+                    sprintf(LOG, "route : %s/%u backup next hop is merged with %s's backup next hop node %s", 
                             route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
                             result->node->backup_next_hop[level][nh][i].node->node_name); TRACE();
                 }
@@ -1230,11 +1230,10 @@ start_route_installation(spf_info_t *spf_info,
         if(route->level != level)
             continue;
 
-        if(route->install_state != RTE_NO_CHANGE ||
+        if(route->install_state != RTE_NO_CHANGE &&
             route->install_state != RTE_STALE){
              
             rt_entry_template = GET_NEW_RT_ENTRY();
-
             prepare_new_rt_entry_template(spf_info, rt_entry_template, route,
                     spf_info->spf_level_info[level].version); 
 
@@ -1280,18 +1279,18 @@ start_route_installation(spf_info_t *spf_info,
                 } ITERATE_LIST_END;
             } ITERATE_NH_TYPE_END;
 #endif
+            ITERATE_NH_TYPE_BEGIN(nh){
+                sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->primary_nh_count = %u(%s), cost = %u", 
+                        rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
+                        rt_entry_template->primary_nh_count[nh], 
+                        nh == IPNH ? "IPNH" : "LSPNH", rt_entry_template->cost); TRACE();
+            } ITERATE_NH_TYPE_END;
+            sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->backup_nh_count = %u",
+                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, rt_entry_template->backup_nh_count); TRACE();
+
             /*rt_entry_template is now ready to be installed in RIB*/
         }
         
-        ITERATE_NH_TYPE_BEGIN(nh){
-            sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->primary_nh_count = %u(%s), cost = %u", 
-                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
-                    rt_entry_template->primary_nh_count[nh], 
-                    nh == IPNH ? "IPNH" : "LSPNH", rt_entry_template->cost); TRACE();
-        } ITERATE_NH_TYPE_END;
-        sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->backup_nh_count = %u",
-                rt_entry_template->dest.prefix, rt_entry_template->dest.mask, rt_entry_template->backup_nh_count); TRACE();
-
         sprintf(LOG, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
                 route->level, route->spf_metric, route_intall_status_str(route->install_state)); TRACE();

@@ -46,7 +46,7 @@ instance_node_comparison_fn(void *_node, void *input_node_name);
 static void 
 clear_pq_nodes(node_t *S, LEVEL level){
     unsigned int i = 0;
-    for(i=0; i < MAX_NXT_HOPS; i++){
+    for(i = 0; i < MAX_NXT_HOPS; i++){
         init_internal_nh_t(S->pq_nodes[level][i]);
     }
 }
@@ -68,6 +68,8 @@ init_back_up_computation(node_t *S, LEVEL level){
         copy_nh_list2(res->node->backup_next_hop[level][nh], 
             res->node->old_backup_next_hop[level][nh]); 
 #endif
+        if(is_internal_nh_t_empty(res->node->backup_next_hop[level][nh][0]))
+            continue;
         for(i=0; i < MAX_NXT_HOPS; i++){
             init_internal_nh_t(res->node->backup_next_hop[level][nh][i]);    
         }

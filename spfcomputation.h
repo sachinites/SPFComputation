@@ -126,7 +126,7 @@ typedef struct internal_nh_t_{
     _nh1.dest_metric == _nh2.dest_metric)
 
 #define is_internal_nh_t_empty(_nh) \
-    ((_nh).node == NULL && (_nh).oif == NULL)
+    ((_nh).oif == NULL)
 
 
 #define PRINT_ONE_LINER_NXT_HOP(_internal_nh_t_ptr)                                                                 \
