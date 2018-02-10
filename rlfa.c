@@ -43,9 +43,12 @@ extern instance_t *instance;
 extern int
 instance_node_comparison_fn(void *_node, void *input_node_name);
 
-static void 
+void 
 clear_pq_nodes(node_t *S, LEVEL level){
+    
     unsigned int i = 0;
+    if(is_internal_nh_t_empty(S->pq_nodes[level][0]))
+        return;
     for(i = 0; i < MAX_NXT_HOPS; i++){
         init_internal_nh_t(S->pq_nodes[level][i]);
     }
@@ -407,6 +410,7 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
                     }
                     rlfa->level = level;     
                     rlfa->oif = &edge1->from;
+                    rlfa->protected_link = &protected_link->from;
                     rlfa->node = NULL;
                     if(edge1->etype == UNICAST)
                         set_next_hop_gw_pfx(*rlfa, edge1->to.prefix[level]->prefix);
@@ -442,6 +446,7 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
                         rlfa = get_next_hop_empty_slot(S->pq_nodes[level]);
                         rlfa->level = level;     
                         rlfa->oif = &edge1->from;
+                        rlfa->protected_link = &protected_link->from;
                         rlfa->node = NULL;
                         if(edge1->etype == UNICAST)
                             set_next_hop_gw_pfx(*rlfa, edge1->to.prefix[level]->prefix);
@@ -466,6 +471,7 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
                     rlfa = get_next_hop_empty_slot(S->pq_nodes[level]);
                     rlfa->level = level;     
                     rlfa->oif = &edge1->from;
+                    rlfa->protected_link = &protected_link->from;
                     rlfa->node = NULL;
                     if(edge1->etype == UNICAST)
                         set_next_hop_gw_pfx(*rlfa, edge1->to.prefix[level]->prefix);
@@ -589,6 +595,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                                     rlfa = get_next_hop_empty_slot(S->pq_nodes[level]);
                                     rlfa->level = level;     
                                     rlfa->oif = &edge1->from;
+                                    rlfa->protected_link = &protected_link->from;
                                     rlfa->node = NULL;
                                     if(edge1->etype == UNICAST)
                                         set_next_hop_gw_pfx(*rlfa, edge1->to.prefix[level]->prefix);
@@ -643,6 +650,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                             rlfa = get_next_hop_empty_slot(S->pq_nodes[level]);
                             rlfa->level = level;     
                             rlfa->oif = &edge1->from;
+                            rlfa->protected_link = &protected_link->from;
                             rlfa->node = NULL;
                             if(edge1->etype == UNICAST)
                                 set_next_hop_gw_pfx(*rlfa, edge1->to.prefix[level]->prefix);
@@ -674,6 +682,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                                 rlfa = get_next_hop_empty_slot(S->pq_nodes[level]);
                                 rlfa->level = level;     
                                 rlfa->oif = &edge1->from;
+                                rlfa->protected_link = &protected_link->from;
                                 rlfa->node = NULL;
                                 if(edge1->etype == UNICAST)
                                     set_next_hop_gw_pfx(*rlfa, edge1->to.prefix[level]->prefix);
@@ -743,6 +752,7 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
              * LFA for such a destination*/
             if(p_node->proxy_nbr == D_res->node)
                 continue;
+            
             /*Check if this is impacted destination*/
             memset(impact_reason, 0, STRING_REASON_LEN);
 
@@ -1181,6 +1191,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                 backup_nh = get_next_hop_empty_slot(D->backup_next_hop[level][backup_nh_type]);
                 backup_nh->level = level;
                 backup_nh->oif = &edge1->from;
+                backup_nh->protected_link = &protected_link->from;
                 backup_nh->node = N;
                 if(backup_nh_type == IPNH)
                     set_next_hop_gw_pfx(*backup_nh, edge2->to.prefix[level]->prefix);
@@ -1263,6 +1274,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
             backup_nh = get_next_hop_empty_slot(D->backup_next_hop[level][backup_nh_type]);
             backup_nh->level = level;
             backup_nh->oif = &edge1->from;
+            backup_nh->protected_link = &protected_link->from;
             backup_nh->node = N;
             if(backup_nh_type == IPNH)
                 set_next_hop_gw_pfx(*backup_nh, edge2->to.prefix[level]->prefix);
@@ -1421,6 +1433,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
                     backup_nh->level = level;
                     backup_nh->oif = &edge1->from;
+                    backup_nh->protected_link = &protected_link->from;
                     backup_nh->node = N;
                     if(backup_nh_type == IPNH)
                         set_next_hop_gw_pfx(*backup_nh, edge1->to.prefix[level]->prefix);
@@ -1483,6 +1496,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
                 backup_nh->level = level;
                 backup_nh->oif = &edge1->from;
+                backup_nh->protected_link = &protected_link->from;
                 backup_nh->node = N;
                 if(backup_nh_type == IPNH)
                     set_next_hop_gw_pfx(*backup_nh, edge1->to.prefix[level]->prefix);

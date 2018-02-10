@@ -559,6 +559,7 @@ void
 dump_next_hop(internal_nh_t *nh){
 
     printf("\toif = %-10s", nh->oif->intf_name);
+    printf("\tprotecting link = %-10s", nh->protected_link->intf_name);
     printf("gw_prefix = %-16s", nh->gw_prefix);
     printf(" Node = %-16s\n", nh->node->node_name);
     printf("\tnh_type = %-6s", nh->nh_type == IPNH ? "IPNH" : "LSPNH"); 

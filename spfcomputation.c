@@ -152,6 +152,115 @@ inverse_topology(instance_t *instance, LEVEL level){
     }ITERATE_LIST_END;
 }
 
+static void
+run_dijkastra_forward(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
+
+    node_t *candidate_node = NULL,
+           *nbr_node = NULL;
+    edge_t *edge = NULL;
+    self_spf_result_t *self_res = NULL;
+
+    /*Process untill candidate tree is not empty*/
+    sprintf(LOG, "Running Dijkastra forward with root node = %s, Level = %u", 
+            (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name, level); TRACE();
+
+    while(!IS_CANDIDATE_TREE_EMPTY(ctree)){
+
+        /*Take the node with miminum spf_metric off the candidate tree*/
+
+        candidate_node = GET_CANDIDATE_TREE_TOP(ctree, level);
+        REMOVE_CANDIDATE_TREE_TOP(ctree);
+        candidate_node->is_node_on_heap = FALSE;
+        sprintf(LOG, "Candidate node %s Taken off candidate list", candidate_node->node_name); TRACE();
+
+        /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
+         * however we process it as ususal like other nodes*/
+
+        spf_result_t *res = get_forward_spf_result_t();
+        res->node = candidate_node;
+        res->spf_metric = candidate_node->spf_metric[level];
+        res->lsp_metric = candidate_node->lsp_metric[level];
+
+        if(candidate_node->node_type[level] != PSEUDONODE)
+            singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
+
+        self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
+
+        if(self_res){
+            sprintf(LOG, "Curr node : %s, Overwriting self spf result with spf root %s", 
+                    candidate_node->node_name, spf_root->node_name); TRACE();
+            self_res->spf_root = spf_root;
+            self_res->res = res;
+        }
+        else{
+            sprintf(LOG, "Curr node : %s, Creating New self spf result with spf root %s",
+                    candidate_node->node_name, spf_root->node_name); TRACE();
+            self_res = calloc(1, sizeof(self_spf_result_t));
+            self_res->spf_root = spf_root;
+            self_res->res = res;
+            singly_ll_add_node_by_val(candidate_node->self_spf_result[level], self_res);
+        }
+        
+        /*Iterare over all the nbrs of Candidate node*/
+
+        ITERATE_NODE_LOGICAL_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
+            sprintf(LOG, "Processing Nbr : %s", nbr_node->node_name); TRACE();
+
+            /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
+             * not consider the node for SPF computation if we find 2-way nbrship is broken. */
+            if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
+                sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
+                continue;
+            }
+
+            sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
+            if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
+                        ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) < (unsigned long long)nbr_node->spf_metric[level]){
+
+                sprintf(LOG, "Old Metric : %u, New Metric : %u, Better Next Hop", 
+                        nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
+                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
+                TRACE();
+
+                nbr_node->spf_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
+                    INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
+                nbr_node->lsp_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
+                    INFINITE_METRIC : candidate_node->lsp_metric[level] + edge->metric[level];
+
+                sprintf(LOG, "%s's spf_metric has been updated to %u",  
+                        nbr_node->node_name, nbr_node->spf_metric[level]); TRACE();
+
+                if(nbr_node->is_node_on_heap == FALSE){
+                    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
+                    nbr_node->is_node_on_heap = TRUE;
+                    sprintf(LOG, "%s inserted into candidate tree", nbr_node->node_name); TRACE();
+                }
+                else{
+                    /* We should remove the node and then add again into candidate tree
+                     * But now i dont have brain cells to do this useless work. It has impact
+                     * on performance, but not on output*/
+
+                    sprintf(LOG, "%s is already present in candidate tree", nbr_node->node_name); TRACE();
+                }
+            }
+
+            else if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
+                        ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) == (unsigned long long)nbr_node->spf_metric[level]){
+
+                sprintf(LOG, "Old Metric : %u, New Metric : %u, ECMP path",
+                        nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
+                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]); TRACE();
+            }
+            else{
+                sprintf(LOG, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
+                        nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
+                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
+                TRACE();
+            }
+        }
+        ITERATE_NODE_LOGICAL_NBRS_END;
+    }
+}
 
 static void
 run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
@@ -568,6 +677,9 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
        if(!IS_BIT_SET(spf_root->backup_spf_options, 
             SPF_BACKUP_OPTIONS_REMOTE_BACKUP_CALCULATION))
            continue;
+       
+       /*clear pq nodes here as pq nodes are computed aftresh for each protected link*/
+       clear_pq_nodes(spf_root, level);
 
        if(is_broadcast_link(edge, level) == FALSE){
            p2p_compute_link_node_protecting_extended_p_space(spf_root, edge, level);
@@ -613,9 +725,12 @@ spf_computation(node_t *spf_root,
 
     if(spf_type == FULL_RUN){
         spf_info->spf_level_info[level].version++;
+        run_dijkastra(spf_root, level, &instance->ctree);
     }
-    
-    run_dijkastra(spf_root, level, &instance->ctree);
+    else if(spf_type == FORWARD_RUN){
+        run_dijkastra(spf_root, level, &instance->ctree);
+        //run_dijkastra_forward(spf_root, level, &instance->ctree);
+    }
     
     if(spf_type == FORWARD_RUN)
         return;
@@ -627,11 +742,13 @@ spf_computation(node_t *spf_root,
     if(spf_type == FULL_RUN){
         sprintf(LOG, "Route building starts After SPF FORWARD run"); TRACE();
         spf_postprocessing(spf_info, spf_root, level);
+#if 0
         if(IS_BIT_SET(spf_root->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED)){
             /*Clean the result so that other nodes to not export these results into
              * their route calculation*/
             init_back_up_computation(spf_root, level);
         }
+#endif
     }
 }
 

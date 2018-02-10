@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -O0
+CFLAGS=-g -Wall -O0 -pg
 INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./BitOp -I ./logging
 USECLILIB=-lcli
 TARGET:rpd

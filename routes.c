@@ -74,7 +74,7 @@ route_malloc(){
     return route;
 }
 
-static inline void
+static void
 merge_route_primary_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh){
 
     unsigned int i = 0;
@@ -94,6 +94,92 @@ merge_route_primary_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh
     }
 
     assert(GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]) <= MAX_NXT_HOPS);
+}
+
+#if 0
+static boolean
+is_backup_nexthop_protect_atleast_one_primary_nexthop_oif(internal_nh_t *backup_nh, 
+        ll_t *primary_nh_list){
+
+    internal_nh_t *primary_nxt_hop = NULL;
+    singly_ll_node_t* list_node = NULL;
+     
+    ITERATE_LIST_BEGIN(primary_nh_list, list_node){
+        primary_nxt_hop = list_node->data;
+        if(backup_nh->protected_link != primary_nxt_hop->oif)
+            continue;
+        return TRUE;
+    } ITERATE_LIST_END;
+    return FALSE;
+}
+
+static void
+remove_not_protecting_backups(routes_t *route){
+
+    nh_type_t nh, nh1;
+    singly_ll_node_t *list_node = NULL;
+    internal_nh_t *backup_nh = NULL;
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+        ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+            backup_nh = list_node->data;
+            backup_nh->is_eligible = FALSE;
+            ITERATE_NH_TYPE_BEGIN(nh1){
+                if(is_backup_nexthop_protect_atleast_one_primary_nexthop_oif(\
+                        backup_nh, route->primary_nh_list[nh1]) == FALSE)
+                   continue;
+                   backup_nh->is_eligible = TRUE;
+                   break;
+            } ITERATE_NH_TYPE_END;
+        } ITERATE_LIST_END;
+    } ITERATE_NH_TYPE_END;
+
+    ITERATE_NH_TYPE_BEGIN(nh){ 
+        sprintf(LOG, "route : %s/%u, backups removed which do not cover any primary nexthop", 
+                route->rt_key.prefix, route->rt_key.mask); TRACE();
+        sprintf(LOG, "route : %s/%u, # %s backups before deletion : %u", route->rt_key.prefix, route->rt_key.mask, 
+            nh == IPNH ? "IPNH" : "LSPNH", 
+            GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh])); TRACE();
+        ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+            backup_nh = list_node->data;
+            if(backup_nh->is_eligible == TRUE)
+                continue;
+            singly_ll_remove_node(route->backup_nh_list[nh], list_node);
+            sprintf(LOG, "\t backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", backup_nh->oif->intf_name,
+                    next_hop_type(*backup_nh) == IPNH ? "IPNH" : "LSPNH",
+                    next_hop_type(*backup_nh) == IPNH ? next_hop_gateway_pfx(backup_nh) : "",
+                    backup_nh->node ? backup_nh->node->node_name : backup_nh->rlfa->node_name,
+                    backup_nh->node ? backup_nh->node->router_id : backup_nh->rlfa->router_id,
+                    backup_nh->protected_link->intf_name); TRACE();
+             free(backup_nh);
+             free(list_node);
+        }ITERATE_LIST_END;
+        sprintf(LOG, "route : %s/%u, # %s backups after deletion : %u", route->rt_key.prefix, route->rt_key.mask, 
+            nh == IPNH ? "IPNH" : "LSPNH", 
+            GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh])); TRACE();
+    } ITERATE_NH_TYPE_END;
+}
+#endif
+
+static void
+merge_route_backup_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh){
+
+    unsigned int i = 0;
+    internal_nh_t *int_nxt_hop = NULL;
+     
+    for( ; i < MAX_NXT_HOPS ; i++){
+
+        if(is_internal_nh_t_empty(result->node->backup_next_hop[route->level][nh][i]))
+            break;
+        int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+        copy_internal_nh_t(result->node->backup_next_hop[route->level][nh][i], *int_nxt_hop);
+        singly_ll_add_node_by_val(route->backup_nh_list[nh], int_nxt_hop);
+        sprintf(LOG, "route : %s/%u backup next hop is merged with %s's next hop node %s", 
+                     route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                     result->node->backup_next_hop[route->level][nh][i].node->node_name); TRACE();
+    }
+
+    assert(GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh]) <= MAX_NXT_HOPS);
 }
 
 void
@@ -180,6 +266,10 @@ prepare_new_nxt_hop_template(node_t *computing_node,
     }
     
     nh_template->nh_name[NODE_NAME_SIZE - 1] = '\0';
+    if(nxt_hop_node && nxt_hop_node->protected_link){
+        strncpy(nh_template->protected_link, nxt_hop_node->protected_link->intf_name, IF_NAME_SIZE-1);
+        nh_template->protected_link[IF_NAME_SIZE-1] = '\0';
+    }
 
     /*Get the router id if nxt_hop_node is Forward Adjacency Or LDP Nexthop*/
     if(nxt_hop_node){
@@ -779,7 +869,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
                     copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
                     ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
-                    sprintf(LOG, "route : %s/%u backup next hop is merged with %s's next hop node %s", 
+                    sprintf(LOG, "route : %s/%u backup next hop is copied with with %s's next hop node %s", 
                             route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
                             result->node->backup_next_hop[level][nh][i].node->node_name); TRACE();
                 }
@@ -889,6 +979,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
+                            merge_route_backup_nexthops(route, result, nh);
                         } ITERATE_NH_TYPE_END;
                     }
                     /*Linkage*/
@@ -916,6 +1007,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
+                            merge_route_backup_nexthops(route, result, nh);
                         } ITERATE_NH_TYPE_END;
                     }
                     else{
@@ -1017,6 +1109,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         /* Union LFA,s RLFA,s Primary nexthops*/
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
+                            merge_route_backup_nexthops(route, result, nh);
                         } ITERATE_NH_TYPE_END;
                     }
                     /*Linkage*/
@@ -1044,6 +1137,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
+                            merge_route_backup_nexthops(route, result, nh);
                         } ITERATE_NH_TYPE_END;
                     }
                     else{
@@ -1092,7 +1186,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 }
 
 /* Routine to add one single route to RIB*/
-
+/*This routine is not in use*/
 void
 install_route_in_rib(spf_info_t *spf_info, 
         LEVEL level, routes_t *route){
@@ -1201,6 +1295,13 @@ install_route_in_rib(spf_info_t *spf_info,
 
 }
 
+#if 0
+static boolean
+is_route_eligible_for_backups(routes_t *route){
+
+    return TRUE;
+}
+#endif
 /*Routine to build the routing table*/
 
 void
@@ -1257,28 +1358,30 @@ start_route_installation(spf_info_t *spf_info,
                     } ITERATE_LIST_END;
                 }
             } ITERATE_NH_TYPE_END;
-           
+          
+//            if(is_route_eligible_for_backups(route)){ 
 #if 0
-            backup = backup_selection_policy(route);
-            if(backup){
-                prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node,
-                    backup, &rt_entry_template->backup_nh, level, backup->nh_type);
-                rt_entry_template->backup_nh_count++;
-            }
+                backup = backup_selection_policy(route);
+                if(backup){
+                    prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node,
+                            backup, &rt_entry_template->backup_nh, level, backup->nh_type);
+                    rt_entry_template->backup_nh_count++;
+                }
 #endif
 #if 1
-            /*Install All backups instead of best one*/
-            rt_entry_template->backup_nh_count = 0;
-            ITERATE_NH_TYPE_BEGIN(nh){
-                ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node2){
-                    backup = list_node2->data;
-                    prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node,
-                            backup, &rt_entry_template->backup_nh[rt_entry_template->backup_nh_count], 
-                            level, backup->nh_type);
-                    rt_entry_template->backup_nh_count++;
-                } ITERATE_LIST_END;
-            } ITERATE_NH_TYPE_END;
+                /*Install All backups instead of best one*/
+                rt_entry_template->backup_nh_count = 0;
+                ITERATE_NH_TYPE_BEGIN(nh){
+                    ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node2){
+                        backup = list_node2->data;
+                        prepare_new_nxt_hop_template(spf_info->spf_level_info[level].node,
+                                backup, &rt_entry_template->backup_nh[rt_entry_template->backup_nh_count], 
+                                level, backup->nh_type);
+                        rt_entry_template->backup_nh_count++;
+                    } ITERATE_LIST_END;
+                } ITERATE_NH_TYPE_END;
 #endif
+//            }
             ITERATE_NH_TYPE_BEGIN(nh){
                 sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->primary_nh_count = %u(%s), cost = %u", 
                         rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
@@ -1409,11 +1512,15 @@ build_routing_table(spf_info_t *spf_info,
 
     } ITERATE_LIST_END;
 
+    /*Remove backups which do not protect any primary next hops oif from route's backup list*/
+
+
     /*Iterate over all UPDATED routes and figured out which one needs to be updated
      * in RIB*/
     ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
 
         route = list_node->data;
+        //remove_not_protecting_backups(route);
         if(route->install_state != RTE_UPDATED)
             continue;
 

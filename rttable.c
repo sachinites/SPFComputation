@@ -215,8 +215,8 @@ show_routing_table(rttable *rttable){
     time_t curr_time = time(NULL);
 
     printf("Table %s\n", rttable->table_name);
-    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF         Backup Score       Age\n");
-    printf("-----------------------------------------------------------------------------------------------------------------------------------------------\n");
+    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF|protection         Backup Score       Age\n");
+    printf("------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
@@ -270,19 +270,21 @@ show_routing_table(rttable *rttable){
             /*print the back as per its type*/
             switch(nh){
                 case IPNH:
-                    printf("%-15s    %s|%-22s   %-12s   %u\n", 
+                    printf("%-15s    %s|%-22s   %-s|%-12s   %u\n", 
                             rt_entry->backup_nh[i].gwip,
                             rt_entry->backup_nh[i].nh_name,
                             "IPNH",
                             rt_entry->backup_nh[i].oif,
+                            rt_entry->backup_nh[i].protected_link,
                             5000);
                     break;
                 case LSPNH:
-                    printf("%-15s    LDP->%-s|%-17s   %-12s   %u\n",
+                    printf("%-15s    LDP->%-s|%-17s   %s|%-12s   %u\n",
                             "",
                             rt_entry->backup_nh[i].rlfa_name,
                             rt_entry->backup_nh[i].router_id,
                             rt_entry->backup_nh[i].oif,
+                            rt_entry->backup_nh[i].protected_link,
                             6000);
                     break;
                 default:

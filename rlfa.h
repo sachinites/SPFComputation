@@ -163,6 +163,9 @@ void
 init_back_up_computation(node_t *S, LEVEL level);
 
 void
+clear_pq_nodes(node_t *S, LEVEL level);
+
+void
 compute_lfa(node_t * S, edge_t *protected_link, LEVEL level, boolean strict_down_stream_lfa);
 
 void

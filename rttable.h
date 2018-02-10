@@ -40,6 +40,7 @@ typedef struct LL ll_t;
 
 typedef struct nh_t_{
     char oif[IF_NAME_SIZE];
+    char protected_link[IF_NAME_SIZE];
     char nh_name[NODE_NAME_SIZE]; /*IPNH | FA | RLFA*/
     char gwip[PREFIX_LEN + 1];    /*IPNH only, else 0.0.0.0*/
     nh_type_t nh_type;            /*IPNH | LSPNH*/
