@@ -303,7 +303,10 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
                  d_nbr_to_S = 0,
                  d_S_to_p_node = 0,
                  d_nbr_to_PN = 0,
-                 d_PN_to_p_node = 0;
+                 d_PN_to_p_node = 0,
+                 d_S_to_nbr = 0,
+                 d_S_to_PN = 0,
+                 d_PN_to_nbr =0;
 
 
     spf_result_t *spf_result_p_node = NULL;
@@ -350,6 +353,14 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
         }
 
         d_nbr_to_PN = DIST_X_Y(nbr_node, PN, level);
+        d_S_to_nbr = DIST_X_Y(S, nbr_node, level);
+        d_PN_to_nbr = DIST_X_Y(PN, nbr_node, level);
+
+        if(!(d_S_to_nbr <  d_S_to_PN + d_PN_to_nbr)){
+            sprintf(LOG, "Node : %s : Nbr %s will not be considered for computing P-space," 
+                        "nbr traverses protected link", S->node_name, nbr_node->node_name); TRACE();
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
+        }   
 
         ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node1){
             spf_result_p_node = (spf_result_t *)list_node1->data;
@@ -516,9 +527,12 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
     unsigned int d_nbr_to_p_node = 0,
                  d_nbr_to_S = 0,
                  d_nbr_to_E = 0,
+                 d_E_to_nbr =0,
                  d_E_to_p_node = 0,
-                 d_S_to_p_node = 0;
-
+                 d_S_to_p_node = 0,
+                 d_S_to_nbr = 0,
+                 d_S_to_E = 0;
+                    
     spf_result_t *spf_result_p_node = NULL;
 
     if(!IS_LEVEL_SET(protected_link->level, level))
@@ -542,7 +556,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
      * carries all nodes of the network reachable from source at level l.
      * We deem this list as the "entire network"*/ 
     E = protected_link->to.node;
-
+    d_S_to_E = DIST_X_Y(S, E, level);
     sprintf(LOG, "Node : %s : Begin ext-pspace computation for S=%s, protected-link = %s, LEVEL = %s",
                   S->node_name, S->node_name, protected_link->from.intf_name, get_str_level(level)); TRACE();
 
@@ -563,6 +577,20 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
             }
 
             d_nbr_to_E = DIST_X_Y(nbr_node, E, level);
+            d_S_to_nbr = DIST_X_Y(S, nbr_node, level);
+            d_E_to_nbr = DIST_X_Y(E, nbr_node, level);
+            
+            /*  skip nbrs which are reachable from S from protected link*/
+             /* nbr should not be reachable via E. Examine
+              * only the node protecting nbrs since S need to establish the
+              * tunnel to P node and this tunnel should reach P via shortest path
+              * not passing through protected-link*/
+
+            if(!(d_S_to_nbr <  d_S_to_E + d_E_to_nbr)){
+                sprintf(LOG, "Node : %s : Nbr %s will not be considered for computing P-space," 
+                        "nbr traverses protected link", S->node_name, nbr_node->node_name); TRACE();
+                ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
+            }
 
             ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node1){
                 spf_result_p_node = (spf_result_t *)list_node1->data;

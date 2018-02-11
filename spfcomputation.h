@@ -131,7 +131,7 @@ typedef struct internal_nh_t_{
     (_nh1.level == _nh2.level && _nh1.node == _nh2.node &&   \
     _nh1.oif == _nh2.oif && _nh1.nh_type == _nh2.nh_type &&  \
     _nh1.protected_link == _nh2.protected_link &&            \
-    _nh1.lfa_type == _nh2.lfa_type && _nh1.proxy_nbr == _nh2.proxy_nbr && \
+    _nh1.lfa_type == _nh2.lfa_type &&                        \
     _nh1.rlfa == _nh2.rlfa && _nh1.ldplabel == _nh2.ldplabel && \
     _nh1.root_metric == _nh2.root_metric &&                     \
     _nh1.dest_metric == _nh2.dest_metric)

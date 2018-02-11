@@ -624,6 +624,16 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         unsigned int i = 0;
         nh_type_t nh = NH_MAX;
         internal_nh_t *int_nxt_hop = NULL;
+        singly_ll_node_t* list_node = NULL;
+
+        /*Delete the older prefix list. We dont know what is the use
+         * of maintingin this list. We feel we should renew this list every
+         * time the route is overwritten with better prefix. We will revisit 
+         * once we find the use of this list.*/
+        ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
+            free(list_node->data);
+        } ITERATE_LIST_END;
+        delete_singly_ll(route->like_prefix_list);
 
         route_set_key(route, prefix->prefix, prefix->mask); 
 
@@ -831,8 +841,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
          * PREFIX_METRIC_TYPE_EXT */
 
         route->flags = prefix->prefix_flags;
-
-
         route->level = level;
         route->hosting_node = prefix->hosting_node;
 
