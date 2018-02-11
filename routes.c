@@ -162,15 +162,62 @@ remove_not_protecting_backups(routes_t *route){
 #endif
 
 static void
-merge_route_backup_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh){
+merge_route_backup_nexthops(routes_t *route, 
+                            spf_result_t *result, 
+                            nh_type_t nh){
 
     unsigned int i = 0;
-    internal_nh_t *int_nxt_hop = NULL;
-     
-    for( ; i < MAX_NXT_HOPS ; i++){
+    internal_nh_t *int_nxt_hop = NULL,
+                  *backup = NULL;
+    singly_ll_node_t *list_node = NULL;
+    nh_type_t nh1;
 
-        if(is_internal_nh_t_empty(result->node->backup_next_hop[route->level][nh][i]))
-            break;
+    /*clean LFAs*/
+    if(route->ecmp_dest_count == 2){
+        ITERATE_NH_TYPE_BEGIN(nh1){
+            ITERATE_LIST_BEGIN(route->backup_nh_list[nh1], list_node){
+                backup = list_node->data;
+                if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
+                        backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
+                        backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
+                        backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
+                        backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
+                        backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
+                    singly_ll_remove_node(route->backup_nh_list[nh1], list_node);
+                    sprintf(LOG, "\t ECMP : LFA backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", 
+                            backup->oif->intf_name,
+                            next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
+                            next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
+                            backup->node->node_name, backup->node->router_id,
+                            backup->protected_link->intf_name); TRACE();
+                    free(backup);
+                    free(list_node);
+                }
+            } ITERATE_LIST_END;
+        } ITERATE_NH_TYPE_END;
+    }
+
+    for( i = 0; i < MAX_NXT_HOPS ; i++){
+        
+        backup = &result->node->backup_next_hop[route->level][nh][i];
+        if(is_internal_nh_t_empty(*backup)) break;
+        /*If route has ECMP, then no need to collect Link protecting LFAs from
+         * multiple destinations*/
+        if(route->ecmp_dest_count >= 2                                    &&
+            (backup->lfa_type == LINK_PROTECTION_LFA                      ||
+             backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
+             backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
+             backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
+             backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
+             backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM)){
+            sprintf(LOG, "\t ECMP : LFA backup dropped : %s----%s---->%-s(%s(%s)) protecting link: %s", 
+                    backup->oif->intf_name,
+                    next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
+                    next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
+                    backup->node->node_name, backup->node->router_id,
+                    backup->protected_link->intf_name); TRACE();
+            continue;
+        }
         int_nxt_hop = calloc(1, sizeof(internal_nh_t));
         copy_internal_nh_t(result->node->backup_next_hop[route->level][nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->backup_nh_list[nh], int_nxt_hop);
@@ -178,7 +225,6 @@ merge_route_backup_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh)
                      route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
                      result->node->backup_next_hop[route->level][nh][i].node->node_name); TRACE();
     }
-
     assert(GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh]) <= MAX_NXT_HOPS);
 }
 
@@ -377,9 +423,10 @@ is_same_next_hop(internal_nh_t *nxt_hop, nh_t *nh){
             return FALSE;
     }
 
-    if(nxt_hop->node && 
-            strncmp(nxt_hop->node->node_name, nh->nh_name, NODE_NAME_SIZE))
-        return FALSE;
+    if(nxt_hop->node){
+        if(strncmp(nxt_hop->node->node_name, nh->nh_name, NODE_NAME_SIZE))
+            return FALSE;
+    }
     
     nh_type = next_hop_type((*nxt_hop));
 
@@ -634,7 +681,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
             free(list_node->data);
         } ITERATE_LIST_END;
         delete_singly_ll(route->like_prefix_list);
-
+        route->ecmp_dest_count = 1;
         route_set_key(route, prefix->prefix, prefix->mask); 
 
         sprintf(LOG, "route : %s/%u being over written for %s", route->rt_key.prefix, 
@@ -832,7 +879,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         route = route_malloc();
         route_set_key(route, prefix->prefix, prefix->mask); 
-
+        route->ecmp_dest_count = 1;
         route->version = spf_info->spf_level_info[level].version;
 
         /*Copy the prefix flags to route flags. flags include :
@@ -984,7 +1031,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.prefix, route->rt_key.mask); TRACE();
                         /* Union LFA,s RLFA,s Primary nexthops*/
-
+                        route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
                             merge_route_backup_nexthops(route, result, nh);
@@ -1013,6 +1060,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.prefix, route->rt_key.mask); TRACE();
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
+                        route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
                             merge_route_backup_nexthops(route, result, nh);
@@ -1115,6 +1163,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.prefix, route->rt_key.mask); TRACE();
                         /* Union LFA,s RLFA,s Primary nexthops*/
+                        route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
                             merge_route_backup_nexthops(route, result, nh);
@@ -1143,6 +1192,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.prefix, route->rt_key.mask); TRACE();
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
+                        route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
                             merge_route_backup_nexthops(route, result, nh);
@@ -1547,6 +1597,11 @@ build_routing_table(spf_info_t *spf_info,
                 route_intall_status_str(route->install_state),
                 get_str_level(level)); TRACE();
     }ITERATE_LIST_END;
+}
+
+void
+spf_backup_postprocessing(node_t *spf_root, LEVEL level){
+
 }
 
 void

@@ -63,6 +63,7 @@ typedef struct routes_{
     /*same subnet prefix lists*/
     ll_t *like_prefix_list; 
     route_intall_status install_state; 
+    unsigned int ecmp_dest_count;
 } routes_t;
 
 routes_t *route_malloc();

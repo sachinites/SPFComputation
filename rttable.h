@@ -134,7 +134,7 @@ rttable *
 init_rttable(char *table_name);
 
 void
-show_routing_table(rttable *rttable);
+show_routing_table(rttable *rttable, char *prefix, char mask);
 
 int
 show_traceroute(char *node_name, char *dst_prefix);

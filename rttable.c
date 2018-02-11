@@ -201,7 +201,7 @@ init_rttable(char *table_name){
 }
 
 void
-show_routing_table(rttable *rttable){
+show_routing_table(rttable *rttable, char *prefix, char mask){
 
     assert(rttable);
     singly_ll_node_t *list_node = NULL;
@@ -221,11 +221,18 @@ show_routing_table(rttable *rttable){
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
 
         rt_entry = (rttable_entry_t *)list_node->data;
+
+        /*filter*/
+        if(prefix){
+            if(!(strncmp(prefix, rt_entry->dest.prefix, PREFIX_LEN) == 0 &&
+                        mask == rt_entry->dest.mask))
+                continue;
+        }
         memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
         sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
 
         /*handling local prefixes*/
-        
+
         if(rt_entry->primary_nh_count[IPNH] == 0 && 
                 rt_entry->primary_nh_count[LSPNH] == 0){
 
@@ -237,7 +244,10 @@ show_routing_table(rttable *rttable){
                     "Direct", rt_entry->primary_nh[IPNH][0].nh_name, 
                     "--", "--", "", 
                     hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)));
-            continue;
+            if(prefix)
+                return;
+            else
+                continue;
         }
 
         printf("%-20s      %-4d        %-3d (%-3s)     %-2d    ", 
@@ -250,7 +260,7 @@ show_routing_table(rttable *rttable){
         } ITERATE_NH_TYPE_END;
 
         ITERATE_NH_TYPE_BEGIN(nh){
-            
+
             for(i = 0; i < rt_entry->primary_nh_count[nh]; i++, j++){
                 printf("%-15s    %-s|%-22s   %-22s        %s\n", 
                         nh == IPNH ? rt_entry->primary_nh[nh][i].gwip : "--",  
@@ -258,8 +268,8 @@ show_routing_table(rttable *rttable){
                         rt_entry->primary_nh[nh][i].nh_type == IPNH ? "IPNH" : "LSPNH",
                         rt_entry->primary_nh[nh][i].oif,
                         i == 0 ? hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)) : "");
-                        if(j < total_nx_hops -1)
-                            printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
+                if(j < total_nx_hops -1)
+                    printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
             }
         } ITERATE_NH_TYPE_END;
 
@@ -291,6 +301,8 @@ show_routing_table(rttable *rttable){
                     assert(0);
             }
         }
+        if(prefix)
+            return;
     }ITERATE_LIST_END;
 }
 

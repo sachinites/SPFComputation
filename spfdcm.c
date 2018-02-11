@@ -180,14 +180,20 @@ show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
     char *node_name = NULL;
     tlv_struct_t *tlv = NULL;
     node_t *node = NULL;
+    char *prefix = NULL;
+    char mask = 0;
 
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
              node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "prefix", strlen("prefix")) ==0)
+             prefix = tlv->value;
+        else if(strncmp(tlv->leaf_id, "mask", strlen("mask")) ==0)
+             mask = atoi(tlv->value);
     } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-    show_routing_table(node->spf_info.rttable);
+    show_routing_table(node->spf_info.rttable, prefix, mask);
     return 0;
 } 
 
@@ -929,7 +935,16 @@ spf_init_dcm(){
     static param_t route;
     init_param(&route, CMD, "route", show_route_handler, 0, INVALID, 0, "routing table");
     libcli_register_param(&instance_node_name, &route);
-
+    {
+        static param_t prefix;
+        init_param(&prefix, LEAF, 0, 0, 0, IPV4, "prefix", "Ipv4 prefix without mask");
+        libcli_register_param(&route, &prefix);
+        {
+            static param_t mask;
+            init_param(&mask, LEAF, 0, show_route_handler, validate_ipv4_mask, INT, "mask", "mask (0-32)");
+            libcli_register_param(&prefix, &mask);
+        }
+    }
     /*show instance node <node-name> level <level-no>*/ 
     static param_t instance_node_name_level;
     init_param(&instance_node_name_level, CMD, "level", 0, 0, INVALID, 0, "level");
