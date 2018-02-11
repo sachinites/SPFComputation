@@ -40,7 +40,7 @@
 #define MAX_NODE_INTF_SLOTS     10
 #define PREFIX_LEN              15
 #define PREFIX_LEN_WITH_MASK    (PREFIX_LEN + 3)
-#define MAX_NXT_HOPS            16
+#define MAX_NXT_HOPS            8
 #define INFINITE_METRIC         (0xFE000000)
 #define LINK_DEFAULT_METRIC     10
 #define DEFAULT_LINK_BW         LINK_DEFAULT_METRIC

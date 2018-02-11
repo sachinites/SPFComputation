@@ -142,18 +142,19 @@ typedef struct internal_nh_t_{
 
 #define PRINT_ONE_LINER_NXT_HOP(_internal_nh_t_ptr)                                                                 \
     if(_internal_nh_t_ptr->protected_link == NULL)                                                                  \
-            printf("\t%s----%s---->%-s(%s(%s))\n", nxthop->oif->intf_name,                                          \
-            next_hop_type(*_internal_nh_t_ptr) == IPNH ? "IPNH" : "LSPNH",                                          \
-            next_hop_type(*_internal_nh_t_ptr) == IPNH ? next_hop_gateway_pfx(_internal_nh_t_ptr) : "",             \
-            _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->node_name : _internal_nh_t_ptr->rlfa->node_name,   \
-            _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->router_id : _internal_nh_t_ptr->rlfa->router_id);  \
-    else                                                                                                            \
-            printf("\t%s----%s---->%-s(%s(%s)) protecting : %s\n", nxthop->oif->intf_name,                          \
+            printf("\t%s----%s---->%-s(%s(%s)) -- %s\n", nxthop->oif->intf_name,                                    \
             next_hop_type(*_internal_nh_t_ptr) == IPNH ? "IPNH" : "LSPNH",                                          \
             next_hop_type(*_internal_nh_t_ptr) == IPNH ? next_hop_gateway_pfx(_internal_nh_t_ptr) : "",             \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->node_name : _internal_nh_t_ptr->rlfa->node_name,   \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->router_id : _internal_nh_t_ptr->rlfa->router_id,   \
-            _internal_nh_t_ptr->protected_link->intf_name) 
+            get_str_lfa_type(_internal_nh_t_ptr->lfa_type));                                                        \
+    else                                                                                                            \
+            printf("\t%s----%s---->%-s(%s(%s)) protecting : %s -- %s\n", nxthop->oif->intf_name,                    \
+            next_hop_type(*_internal_nh_t_ptr) == IPNH ? "IPNH" : "LSPNH",                                          \
+            next_hop_type(*_internal_nh_t_ptr) == IPNH ? next_hop_gateway_pfx(_internal_nh_t_ptr) : "",             \
+            _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->node_name : _internal_nh_t_ptr->rlfa->node_name,   \
+            _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->router_id : _internal_nh_t_ptr->rlfa->router_id,   \
+            _internal_nh_t_ptr->protected_link->intf_name, get_str_lfa_type(_internal_nh_t_ptr->lfa_type)) 
          
 
 typedef struct spf_result_{
