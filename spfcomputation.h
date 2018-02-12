@@ -65,6 +65,8 @@ typedef struct internal_nh_t_{
     unsigned int ldplabel;
     unsigned int root_metric;
     unsigned int dest_metric;
+    /*No of destinations covered by this RLFA backup*/
+    unsigned int *ref_count; 
     boolean is_eligible;
 } internal_nh_t;
 

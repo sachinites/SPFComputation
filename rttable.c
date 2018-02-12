@@ -215,7 +215,7 @@ show_routing_table(rttable *rttable, char *prefix, char mask){
     time_t curr_time = time(NULL);
 
     printf("Table %s\n", rttable->table_name);
-    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF|protection         Backup Score       Age\n");
+    printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF           protection    Backup Score  Age\n");
     printf("------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
@@ -237,7 +237,7 @@ show_routing_table(rttable *rttable, char *prefix, char mask){
                 rt_entry->primary_nh_count[LSPNH] == 0){
 
             sprintf(subnet, "%s/%d", rt_entry->dest.prefix, rt_entry->dest.mask);
-            printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-12s      %-16s          %s\n",
+            printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-12s      %-16s                      %s\n",
                     subnet, rt_entry->version, rt_entry->cost, 
                     IS_BIT_SET(rt_entry->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT", 
                     rt_entry->level, 
@@ -262,12 +262,12 @@ show_routing_table(rttable *rttable, char *prefix, char mask){
         ITERATE_NH_TYPE_BEGIN(nh){
 
             for(i = 0; i < rt_entry->primary_nh_count[nh]; i++, j++){
-                printf("%-15s    %-s|%-22s   %-22s        %s\n", 
+                printf("%-15s    %-s|%-22s   %-26s                %s\n", 
                         nh == IPNH ? rt_entry->primary_nh[nh][i].gwip : "--",  
                         rt_entry->primary_nh[nh][i].nh_name,
                         rt_entry->primary_nh[nh][i].nh_type == IPNH ? "IPNH" : "LSPNH",
                         rt_entry->primary_nh[nh][i].oif,
-                        i == 0 ? hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)) : "");
+                        hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)));
                 if(j < total_nx_hops -1)
                     printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
             }
@@ -280,22 +280,22 @@ show_routing_table(rttable *rttable, char *prefix, char mask){
             /*print the back as per its type*/
             switch(nh){
                 case IPNH:
-                    printf("%-15s    %s|%-22s   %-s|%-12s   %u\n", 
+                    printf("%-15s    %s|%-22s   %-12s    %-10s       %-5u    %s\n", 
                             rt_entry->backup_nh[i].gwip,
                             rt_entry->backup_nh[i].nh_name,
                             "IPNH",
                             rt_entry->backup_nh[i].oif,
                             rt_entry->backup_nh[i].protected_link,
-                            5000);
+                            5000, hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)));
                     break;
                 case LSPNH:
-                    printf("%-15s    LDP->%-s|%-17s   %s|%-12s   %u\n",
+                    printf("%-15s    LDP->%-s|%-17s   %-12s    %-10s       %-5u    %s\n",
                             "",
                             rt_entry->backup_nh[i].rlfa_name,
                             rt_entry->backup_nh[i].router_id,
                             rt_entry->backup_nh[i].oif,
                             rt_entry->backup_nh[i].protected_link,
-                            6000);
+                            6000, hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)));
                     break;
                 default:
                     assert(0);

@@ -131,40 +131,6 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
         sprintf(impact_reason, "Dest %s only primary nxt hop oif(%s) = protected_link(%s)",
                     D->node_name, primary_nh->oif->intf_name, protected_link->from.intf_name);
         return TRUE;
-#if 0
-        if(IS_LINK_PROTECTION_ENABLED(protected_link) &&
-           !IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-            /*D 's only primary nexthop is different from protected_link*/
-            sprintf(impact_reason, "Dest %s only primary nxt hop oif(%s) != protected_link(%s) AND Only LINK_PROTECTION Enabled",
-                D->node_name, primary_nh->oif->intf_name, protected_link->from.intf_name);
-            return FALSE;
-        }
-
-        /*if Node protection is enabled, primary nexthop is different from E and 
-         * should not traverse E*/
-        if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-            if(primary_nh->node == E){
-                sprintf(impact_reason, "Dest %s only primary nxt hop node(%s) = protected_link next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
-                    D->node_name, primary_nh->node->node_name, E->node_name);
-                return TRUE;
-            }
-
-            d_prim_nh_to_D = DIST_X_Y(primary_nh->node, D, level);
-            d_prim_nh_to_E = DIST_X_Y(primary_nh->node, E, level);
-            d_E_to_D = DIST_X_Y(E, D, level);
-
-            if(d_prim_nh_to_D < d_prim_nh_to_E + d_E_to_D){
-                sprintf(impact_reason, "Dest %s only primary nxt hop node(%s) do not traverse protected_link next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
-                    D->node_name, primary_nh->node->node_name, E->node_name);
-                return FALSE;
-            }
-            else{
-                sprintf(impact_reason, "Dest %s only primary nxt hop node(%s) traverses protected_link next hop node (%s) AND LINK_NODE_PROTECTION Enabled",
-                    D->node_name, primary_nh->node->node_name, E->node_name);
-                return TRUE;    
-            }
-        }
-#endif
     }
 
     if(nh_count > 1){
@@ -782,6 +748,7 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
                 sprintf(LOG, "Node : %s : Link protected p-node %s qualify as link protection Q node",
                         S->node_name, p_node->rlfa->node_name); TRACE();
                 rlfa = get_next_hop_empty_slot(D_res->node->backup_next_hop[level][LSPNH]);
+                //(*(p_node->ref_count))++;
                 copy_internal_nh_t(*p_node, *rlfa);
                 rlfa->dest_metric = d_p_to_D;
                 continue;
@@ -796,6 +763,7 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
                 /*When tested for P nodes, node protecting p-nodes are automatically link protecting 
                  * p nodes also for given Destination*/
                 rlfa = get_next_hop_empty_slot(D_res->node->backup_next_hop[level][LSPNH]);
+                //(*(p_node->ref_count))++;
                 copy_internal_nh_t(*p_node, *rlfa);
                 continue;
             }
@@ -827,6 +795,7 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
                     "Demoted from LINK_NODE_PROTECTION to LINK_PROTECTION PQ node for Dest %s", 
                      S->node_name, p_node->rlfa->node_name, D_res->node->node_name); TRACE();
             rlfa = get_next_hop_empty_slot(D_res->node->backup_next_hop[level][LSPNH]);
+            //(*(p_node->ref_count))++;
             copy_internal_nh_t(*p_node, *rlfa);
             rlfa->lfa_type = BROADCAST_LINK_PROTECTION_RLFA;
         }ITERATE_LIST_END;
@@ -929,6 +898,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
                             S->node_name, p_node->rlfa->node_name, D_res->node->node_name); TRACE();
                     p_node->dest_metric = d_p_to_D;
                     rlfa = get_next_hop_empty_slot(D_res->node->backup_next_hop[level][LSPNH]);
+                    //(*(p_node->ref_count))++;
                     copy_internal_nh_t(*p_node, *rlfa);
                     continue;
                 }
@@ -954,6 +924,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
                 }
                 p_node->dest_metric = d_p_to_D;
                 rlfa = get_next_hop_empty_slot(D_res->node->backup_next_hop[level][LSPNH]);
+                //(*(p_node->ref_count))++;
                 copy_internal_nh_t(*p_node, *rlfa);
                 rlfa->lfa_type = LINK_PROTECTION_RLFA;
                 sprintf(LOG, "Node : %s : Node protected p-node %s qualify as link protection Q node"
@@ -978,6 +949,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
                 }
                 p_node->dest_metric = d_p_to_D;
                 rlfa = get_next_hop_empty_slot(D_res->node->backup_next_hop[level][LSPNH]);
+                //(*(p_node->ref_count))++;
                 copy_internal_nh_t(*p_node, *rlfa);
                 rlfa->lfa_type = LINK_PROTECTION_RLFA;
                 sprintf(LOG, "Node : %s : link protected p-node %s qualify as link protection Q node for Dest %s",
@@ -1353,9 +1325,12 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
         dist_S_D = D_res->spf_metric;
         ITERATE_NODE_PHYSICAL_NBRS_BEGIN(S, N, pn_node, edge1, edge2, level){
 
-            sprintf(LOG, "Node : %s : Testing nbr %s via edge1 = %s, edge2 = %s for LFA candidature",
-                    S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); TRACE();
-
+            sprintf(LOG, "Node : %s : Testing nbr %s via edge1(%s) = %s, edge2(%s) = %s for LFA candidature",
+                    S->node_name, N->node_name, edge1->status == 1 ? "UP" : "DOWN", 
+                    edge1->from.intf_name,
+                    edge2->status == 1 ? "UP" : "DOWN", 
+                    edge2->from.intf_name); TRACE();
+            
             /*Do not consider the link being protected to find LFA*/
             if(edge1 == protected_link){
                 sprintf(LOG, "Node : %s : Nbr %s with OIF %s is same as protected link %s, skipping this nbr from LFA candidature", 

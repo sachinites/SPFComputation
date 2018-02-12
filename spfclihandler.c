@@ -80,6 +80,8 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
 
     for(; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
+    
+        if(edge_end->dirn == INCOMING) continue;   
         if(!edge_end){
             return;
         }
@@ -561,11 +563,27 @@ dump_next_hop(internal_nh_t *nh){
     printf("\toif = %-10s", nh->oif->intf_name);
     printf("\tprotecting link = %-10s", nh->protected_link->intf_name);
     printf("gw_prefix = %-16s", nh->gw_prefix);
-    printf(" Node = %-16s\n", nh->node->node_name);
-    printf("\tnh_type = %-6s", nh->nh_type == IPNH ? "IPNH" : "LSPNH"); 
+    if(nh->node)
+        printf(" Node = %-16s\n", nh->node->node_name);
+    else
+        printf(" Node = %s\n", "NULL");
+
+    printf("\tnh_type = %-8s", nh->nh_type == IPNH ? "IPNH" : "LSPNH");
+
+    //if(nh->rlfa) printf("ref_count = %-5u", *(nh->ref_count));
+
     printf("lfa_type = %-25s\n", get_str_lfa_type(nh->lfa_type));
-    printf("\tproxy_nbr = %-16s", nh->proxy_nbr->node_name);
-    printf("rlfa = %-16s\n", nh->rlfa->node_name);
+
+    if(nh->proxy_nbr)
+        printf("\tproxy_nbr = %-16s", nh->proxy_nbr->node_name);
+    else
+        printf("\tproxy_nbr = %-16s", "NULL");
+
+    if(nh->rlfa)
+        printf("rlfa = %-16s\n", nh->rlfa->node_name);
+    else
+        printf("rlfa = %-16s\n", "NULL");
+
     printf("\tldplabel = %-17u", nh->ldplabel);
     printf("root_metric = %-8u", nh->root_metric);
     printf("dest_metric = %-8u", nh->dest_metric);
@@ -573,7 +591,9 @@ dump_next_hop(internal_nh_t *nh){
 }
 
 int
-debug_show_node_back_up_spf_results(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+debug_show_node_back_up_spf_results(param_t *param, 
+                ser_buff_t *tlv_buf, 
+                op_mode enable_or_disable){
 
     node_t *node = NULL,
            *D = NULL,

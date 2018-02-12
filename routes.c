@@ -66,7 +66,7 @@ route_malloc(){
         singly_ll_set_comparison_fn(route->primary_nh_list[nh], instance_node_comparison_fn);
         route->backup_nh_list[nh] = init_singly_ll();
         singly_ll_set_comparison_fn(route->backup_nh_list[nh], instance_node_comparison_fn);
-    }
+    }ITERATE_NH_TYPE_END;
     route->like_prefix_list = init_singly_ll();
     singly_ll_set_comparison_fn(route->like_prefix_list, get_prefix_comparison_fn());
     singly_ll_set_order_comparison_fn(route->like_prefix_list, get_prefix_order_comparison_fn());
@@ -96,71 +96,6 @@ merge_route_primary_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh
     assert(GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]) <= MAX_NXT_HOPS);
 }
 
-#if 0
-static boolean
-is_backup_nexthop_protect_atleast_one_primary_nexthop_oif(internal_nh_t *backup_nh, 
-        ll_t *primary_nh_list){
-
-    internal_nh_t *primary_nxt_hop = NULL;
-    singly_ll_node_t* list_node = NULL;
-     
-    ITERATE_LIST_BEGIN(primary_nh_list, list_node){
-        primary_nxt_hop = list_node->data;
-        if(backup_nh->protected_link != primary_nxt_hop->oif)
-            continue;
-        return TRUE;
-    } ITERATE_LIST_END;
-    return FALSE;
-}
-
-static void
-remove_not_protecting_backups(routes_t *route){
-
-    nh_type_t nh, nh1;
-    singly_ll_node_t *list_node = NULL;
-    internal_nh_t *backup_nh = NULL;
-
-    ITERATE_NH_TYPE_BEGIN(nh){
-        ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
-            backup_nh = list_node->data;
-            backup_nh->is_eligible = FALSE;
-            ITERATE_NH_TYPE_BEGIN(nh1){
-                if(is_backup_nexthop_protect_atleast_one_primary_nexthop_oif(\
-                        backup_nh, route->primary_nh_list[nh1]) == FALSE)
-                   continue;
-                   backup_nh->is_eligible = TRUE;
-                   break;
-            } ITERATE_NH_TYPE_END;
-        } ITERATE_LIST_END;
-    } ITERATE_NH_TYPE_END;
-
-    ITERATE_NH_TYPE_BEGIN(nh){ 
-        sprintf(LOG, "route : %s/%u, backups removed which do not cover any primary nexthop", 
-                route->rt_key.prefix, route->rt_key.mask); TRACE();
-        sprintf(LOG, "route : %s/%u, # %s backups before deletion : %u", route->rt_key.prefix, route->rt_key.mask, 
-            nh == IPNH ? "IPNH" : "LSPNH", 
-            GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh])); TRACE();
-        ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
-            backup_nh = list_node->data;
-            if(backup_nh->is_eligible == TRUE)
-                continue;
-            singly_ll_remove_node(route->backup_nh_list[nh], list_node);
-            sprintf(LOG, "\t backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", backup_nh->oif->intf_name,
-                    next_hop_type(*backup_nh) == IPNH ? "IPNH" : "LSPNH",
-                    next_hop_type(*backup_nh) == IPNH ? next_hop_gateway_pfx(backup_nh) : "",
-                    backup_nh->node ? backup_nh->node->node_name : backup_nh->rlfa->node_name,
-                    backup_nh->node ? backup_nh->node->router_id : backup_nh->rlfa->router_id,
-                    backup_nh->protected_link->intf_name); TRACE();
-             free(backup_nh);
-             free(list_node);
-        }ITERATE_LIST_END;
-        sprintf(LOG, "route : %s/%u, # %s backups after deletion : %u", route->rt_key.prefix, route->rt_key.mask, 
-            nh == IPNH ? "IPNH" : "LSPNH", 
-            GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh])); TRACE();
-    } ITERATE_NH_TYPE_END;
-}
-#endif
-
 static void
 merge_route_backup_nexthops(routes_t *route, 
                             spf_result_t *result, 
@@ -170,12 +105,10 @@ merge_route_backup_nexthops(routes_t *route,
     internal_nh_t *int_nxt_hop = NULL,
                   *backup = NULL;
     singly_ll_node_t *list_node = NULL;
-    nh_type_t nh1;
 
     /*clean LFAs*/
     if(route->ecmp_dest_count == 2){
-        ITERATE_NH_TYPE_BEGIN(nh1){
-            ITERATE_LIST_BEGIN(route->backup_nh_list[nh1], list_node){
+            ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
                 backup = list_node->data;
                 if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
                         backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
@@ -183,7 +116,7 @@ merge_route_backup_nexthops(routes_t *route,
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
-                    singly_ll_remove_node(route->backup_nh_list[nh1], list_node);
+                    singly_ll_remove_node(route->backup_nh_list[nh], list_node);
                     sprintf(LOG, "\t ECMP : LFA backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", 
                             backup->oif->intf_name,
                             next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
@@ -194,7 +127,6 @@ merge_route_backup_nexthops(routes_t *route,
                     free(list_node);
                 }
             } ITERATE_LIST_END;
-        } ITERATE_NH_TYPE_END;
     }
 
     for( i = 0; i < MAX_NXT_HOPS ; i++){

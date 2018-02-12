@@ -662,9 +662,11 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
     for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = spf_root->edges[i];
         if(!edge_end) break;
+        
         if(IS_BIT_SET(edge_end->edge_config_flags, NO_ELIGIBLE_BACK_UP))
             continue;
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+        if(!edge->status) continue;
         if(edge->etype == LSP)
             continue;
         if(!IS_LINK_NODE_PROTECTION_ENABLED(edge) &&

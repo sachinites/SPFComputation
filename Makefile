@@ -1,5 +1,6 @@
 CC=gcc
-CFLAGS=-g -Wall -O0
+#GCOV=-fprofile-arcs -ftest-coverage
+CFLAGS=-g -Wall -O0 ${GCOV}
 INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./BitOp -I ./logging
 USECLILIB=-lcli
 TARGET:rpd
