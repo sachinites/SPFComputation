@@ -1,12 +1,12 @@
 CC=gcc
 #GCOV=-fprofile-arcs -ftest-coverage
 CFLAGS=-g -Wall -O0 ${GCOV}
-INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./BitOp -I ./logging
+INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./BitOp -I ./logging -I ./Libtrace
 USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o ./logging/logging.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./logging/logging.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -24,6 +24,9 @@ advert.o:advert.c
 rlfa.o:rlfa.c
 	@echo "Building rlfa.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} rlfa.c -o rlfa.o
+spftrace.o:spftrace.c
+	@echo "Building spftrace.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} spftrace.c -o spftrace.o
 spfdcm.o:spfdcm.c
 	@echo "Building spfdcm.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} spfdcm.c -o spfdcm.o
@@ -65,6 +68,7 @@ cleanall:
 	rm Heap/*.o
 	rm Queue/*.o
 	rm logging/*.o
+	rm Libtrace/*.o
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	make clean

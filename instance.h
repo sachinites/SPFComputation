@@ -41,6 +41,7 @@
 #include "prefix.h"
 #include "heap_interface.h"
 #include "rlfa.h"
+#include "Libtrace/libtrace.h"
 
 typedef struct edge_end_ edge_end_t;
 
@@ -114,6 +115,7 @@ typedef struct instance_{
     node_t *instance_root;
     ll_t *instance_node_list;
     candidate_tree_t ctree;/*Candidate tree is shared by all nodes for SPF run*/
+    traceoptions *traceopts;
 } instance_t;
 
 node_t *

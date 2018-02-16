@@ -36,6 +36,7 @@
 #include "bitsop.h"
 #include "rttable.h"
 #include "advert.h"
+#include "spftrace.h"
 
 extern instance_t *instance;
 
@@ -88,9 +89,10 @@ merge_route_primary_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh
         int_nxt_hop = calloc(1, sizeof(internal_nh_t));
         copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->primary_nh_list[nh], int_nxt_hop);
-        sprintf(LOG, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
+        sprintf(instance->traceopts->b, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
                      route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                     result->next_hop[nh][i].node->node_name); TRACE();
+                     result->next_hop[nh][i].node->node_name); 
+        trace(instance->traceopts, ROUTE_CALCULATION_BIT);
     }
 
     assert(GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]) <= MAX_NXT_HOPS);
@@ -117,12 +119,13 @@ merge_route_backup_nexthops(routes_t *route,
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
                     singly_ll_remove_node(route->backup_nh_list[nh], list_node);
-                    sprintf(LOG, "\t ECMP : LFA backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", 
+                    sprintf(instance->traceopts->b, "\t ECMP : LFA backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", 
                             backup->oif->intf_name,
                             next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
                             next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
                             backup->node->node_name, backup->node->router_id,
-                            backup->protected_link->intf_name); TRACE();
+                            backup->protected_link->intf_name); 
+                    trace(instance->traceopts, ROUTE_CALCULATION_BIT);
                     free(backup);
                     free(list_node);
                 }
@@ -142,20 +145,21 @@ merge_route_backup_nexthops(routes_t *route,
              backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
              backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
              backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM)){
-            sprintf(LOG, "\t ECMP : LFA backup dropped : %s----%s---->%-s(%s(%s)) protecting link: %s", 
+            sprintf(instance->traceopts->b, "\t ECMP : LFA backup dropped : %s----%s---->%-s(%s(%s)) protecting link: %s", 
                     backup->oif->intf_name,
                     next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
                     next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
                     backup->node->node_name, backup->node->router_id,
-                    backup->protected_link->intf_name); TRACE();
+                    backup->protected_link->intf_name); 
+            trace(instance->traceopts, ROUTE_CALCULATION_BIT);
             continue;
         }
         int_nxt_hop = calloc(1, sizeof(internal_nh_t));
         copy_internal_nh_t(result->node->backup_next_hop[route->level][nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->backup_nh_list[nh], int_nxt_hop);
-        sprintf(LOG, "route : %s/%u backup next hop is merged with %s's next hop node %s", 
+        sprintf(instance->traceopts->b, "route : %s/%u backup next hop is merged with %s's next hop node %s", 
                      route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                     result->node->backup_next_hop[route->level][nh][i].node->node_name); TRACE();
+                     result->node->backup_next_hop[route->level][nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
     }
     assert(GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh]) <= MAX_NXT_HOPS);
 }
@@ -447,13 +451,13 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
    routes_t *route = NULL;
    unsigned int i = 0;
 
-   sprintf(LOG, "Deleting Stale Routes"); TRACE();
+   sprintf(instance->traceopts->b, "Deleting Stale Routes"); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
            
        route = list_node->data;
        if(route->install_state == RTE_STALE && IS_LEVEL_SET(route->level, level)){
-        sprintf(LOG, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.prefix, 
-                        route->rt_key.mask, level); TRACE();
+        sprintf(instance->traceopts->b, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.prefix, 
+                        route->rt_key.mask, level); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
         i++;
         ROUTE_DEL_FROM_ROUTE_LIST(spf_info, route);
         free_route(route);
@@ -616,8 +620,8 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         route->ecmp_dest_count = 1;
         route_set_key(route, prefix->prefix, prefix->mask); 
 
-        sprintf(LOG, "route : %s/%u being over written for %s", route->rt_key.prefix, 
-                    route->rt_key.mask, get_str_level(level)); TRACE();
+        sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.prefix, 
+                    route->rt_key.mask, get_str_level(level)); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
         route->version = spf_info->spf_level_info[level].version;
         route->flags = prefix->prefix_flags;
@@ -646,9 +650,9 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
                     copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
                     ROUTE_ADD_NH(route->primary_nh_list[nh], int_nxt_hop);   
-                    sprintf(LOG, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
+                    sprintf(instance->traceopts->b, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
                             route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                            result->next_hop[nh][i].node->node_name); TRACE();
+                            result->next_hop[nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 }
                 else
                     break;
@@ -658,9 +662,9 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
                     copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
                     ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
-                    sprintf(LOG, "route : %s/%u backup next hop is merged with %s's backup next hop node %s", 
+                    sprintf(instance->traceopts->b, "route : %s/%u backup next hop is merged with %s's backup next hop node %s", 
                             route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                            result->node->backup_next_hop[level][nh][i].node->node_name); TRACE();
+                            result->node->backup_next_hop[level][nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 }
                 else
                     break;
@@ -687,9 +691,9 @@ link_prefix_to_route(routes_t *route, prefix_t *new_prefix,
 
                         new_prefix_pref = route_preference(new_prefix->prefix_flags, new_prefix->level);
 
-    sprintf(LOG, "To Route : %s/%u, %s, Appending prefix : %s/%u to Route prefix list",
+    sprintf(instance->traceopts->b, "To Route : %s/%u, %s, Appending prefix : %s/%u to Route prefix list",
                  route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level),
-                 new_prefix->prefix, new_prefix->mask); TRACE();
+                 new_prefix->prefix, new_prefix->mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
     if(is_singly_ll_empty(route->like_prefix_list)){
         singly_ll_add_node_by_val(route->like_prefix_list, new_prefix);
@@ -794,20 +798,20 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
 
 
-    sprintf(LOG, "Node : %s : result node %s, prefix %s, level %s, prefix metric : %u",
+    sprintf(instance->traceopts->b, "Node : %s : result node %s, prefix %s, level %s, prefix metric : %u",
             GET_SPF_INFO_NODE(spf_info, level)->node_name, result->node->node_name, 
-            prefix->prefix, get_str_level(level), prefix->metric); TRACE();
+            prefix->prefix, get_str_level(level), prefix->metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
     if(prefix->metric == INFINITE_METRIC){
-        sprintf(LOG, "prefix : %s/%u discarded because of infinite metric", prefix->prefix, prefix->mask); TRACE();
+        sprintf(instance->traceopts->b, "prefix : %s/%u discarded because of infinite metric", prefix->prefix, prefix->mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
         return;
     }
 
     route = search_route_in_spf_route_list(spf_info, prefix, level);
 
     if(!route){
-        sprintf(LOG, "prefix : %s/%u is a New route (malloc'd) in %s, hosting_node %s", 
-                prefix->prefix, prefix->mask, get_str_level(level), prefix->hosting_node->node_name); TRACE();
+        sprintf(instance->traceopts->b, "prefix : %s/%u is a New route (malloc'd) in %s, hosting_node %s", 
+                prefix->prefix, prefix->mask, get_str_level(level), prefix->hosting_node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
         route = route_malloc();
         route_set_key(route, prefix->prefix, prefix->mask); 
@@ -844,9 +848,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
                     copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
                     ROUTE_ADD_NH(route->primary_nh_list[nh], int_nxt_hop);   
-                    sprintf(LOG, "Node : %s : route : %s/%u Next hop added : %s|%s at %s", 
+                    sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Next hop added : %s|%s at %s", 
                             GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask ,
-                            result->next_hop[nh][i].node->node_name, nh == IPNH ? "IPNH":"LSPNH", get_str_level(level)); TRACE();
+                            result->next_hop[nh][i].node->node_name, nh == IPNH ? "IPNH":"LSPNH", get_str_level(level)); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 }
                 else
                     break;
@@ -856,9 +860,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
                     copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
                     ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
-                    sprintf(LOG, "route : %s/%u backup next hop is copied with with %s's next hop node %s", 
+                    sprintf(instance->traceopts->b, "route : %s/%u backup next hop is copied with with %s's next hop node %s", 
                             route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                            result->node->backup_next_hop[level][nh][i].node->node_name); TRACE();
+                            result->node->backup_next_hop[level][nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 }
                 else
                     break;
@@ -875,15 +879,15 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
         route->install_state = RTE_ADDED;
-        sprintf(LOG, "Node : %s : route : %s/%u, spf_metric = %u, lsp_metric = %u,  marked RTE_ADDED for level%u",  
+        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u, spf_metric = %u, lsp_metric = %u,  marked RTE_ADDED for level%u",  
                 GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
-                route->spf_metric, route->lsp_metric, route->level); TRACE();
+                route->spf_metric, route->lsp_metric, route->level); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
     }
     else{
-        sprintf(LOG, "Node : %s : route : %s/%u existing route. route verion : %u," 
+        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u existing route. route verion : %u," 
                 "spf version : %u, route level : %s, spf level : %s", 
                 GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->prefix, prefix->mask, route->version, 
-                spf_info->spf_level_info[level].version, get_str_level(route->level), get_str_level(level)); TRACE();
+                spf_info->spf_level_info[level].version, get_str_level(route->level), get_str_level(level)); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
         if(route->install_state == RTE_ADDED){
 
@@ -893,17 +897,17 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             route_pref  = route_preference(route->flags, route->level);
 
             if(prefix_pref.pref == ROUTE_UNKNOWN_PREFERENCE){
-                sprintf(LOG, "Node : %s : Prefix : %s/%u pref = %s, ignoring prefix",  GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                        prefix->prefix, prefix->mask, prefix_pref.pref_str); TRACE();
+                sprintf(instance->traceopts->b, "Node : %s : Prefix : %s/%u pref = %s, ignoring prefix",  GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                        prefix->prefix, prefix->mask, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 return;
             }
 
             if(route_pref.pref < prefix_pref.pref){
 
                 /* if existing route is better*/ 
-                sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Not overwritten",
+                sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Not overwritten",
                         GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                        route_pref.pref_str, prefix_pref.pref_str); TRACE();
+                        route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 /*Linkage*/
                 if(linkage){
                     route_prefix = calloc(1, sizeof(prefix_t));
@@ -915,9 +919,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             /* If new prefix is better*/
             else if(prefix_pref.pref < route_pref.pref){
 
-                sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, will be overwritten",
+                sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, will be overwritten",
                         GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                        route_pref.pref_str, prefix_pref.pref_str); TRACE();
+                        route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
@@ -931,9 +935,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             /* If prefixes are of same preference*/ 
             else{
                 /* If route pref = prefix pref, then decide based on metric*/
-                sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Same preference, Trying based on metric",
+                sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Same preference, Trying based on metric",
                         GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                        route_pref.pref_str, prefix_pref.pref_str); TRACE();
+                        route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
                 /* If the prefix and route are of same pref, both will have internal metric Or both will have external metric*/
                 if(IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) && 
@@ -947,21 +951,21 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                 if(IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
                     /*Decide pref based on external metric*/
-                    sprintf(LOG, "Node : %s : route : %s/%u Deciding based on External metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); TRACE(); 
+                    sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on External metric",
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);; 
 
                     if(prefix->metric < route->ext_metric){
-                        sprintf(LOG, "Node : %s : prefix external metric ( = %u) is better than routes external metric( = %u), will overwrite",
-                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); TRACE();
+                        sprintf(instance->traceopts->b, "Node : %s : prefix external metric ( = %u) is better than routes external metric( = %u), will overwrite",
+                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(prefix->metric > route->ext_metric){
-                        sprintf(LOG, "Node : %s : prefix external metric ( = %u) is no better than routes external metric( = %u), will not overwrite",
-                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); TRACE();
+                        sprintf(instance->traceopts->b, "Node : %s : prefix external metric ( = %u) is no better than routes external metric( = %u), will not overwrite",
+                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     }
                     else{
-                        sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); TRACE();
+                        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                                route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/
                         route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
@@ -979,18 +983,18 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                 }else{
                     /*Decide pref based on internal metric*/
-                    sprintf(LOG, "Node : %s : route : %s/%u Deciding based on Internal metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); TRACE();
+                    sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on Internal metric",
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     if(result->spf_metric + prefix->metric < route->spf_metric){
-                        sprintf(LOG, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u, old route metric = %u", 
+                        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
                                 route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                                result->spf_metric + prefix->metric, route->spf_metric); TRACE();
+                                result->spf_metric + prefix->metric, route->spf_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(result->spf_metric + prefix->metric == route->spf_metric){
-                        sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); TRACE();
+                        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                                route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
                         route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
@@ -999,10 +1003,10 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         } ITERATE_NH_TYPE_END;
                     }
                     else{
-                        sprintf(LOG, "Node : %s : route : %s/%u is not over-written because no better metric on node %s is found with metric = %u, old route metric = %u", 
+                        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is not over-written because no better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
                                 route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                                result->spf_metric + prefix->metric, route->spf_metric); TRACE();
+                                result->spf_metric + prefix->metric, route->spf_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     }
                     /*Linkage*/
                     if(linkage){
@@ -1025,17 +1029,17 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             route_pref = route_preference(route->flags, route->level);
 
             if(prefix_pref.pref == ROUTE_UNKNOWN_PREFERENCE){
-                sprintf(LOG, "Node : %s : Prefix : %s/%u pref = %s, ignoring prefix",  GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                        prefix->prefix, prefix->mask, prefix_pref.pref_str); TRACE();
+                sprintf(instance->traceopts->b, "Node : %s : Prefix : %s/%u pref = %s, ignoring prefix",  GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                        prefix->prefix, prefix->mask, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 return;
             }
             
             if(route_pref.pref < prefix_pref.pref){
 
                 /* if existing route is better*/ 
-                sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Not overwritten",
+                sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Not overwritten",
                         GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                        route_pref.pref_str, prefix_pref.pref_str); TRACE();
+                        route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 /*Linkage*/
                 if(linkage){
                     route_prefix = calloc(1, sizeof(prefix_t));
@@ -1047,9 +1051,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             /* If new prefix is better*/
             else if(prefix_pref.pref < route_pref.pref){
 
-                sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, will be overwritten",
+                sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, will be overwritten",
                         GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                        route_pref.pref_str, prefix_pref.pref_str); TRACE();
+                        route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
@@ -1063,9 +1067,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             /* If prefixes are of same preference*/ 
             else{
                 /* If route pref = prefix pref, then decide based on metric*/
-                sprintf(LOG, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Same preference, Trying based on metric",
+                sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Same preference, Trying based on metric",
                         GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
-                        route_pref.pref_str, prefix_pref.pref_str); TRACE();
+                        route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
                 /* If the prefix and route are of same pref, both will have internal metric Or both will have external metric*/
                 if(IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) && 
@@ -1079,21 +1083,21 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                 if(IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
                     /*Decide pref based on external metric*/
-                    sprintf(LOG, "Node : %s : route : %s/%u Deciding based on External metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); TRACE(); 
+                    sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on External metric",
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);; 
 
                     if(prefix->metric < route->ext_metric){
-                        sprintf(LOG, "Node : %s : prefix external metric ( = %u) is better than routes external metric( = %u), will overwrite",
-                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); TRACE();
+                        sprintf(instance->traceopts->b, "Node : %s : prefix external metric ( = %u) is better than routes external metric( = %u), will overwrite",
+                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(prefix->metric > route->ext_metric){
-                        sprintf(LOG, "Node : %s : prefix external metric ( = %u) is no better than routes external metric( = %u), will not overwrite",
-                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); TRACE();
+                        sprintf(instance->traceopts->b, "Node : %s : prefix external metric ( = %u) is no better than routes external metric( = %u), will not overwrite",
+                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     }
                     else{
-                        sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); TRACE();
+                        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                                route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/
                         route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
@@ -1111,18 +1115,18 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                 }else{
                     /*Decide pref based on internal metric*/
-                    sprintf(LOG, "Node : %s : route : %s/%u Deciding based on Internal metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); TRACE();
+                    sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on Internal metric",
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     if(result->spf_metric + prefix->metric < route->spf_metric){
-                        sprintf(LOG, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u, old route metric = %u", 
+                        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
                                 route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                                result->spf_metric + prefix->metric, route->spf_metric); TRACE();
+                                result->spf_metric + prefix->metric, route->spf_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(result->spf_metric + prefix->metric == route->spf_metric){
-                        sprintf(LOG, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); TRACE();
+                        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
+                                route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
                         route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
@@ -1131,10 +1135,10 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         } ITERATE_NH_TYPE_END;
                     }
                     else{
-                        sprintf(LOG, "Node : %s : route : %s/%u is not over-written because no better metric on node %s is found with metric = %u, old route metric = %u", 
+                        sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is not over-written because no better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
                                 route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                                result->spf_metric + prefix->metric, route->spf_metric); TRACE();
+                                result->spf_metric + prefix->metric, route->spf_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     }
                     /*Linkage*/
                     if(linkage){
@@ -1151,16 +1155,16 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         else/*This else should not hit for prc run*/
         {
             /*prefix is from prev run and exists. This code hits only once per given route*/
-            sprintf(LOG, "route : %s/%u, updated route(?)", 
-                    route->rt_key.prefix, route->rt_key.mask); TRACE();
+            sprintf(instance->traceopts->b, "route : %s/%u, updated route(?)", 
+                    route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
             route->install_state = RTE_UPDATED;
 
-            sprintf(LOG, "Node : %s : route : %s/%u, old spf_metric = %u, new spf metric = %u, marked RTE_UPDATED for level%u",  
+            sprintf(instance->traceopts->b, "Node : %s : route : %s/%u, old spf_metric = %u, new spf metric = %u, marked RTE_UPDATED for level%u",  
                     GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
-                    route->spf_metric, result->spf_metric + prefix->metric, route->level); TRACE();
+                    route->spf_metric, result->spf_metric + prefix->metric, route->level); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
-            sprintf(LOG, "Node : %s : route : %s/%u %s is mandatorily over-written because of version mismatch",
-                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(level)); TRACE();
+            sprintf(instance->traceopts->b, "Node : %s : route : %s/%u %s is mandatorily over-written because of version mismatch",
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(level)); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
             overwrite_route(spf_info, route, prefix, result, level);
             route->version = spf_info->spf_level_info[level].version;
@@ -1203,7 +1207,7 @@ install_route_in_rib(spf_info_t *spf_info,
             spf_info->spf_level_info[level].version); 
 
     ITERATE_NH_TYPE_BEGIN(nh){
-        sprintf(LOG, "route : %s/%u, rt_entry_template->primary_nh_count = %u(%s)", 
+        sprintf(instance->traceopts->b, "route : %s/%u, rt_entry_template->primary_nh_count = %u(%s)", 
                 rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
                 rt_entry_template->primary_nh_count[nh], nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
     } ITERATE_NH_TYPE_END ;
@@ -1237,7 +1241,7 @@ install_route_in_rib(spf_info_t *spf_info,
     /*rt_entry_template is now ready to be installed in RIB*/
 
     STALE:
-    sprintf(LOG, "RIB modification : route : %s/%u, Level%u, Action : %s", 
+    sprintf(instance->traceopts->b, "RIB modification : route : %s/%u, Level%u, Action : %s", 
             route->rt_key.prefix, route->rt_key.mask, 
             route->level, route_intall_status_str(route->install_state)); TRACE();
 
@@ -1276,7 +1280,7 @@ install_route_in_rib(spf_info_t *spf_info,
             assert(0);
     }
 
-    sprintf(LOG, "Result for Route : %s/%u, L%d : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
+    sprintf(instance->traceopts->b, "Result for Route : %s/%u, L%d : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
             route->rt_key.prefix, route->rt_key.mask, route->level, 
             rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
     printf("Node %s : Result for Route : %s/%u, L%d : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
@@ -1298,7 +1302,7 @@ void
 start_route_installation(spf_info_t *spf_info,
                          LEVEL level){
 
-    sprintf(LOG, "Entered ... Level : %u", level); TRACE();
+    sprintf(instance->traceopts->b, "Entered ... Level : %u", level); TRACE();
     singly_ll_node_t *list_node = NULL, 
                      *list_node2 = NULL;
 
@@ -1373,18 +1377,18 @@ start_route_installation(spf_info_t *spf_info,
 #endif
 //            }
             ITERATE_NH_TYPE_BEGIN(nh){
-                sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->primary_nh_count = %u(%s), cost = %u", 
+                sprintf(instance->traceopts->b, "rt_entry Template for route : %s/%u, rt_entry_template->primary_nh_count = %u(%s), cost = %u", 
                         rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
                         rt_entry_template->primary_nh_count[nh], 
                         nh == IPNH ? "IPNH" : "LSPNH", rt_entry_template->cost); TRACE();
             } ITERATE_NH_TYPE_END;
-            sprintf(LOG, "rt_entry Template for route : %s/%u, rt_entry_template->backup_nh_count = %u",
+            sprintf(instance->traceopts->b, "rt_entry Template for route : %s/%u, rt_entry_template->backup_nh_count = %u",
                     rt_entry_template->dest.prefix, rt_entry_template->dest.mask, rt_entry_template->backup_nh_count); TRACE();
 
             /*rt_entry_template is now ready to be installed in RIB*/
         }
         
-        sprintf(LOG, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
+        sprintf(instance->traceopts->b, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
                 route->level, route->spf_metric, route_intall_status_str(route->install_state)); TRACE();
 
@@ -1434,7 +1438,7 @@ start_route_installation(spf_info_t *spf_info,
     }ITERATE_LIST_END;
     
     delete_stale_routes(spf_info, level);
-    sprintf(LOG, "SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
+    sprintf(instance->traceopts->b, "SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
             level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
     printf("SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
             level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change);
@@ -1454,7 +1458,7 @@ build_routing_table(spf_info_t *spf_info,
 
     rttable_entry_t *rt_entry = NULL;
     
-    sprintf(LOG, "Entered ... spf_root : %s, Level : %s", spf_root->node_name, get_str_level(level)); TRACE();
+    sprintf(instance->traceopts->b, "Entered ... spf_root : %s, Level : %s", spf_root->node_name, get_str_level(level)); TRACE();
     
     mark_all_routes_stale(spf_info, level);
 
@@ -1466,7 +1470,7 @@ build_routing_table(spf_info_t *spf_info,
     ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
 
         result = (spf_result_t *)list_node->data;
-        sprintf(LOG, "Node %s : processing result of %s, at level %s", 
+        sprintf(instance->traceopts->b, "Node %s : processing result of %s, at level %s", 
             spf_root->node_name, result->node->node_name, get_str_level(level)); TRACE();
 
         /*Iterate over all the prefixes of result->node for level 'level'*/
@@ -1478,7 +1482,7 @@ build_routing_table(spf_info_t *spf_info,
                 !spf_root->spf_info.spff_multi_area){                        /* if the computing router is L1-only router*/
 
             L1L2_result = result;                                    /* Record the L1L2 router result*/
-            sprintf(LOG, "Node %s : L1L2_result recorded - %s", 
+            sprintf(instance->traceopts->b, "Node %s : L1L2_result recorded - %s", 
                             spf_root->node_name, L1L2_result->node->node_name); TRACE(); 
 
             prefix_t default_prefix;
@@ -1524,7 +1528,7 @@ build_routing_table(spf_info_t *spf_info,
             route->install_state = RTE_CHANGED;
         else
             route->install_state = RTE_NO_CHANGE;
-        sprintf(LOG, "Route : %s/%u is Marked as %s at %s", 
+        sprintf(instance->traceopts->b, "Route : %s/%u is Marked as %s at %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
                 route_intall_status_str(route->install_state),
                 get_str_level(level)); TRACE();
@@ -1546,7 +1550,7 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
      *  If this is L2 run, then set my spf_info_t->spff_multi_area bit, and schedule
      *  SPF L1 run to ensure L1 routes are uptodate before updating L2 routes
      *-----------------------------------------------------------------------------*/
-    sprintf(LOG, "Entered ... "); TRACE();
+    sprintf(instance->traceopts->b, "Entered ... "); TRACE();
        
     if(level == LEVEL2 && spf_info->spf_level_info[LEVEL1].version){
         /*If at least 1 SPF L1 run has been triggered*/
@@ -1554,7 +1558,7 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
         spf_determine_multi_area_attachment(spf_info, spf_root);  
         /*Schedule level 1 spf run, just to make sure L1 routes are up
          *      * to date before building L2 routes*/
-        //sprintf(LOG, "L2 spf run, triggering L1 SPF run first before building L2 routes"); TRACE();
+        //sprintf(instance->traceopts->b, "L2 spf run, triggering L1 SPF run first before building L2 routes"); TRACE();
         //spf_computation(spf_root, spf_info, LEVEL1, FULL_RUN);
     }
 

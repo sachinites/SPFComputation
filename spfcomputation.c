@@ -40,6 +40,7 @@
 #include "bitsop.h"
 #include "Queue.h"
 #include "advert.h"
+#include "spftrace.h"
 
 extern instance_t *instance;
 
@@ -161,8 +162,9 @@ run_dijkastra_forward(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
     self_spf_result_t *self_res = NULL;
 
     /*Process untill candidate tree is not empty*/
-    sprintf(LOG, "Running Dijkastra forward with root node = %s, Level = %u", 
-            (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name, level); TRACE();
+    sprintf(instance->traceopts->b, "Running Dijkastra forward with root node = %s, Level = %u", 
+            (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name, level); 
+    trace(instance->traceopts, DIJKSTRA_BIT);
 
     while(!IS_CANDIDATE_TREE_EMPTY(ctree)){
 
@@ -171,7 +173,8 @@ run_dijkastra_forward(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         candidate_node = GET_CANDIDATE_TREE_TOP(ctree, level);
         REMOVE_CANDIDATE_TREE_TOP(ctree);
         candidate_node->is_node_on_heap = FALSE;
-        sprintf(LOG, "Candidate node %s Taken off candidate list", candidate_node->node_name); TRACE();
+        sprintf(instance->traceopts->b, "Candidate node %s Taken off candidate list", candidate_node->node_name); 
+        trace(instance->traceopts, DIJKSTRA_BIT);
 
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
          * however we process it as ususal like other nodes*/
@@ -187,14 +190,16 @@ run_dijkastra_forward(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
 
         if(self_res){
-            sprintf(LOG, "Curr node : %s, Overwriting self spf result with spf root %s", 
-                    candidate_node->node_name, spf_root->node_name); TRACE();
+            sprintf(instance->traceopts->b, "Curr node : %s, Overwriting self spf result with spf root %s", 
+                    candidate_node->node_name, spf_root->node_name); 
+            trace(instance->traceopts, DIJKSTRA_BIT);
             self_res->spf_root = spf_root;
             self_res->res = res;
         }
         else{
-            sprintf(LOG, "Curr node : %s, Creating New self spf result with spf root %s",
-                    candidate_node->node_name, spf_root->node_name); TRACE();
+            sprintf(instance->traceopts->b, "Curr node : %s, Creating New self spf result with spf root %s",
+                    candidate_node->node_name, spf_root->node_name);
+            trace(instance->traceopts, DIJKSTRA_BIT);
             self_res = calloc(1, sizeof(self_spf_result_t));
             self_res->spf_root = spf_root;
             self_res->res = res;
@@ -204,58 +209,65 @@ run_dijkastra_forward(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         /*Iterare over all the nbrs of Candidate node*/
 
         ITERATE_NODE_LOGICAL_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
-            sprintf(LOG, "Processing Nbr : %s", nbr_node->node_name); TRACE();
-
+            sprintf(instance->traceopts->b, "Processing Nbr : %s", nbr_node->node_name); 
+            trace(instance->traceopts, DIJKSTRA_BIT);
             /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
              * not consider the node for SPF computation if we find 2-way nbrship is broken. */
             if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
-                sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
+                sprintf(instance->traceopts->b, "Two Way nbrship broken with nbr %s", nbr_node->node_name);
+                trace(instance->traceopts, DIJKSTRA_BIT);
                 continue;
             }
 
-            sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
+            sprintf(instance->traceopts->b, "Two Way nbrship verified with nbr %s", nbr_node->node_name); 
+            trace(instance->traceopts, DIJKSTRA_BIT); 
+
             if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
                         ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) < (unsigned long long)nbr_node->spf_metric[level]){
 
-                sprintf(LOG, "Old Metric : %u, New Metric : %u, Better Next Hop", 
+                sprintf(instance->traceopts->b, "Old Metric : %u, New Metric : %u, Better Next Hop", 
                         nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
                         ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
-                TRACE();
+                trace(instance->traceopts, DIJKSTRA_BIT);
 
                 nbr_node->spf_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
                     INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
                 nbr_node->lsp_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
                     INFINITE_METRIC : candidate_node->lsp_metric[level] + edge->metric[level];
 
-                sprintf(LOG, "%s's spf_metric has been updated to %u",  
-                        nbr_node->node_name, nbr_node->spf_metric[level]); TRACE();
+                sprintf(instance->traceopts->b, "%s's spf_metric has been updated to %u",  
+                        nbr_node->node_name, nbr_node->spf_metric[level]); 
+                trace(instance->traceopts, DIJKSTRA_BIT);
 
                 if(nbr_node->is_node_on_heap == FALSE){
                     INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
                     nbr_node->is_node_on_heap = TRUE;
-                    sprintf(LOG, "%s inserted into candidate tree", nbr_node->node_name); TRACE();
+                    sprintf(instance->traceopts->b, "%s inserted into candidate tree", nbr_node->node_name); 
+                    trace(instance->traceopts, DIJKSTRA_BIT);
                 }
                 else{
                     /* We should remove the node and then add again into candidate tree
                      * But now i dont have brain cells to do this useless work. It has impact
                      * on performance, but not on output*/
 
-                    sprintf(LOG, "%s is already present in candidate tree", nbr_node->node_name); TRACE();
+                    sprintf(instance->traceopts->b, "%s is already present in candidate tree", nbr_node->node_name); 
+                    trace(instance->traceopts, DIJKSTRA_BIT);
                 }
             }
 
             else if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
                         ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) == (unsigned long long)nbr_node->spf_metric[level]){
 
-                sprintf(LOG, "Old Metric : %u, New Metric : %u, ECMP path",
-                        nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
-                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]); TRACE();
-            }
-            else{
-                sprintf(LOG, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
+                sprintf(instance->traceopts->b, "Old Metric : %u, New Metric : %u, ECMP path",
                         nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
                         ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
-                TRACE();
+                trace(instance->traceopts, DIJKSTRA_BIT);
+            }
+            else{
+                sprintf(instance->traceopts->b, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
+                        nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
+                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
+                trace(instance->traceopts, DIJKSTRA_BIT);
             }
         }
         ITERATE_NODE_LOGICAL_NBRS_END;
@@ -272,8 +284,9 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
     nh_type_t nh = NH_MAX;
 
     /*Process untill candidate tree is not empty*/
-    sprintf(LOG, "Running Dijkastra with root node = %s, Level = %u", 
-            (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name, level); TRACE();
+    sprintf(instance->traceopts->b, "Running Dijkastra with root node = %s, Level = %u", 
+            (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name, level); 
+    trace(instance->traceopts, DIJKSTRA_BIT);
 
     while(!IS_CANDIDATE_TREE_EMPTY(ctree)){
 
@@ -282,7 +295,8 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         candidate_node = GET_CANDIDATE_TREE_TOP(ctree, level);
         REMOVE_CANDIDATE_TREE_TOP(ctree);
         candidate_node->is_node_on_heap = FALSE;
-        sprintf(LOG, "Candidate node %s Taken off candidate list", candidate_node->node_name); TRACE();
+        sprintf(instance->traceopts->b, "Candidate node %s Taken off candidate list", candidate_node->node_name); 
+        trace(instance->traceopts, DIJKSTRA_BIT);
 
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
          * however we process it as ususal like other nodes*/
@@ -304,14 +318,14 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
 
         if(self_res){
-            sprintf(LOG, "Curr node : %s, Overwriting self spf result with spf root %s", 
-                    candidate_node->node_name, spf_root->node_name); TRACE();
+            sprintf(instance->traceopts->b, "Curr node : %s, Overwriting self spf result with spf root %s", 
+                    candidate_node->node_name, spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
             self_res->spf_root = spf_root;
             self_res->res = res;
         }
         else{
-            sprintf(LOG, "Curr node : %s, Creating New self spf result with spf root %s",
-                    candidate_node->node_name, spf_root->node_name); TRACE();
+            sprintf(instance->traceopts->b, "Curr node : %s, Creating New self spf result with spf root %s",
+                    candidate_node->node_name, spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
             self_res = calloc(1, sizeof(self_spf_result_t));
             self_res->spf_root = spf_root;
             self_res->res = res;
@@ -321,37 +335,41 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         /*Iterare over all the nbrs of Candidate node*/
 
         ITERATE_NODE_LOGICAL_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
-            sprintf(LOG, "Processing Nbr : %s", nbr_node->node_name); TRACE();
+            sprintf(instance->traceopts->b, "Processing Nbr : %s", nbr_node->node_name); 
+            trace(instance->traceopts, DIJKSTRA_BIT);
 
             /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
              * not consider the node for SPF computation if we find 2-way nbrship is broken. */
             if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
-                sprintf(LOG, "Two Way nbrship broken with nbr %s", nbr_node->node_name); TRACE();
+                sprintf(instance->traceopts->b, "Two Way nbrship broken with nbr %s", nbr_node->node_name); 
+                trace(instance->traceopts, DIJKSTRA_BIT);
                 continue;
             }
 
-            sprintf(LOG, "Two Way nbrship verified with nbr %s",nbr_node->node_name); TRACE();
+            sprintf(instance->traceopts->b, "Two Way nbrship verified with nbr %s",nbr_node->node_name); 
+            trace(instance->traceopts, DIJKSTRA_BIT);
             if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
                         ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) < (unsigned long long)nbr_node->spf_metric[level]){
 
-                sprintf(LOG, "Old Metric : %u, New Metric : %u, Better Next Hop", 
+                sprintf(instance->traceopts->b, "Old Metric : %u, New Metric : %u, Better Next Hop", 
                         nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
                         ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
-                TRACE();
+                trace(instance->traceopts, DIJKSTRA_BIT);
 
                 /*case 1 : if My own List is empty, and nbr is Pseuodnode , do nothing*/
                 if(candidate_node == spf_root && nbr_node->node_type[level] == PSEUDONODE){
-                    sprintf(LOG, "case 1 if I am root and and nbr is Pseuodnode , do nothing"); TRACE();
+                    sprintf(instance->traceopts->b, "case 1 if I am root and and nbr is Pseuodnode , do nothing"); 
+                    trace(instance->traceopts, DIJKSTRA_BIT);
                 }
                 /*case 2 : if My own List is empty, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list*/
                 if((candidate_node == spf_root && nbr_node->node_type[level] == NON_PSEUDONODE) || 
                         (candidate_node->node_type[level] == PSEUDONODE && is_all_nh_list_empty2(candidate_node, level))){
 
                     if(candidate_node == spf_root && nbr_node->node_type[level] == NON_PSEUDONODE)
-                        sprintf(LOG, "case 2 if i am root, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list");
+                        sprintf(instance->traceopts->b, "case 2 if i am root, and nbr is Not a PN, then copy nbr's direct nh list to its own NH list");
                     else
-                        sprintf(LOG, "case 2 if i am PN and all my nh list are empty");
-                    TRACE();
+                        sprintf(instance->traceopts->b, "case 2 if i am PN and all my nh list are empty");
+                    trace(instance->traceopts, DIJKSTRA_BIT);
 
                     /*Drain all NH first*/
                     ITERATE_NH_TYPE_BEGIN(nh){
@@ -361,16 +379,18 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     /*copy only appropriate direct mexthops to nexthops*/
                     nh = edge->etype == LSP ? LSPNH : IPNH;
 
-                    sprintf(LOG, "Copying %s direct_next_hop %s %s to %s next_hop list", nbr_node->node_name, get_str_level(level), 
-                            nh == IPNH ? "IPNH" : "LSPNH", nbr_node->node_name); TRACE();
+                    sprintf(instance->traceopts->b, "Copying %s direct_next_hop %s %s to %s next_hop list", nbr_node->node_name, get_str_level(level), 
+                            nh == IPNH ? "IPNH" : "LSPNH", nbr_node->node_name); 
+                    trace(instance->traceopts, DIJKSTRA_BIT);
 
-                    sprintf(LOG, "printing %s direct_next_hop list at %s %s before copy", nbr_node->node_name, get_str_level(level),
-                            nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                    sprintf(instance->traceopts->b, "printing %s direct_next_hop list at %s %s before copy", nbr_node->node_name, get_str_level(level),
+                            nh == IPNH ? "IPNH" : "LSPNH"); 
+                    trace(instance->traceopts, DIJKSTRA_BIT);
 
                     print_nh_list2(&nbr_node->direct_next_hop[level][nh][0]);
                     copy_nh_list2(&nbr_node->direct_next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
-                    sprintf(LOG, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
-                            nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                    sprintf(instance->traceopts->b, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
+                            nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
                     print_nh_list2(&nbr_node->next_hop[level][nh][0]);
 
                 }
@@ -378,12 +398,13 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 else if(!is_all_nh_list_empty2(candidate_node, level)){
 
                     ITERATE_NH_TYPE_BEGIN(nh){
-                        sprintf(LOG, "case 3 if My own List is not empty, then nbr should inherit my next hop list"); TRACE();
-                        sprintf(LOG, "Copying %s next_hop list %s %s to %s next_hop list", candidate_node->node_name, get_str_level(level), 
-                                nh == IPNH ? "IPNH" : "LSPNH", nbr_node->node_name); TRACE();
+                        sprintf(instance->traceopts->b, "case 3 if My own List is not empty, then nbr should inherit my next hop list"); 
+                        trace(instance->traceopts, DIJKSTRA_BIT);
+                        sprintf(instance->traceopts->b, "Copying %s next_hop list %s %s to %s next_hop list", candidate_node->node_name, get_str_level(level), 
+                                nh == IPNH ? "IPNH" : "LSPNH", nbr_node->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
                         copy_nh_list2(&candidate_node->next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
-                        sprintf(LOG, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
-                                nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                        sprintf(instance->traceopts->b, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
+                                nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
                         print_nh_list2(&nbr_node->next_hop[level][nh][0]);
                         ITERATE_NH_TYPE_END;
                     }
@@ -394,29 +415,32 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 nbr_node->lsp_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
                     INFINITE_METRIC : candidate_node->lsp_metric[level] + edge->metric[level];
 
-                sprintf(LOG, "%s's spf_metric has been updated to %u",  
-                        nbr_node->node_name, nbr_node->spf_metric[level]); TRACE();
+                sprintf(instance->traceopts->b, "%s's spf_metric has been updated to %u",  
+                        nbr_node->node_name, nbr_node->spf_metric[level]); trace(instance->traceopts, DIJKSTRA_BIT);
 
                 if(nbr_node->is_node_on_heap == FALSE){
                     INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
                     nbr_node->is_node_on_heap = TRUE;
-                    sprintf(LOG, "%s inserted into candidate tree", nbr_node->node_name); TRACE();
+                    sprintf(instance->traceopts->b, "%s inserted into candidate tree", nbr_node->node_name); 
+                    trace(instance->traceopts, DIJKSTRA_BIT);
                 }
                 else{
                     /* We should remove the node and then add again into candidate tree
                      * But now i dont have brain cells to do this useless work. It has impact
                      * on performance, but not on output*/
 
-                    sprintf(LOG, "%s is already present in candidate tree", nbr_node->node_name); TRACE();
+                    sprintf(instance->traceopts->b, "%s is already present in candidate tree", nbr_node->node_name); 
+                    trace(instance->traceopts, DIJKSTRA_BIT);
                 }
             }
 
             else if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
                         ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) == (unsigned long long)nbr_node->spf_metric[level]){
 
-                sprintf(LOG, "Old Metric : %u, New Metric : %u, ECMP path",
+                sprintf(instance->traceopts->b, "Old Metric : %u, New Metric : %u, ECMP path",
                         nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
-                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]); TRACE();
+                        ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]); 
+                trace(instance->traceopts, DIJKSTRA_BIT);
 
                 /*We should do two things here :
                  * 1. union of nexthops (IPNH and LSPNH)
@@ -425,13 +449,13 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                  * */
                 ITERATE_NH_TYPE_BEGIN(nh){
 
-                    sprintf(LOG, "Union next_hop of %s %s at %s %s", candidate_node->node_name, 
+                    sprintf(instance->traceopts->b, "Union next_hop of %s %s at %s %s", candidate_node->node_name, 
                             nbr_node->node_name, get_str_level(level), 
-                            nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                            nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
 
                     union_nh_list2(&candidate_node->next_hop[level][nh][0]  , &nbr_node->next_hop[level][nh][0]);
-                    sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
-                            get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                    sprintf(instance->traceopts->b, "next_hop of %s at %s %s after Union", nbr_node->node_name,
+                            get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
                     print_nh_list2(&nbr_node->next_hop[level][nh][0]);
                 } ITERATE_NH_TYPE_END;
                     
@@ -440,20 +464,20 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 nh = edge->etype == LSP ? LSPNH : IPNH;
 
                 if(is_nh_list_empty2(&candidate_node->next_hop[level][nh][0])){
-                    sprintf(LOG, "Union direct_next_hop of %s with Next hop of %s at %s %s", nbr_node->node_name, 
+                    sprintf(instance->traceopts->b, "Union direct_next_hop of %s with Next hop of %s at %s %s", nbr_node->node_name, 
                             nbr_node->node_name, get_str_level(level), 
-                            nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                            nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
                     union_direct_nh_list2(&nbr_node->direct_next_hop[level][nh][0] , &nbr_node->next_hop[level][nh][0] );
-                    sprintf(LOG, "next_hop of %s at %s %s after Union", nbr_node->node_name,
-                            get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                    sprintf(instance->traceopts->b, "next_hop of %s at %s %s after Union", nbr_node->node_name,
+                            get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
                     print_nh_list2(&nbr_node->next_hop[level][nh][0]);
                 }
             }
             else{
-                sprintf(LOG, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
+                sprintf(instance->traceopts->b, "Old Metric : %u, New Metric : %u, Not a Better Next Hop",
                         nbr_node->spf_metric[level], IS_OVERLOADED(candidate_node, level) 
                         ? INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]);
-                TRACE();
+                trace(instance->traceopts, DIJKSTRA_BIT);
             }
         }
         ITERATE_NODE_LOGICAL_NBRS_END;
@@ -655,7 +679,8 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
     if(!IS_BIT_SET(spf_root->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED))
         return;
 
-    sprintf(LOG, "Begin SPF back up calculation"); TRACE();
+    sprintf(instance->traceopts->b, "Begin SPF back up calculation"); 
+    trace(instance->traceopts, SPF_PHASES); 
     boolean strict_down_stream_lfa = FALSE;
     init_back_up_computation(spf_root, level); 
 
@@ -692,7 +717,8 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
            broadcast_filter_select_pq_nodes_from_ex_pspace(spf_root, edge, level);
        }
     }
-    sprintf(LOG, "END of SPF back up calculation"); TRACE();
+    sprintf(instance->traceopts->b, "END of SPF back up calculation"); 
+    trace(instance->traceopts, SPF_PHASES);
 }
 
 void
@@ -712,14 +738,14 @@ spf_computation(node_t *spf_root,
     }
 
     if(level == LEVEL2 && spf_root->spf_info.spf_level_info[LEVEL1].version == 0){
-        sprintf(LOG, "Root : %s, Running first LEVEL1 full SPF run before LEVEL2 full SPF run", 
-                        spf_root->node_name); TRACE();
+        sprintf(instance->traceopts->b, "Root : %s, Running first LEVEL1 full SPF run before LEVEL2 full SPF run", 
+                        spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
         spf_computation(spf_root, &spf_root->spf_info, LEVEL1, FULL_RUN);      
     }
 
-    sprintf(LOG, "Node : %s, Triggered SPF run : %s, %s", 
+    sprintf(instance->traceopts->b, "Node : %s, Triggered SPF run : %s, %s", 
                 spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "FORWARD_RUN",
-                get_str_level(level)); TRACE();
+                get_str_level(level)); trace(instance->traceopts, DIJKSTRA_BIT);
                  
     RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
@@ -741,7 +767,7 @@ spf_computation(node_t *spf_root,
     /* Route Building After SPF computation*/
     /*We dont build routing table for reverse spf run*/
     if(spf_type == FULL_RUN){
-        sprintf(LOG, "Route building starts After SPF FORWARD run"); TRACE();
+        sprintf(instance->traceopts->b, "Route building starts After SPF FORWARD run"); trace(instance->traceopts, DIJKSTRA_BIT);
         spf_postprocessing(spf_info, spf_root, level);
 #if 0
         /*backup routine must not impact main spf computation*/
@@ -762,10 +788,10 @@ init_prc_run(node_t *spf_root, LEVEL level){
 void
 partial_spf_run(node_t *spf_root, LEVEL level){
 
-    sprintf(LOG, "Root : %s, %s", spf_root->node_name, get_str_level(level)); TRACE();
+    sprintf(instance->traceopts->b, "Root : %s, %s", spf_root->node_name, get_str_level(level)); trace(instance->traceopts, DIJKSTRA_BIT);
     
     if(spf_root->spf_info.spf_level_info[level].version == 0){
-        sprintf(LOG, "Root : %s, %s. No full SPF run till now. Runnig ...", spf_root->node_name, get_str_level(level)); TRACE();
+        sprintf(instance->traceopts->b, "Root : %s, %s. No full SPF run till now. Runnig ...", spf_root->node_name, get_str_level(level)); trace(instance->traceopts, DIJKSTRA_BIT);
         
         spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);      
         return;

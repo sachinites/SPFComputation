@@ -448,9 +448,7 @@ add_prefix_to_prefix_list(ll_t *prefix_list,
     strncpy(key.prefix, prefix->prefix, PREFIX_LEN);
     key.prefix[PREFIX_LEN] = '\0'; 
     key.mask = prefix->mask;
-
     assert(!singly_ll_search_by_key(prefix_list, &key));
-
     add_new_prefix_in_list(prefix_list, prefix, hosting_node_metric);
     return 1;
 }

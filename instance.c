@@ -38,6 +38,7 @@
 #include "instance.h"
 #include "spfutil.h"
 #include "rttable.h"
+#include "spftrace.h"
 
 static void
 add_node_to_owning_instance(instance_t *instance, node_t *node){
@@ -358,6 +359,9 @@ instance_node_comparison_fn(void *_node, void *input_node_name){
     return 0;
 }
 
+extern void
+_spf_display_trace_options(unsigned long long bit_mask);
+
 instance_t *
 get_new_instance(){
 
@@ -365,6 +369,10 @@ get_new_instance(){
     instance->instance_node_list = init_singly_ll();
     singly_ll_set_comparison_fn(instance->instance_node_list, instance_node_comparison_fn);
     CANDIDATE_TREE_INIT(&instance->ctree);
+    instance->traceopts = calloc(1, sizeof(traceoptions));
+    init_trace(instance->traceopts);
+    register_display_trace_options(instance->traceopts, _spf_display_trace_options);
+    enable_spf_trace(instance, SPF_PHASES);
     return instance;
 }
 

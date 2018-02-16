@@ -39,6 +39,7 @@
 #include "spfcmdcodes.h"
 #include "advert.h"
 #include "rlfa.h"
+#include "spftrace.h"
 
 extern instance_t * instance;
 
@@ -683,5 +684,11 @@ debug_show_node_back_up_spf_results(param_t *param,
             } ITERATE_NH_TYPE_END;
         } ITERATE_LIST_END;
     }
+    return 0;
+}
+
+int
+display_logging_status(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+    spf_display_trace_options();
     return 0;
 }

@@ -38,6 +38,7 @@
 #include "spfutil.h"
 #include "spfcomputation.h"
 #include "logging.h"
+#include "spftrace.h"
 #include "bitsop.h"
 #include "spfcmdcodes.h"
 #include "spfclihandler.h"
@@ -703,6 +704,65 @@ config_static_route_handler(param_t *param,
 }
 
 static int
+set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    int CMDCODE;
+    CMDCODE = EXTRACT_CMD_CODE(tlv_buf);
+    switch(CMDCODE){
+        case CMDCODE_DEBUG_TRACEOPTIONS_DIJKASTRA:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, DIJKSTRA_BIT):
+                disable_spf_trace(instance, DIJKSTRA_BIT);
+            break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_SPF_POSTPROCESSING:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, SPF_POST_PROCESSING_BIT):
+                disable_spf_trace(instance, SPF_POST_PROCESSING_BIT);
+            break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_INSTALLATION:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, ROUTE_INSTALLATION_BIT):
+                disable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
+            break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_CALCULATION:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, ROUTE_CALCULATION_BIT):
+                disable_spf_trace(instance, ROUTE_CALCULATION_BIT);
+            break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_LFA:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, LFA_COMPUTATION_BIT):
+                disable_spf_trace(instance, LFA_COMPUTATION_BIT);
+            break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_RLFA:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, RLFA_COMPUTATION_BIT):
+                disable_spf_trace(instance, RLFA_COMPUTATION_BIT);
+            break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_ALL:
+            switch(enable_or_disable){
+                case CONFIG_ENABLE:
+                    enable_spf_trace(instance, DIJKSTRA_BIT);
+                    enable_spf_trace(instance, SPF_POST_PROCESSING_BIT);
+                    enable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
+                    enable_spf_trace(instance, ROUTE_CALCULATION_BIT);
+                    enable_spf_trace(instance, LFA_COMPUTATION_BIT);
+                    enable_spf_trace(instance, RLFA_COMPUTATION_BIT);
+                    break;
+                case CONFIG_DISABLE:
+                    disable_spf_trace(instance, DIJKSTRA_BIT);
+                    disable_spf_trace(instance, SPF_POST_PROCESSING_BIT);
+                    disable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
+                    disable_spf_trace(instance, ROUTE_CALCULATION_BIT);
+                    disable_spf_trace(instance, LFA_COMPUTATION_BIT);
+                    disable_spf_trace(instance, RLFA_COMPUTATION_BIT);
+                    break;
+                default:
+                    assert(0);
+            }
+            break;
+        default: 
+            assert(0);
+    }
+    return 0; 
+}
+
+
+static int
 debug_log_enable_disable_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
     
     tlv_struct_t *tlv = NULL;
@@ -713,10 +773,10 @@ debug_log_enable_disable_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
     } TLV_LOOP_END;
 
     if(strncmp(value, "enable", strlen(value)) ==0){
-        enable_logging();
+        enable_spf_tracing();
     }
     else if(strncmp(value, "disable", strlen(value)) ==0){
-        disable_logging();
+        disable_spf_tracing();
     }
     else
         assert(0);
@@ -1035,6 +1095,67 @@ spf_init_dcm(){
         libcli_register_param(config, &config_node);
         libcli_register_display_callback(&config_node, display_instance_nodes); 
 
+
+        /*config debug commands*/
+
+        {
+            static param_t debug;
+            init_param(&debug, CMD, "debug", 0, 0, INVALID, 0, "debug");
+            libcli_register_param(config, &debug);
+            {
+                static param_t set;
+                init_param(&set, CMD, "set", 0, 0, INVALID, 0, "set trace");
+                libcli_register_param(&debug, &set);
+                {
+                    static param_t trace;
+                    init_param(&trace, CMD, "trace", 0, 0, INVALID, 0, "set trace");
+                    libcli_register_param(&set, &trace);
+                    {
+                        static param_t trace_all;
+                        init_param(&trace_all, CMD, "all", set_unset_traceoptions, 0, INVALID, 0, "Enable|Disable all traces");
+                        libcli_register_param(&trace, &trace_all);
+                        set_param_cmd_code(&trace_all, CMDCODE_DEBUG_TRACEOPTIONS_ALL);
+                    }
+                    {
+                        static param_t trace_type_dijkastra;
+                        init_param(&trace_type_dijkastra, CMD, "dijkastra", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for Dijkastra");
+                        libcli_register_param(&trace, &trace_type_dijkastra);
+                        set_param_cmd_code(&trace_type_dijkastra, CMDCODE_DEBUG_TRACEOPTIONS_DIJKASTRA);
+                    }
+                    {
+                        static param_t spf_post_processing;
+                        init_param(&spf_post_processing, CMD, "spf-post-processing", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for SPF post processing");
+                        libcli_register_param(&trace, &spf_post_processing);
+                        set_param_cmd_code(&spf_post_processing, CMDCODE_DEBUG_TRACEOPTIONS_SPF_POSTPROCESSING);
+                    }
+                    {
+                        static param_t route_installation;
+                        init_param(&route_installation, CMD, "route-installation", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for Route Installation");
+                        libcli_register_param(&trace, &route_installation);
+                        set_param_cmd_code(&route_installation, CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_INSTALLATION);
+                    }
+                    {
+                        static param_t route_calculation;
+                        init_param(&route_calculation, CMD, "route-calculation", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for Route Calculation");
+                        libcli_register_param(&trace, &route_calculation);
+                        set_param_cmd_code(&route_calculation, CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_CALCULATION);
+                    }
+                    {
+                        static param_t lfa;
+                        init_param(&lfa, CMD, "lfa", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for LFA");
+                        libcli_register_param(&trace, &lfa);
+                        set_param_cmd_code(&lfa, CMDCODE_DEBUG_TRACEOPTIONS_LFA);
+                    }
+                    {
+                        static param_t rlfa;
+                        init_param(&rlfa, CMD, "rlfa", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for RLFA");
+                        libcli_register_param(&trace, &rlfa);
+                        set_param_cmd_code(&rlfa, CMDCODE_DEBUG_TRACEOPTIONS_RLFA);
+                    }
+                }
+            }
+        }
+
         static param_t config_node_node_name;
         init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
         libcli_register_param(&config_node, &config_node_node_name);
@@ -1334,7 +1455,7 @@ spf_init_dcm(){
         libcli_register_param(&instance_node, &instance_node_name);
 
         static param_t route;
-        init_param(&route, CMD, "route", show_route_tree_handler, 0, INVALID, "route", "route on a node");
+        init_param(&route, CMD, "route", show_route_tree_handler, 0, INVALID, 0,  "route on a node");
         libcli_register_param(&instance_node_name, &route);
         set_param_cmd_code(&route, CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES);
 
@@ -1351,6 +1472,13 @@ spf_init_dcm(){
     /*debug show commands*/
 
     {
+        /*debug show log-status*/
+        {
+            static param_t log_status;
+            init_param(&log_status, CMD, "log-status", display_logging_status, 0, INVALID, 0, "log-status"); 
+            libcli_register_param(debug_show, &log_status);
+        }
+
         /*debug show instance*/
         static param_t instance;
         init_param(&instance, CMD, "instance", 0, 0, INVALID, 0, "Network graph");
