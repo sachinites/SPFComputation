@@ -767,20 +767,32 @@ debug_log_enable_disable_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
     
     tlv_struct_t *tlv = NULL;
     char *value = NULL;
-
+    int CMDCODE = EXTRACT_CMD_CODE(tlv_buf);
+     
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         value = tlv->value;        
     } TLV_LOOP_END;
 
-    if(strncmp(value, "enable", strlen(value)) ==0){
-        enable_spf_tracing();
-    }
-    else if(strncmp(value, "disable", strlen(value)) ==0){
-        disable_spf_tracing();
-    }
-    else
-        assert(0);
-
+    switch(CMDCODE){
+        case CMDCODE_DEBUG_LOG_ENABLE_DISABLE:
+            if(strncmp(value, "enable", strlen(value)) ==0){
+                enable_spf_tracing();
+            }
+            else if(strncmp(value, "disable", strlen(value)) ==0){
+                disable_spf_tracing();
+            }
+           break; 
+        case CMDCODE_DEBUG_LOG_FILE_ENABLE_DISABLE:
+            if(strncmp(value, "enable", strlen(value)) ==0){
+                trace_set_log_medium(instance->traceopts, LOG_FILE);
+            }
+            else if(strncmp(value, "disable", strlen(value)) ==0){
+                trace_set_log_medium(instance->traceopts, CONSOLE);
+            }
+           break; 
+        default:
+            assert(0);
+    } 
     return 0;
 }
 
@@ -1438,6 +1450,15 @@ spf_init_dcm(){
     static param_t debug_log_enable_disable;
     init_param(&debug_log_enable_disable, LEAF, 0, debug_log_enable_disable_handler, validate_debug_log_enable_disable, STRING, "log-status", "enable | disable"); 
     libcli_register_param(&debug_log, &debug_log_enable_disable);
+    set_param_cmd_code(&debug_log_enable_disable, CMDCODE_DEBUG_LOG_ENABLE_DISABLE);
+
+    /*debug log enable file*/
+    {
+        static param_t debug_file;
+        init_param(&debug_file, CMD, "file", debug_log_enable_disable_handler, 0, INVALID, 0, "Enable|Disable file logging");
+        libcli_register_param(&debug_log_enable_disable, &debug_file);
+        set_param_cmd_code(&debug_file, CMDCODE_DEBUG_LOG_FILE_ENABLE_DISABLE); 
+    }
 
     /* debug instance node <node-name> route-tree*/
     {

@@ -6,7 +6,7 @@ USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./logging/logging.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./logging/logging.o ./Libtrace/libtrace.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -54,13 +54,16 @@ rttable.o:rttable.c
 logging.o:./logging/logging.c
 	@echo "Building logging.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./logging/logging.c -o ./logging/logging.o
+libtrace.o:./Libtrace/libtrace.c
+	@echo "Building libtrace.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./Libtrace/libtrace.c -o ./Libtrace/libtrace.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Queue/Queue.c -o Queue/Queue.o
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 clean:
-	rm rpd
 	rm *.o
+	rm rpd
 all:
 	(cd CommandParser; make)
 	make

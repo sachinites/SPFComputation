@@ -86,4 +86,7 @@
 #define CMDCODE_DEBUG_TRACEOPTIONS_LFA                      47 /*debug set trace lfa*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_RLFA                     48 /*debug set trace rlfa*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_ALL                      49 /*conf debug set trace all*/
+
+#define CMDCODE_DEBUG_LOG_ENABLE_DISABLE                    50 /*debug log enable|disable*/
+#define CMDCODE_DEBUG_LOG_FILE_ENABLE_DISABLE               51 /*debug log enable|disable file*/
 #endif /* __SPFCMDCODES__H */

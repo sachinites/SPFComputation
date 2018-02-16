@@ -91,6 +91,10 @@ void
 _spf_display_trace_options(unsigned long long bit_mask){
 
     spf_trace_t trace_type = 0;
+    printf("Logging : %s\n", instance->traceopts->enable ? "ENABLE" : "DISABLE");
+    printf("log storage medium set : %s\n", 
+        instance->traceopts->logstorage == CONSOLE ? "CONSOLE" : "FILE");
+    printf("traceopts->logf_fd = 0x%x\n", (unsigned int)instance->traceopts->logf_fd);
     for(; trace_type < TRACE_MAX_BIT; trace_type++){
         printf("\t%-30s : %s\n", get_str_trace(trace_type), 
             is_spf_trace_enabled(instance, trace_type) ? "ENABLED" : "DISABLED");

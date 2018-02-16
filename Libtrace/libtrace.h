@@ -49,47 +49,62 @@ typedef enum{
     TR_TRUE
 } tr_boolean;
 
+typedef enum{
+    
+    CONSOLE,
+    LOG_FILE
+} log_storage_t;
+
 typedef struct {
     
     char b[256];
     unsigned long long bit_mask;
     tr_boolean enable;
     void (*display_trace_options)(unsigned long long);
+    log_storage_t logstorage;
+    FILE *logf_fd;
 } traceoptions;
 
-static inline void
-trace_enable(traceoptions *traceopts, tr_boolean enable){
-    traceopts->enable = enable;
+void
+trace_enable(traceoptions *traceopts, tr_boolean enable);
+
+void 
+init_trace(traceoptions *traceopts);
+
+void
+set_trace_storage(traceoptions *traceopts, log_storage_t logstorage);
+
+extern char fn_line_buff[32];
+
+#define trace(traceopts_ptr, bit)                                                       \
+    if((traceopts_ptr)->enable == TR_TRUE){                                             \
+        if(TR_IS_BIT_SET((traceopts_ptr)->bit_mask, bit)){                              \
+            if((traceopts_ptr)->logstorage == CONSOLE)                                  \
+                printf("%s(%d) : %s\n", __FUNCTION__, __LINE__, (traceopts_ptr)->b);    \
+            else  {                                                                     \
+                memset(fn_line_buff, 0, 32);                                            \
+                sprintf(fn_line_buff, "%s(%u) : ", __FUNCTION__, __LINE__);             \
+                fwrite(fn_line_buff, sizeof(char), strlen(fn_line_buff),                \
+                    (traceopts_ptr)->logf_fd);                                          \
+                fwrite((traceopts_ptr)->b,  sizeof(char),                               \
+                    strlen((traceopts_ptr)->b), (traceopts_ptr)->logf_fd);              \
+                fwrite("\n", 1, 1, (traceopts_ptr)->logf_fd);                           \
+            }                                                                           \
+            memset((traceopts_ptr)->b, 0, strlen((traceopts_ptr)->b));                  \
+        }                                                                               \
 }
 
-static inline void 
-init_trace(traceoptions *traceopts){
-    memset(traceopts, 0, sizeof(traceoptions));
-}
+void
+trace_set_log_medium(traceoptions *traceopts, log_storage_t logstorage);
 
-#define trace(traceopts_ptr, bit)                                                  \
-    if((traceopts_ptr)->enable == TR_TRUE){                                        \
-        if(TR_IS_BIT_SET((traceopts_ptr)->bit_mask, bit)){                         \
-            printf("%s(%d) : %s\n", __FUNCTION__, __LINE__, (traceopts_ptr)->b);\
-            memset((traceopts_ptr)->b, 0, 256);                                 \
-        }                                                                       \
-}
-
-static inline void
+void
 register_display_trace_options(traceoptions *traceopts, 
-    void (*display_trace_options)(unsigned long long)){
-    traceopts->display_trace_options = display_trace_options;
-}
+    void (*display_trace_options)(unsigned long long));
 
-static inline void
-enable_trace_event(traceoptions *traceopts, unsigned long long bit){
-    TR_SET_BIT(traceopts->bit_mask, bit);
-}
+void
+enable_trace_event(traceoptions *traceopts, unsigned long long bit);
 
-static inline void
-disable_trace_event(traceoptions *traceopts, unsigned long long bit){
-    TR_UNSET_BIT(traceopts->bit_mask, bit);
-}
-
+void
+disable_trace_event(traceoptions *traceopts, unsigned long long bit);
 
 #endif /* __LIBTRACE__ */
