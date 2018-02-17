@@ -159,7 +159,8 @@ merge_route_backup_nexthops(routes_t *route,
         singly_ll_add_node_by_val(route->backup_nh_list[nh], int_nxt_hop);
         sprintf(instance->traceopts->b, "route : %s/%u backup next hop is merged with %s's next hop node %s", 
                      route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                     result->node->backup_next_hop[route->level][nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                     result->node->backup_next_hop[route->level][nh][i].node->node_name); 
+        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
     }
     assert(GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh]) <= MAX_NXT_HOPS);
 }
@@ -187,7 +188,7 @@ free_route(routes_t *route){
         ROUTE_FLUSH_BACKUP_NH_LIST(route, nh);
         free(route->backup_nh_list[nh]);
         route->backup_nh_list[nh] = 0;
-    }
+    } ITERATE_NH_TYPE_END;
 
     ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
         

@@ -1,12 +1,12 @@
 CC=gcc
 #GCOV=-fprofile-arcs -ftest-coverage
 CFLAGS=-g -Wall -O0 ${GCOV}
-INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./BitOp -I ./logging -I ./Libtrace
+INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./mpls -I ./BitOp -I ./logging -I ./Libtrace
 USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./logging/logging.o ./Libtrace/libtrace.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./logging/logging.o ./Libtrace/libtrace.o mpls/ldp.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -18,6 +18,9 @@ testapp.o:testapp.c
 instance.o:instance.c
 	@echo "Building instance.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} instance.c -o instance.o
+mpls/ldp.o:mpls/ldp.c
+	@echo "Building mpls/ldp.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} mpls/ldp.c -o mpls/ldp.o
 advert.o:advert.c
 	@echo "Building advert.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} advert.c -o advert.o
@@ -72,6 +75,7 @@ cleanall:
 	rm Queue/*.o
 	rm logging/*.o
 	rm Libtrace/*.o
+	rm mpls/*.o
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	make clean

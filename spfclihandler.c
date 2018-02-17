@@ -82,10 +82,10 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
     for(; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
     
-        if(edge_end->dirn == INCOMING) continue;   
         if(!edge_end){
             return;
         }
+        if(edge_end->dirn == INCOMING) continue;   
 
         if(strncmp(edge_end->intf_name, slot_name, strlen(edge_end->intf_name)) == 0 &&
             strlen(edge_end->intf_name) == strlen(slot_name)){
