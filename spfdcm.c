@@ -432,15 +432,18 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
             break;
         case CMDCODE_CONFIG_NODE_RSVPLSP:
             {
+                boolean rc = FALSE;
                 switch(enable_or_disable){
                     case CONFIG_ENABLE:
-                        inset_lsp_as_forward_adjacency(node, lsp_name, metric, tail_end_ip, level);
+                        rc = inset_lsp_as_forward_adjacency(node, lsp_name, metric, tail_end_ip, level);
                         break;
                     case CONFIG_DISABLE:
                         break;
                     default:
                         ;
                 }
+                if(rc == FALSE)
+                    break;
                 dist_info_hdr_t dist_info_hdr;
                 memset(&dist_info_hdr, 0, sizeof(dist_info_hdr_t));
                 dist_info_hdr.info_dist_level = level;

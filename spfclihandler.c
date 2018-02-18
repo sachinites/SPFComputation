@@ -343,7 +343,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
 }
 
 /* level could LEVEL12*/
-void
+boolean
 inset_lsp_as_forward_adjacency(node_t *ingress_lsr_node, 
                            char *lsp_name, 
                            unsigned int metric, 
@@ -371,10 +371,11 @@ inset_lsp_as_forward_adjacency(node_t *ingress_lsr_node,
         printf("Error : Could not find Node for Router id %s in LEVEL%u", tail_end_ip, level);   
         free(lsp);
         lsp = NULL;
-        return;
+        return FALSE;
     }
 
     insert_edge_between_2_nodes(lsp, ingress_lsr_node, tail_end_node, UNIDIRECTIONAL);
+    return TRUE;
 }
 
 int
