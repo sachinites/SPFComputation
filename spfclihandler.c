@@ -344,7 +344,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
 
 /* level could LEVEL12*/
 boolean
-inset_lsp_as_forward_adjacency(node_t *ingress_lsr_node, 
+insert_lsp_as_forward_adjacency(node_t *ingress_lsr_node, 
                            char *lsp_name, 
                            unsigned int metric, 
                            char *tail_end_ip, 

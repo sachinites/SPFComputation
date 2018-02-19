@@ -34,11 +34,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <logging.h>
 #include "instance.h"
 #include "spfutil.h"
 #include "rttable.h"
 #include "spftrace.h"
+
+extern instance_t *instance;
 
 static void
 add_node_to_owning_instance(instance_t *instance, node_t *node){
@@ -372,7 +373,7 @@ get_new_instance(){
     instance->traceopts = calloc(1, sizeof(traceoptions));
     init_trace(instance->traceopts);
     register_display_trace_options(instance->traceopts, _spf_display_trace_options);
-    enable_spf_trace(instance, SPF_PHASES);
+    enable_spf_trace(instance, SPF_EVENTS_BIT);
     return instance;
 }
 
@@ -439,8 +440,9 @@ attach_prefix_on_node(node_t *node,
     _prefix->hosting_node = node;
     _prefix->prefix_flags = prefix_flags;
 
-    sprintf(LOG, "Node : %s, prefix attached : %s/%u, prefix metric : %u",
-        node->node_name, prefix, mask, metric); TRACE();
+    sprintf(instance->traceopts->b, "Node : %s, prefix attached : %s/%u, prefix metric : %u",
+        node->node_name, prefix, mask, metric);
+    trace(instance->traceopts, SPF_PREFIX_BIT);
 
     if(add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level), _prefix, 0))
         return _prefix;
@@ -468,8 +470,9 @@ deattach_prefix_on_node(node_t *node,
     if(!_prefix)
         return;
 
-    sprintf(LOG, "Node : %s, prefix deattached : %s/%u, prefix metric : %u",
-        node->node_name, prefix, mask, _prefix->metric); TRACE();
+    sprintf(instance->traceopts->b, "Node : %s, prefix deattached : %s/%u, prefix metric : %u",
+        node->node_name, prefix, mask, _prefix->metric); 
+    trace(instance->traceopts, SPF_PREFIX_BIT);
     singly_ll_remove_node_by_dataptr(GET_NODE_PREFIX_LIST(node, level), _prefix);
     free(_prefix);
     _prefix = NULL;

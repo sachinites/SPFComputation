@@ -34,30 +34,9 @@
 #include <unistd.h>
 #include "advert.h"
 #include "instance.h"
-#include "logging.h"
 #include "spfutil.h"
 #include "Queue.h"
-
-static FLAG flood = 1;
-
-void
-abort_flooding(void){
-
-    sprintf(LOG, "Flooding aborted"); TRACE();
-    flood = 0;
-}
-
-void
-init_flooding(void){
-
-    flood = 1;
-}
-
-FLAG
-get_flooding_status(void){
-
-    return flood;
-}
+#include "spftrace.h"
 
 char *
 advert_id_str(ADVERT_ID_T advert_id){
@@ -137,12 +116,8 @@ generate_lsp(instance_t *instance,
     LEVEL level_of_info_dist = dist_info->info_dist_level,
           level_it = LEVEL_UNKNOWN;
 
-    init_flooding(); 
     /*distribute the info to self*/
     fn_ptr(lsp_generator, lsp_generator, dist_info);
-
-    if(get_flooding_status() == 0)
-        return;
 
     /*distribute info in the network at a given level*/
     Queue_t *q = initQ();
@@ -168,8 +143,9 @@ generate_lsp(instance_t *instance,
                 if(nbr_node->lsp_distribution_bit){
                     ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(curr_node, nbr_node, pn_node, level_it);
                 }
-                sprintf(LOG, "LSP Distribution Src : %s, Des Node : %s", 
-                        lsp_generator->node_name, nbr_node->node_name); TRACE();
+                sprintf(instance->traceopts->b, "LSP Distribution Src : %s, Des Node : %s", 
+                        lsp_generator->node_name, nbr_node->node_name); 
+                trace(instance->traceopts, SPF_EVENTS_BIT);
 
                 fn_ptr(lsp_generator, nbr_node, dist_info);
                 nbr_node->lsp_distribution_bit = 1;

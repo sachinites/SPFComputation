@@ -41,8 +41,6 @@ char
     switch(trace_type){
         case DIJKSTRA_BIT:
             return "DIJKSTRA_BIT";
-        case SPF_POST_PROCESSING_BIT:
-            return "SPF_POST_PROCESSING_BIT";
         case ROUTE_INSTALLATION_BIT:
             return "ROUTE_INSTALLATION_BIT";
         case ROUTE_CALCULATION_BIT:
@@ -51,8 +49,12 @@ char
             return "LFA_COMPUTATION_BIT";
         case RLFA_COMPUTATION_BIT:
             return "RLFA_COMPUTATION_BIT";
-        case SPF_PHASES:
-            return "SPF_PHASES";
+        case SPF_EVENTS_BIT:
+            return "SPF_EVENTS_BIT";
+        case SPF_PREFIX_BIT:
+            return "SPF_PREFIX_BIT";
+        case ROUTING_TABLE_BIT:
+            return "ROUTING_TABLE_BIT";
         case TRACE_MAX_BIT:
             return "TRACE_MAX_BIT";
         default:

@@ -1,22 +1,2624 @@
-==5969== Memcheck, a memory error detector
-==5969== Copyright (C) 2002-2013, and GNU GPL'd, by Julian Seward et al.
-==5969== Using Valgrind-3.10.1 and LibVEX; rerun with -h for copyright info
-==5969== Command: ./rpd
-==5969== Parent PID: 4623
-==5969== 
-==5969== 
-==5969== HEAP SUMMARY:
-==5969==     in use at exit: 533,952 bytes in 2,190 blocks
-==5969==   total heap usage: 4,665 allocs, 2,475 frees, 1,212,308 bytes allocated
-==5969== 
-==5969== LEAK SUMMARY:
-==5969==    definitely lost: 0 bytes in 0 blocks
-==5969==    indirectly lost: 0 bytes in 0 blocks
-==5969==      possibly lost: 0 bytes in 0 blocks
-==5969==    still reachable: 533,952 bytes in 2,190 blocks
-==5969==         suppressed: 0 bytes in 0 blocks
-==5969== Reachable blocks (those to which a pointer was found) are not shown.
-==5969== To see them, rerun with: --leak-check=full --show-leak-kinds=all
-==5969== 
-==5969== For counts of detected and suppressed errors, rerun with: -v
-==5969== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==24182== Memcheck, a memory error detector
+==24182== Copyright (C) 2002-2013, and GNU GPL'd, by Julian Seward et al.
+==24182== Using Valgrind-3.10.1 and LibVEX; rerun with -h for copyright info
+==24182== Command: ./rpd
+==24182== Parent PID: 23917
+==24182== 
+==24182== 
+==24182== HEAP SUMMARY:
+==24182==     in use at exit: 603,604 bytes in 2,085 blocks
+==24182==   total heap usage: 4,108 allocs, 2,023 frees, 946,948 bytes allocated
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 1 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804AAF1: add_node_to_owning_instance (instance.c:46)
+==24182==    by 0x804ADE5: create_new_node (instance.c:107)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 2 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804AAF1: add_node_to_owning_instance (instance.c:46)
+==24182==    by 0x804ADE5: create_new_node (instance.c:107)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 3 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804AAF1: add_node_to_owning_instance (instance.c:46)
+==24182==    by 0x804ADE5: create_new_node (instance.c:107)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 4 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804AAF1: add_node_to_owning_instance (instance.c:46)
+==24182==    by 0x804ADE5: create_new_node (instance.c:107)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 5 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804AAF1: add_node_to_owning_instance (instance.c:46)
+==24182==    by 0x804ADE5: create_new_node (instance.c:107)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 6 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804AAF1: add_node_to_owning_instance (instance.c:46)
+==24182==    by 0x804ADE5: create_new_node (instance.c:107)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 7 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804AAF1: add_node_to_owning_instance (instance.c:46)
+==24182==    by 0x804ADE5: create_new_node (instance.c:107)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 8 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058A6C: add_new_prefix_in_list (prefix.c:389)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FBBA: build_rlfa_topo (topo.c:356)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 9 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058A6C: add_new_prefix_in_list (prefix.c:389)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FBBA: build_rlfa_topo (topo.c:356)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 10 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FC3E: build_rlfa_topo (topo.c:359)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 11 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058A6C: add_new_prefix_in_list (prefix.c:389)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FC3E: build_rlfa_topo (topo.c:359)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 12 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FCC2: build_rlfa_topo (topo.c:362)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 13 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058A6C: add_new_prefix_in_list (prefix.c:389)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FCC2: build_rlfa_topo (topo.c:362)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 14 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FD46: build_rlfa_topo (topo.c:365)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 15 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058A6C: add_new_prefix_in_list (prefix.c:389)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FD46: build_rlfa_topo (topo.c:365)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 16 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FDCA: build_rlfa_topo (topo.c:368)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 17 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058A6C: add_new_prefix_in_list (prefix.c:389)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FDCA: build_rlfa_topo (topo.c:368)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 18 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FE4E: build_rlfa_topo (topo.c:371)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 19 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FE4E: build_rlfa_topo (topo.c:371)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 20 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FED2: build_rlfa_topo (topo.c:374)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 21 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058A6C: add_new_prefix_in_list (prefix.c:389)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FED2: build_rlfa_topo (topo.c:374)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 22 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FF56: build_rlfa_topo (topo.c:377)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 8 bytes in 1 blocks are still reachable in loss record 23 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x8058B62: add_new_prefix_in_list (prefix.c:426)
+==24182==    by 0x8058C71: add_prefix_to_prefix_list (prefix.c:455)
+==24182==    by 0x804B1F1: attach_edge_end_prefix_on_node (instance.c:225)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FF56: build_rlfa_topo (topo.c:377)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 24 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x808186D: init_serialized_buffer_of_defined_size (serialize.c:19)
+==24182==    by 0x807F2AF: init_libcli (cmd_hier.c:196)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 25 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804B6D8: get_new_instance (instance.c:370)
+==24182==    by 0x806FA29: build_rlfa_topo (topo.c:346)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 26 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD23: create_new_node (instance.c:92)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 27 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD4A: create_new_node (instance.c:95)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 28 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD71: create_new_node (instance.c:98)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 29 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x8049DA3: init_rttable (rttable.c:200)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 30 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD23: create_new_node (instance.c:92)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 31 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD4A: create_new_node (instance.c:95)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 32 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD71: create_new_node (instance.c:98)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 33 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x8049DA3: init_rttable (rttable.c:200)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 34 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD23: create_new_node (instance.c:92)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 35 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD4A: create_new_node (instance.c:95)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 36 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD71: create_new_node (instance.c:98)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 37 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x8049DA3: init_rttable (rttable.c:200)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 38 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD23: create_new_node (instance.c:92)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 39 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD4A: create_new_node (instance.c:95)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 40 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD71: create_new_node (instance.c:98)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 41 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x8049DA3: init_rttable (rttable.c:200)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 42 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD23: create_new_node (instance.c:92)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 43 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD4A: create_new_node (instance.c:95)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 44 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD71: create_new_node (instance.c:98)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 45 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x8049DA3: init_rttable (rttable.c:200)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 46 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD23: create_new_node (instance.c:92)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 47 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD4A: create_new_node (instance.c:95)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 48 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD71: create_new_node (instance.c:98)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 49 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x8049DA3: init_rttable (rttable.c:200)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 50 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD23: create_new_node (instance.c:92)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 51 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD4A: create_new_node (instance.c:95)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 52 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AD71: create_new_node (instance.c:98)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 1 blocks are still reachable in loss record 53 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x8049DA3: init_rttable (rttable.c:200)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 2 blocks are still reachable in loss record 54 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x8058A21: add_new_prefix_in_list (prefix.c:379)
+==24182==    by 0x804AC73: create_new_node (instance.c:79)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 2 blocks are still reachable in loss record 55 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x8058A21: add_new_prefix_in_list (prefix.c:379)
+==24182==    by 0x804AC73: create_new_node (instance.c:79)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 2 blocks are still reachable in loss record 56 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x8058A21: add_new_prefix_in_list (prefix.c:379)
+==24182==    by 0x804AC73: create_new_node (instance.c:79)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 2 blocks are still reachable in loss record 57 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x8058A21: add_new_prefix_in_list (prefix.c:379)
+==24182==    by 0x804AC73: create_new_node (instance.c:79)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 2 blocks are still reachable in loss record 58 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x8058A21: add_new_prefix_in_list (prefix.c:379)
+==24182==    by 0x804AC73: create_new_node (instance.c:79)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 2 blocks are still reachable in loss record 59 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x8058A21: add_new_prefix_in_list (prefix.c:379)
+==24182==    by 0x804AC73: create_new_node (instance.c:79)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 16 bytes in 2 blocks are still reachable in loss record 60 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x8058A21: add_new_prefix_in_list (prefix.c:379)
+==24182==    by 0x804AC73: create_new_node (instance.c:79)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 24 bytes in 1 blocks are still reachable in loss record 61 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804B6D0: get_new_instance (instance.c:369)
+==24182==    by 0x806FA29: build_rlfa_topo (topo.c:346)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 24 bytes in 1 blocks are still reachable in loss record 62 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8049D7A: init_rttable (rttable.c:197)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 24 bytes in 1 blocks are still reachable in loss record 63 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8049D7A: init_rttable (rttable.c:197)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 24 bytes in 1 blocks are still reachable in loss record 64 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8049D7A: init_rttable (rttable.c:197)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 24 bytes in 1 blocks are still reachable in loss record 65 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8049D7A: init_rttable (rttable.c:197)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 24 bytes in 1 blocks are still reachable in loss record 66 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8049D7A: init_rttable (rttable.c:197)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 24 bytes in 1 blocks are still reachable in loss record 67 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8049D7A: init_rttable (rttable.c:197)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 24 bytes in 1 blocks are still reachable in loss record 68 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8049D7A: init_rttable (rttable.c:197)
+==24182==    by 0x804AD9F: create_new_node (instance.c:101)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 69 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F29B: init_libcli (cmd_hier.c:193)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 70 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F345: init_libcli (cmd_hier.c:215)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 71 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F389: init_libcli (cmd_hier.c:216)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 72 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F3CD: init_libcli (cmd_hier.c:217)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 73 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F411: init_libcli (cmd_hier.c:221)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 74 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F469: init_libcli (cmd_hier.c:225)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 75 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F4D5: init_libcli (cmd_hier.c:231)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 76 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F5AD: init_libcli (cmd_hier.c:242)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 77 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F605: init_libcli (cmd_hier.c:246)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 78 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F671: init_libcli (cmd_hier.c:251)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 79 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F6C9: init_libcli (cmd_hier.c:256)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 80 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F721: init_libcli (cmd_hier.c:260)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 81 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F78D: init_libcli (cmd_hier.c:265)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 82 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F7E5: init_libcli (cmd_hier.c:269)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 83 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F83D: init_libcli (cmd_hier.c:273)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 84 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F8A9: init_libcli (cmd_hier.c:278)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 85 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F901: init_libcli (cmd_hier.c:282)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 86 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F959: init_libcli (cmd_hier.c:286)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 87 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807F9D9: init_libcli (cmd_hier.c:295)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 88 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807FA31: init_libcli (cmd_hier.c:300)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 89 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807FA89: init_libcli (cmd_hier.c:305)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 90 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807FB4D: init_libcli (cmd_hier.c:315)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 91 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807FBAC: init_libcli (cmd_hier.c:320)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 92 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x807FC0B: init_libcli (cmd_hier.c:325)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 93 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806B924: spf_init_dcm (spfdcm.c:950)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 94 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806B97B: spf_init_dcm (spfdcm.c:955)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 95 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806B9E7: spf_init_dcm (spfdcm.c:965)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 96 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BA3E: spf_init_dcm (spfdcm.c:969)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 97 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BB02: spf_init_dcm (spfdcm.c:979)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 98 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BBC6: spf_init_dcm (spfdcm.c:990)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 99 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BC9E: spf_init_dcm (spfdcm.c:1005)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 100 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BD62: spf_init_dcm (spfdcm.c:1015)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 101 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BDCE: spf_init_dcm (spfdcm.c:1022)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 102 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BED6: spf_init_dcm (spfdcm.c:1036)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 103 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BF9A: spf_init_dcm (spfdcm.c:1047)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 104 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806BFF1: spf_init_dcm (spfdcm.c:1051)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 105 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C049: spf_init_dcm (spfdcm.c:1056)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 106 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C10D: spf_init_dcm (spfdcm.c:1068)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 107 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C179: spf_init_dcm (spfdcm.c:1076)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 108 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C1E5: spf_init_dcm (spfdcm.c:1082)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 109 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C251: spf_init_dcm (spfdcm.c:1087)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 110 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C329: spf_init_dcm (spfdcm.c:1100)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 111 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C395: spf_init_dcm (spfdcm.c:1106)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 112 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C401: spf_init_dcm (spfdcm.c:1112)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 113 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C46D: spf_init_dcm (spfdcm.c:1120)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 114 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C4D8: spf_init_dcm (spfdcm.c:1129)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 115 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C52F: spf_init_dcm (spfdcm.c:1133)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 116 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C587: spf_init_dcm (spfdcm.c:1137)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 117 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C5DF: spf_init_dcm (spfdcm.c:1141)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 118 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C64B: spf_init_dcm (spfdcm.c:1147)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 119 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C6B7: spf_init_dcm (spfdcm.c:1153)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 120 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C723: spf_init_dcm (spfdcm.c:1159)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 121 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C78F: spf_init_dcm (spfdcm.c:1165)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 122 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C7FB: spf_init_dcm (spfdcm.c:1171)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 123 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C867: spf_init_dcm (spfdcm.c:1177)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 124 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C8D3: spf_init_dcm (spfdcm.c:1183)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 125 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806C93F: spf_init_dcm (spfdcm.c:1189)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 126 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CA03: spf_init_dcm (spfdcm.c:1205)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 127 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CA6F: spf_init_dcm (spfdcm.c:1211)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 128 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CADB: spf_init_dcm (spfdcm.c:1218)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 129 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CB47: spf_init_dcm (spfdcm.c:1225)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 130 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CC0B: spf_init_dcm (spfdcm.c:1236)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 131 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CCBB: spf_init_dcm (spfdcm.c:1244)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 132 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CD7F: spf_init_dcm (spfdcm.c:1256)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 133 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CDEB: spf_init_dcm (spfdcm.c:1264)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 134 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CE57: spf_init_dcm (spfdcm.c:1272)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 135 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CEC3: spf_init_dcm (spfdcm.c:1278)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 136 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CF2F: spf_init_dcm (spfdcm.c:1286)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 137 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806CF87: spf_init_dcm (spfdcm.c:1290)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 138 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D04B: spf_init_dcm (spfdcm.c:1301)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 139 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D10F: spf_init_dcm (spfdcm.c:1312)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 140 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D167: spf_init_dcm (spfdcm.c:1316)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 141 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D1D3: spf_init_dcm (spfdcm.c:1322)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 142 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D22B: spf_init_dcm (spfdcm.c:1326)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 143 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D333: spf_init_dcm (spfdcm.c:1338)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 144 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D3F7: spf_init_dcm (spfdcm.c:1350)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 145 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D44F: spf_init_dcm (spfdcm.c:1354)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 146 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D4BB: spf_init_dcm (spfdcm.c:1361)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 147 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D6CB: spf_init_dcm (spfdcm.c:1387)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 148 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D77B: spf_init_dcm (spfdcm.c:1396)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 149 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D7D3: spf_init_dcm (spfdcm.c:1400)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 150 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D897: spf_init_dcm (spfdcm.c:1410)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 151 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D947: spf_init_dcm (spfdcm.c:1418)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 152 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806D9F7: spf_init_dcm (spfdcm.c:1426)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 153 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806DABB: spf_init_dcm (spfdcm.c:1439)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 154 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806DB13: spf_init_dcm (spfdcm.c:1443)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 155 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806DC1B: spf_init_dcm (spfdcm.c:1455)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 156 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806DD37: spf_init_dcm (spfdcm.c:1472)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 157 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806DDFA: spf_init_dcm (spfdcm.c:1484)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 158 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806DE66: spf_init_dcm (spfdcm.c:1492)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 159 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806DEBD: spf_init_dcm (spfdcm.c:1496)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 160 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806DF81: spf_init_dcm (spfdcm.c:1505)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 161 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806E0B1: spf_init_dcm (spfdcm.c:1525)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 162 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806E108: spf_init_dcm (spfdcm.c:1531)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 163 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806E15F: spf_init_dcm (spfdcm.c:1537)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 164 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806E223: spf_init_dcm (spfdcm.c:1549)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 165 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806E2E7: spf_init_dcm (spfdcm.c:1560)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 166 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806E33F: spf_init_dcm (spfdcm.c:1565)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 167 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806E3AB: spf_init_dcm (spfdcm.c:1573)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 168 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FC63: init_param (cmd_hier.c:350)
+==24182==    by 0x806E417: spf_init_dcm (spfdcm.c:1580)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 169 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FD68: init_param (cmd_hier.c:364)
+==24182==    by 0x807FF77: support_cmd_negation (cmd_hier.c:407)
+==24182==    by 0x806E44B: spf_init_dcm (spfdcm.c:1593)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 170 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FD68: init_param (cmd_hier.c:364)
+==24182==    by 0x807FF77: support_cmd_negation (cmd_hier.c:407)
+==24182==    by 0x806E456: spf_init_dcm (spfdcm.c:1594)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 32 bytes in 1 blocks are still reachable in loss record 171 of 336
+==24182==    at 0x402A17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807E881: heap_init (heap.c:18)
+==24182==    by 0x804B702: get_new_instance (instance.c:372)
+==24182==    by 0x806FA29: build_rlfa_topo (topo.c:346)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 172 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ABD1: create_new_node (instance.c:70)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 173 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AC78: create_new_node (instance.c:81)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 174 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ACE0: create_new_node (instance.c:87)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 175 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ABD1: create_new_node (instance.c:70)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 176 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AC78: create_new_node (instance.c:81)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 177 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ACE0: create_new_node (instance.c:87)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 178 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ABD1: create_new_node (instance.c:70)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 179 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AC78: create_new_node (instance.c:81)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 180 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ACE0: create_new_node (instance.c:87)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 181 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ABD1: create_new_node (instance.c:70)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 182 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AC78: create_new_node (instance.c:81)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 183 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ACE0: create_new_node (instance.c:87)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 184 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ABD1: create_new_node (instance.c:70)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 185 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AC78: create_new_node (instance.c:81)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 186 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ACE0: create_new_node (instance.c:87)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 187 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ABD1: create_new_node (instance.c:70)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 188 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AC78: create_new_node (instance.c:81)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 189 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ACE0: create_new_node (instance.c:87)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 190 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ABD1: create_new_node (instance.c:70)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 191 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804AC78: create_new_node (instance.c:81)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 2 blocks are still reachable in loss record 192 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804ACE0: create_new_node (instance.c:87)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 32 bytes in 4 blocks are still reachable in loss record 193 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x80764C9: run_dijkastra (spfcomputation.c:315)
+==24182==    by 0x807B840: spf_computation (spfcomputation.c:755)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182==    by 0x8048BE6: main (testapp.c:79)
+==24182== 
+==24182== 32 bytes in 4 blocks are still reachable in loss record 194 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804F648: overwrite_route (routes.c:664)
+==24182==    by 0x8054865: update_route (routes.c:1125)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 195 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FB52: build_rlfa_topo (topo.c:356)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 196 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FB70: build_rlfa_topo (topo.c:356)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 197 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FBBA: build_rlfa_topo (topo.c:356)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 198 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FBBA: build_rlfa_topo (topo.c:356)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 199 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FBD6: build_rlfa_topo (topo.c:359)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 200 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FBF4: build_rlfa_topo (topo.c:359)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 201 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FC3E: build_rlfa_topo (topo.c:359)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 202 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FC3E: build_rlfa_topo (topo.c:359)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 203 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FC5A: build_rlfa_topo (topo.c:362)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 204 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FC78: build_rlfa_topo (topo.c:362)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 205 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FCC2: build_rlfa_topo (topo.c:362)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 206 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FCC2: build_rlfa_topo (topo.c:362)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 207 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FCDE: build_rlfa_topo (topo.c:365)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 208 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FCFC: build_rlfa_topo (topo.c:365)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 209 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FD46: build_rlfa_topo (topo.c:365)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 210 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FD46: build_rlfa_topo (topo.c:365)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 211 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FD62: build_rlfa_topo (topo.c:368)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 212 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FD80: build_rlfa_topo (topo.c:368)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 213 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FDCA: build_rlfa_topo (topo.c:368)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 214 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FDCA: build_rlfa_topo (topo.c:368)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 215 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FDE6: build_rlfa_topo (topo.c:371)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 216 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FE04: build_rlfa_topo (topo.c:371)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 217 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FE4E: build_rlfa_topo (topo.c:371)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 218 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FE4E: build_rlfa_topo (topo.c:371)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 219 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FE6A: build_rlfa_topo (topo.c:374)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 220 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FE88: build_rlfa_topo (topo.c:374)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 221 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FED2: build_rlfa_topo (topo.c:374)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 222 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FED2: build_rlfa_topo (topo.c:374)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 223 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FEEE: build_rlfa_topo (topo.c:377)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 224 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x806FF0C: build_rlfa_topo (topo.c:377)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 225 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x806FF56: build_rlfa_topo (topo.c:377)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 40 bytes in 1 blocks are still reachable in loss record 226 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804B1A4: attach_edge_end_prefix_on_node (instance.c:222)
+==24182==    by 0x804B355: insert_interface_into_node (instance.c:278)
+==24182==    by 0x804B384: insert_edge_between_2_nodes (instance.c:289)
+==24182==    by 0x804B498: insert_edge_between_2_nodes (instance.c:307)
+==24182==    by 0x806FF56: build_rlfa_topo (topo.c:377)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 56 bytes in 7 blocks are still reachable in loss record 227 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x80768A6: run_dijkastra (spfcomputation.c:328)
+==24182==    by 0x807B840: spf_computation (spfcomputation.c:755)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182==    by 0x8048BE6: main (testapp.c:79)
+==24182== 
+==24182== 56 bytes in 7 blocks are still reachable in loss record 228 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x80768D8: run_dijkastra (spfcomputation.c:331)
+==24182==    by 0x807B840: spf_computation (spfcomputation.c:755)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182==    by 0x8048BE6: main (testapp.c:79)
+==24182== 
+==24182== 64 bytes in 8 blocks are still reachable in loss record 229 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x80764C9: run_dijkastra (spfcomputation.c:315)
+==24182==    by 0x807B866: spf_computation (spfcomputation.c:758)
+==24182==    by 0x8059347: Compute_and_Store_Forward_SPF (rlfa.c:181)
+==24182==    by 0x805FEC3: p2p_filter_select_pq_nodes_from_ex_pspace (rlfa.c:828)
+==24182==    by 0x807B168: compute_backup_routine (spfcomputation.c:712)
+==24182==    by 0x807B883: spf_computation (spfcomputation.c:765)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182== 
+==24182== 72 bytes in 9 blocks are still reachable in loss record 230 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x80764C9: run_dijkastra (spfcomputation.c:315)
+==24182==    by 0x807B866: spf_computation (spfcomputation.c:758)
+==24182==    by 0x8059347: Compute_and_Store_Forward_SPF (rlfa.c:181)
+==24182==    by 0x805FED8: p2p_filter_select_pq_nodes_from_ex_pspace (rlfa.c:829)
+==24182==    by 0x807B168: compute_backup_routine (spfcomputation.c:712)
+==24182==    by 0x807B883: spf_computation (spfcomputation.c:765)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182== 
+==24182== 80 bytes in 2 blocks are still reachable in loss record 231 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804AC40: create_new_node (instance.c:77)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 80 bytes in 2 blocks are still reachable in loss record 232 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804AC40: create_new_node (instance.c:77)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 80 bytes in 2 blocks are still reachable in loss record 233 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804AC40: create_new_node (instance.c:77)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 80 bytes in 2 blocks are still reachable in loss record 234 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804AC40: create_new_node (instance.c:77)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 80 bytes in 2 blocks are still reachable in loss record 235 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804AC40: create_new_node (instance.c:77)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 80 bytes in 2 blocks are still reachable in loss record 236 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804AC40: create_new_node (instance.c:77)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 80 bytes in 2 blocks are still reachable in loss record 237 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8057945: create_new_prefix (prefix.c:49)
+==24182==    by 0x804AC40: create_new_node (instance.c:77)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 80 bytes in 10 blocks are still reachable in loss record 238 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804C80D: merge_route_primary_nexthops (routes.c:90)
+==24182==    by 0x8054A9F: update_route (routes.c:1133)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 80 bytes in 10 blocks are still reachable in loss record 239 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x804FB2B: link_prefix_to_route (routes.c:703)
+==24182==    by 0x8054D36: update_route (routes.c:1147)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 240 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x807F541: init_libcli (cmd_hier.c:236)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 241 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x807FAE1: init_libcli (cmd_hier.c:309)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 242 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806BA96: spf_init_dcm (spfdcm.c:973)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 243 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806BB6E: spf_init_dcm (spfdcm.c:984)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 244 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806BC32: spf_init_dcm (spfdcm.c:996)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 245 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806BCF6: spf_init_dcm (spfdcm.c:1009)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 246 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806BE26: spf_init_dcm (spfdcm.c:1026)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 247 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806BE7E: spf_init_dcm (spfdcm.c:1030)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 248 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806BF2E: spf_init_dcm (spfdcm.c:1040)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 249 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806C0A1: spf_init_dcm (spfdcm.c:1061)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 250 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806C2BD: spf_init_dcm (spfdcm.c:1092)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 251 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806C9AB: spf_init_dcm (spfdcm.c:1198)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 252 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806CBB3: spf_init_dcm (spfdcm.c:1230)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 253 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806CC63: spf_init_dcm (spfdcm.c:1240)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 254 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806CD13: spf_init_dcm (spfdcm.c:1248)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 255 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806CFDF: spf_init_dcm (spfdcm.c:1294)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 256 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D0A3: spf_init_dcm (spfdcm.c:1305)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 257 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D283: spf_init_dcm (spfdcm.c:1330)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 258 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D2DB: spf_init_dcm (spfdcm.c:1334)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 259 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D38B: spf_init_dcm (spfdcm.c:1342)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 260 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D513: spf_init_dcm (spfdcm.c:1365)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 261 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D56B: spf_init_dcm (spfdcm.c:1369)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 262 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D5C3: spf_init_dcm (spfdcm.c:1373)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 263 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D61B: spf_init_dcm (spfdcm.c:1377)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 264 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D673: spf_init_dcm (spfdcm.c:1381)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 265 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D723: spf_init_dcm (spfdcm.c:1391)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 266 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D82B: spf_init_dcm (spfdcm.c:1404)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 267 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D8EF: spf_init_dcm (spfdcm.c:1414)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 268 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806D99F: spf_init_dcm (spfdcm.c:1422)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 269 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806DA4F: spf_init_dcm (spfdcm.c:1430)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 270 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806DB6B: spf_init_dcm (spfdcm.c:1447)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 271 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806DBC3: spf_init_dcm (spfdcm.c:1451)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 272 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806DC73: spf_init_dcm (spfdcm.c:1459)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 273 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806DCCB: spf_init_dcm (spfdcm.c:1463)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 274 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806DD8E: spf_init_dcm (spfdcm.c:1477)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 275 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806DF29: spf_init_dcm (spfdcm.c:1501)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 276 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806DFED: spf_init_dcm (spfdcm.c:1510)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 277 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806E045: spf_init_dcm (spfdcm.c:1514)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 278 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806E1CB: spf_init_dcm (spfdcm.c:1543)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 104 bytes in 1 blocks are still reachable in loss record 279 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FCDC: init_param (cmd_hier.c:356)
+==24182==    by 0x806E28F: spf_init_dcm (spfdcm.c:1555)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 112 bytes in 14 blocks are still reachable in loss record 280 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x80764C9: run_dijkastra (spfcomputation.c:315)
+==24182==    by 0x807B866: spf_computation (spfcomputation.c:758)
+==24182==    by 0x8059347: Compute_and_Store_Forward_SPF (rlfa.c:181)
+==24182==    by 0x80594DE: Compute_PHYSICAL_Neighbor_SPFs (rlfa.c:195)
+==24182==    by 0x8068DBB: compute_lfa (rlfa.c:1526)
+==24182==    by 0x807B0F9: compute_backup_routine (spfcomputation.c:701)
+==24182==    by 0x807B883: spf_computation (spfcomputation.c:765)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182== 
+==24182== 128 bytes in 16 blocks are still reachable in loss record 281 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804F648: overwrite_route (routes.c:664)
+==24182==    by 0x8055354: update_route (routes.c:1169)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 156 bytes in 1 blocks are still reachable in loss record 282 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FF31: support_cmd_negation (cmd_hier.c:406)
+==24182==    by 0x806E44B: spf_init_dcm (spfdcm.c:1593)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 156 bytes in 1 blocks are still reachable in loss record 283 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807FF31: support_cmd_negation (cmd_hier.c:406)
+==24182==    by 0x806E456: spf_init_dcm (spfdcm.c:1594)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 168 bytes in 21 blocks are still reachable in loss record 284 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x80764C9: run_dijkastra (spfcomputation.c:315)
+==24182==    by 0x807B866: spf_computation (spfcomputation.c:758)
+==24182==    by 0x8059347: Compute_and_Store_Forward_SPF (rlfa.c:181)
+==24182==    by 0x806024B: p2p_filter_select_pq_nodes_from_ex_pspace (rlfa.c:860)
+==24182==    by 0x807B168: compute_backup_routine (spfcomputation.c:712)
+==24182==    by 0x807B883: spf_computation (spfcomputation.c:765)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 285 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x806FB9C: build_rlfa_topo (topo.c:356)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 286 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x804B407: insert_edge_between_2_nodes (instance.c:298)
+==24182==    by 0x806FBBA: build_rlfa_topo (topo.c:356)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 287 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x806FC20: build_rlfa_topo (topo.c:359)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 288 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x804B407: insert_edge_between_2_nodes (instance.c:298)
+==24182==    by 0x806FC3E: build_rlfa_topo (topo.c:359)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 289 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x806FCA4: build_rlfa_topo (topo.c:362)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 290 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x804B407: insert_edge_between_2_nodes (instance.c:298)
+==24182==    by 0x806FCC2: build_rlfa_topo (topo.c:362)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 291 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x806FD28: build_rlfa_topo (topo.c:365)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 292 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x804B407: insert_edge_between_2_nodes (instance.c:298)
+==24182==    by 0x806FD46: build_rlfa_topo (topo.c:365)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 293 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x806FDAC: build_rlfa_topo (topo.c:368)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 294 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x804B407: insert_edge_between_2_nodes (instance.c:298)
+==24182==    by 0x806FDCA: build_rlfa_topo (topo.c:368)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 295 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x806FE30: build_rlfa_topo (topo.c:371)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 296 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x804B407: insert_edge_between_2_nodes (instance.c:298)
+==24182==    by 0x806FE4E: build_rlfa_topo (topo.c:371)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 297 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x806FEB4: build_rlfa_topo (topo.c:374)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 298 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x804B407: insert_edge_between_2_nodes (instance.c:298)
+==24182==    by 0x806FED2: build_rlfa_topo (topo.c:374)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 299 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x806FF38: build_rlfa_topo (topo.c:377)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 200 bytes in 1 blocks are still reachable in loss record 300 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AE04: create_new_edge (instance.c:119)
+==24182==    by 0x804B407: insert_edge_between_2_nodes (instance.c:298)
+==24182==    by 0x806FF56: build_rlfa_topo (topo.c:377)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 240 bytes in 30 blocks are still reachable in loss record 301 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804EFBB: overwrite_route (routes.c:652)
+==24182==    by 0x8054865: update_route (routes.c:1125)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 272 bytes in 4 blocks are still reachable in loss record 302 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804F245: overwrite_route (routes.c:662)
+==24182==    by 0x8054865: update_route (routes.c:1125)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182== 
+==24182== 368 bytes in 46 blocks are still reachable in loss record 303 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804FB1B: link_prefix_to_route (routes.c:699)
+==24182==    by 0x8054D36: update_route (routes.c:1147)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 392 bytes in 49 blocks are still reachable in loss record 304 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x80768A6: run_dijkastra (spfcomputation.c:328)
+==24182==    by 0x807B840: spf_computation (spfcomputation.c:755)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182==    by 0x8048BE6: main (testapp.c:79)
+==24182== 
+==24182== 392 bytes in 49 blocks are still reachable in loss record 305 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x80768D8: run_dijkastra (spfcomputation.c:331)
+==24182==    by 0x807B840: spf_computation (spfcomputation.c:755)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182== 
+==24182== 448 bytes in 56 blocks are still reachable in loss record 306 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804EFBB: overwrite_route (routes.c:652)
+==24182==    by 0x8055354: update_route (routes.c:1169)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 472 bytes in 59 blocks are still reachable in loss record 307 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804FB1B: link_prefix_to_route (routes.c:699)
+==24182==    by 0x80553C6: update_route (routes.c:1176)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 536 bytes in 1 blocks are still reachable in loss record 308 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804B716: get_new_instance (instance.c:373)
+==24182==    by 0x806FA29: build_rlfa_topo (topo.c:346)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 680 bytes in 10 blocks are still reachable in loss record 309 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804C590: merge_route_primary_nexthops (routes.c:88)
+==24182==    by 0x8054A9F: update_route (routes.c:1133)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182== 
+==24182== 840 bytes in 105 blocks are still reachable in loss record 310 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x805114C: update_route (routes.c:880)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 840 bytes in 105 blocks are still reachable in loss record 311 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x8051161: update_route (routes.c:880)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 840 bytes in 105 blocks are still reachable in loss record 312 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEDD: singly_ll_init_node (LinkedListApi.c:13)
+==24182==    by 0x807E0DE: singly_ll_add_node_by_val (LinkedListApi.c:80)
+==24182==    by 0x804957D: rt_route_install (rttable.c:82)
+==24182==    by 0x80568BD: start_route_installation (routes.c:1415)
+==24182==    by 0x80578A5: spf_postprocessing (routes.c:1579)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 1,024 bytes in 1 blocks are still reachable in loss record 313 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x808188C: init_serialized_buffer_of_defined_size (serialize.c:20)
+==24182==    by 0x807F2AF: init_libcli (cmd_hier.c:196)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 1,024 bytes in 16 blocks are still reachable in loss record 314 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x808243F: init_token_array (string_util.c:36)
+==24182==    by 0x807F301: init_libcli (cmd_hier.c:212)
+==24182==    by 0x806B8B8: spf_init_dcm (spfdcm.c:936)
+==24182==    by 0x8048BD7: main (testapp.c:62)
+==24182== 
+==24182== 1,088 bytes in 16 blocks are still reachable in loss record 315 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804F245: overwrite_route (routes.c:662)
+==24182==    by 0x8055354: update_route (routes.c:1169)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182== 
+==24182== 1,680 bytes in 105 blocks are still reachable in loss record 316 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804C4EE: route_malloc (routes.c:70)
+==24182==    by 0x80503B6: update_route (routes.c:816)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 2,040 bytes in 30 blocks are still reachable in loss record 317 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804ECC6: overwrite_route (routes.c:650)
+==24182==    by 0x8054865: update_route (routes.c:1125)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182== 
+==24182== 2,240 bytes in 56 blocks are still reachable in loss record 318 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8054CF6: update_route (routes.c:1145)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182==    by 0x8048BE6: main (testapp.c:79)
+==24182== 
+==24182== 2,360 bytes in 59 blocks are still reachable in loss record 319 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8055386: update_route (routes.c:1174)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182==    by 0x8048BE6: main (testapp.c:79)
+==24182== 
+==24182== 3,360 bytes in 210 blocks are still reachable in loss record 320 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804C488: route_malloc (routes.c:65)
+==24182==    by 0x80503B6: update_route (routes.c:816)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 3,360 bytes in 210 blocks are still reachable in loss record 321 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x807DEC1: init_singly_ll (LinkedListApi.c:9)
+==24182==    by 0x804C4B5: route_malloc (routes.c:67)
+==24182==    by 0x80503B6: update_route (routes.c:816)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 3,808 bytes in 56 blocks are still reachable in loss record 322 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804ECC6: overwrite_route (routes.c:650)
+==24182==    by 0x8055354: update_route (routes.c:1169)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182== 
+==24182== 4,400 bytes in 4 blocks are still reachable in loss record 323 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8076404: run_dijkastra (spfcomputation.c:303)
+==24182==    by 0x807B840: spf_computation (spfcomputation.c:755)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182==    by 0x8048BE6: main (testapp.c:79)
+==24182== 
+==24182== 7,980 bytes in 105 blocks are still reachable in loss record 324 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804C477: route_malloc (routes.c:63)
+==24182==    by 0x80503B6: update_route (routes.c:816)
+==24182==    by 0x8057375: build_routing_table (routes.c:1515)
+==24182==    by 0x8057893: spf_postprocessing (routes.c:1578)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182== 
+==24182== 8,800 bytes in 8 blocks are still reachable in loss record 325 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8076404: run_dijkastra (spfcomputation.c:303)
+==24182==    by 0x807B866: spf_computation (spfcomputation.c:758)
+==24182==    by 0x8059347: Compute_and_Store_Forward_SPF (rlfa.c:181)
+==24182==    by 0x805FEC3: p2p_filter_select_pq_nodes_from_ex_pspace (rlfa.c:828)
+==24182==    by 0x807B168: compute_backup_routine (spfcomputation.c:712)
+==24182==    by 0x807B883: spf_computation (spfcomputation.c:765)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182== 
+==24182== 9,900 bytes in 9 blocks are still reachable in loss record 326 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8076404: run_dijkastra (spfcomputation.c:303)
+==24182==    by 0x807B866: spf_computation (spfcomputation.c:758)
+==24182==    by 0x8059347: Compute_and_Store_Forward_SPF (rlfa.c:181)
+==24182==    by 0x805FED8: p2p_filter_select_pq_nodes_from_ex_pspace (rlfa.c:829)
+==24182==    by 0x807B168: compute_backup_routine (spfcomputation.c:712)
+==24182==    by 0x807B883: spf_computation (spfcomputation.c:765)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182== 
+==24182== 11,676 bytes in 1 blocks are still reachable in loss record 327 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AB3E: create_new_node (instance.c:56)
+==24182==    by 0x806FA4F: build_rlfa_topo (topo.c:348)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 11,676 bytes in 1 blocks are still reachable in loss record 328 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AB3E: create_new_node (instance.c:56)
+==24182==    by 0x806FA75: build_rlfa_topo (topo.c:349)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 11,676 bytes in 1 blocks are still reachable in loss record 329 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AB3E: create_new_node (instance.c:56)
+==24182==    by 0x806FA9B: build_rlfa_topo (topo.c:350)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 11,676 bytes in 1 blocks are still reachable in loss record 330 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AB3E: create_new_node (instance.c:56)
+==24182==    by 0x806FAC1: build_rlfa_topo (topo.c:351)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 11,676 bytes in 1 blocks are still reachable in loss record 331 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AB3E: create_new_node (instance.c:56)
+==24182==    by 0x806FAE7: build_rlfa_topo (topo.c:352)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 11,676 bytes in 1 blocks are still reachable in loss record 332 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AB3E: create_new_node (instance.c:56)
+==24182==    by 0x806FB0D: build_rlfa_topo (topo.c:353)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 11,676 bytes in 1 blocks are still reachable in loss record 333 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x804AB3E: create_new_node (instance.c:56)
+==24182==    by 0x806FB33: build_rlfa_topo (topo.c:354)
+==24182==    by 0x8048BDC: main (testapp.c:75)
+==24182== 
+==24182== 15,400 bytes in 14 blocks are still reachable in loss record 334 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8076404: run_dijkastra (spfcomputation.c:303)
+==24182==    by 0x807B866: spf_computation (spfcomputation.c:758)
+==24182==    by 0x8059347: Compute_and_Store_Forward_SPF (rlfa.c:181)
+==24182==    by 0x80594DE: Compute_PHYSICAL_Neighbor_SPFs (rlfa.c:195)
+==24182==    by 0x8068DBB: compute_lfa (rlfa.c:1526)
+==24182==    by 0x807B0F9: compute_backup_routine (spfcomputation.c:701)
+==24182==    by 0x807B883: spf_computation (spfcomputation.c:765)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182== 
+==24182== 23,100 bytes in 21 blocks are still reachable in loss record 335 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8076404: run_dijkastra (spfcomputation.c:303)
+==24182==    by 0x807B866: spf_computation (spfcomputation.c:758)
+==24182==    by 0x8059347: Compute_and_Store_Forward_SPF (rlfa.c:181)
+==24182==    by 0x806024B: p2p_filter_select_pq_nodes_from_ex_pspace (rlfa.c:860)
+==24182==    by 0x807B168: compute_backup_routine (spfcomputation.c:712)
+==24182==    by 0x807B883: spf_computation (spfcomputation.c:765)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182== 
+==24182== 408,660 bytes in 105 blocks are still reachable in loss record 336 of 336
+==24182==    at 0x402C109: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==24182==    by 0x8056020: start_route_installation (routes.c:1335)
+==24182==    by 0x80578A5: spf_postprocessing (routes.c:1579)
+==24182==    by 0x807BA96: spf_computation (spfcomputation.c:770)
+==24182==    by 0x807B5E9: spf_computation (spfcomputation.c:742)
+==24182==    by 0x8071B48: _run_spf_run_all_nodes (spfclihandler.c:60)
+==24182==    by 0x8071B6B: run_spf_run_all_nodes (spfclihandler.c:68)
+==24182==    by 0x80812DA: build_tlv_buffer (parser.c:215)
+==24182==    by 0x8081588: parse_input_cmd (parser.c:293)
+==24182==    by 0x80816E3: command_parser (parser.c:336)
+==24182==    by 0x80802F0: start_shell (cmd_hier.c:520)
+==24182==    by 0x8048BE6: main (testapp.c:79)
+==24182== 
+==24182== LEAK SUMMARY:
+==24182==    definitely lost: 0 bytes in 0 blocks
+==24182==    indirectly lost: 0 bytes in 0 blocks
+==24182==      possibly lost: 0 bytes in 0 blocks
+==24182==    still reachable: 603,604 bytes in 2,085 blocks
+==24182==         suppressed: 0 bytes in 0 blocks
+==24182== 
+==24182== For counts of detected and suppressed errors, rerun with: -v
+==24182== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

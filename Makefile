@@ -1,12 +1,12 @@
 CC=gcc
 #GCOV=-fprofile-arcs -ftest-coverage
 CFLAGS=-g -Wall -O0 ${GCOV}
-INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./mpls -I ./BitOp -I ./logging -I ./Libtrace
+INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./mpls -I ./BitOp -I ./Libtrace
 USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./logging/logging.o ./Libtrace/libtrace.o mpls/ldp.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -54,9 +54,6 @@ spfclihandler.o:spfclihandler.c
 rttable.o:rttable.c
 	@echo "Building rttable.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} rttable.c -o rttable.o
-logging.o:./logging/logging.c
-	@echo "Building logging.o" 
-	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./logging/logging.c -o ./logging/logging.o
 libtrace.o:./Libtrace/libtrace.c
 	@echo "Building libtrace.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./Libtrace/libtrace.c -o ./Libtrace/libtrace.o

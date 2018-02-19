@@ -35,7 +35,6 @@
 #include "heap_interface.h"
 #include "spfutil.h"
 #include "spfcomputation.h"
-#include "logging.h"
 #include "routes.h"
 #include "bitsop.h"
 #include "Queue.h"
@@ -680,7 +679,7 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
         return;
 
     sprintf(instance->traceopts->b, "Begin SPF back up calculation"); 
-    trace(instance->traceopts, SPF_PHASES); 
+    trace(instance->traceopts, SPF_EVENTS_BIT); 
     boolean strict_down_stream_lfa = FALSE;
     init_back_up_computation(spf_root, level); 
 
@@ -718,7 +717,7 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
        }
     }
     sprintf(instance->traceopts->b, "END of SPF back up calculation"); 
-    trace(instance->traceopts, SPF_PHASES);
+    trace(instance->traceopts, SPF_EVENTS_BIT);
 }
 
 void

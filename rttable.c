@@ -36,10 +36,9 @@
 #include <arpa/inet.h>
 #include "rttable.h"
 #include "bitsop.h"
-#include "logging.h"
 #include "spfutil.h"
 #include "LinkedListApi.h"
-
+#include "spftrace.h"
 
 extern instance_t *instance;
 
@@ -75,8 +74,9 @@ rt_route_lookup(rttable *rttable, char *prefix, char mask){
 int
 rt_route_install(rttable *rttable, rttable_entry_t *rt_entry){
 
-    sprintf(LOG, "Added route %s/%d to Routing table for level%d", 
-        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
+    sprintf(instance->traceopts->b, "Added route %s/%d to Routing table for level%d", 
+        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level);
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
     /*Refresh time before adding an enntry*/
     time(&rt_entry->last_refresh_time);
     singly_ll_add_node_by_val(GET_RT_TABLE(rttable), rt_entry);
@@ -96,8 +96,9 @@ rt_route_delete(rttable *rttable, char *prefix, char mask){
         return -1;
     }
 
-    sprintf(LOG, "Deleted route %s/%d from Routing table for level%d", 
-        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
+    sprintf(instance->traceopts->b, "Deleted route %s/%d from Routing table for level%d", 
+        rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level);
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
 
     ITERATE_LIST_BEGIN(GET_RT_TABLE(rttable), list_node){
     
@@ -127,8 +128,9 @@ rt_route_update(rttable *rttable, rttable_entry_t *rt_entry){
         return -1;
     }
 
-    sprintf(LOG, "Updated route %s/%d to Routing table for level%d", 
-            rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level); TRACE();
+    sprintf(instance->traceopts->b, "Updated route %s/%d to Routing table for level%d", 
+            rt_entry->dest.prefix, rt_entry->dest.mask, rt_entry->level);
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
 
     memcpy(rt_entry1->dest.prefix, rt_entry->dest.prefix, PREFIX_LEN + 1); 
     rt_entry1->dest.mask   = rt_entry->dest.mask;

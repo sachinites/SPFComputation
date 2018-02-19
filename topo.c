@@ -871,8 +871,8 @@ lsp_ecmp_topo(){
     /* LSP should be inserted after spf runs, not at compile time*/
     config node A lsp A-B metric 5 to 192.168.0.2 level 1
     config node B lsp B-A metric 5 to 192.168.0.1 level 1
-    inset_lsp_as_forward_adjacency(A, "A-B", 5, "192.168.0.2", LEVEL1);
-    inset_lsp_as_forward_adjacency(B, "B-A", 5, "192.168.0.1", LEVEL1);
+    insert_lsp_as_forward_adjacency(A, "A-B", 5, "192.168.0.2", LEVEL1);
+    insert_lsp_as_forward_adjacency(B, "B-A", 5, "192.168.0.1", LEVEL1);
 #endif
     set_instance_root(instance, A);
     return instance;

@@ -32,10 +32,10 @@
 
 #include <arpa/inet.h>
 #include "spfutil.h"
-#include "logging.h"
 #include "bitsop.h"
 #include "Queue.h"
 #include "advert.h"
+#include "spftrace.h"
 
 extern instance_t *instance;
 
@@ -208,14 +208,16 @@ spf_determine_multi_area_attachment(spf_info_t *spf_info,
         if(res->node->area != myarea && 
                 is_two_way_nbrship(res->node, spf_root, LEVEL2)){
             spf_info->spff_multi_area = 1;
-            sprintf(LOG, "spf_root : %s is L2 Attached with remote Area node : %s", 
-                            spf_root->node_name, res->node->node_name); TRACE();
+            sprintf(instance->traceopts->b, "spf_root : %s is L2 Attached with remote Area node : %s", 
+                            spf_root->node_name, res->node->node_name); 
+            trace(instance->traceopts, ROUTE_CALCULATION_BIT);
             break;   
         }
     }ITERATE_LIST_END;
 
     if(spf_info->spff_multi_area == 0){
-        sprintf(LOG, "spf_root : %s is not L2 Attached with remote Area", spf_root->node_name); TRACE();
+        sprintf(instance->traceopts->b, "spf_root : %s is not L2 Attached with remote Area", spf_root->node_name);
+        trace(instance->traceopts, ROUTE_CALCULATION_BIT);
     }
 }
 
@@ -300,14 +302,13 @@ print_nh_list2(internal_nh_t *nh_list){
 
     unsigned int i = 0;
     
-    sprintf(LOG, "printing next hop list"); TRACE();
-
+    sprintf(instance->traceopts->b, "printing next hop list"); 
+    trace(instance->traceopts, DIJKSTRA_BIT);
     for(; i < MAX_NXT_HOPS; i++){
-
         if(is_nh_list_empty2(&nh_list[i])) return;
-        
-        sprintf(LOG, "oif = %s, NH =  %s , Level = %s, gw_prefix = %s", 
-            nh_list[i].oif->intf_name, nh_list[i].node->node_name, get_str_level(nh_list[i].level), nh_list[i].gw_prefix); TRACE();
+        sprintf(instance->traceopts->b, "oif = %s, NH =  %s , Level = %s, gw_prefix = %s", 
+            nh_list[i].oif->intf_name, nh_list[i].node->node_name, get_str_level(nh_list[i].level), nh_list[i].gw_prefix);
+        trace(instance->traceopts, DIJKSTRA_BIT);
     }
 }
 

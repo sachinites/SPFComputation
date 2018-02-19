@@ -43,6 +43,8 @@
 #define TR_UNSET_BIT(n, pos)   (n = n & ((1 << pos) ^ 0xFFFFFFFFFFFFFFFF))
 #define TR_SET_BIT(n, pos)     (n = n | 1 << pos)
 
+#define TRACEOPTIONS_BUFFER_SiZE    512
+#define FN_LINE_BUFFER_SIZE         64
 
 typedef enum{
     TR_FALSE,
@@ -57,7 +59,7 @@ typedef enum{
 
 typedef struct {
     
-    char b[256];
+    char b[TRACEOPTIONS_BUFFER_SiZE];
     unsigned long long bit_mask;
     tr_boolean enable;
     void (*display_trace_options)(unsigned long long);
@@ -74,7 +76,7 @@ init_trace(traceoptions *traceopts);
 void
 set_trace_storage(traceoptions *traceopts, log_storage_t logstorage);
 
-extern char fn_line_buff[32];
+extern char fn_line_buff[FN_LINE_BUFFER_SIZE];
 
 #define trace(traceopts_ptr, bit)                                                       \
     if((traceopts_ptr)->enable == TR_TRUE){                                             \
@@ -82,7 +84,7 @@ extern char fn_line_buff[32];
             if((traceopts_ptr)->logstorage == CONSOLE)                                  \
                 printf("%s(%d) : %s\n", __FUNCTION__, __LINE__, (traceopts_ptr)->b);    \
             else  {                                                                     \
-                memset(fn_line_buff, 0, 32);                                            \
+                memset(fn_line_buff, 0, FN_LINE_BUFFER_SIZE);                                            \
                 sprintf(fn_line_buff, "%s(%u) : ", __FUNCTION__, __LINE__);             \
                 fwrite(fn_line_buff, sizeof(char), strlen(fn_line_buff),                \
                     (traceopts_ptr)->logf_fd);                                          \

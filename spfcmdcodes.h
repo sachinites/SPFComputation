@@ -79,14 +79,15 @@
 #define CMDCODE_CONFIG_NODE_LINK_DEGRADATION                41 /*config node <node-name> backup-spf-options node-link-degradation*/
 #define CMDCODE_SHOW_BACKUP_SPF_RESULTS                     42 /*show instance node <node-name> backup-spf-results*/
 
-#define CMDCODE_DEBUG_TRACEOPTIONS_DIJKASTRA                43 /*debug set trace dijkastra*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_SPF_POSTPROCESSING       44 /*debug set trace spf-post-processing*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_INSTALLATION       45 /*debug set trace route-installation*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_CALCULATION        46 /*debug set trace route-calculation*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_LFA                      47 /*debug set trace lfa*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_RLFA                     48 /*debug set trace rlfa*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_DIJKASTRA                43 /*conf debug set trace dijkastra*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_INSTALLATION       45 /*conf debug set trace route-installation*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_CALCULATION        46 /*conf debug set trace route-calculation*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_LFA                      47 /*conf debug set trace lfa*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_RLFA                     48 /*conf debug set trace rlfa*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_ALL                      49 /*conf debug set trace all*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_PREFIXES                 50 /*conf debug set trace prefixes*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTING_TABLE            51 /*conf debug set trace routing-table*/
 
-#define CMDCODE_DEBUG_LOG_ENABLE_DISABLE                    50 /*debug log enable|disable*/
-#define CMDCODE_DEBUG_LOG_FILE_ENABLE_DISABLE               51 /*debug log enable|disable file*/
+#define CMDCODE_DEBUG_LOG_ENABLE_DISABLE                    52 /*debug log enable|disable*/
+#define CMDCODE_DEBUG_LOG_FILE_ENABLE_DISABLE               53 /*debug log enable|disable file*/
 #endif /* __SPFCMDCODES__H */

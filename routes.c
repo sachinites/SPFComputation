@@ -32,7 +32,6 @@
 
 #include "spfutil.h"
 #include "routes.h"
-#include "logging.h"
 #include "bitsop.h"
 #include "rttable.h"
 #include "advert.h"
@@ -1210,7 +1209,8 @@ install_route_in_rib(spf_info_t *spf_info,
     ITERATE_NH_TYPE_BEGIN(nh){
         sprintf(instance->traceopts->b, "route : %s/%u, rt_entry_template->primary_nh_count = %u(%s)", 
                 rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
-                rt_entry_template->primary_nh_count[nh], nh == IPNH ? "IPNH" : "LSPNH"); TRACE();
+                rt_entry_template->primary_nh_count[nh], nh == IPNH ? "IPNH" : "LSPNH"); 
+        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     } ITERATE_NH_TYPE_END ;
 
     ITERATE_NH_TYPE_BEGIN(nh){
@@ -1244,7 +1244,8 @@ install_route_in_rib(spf_info_t *spf_info,
     STALE:
     sprintf(instance->traceopts->b, "RIB modification : route : %s/%u, Level%u, Action : %s", 
             route->rt_key.prefix, route->rt_key.mask, 
-            route->level, route_intall_status_str(route->install_state)); TRACE();
+            route->level, route_intall_status_str(route->install_state)); 
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
 
     switch(route->install_state){
 
@@ -1283,7 +1284,8 @@ install_route_in_rib(spf_info_t *spf_info,
 
     sprintf(instance->traceopts->b, "Result for Route : %s/%u, L%d : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
             route->rt_key.prefix, route->rt_key.mask, route->level, 
-            rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
+            rt_added, rt_removed, rt_updated, rt_no_change); 
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     printf("Node %s : Result for Route : %s/%u, L%d : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
             spf_info->spf_level_info[level].node->node_name, route->rt_key.prefix, route->rt_key.mask, route->level, 
             rt_added, rt_removed, rt_updated, rt_no_change);
@@ -1303,7 +1305,8 @@ void
 start_route_installation(spf_info_t *spf_info,
                          LEVEL level){
 
-    sprintf(instance->traceopts->b, "Entered ... Level : %u", level); TRACE();
+    sprintf(instance->traceopts->b, "Entered ... Level : %u", level);
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     singly_ll_node_t *list_node = NULL, 
                      *list_node2 = NULL;
 
@@ -1381,17 +1384,20 @@ start_route_installation(spf_info_t *spf_info,
                 sprintf(instance->traceopts->b, "rt_entry Template for route : %s/%u, rt_entry_template->primary_nh_count = %u(%s), cost = %u", 
                         rt_entry_template->dest.prefix, rt_entry_template->dest.mask, 
                         rt_entry_template->primary_nh_count[nh], 
-                        nh == IPNH ? "IPNH" : "LSPNH", rt_entry_template->cost); TRACE();
+                        nh == IPNH ? "IPNH" : "LSPNH", rt_entry_template->cost); 
+                trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
             } ITERATE_NH_TYPE_END;
             sprintf(instance->traceopts->b, "rt_entry Template for route : %s/%u, rt_entry_template->backup_nh_count = %u",
-                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, rt_entry_template->backup_nh_count); TRACE();
+                    rt_entry_template->dest.prefix, rt_entry_template->dest.mask, rt_entry_template->backup_nh_count); 
+            trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
 
             /*rt_entry_template is now ready to be installed in RIB*/
         }
         
         sprintf(instance->traceopts->b, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
-                route->level, route->spf_metric, route_intall_status_str(route->install_state)); TRACE();
+                route->level, route->spf_metric, route_intall_status_str(route->install_state)); 
+        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
 
         switch(route->install_state){
             
@@ -1440,7 +1446,8 @@ start_route_installation(spf_info_t *spf_info,
     
     delete_stale_routes(spf_info, level);
     sprintf(instance->traceopts->b, "SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
-            level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change); TRACE();
+            level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change); 
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     printf("SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
             level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change);
 }
@@ -1459,7 +1466,8 @@ build_routing_table(spf_info_t *spf_info,
 
     rttable_entry_t *rt_entry = NULL;
     
-    sprintf(instance->traceopts->b, "Entered ... spf_root : %s, Level : %s", spf_root->node_name, get_str_level(level)); TRACE();
+    sprintf(instance->traceopts->b, "Entered ... spf_root : %s, Level : %s", spf_root->node_name, get_str_level(level));
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     
     mark_all_routes_stale(spf_info, level);
 
@@ -1472,7 +1480,8 @@ build_routing_table(spf_info_t *spf_info,
 
         result = (spf_result_t *)list_node->data;
         sprintf(instance->traceopts->b, "Node %s : processing result of %s, at level %s", 
-            spf_root->node_name, result->node->node_name, get_str_level(level)); TRACE();
+            spf_root->node_name, result->node->node_name, get_str_level(level)); 
+        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
 
         /*Iterate over all the prefixes of result->node for level 'level'*/
 
@@ -1484,7 +1493,8 @@ build_routing_table(spf_info_t *spf_info,
 
             L1L2_result = result;                                    /* Record the L1L2 router result*/
             sprintf(instance->traceopts->b, "Node %s : L1L2_result recorded - %s", 
-                            spf_root->node_name, L1L2_result->node->node_name); TRACE(); 
+                            spf_root->node_name, L1L2_result->node->node_name); 
+            trace(instance->traceopts, ROUTE_INSTALLATION_BIT); 
 
             prefix_t default_prefix;
             memset(&default_prefix, 0, sizeof(prefix_t)); 
@@ -1532,7 +1542,8 @@ build_routing_table(spf_info_t *spf_info,
         sprintf(instance->traceopts->b, "Route : %s/%u is Marked as %s at %s", 
                 route->rt_key.prefix, route->rt_key.mask, 
                 route_intall_status_str(route->install_state),
-                get_str_level(level)); TRACE();
+                get_str_level(level)); 
+        trace(instance->traceopts, ROUTE_CALCULATION_BIT); 
     }ITERATE_LIST_END;
 }
 
@@ -1551,7 +1562,8 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
      *  If this is L2 run, then set my spf_info_t->spff_multi_area bit, and schedule
      *  SPF L1 run to ensure L1 routes are uptodate before updating L2 routes
      *-----------------------------------------------------------------------------*/
-    sprintf(instance->traceopts->b, "Entered ... "); TRACE();
+    sprintf(instance->traceopts->b, "Entered ... ");
+    trace(instance->traceopts, ROUTE_CALCULATION_BIT);
        
     if(level == LEVEL2 && spf_info->spf_level_info[LEVEL1].version){
         /*If at least 1 SPF L1 run has been triggered*/

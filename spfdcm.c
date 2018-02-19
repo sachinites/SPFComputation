@@ -37,7 +37,6 @@
 #include "cmdtlv.h"
 #include "spfutil.h"
 #include "spfcomputation.h"
-#include "logging.h"
 #include "spftrace.h"
 #include "bitsop.h"
 #include "spfcmdcodes.h"
@@ -435,7 +434,7 @@ instance_node_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable
                 boolean rc = FALSE;
                 switch(enable_or_disable){
                     case CONFIG_ENABLE:
-                        rc = inset_lsp_as_forward_adjacency(node, lsp_name, metric, tail_end_ip, level);
+                        rc = insert_lsp_as_forward_adjacency(node, lsp_name, metric, tail_end_ip, level);
                         break;
                     case CONFIG_DISABLE:
                         break;
@@ -716,10 +715,6 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, DIJKSTRA_BIT):
                 disable_spf_trace(instance, DIJKSTRA_BIT);
             break;
-        case CMDCODE_DEBUG_TRACEOPTIONS_SPF_POSTPROCESSING:
-            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, SPF_POST_PROCESSING_BIT):
-                disable_spf_trace(instance, SPF_POST_PROCESSING_BIT);
-            break;
         case CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_INSTALLATION:
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, ROUTE_INSTALLATION_BIT):
                 disable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
@@ -736,23 +731,35 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, RLFA_COMPUTATION_BIT):
                 disable_spf_trace(instance, RLFA_COMPUTATION_BIT);
             break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_PREFIXES:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, SPF_PREFIX_BIT):
+                disable_spf_trace(instance, SPF_PREFIX_BIT);
+            break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_ROUTING_TABLE:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, ROUTING_TABLE_BIT):
+                disable_spf_trace(instance, ROUTING_TABLE_BIT);
+            break;
         case CMDCODE_DEBUG_TRACEOPTIONS_ALL:
             switch(enable_or_disable){
                 case CONFIG_ENABLE:
                     enable_spf_trace(instance, DIJKSTRA_BIT);
-                    enable_spf_trace(instance, SPF_POST_PROCESSING_BIT);
+                    enable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     enable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
                     enable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     enable_spf_trace(instance, LFA_COMPUTATION_BIT);
                     enable_spf_trace(instance, RLFA_COMPUTATION_BIT);
+                    enable_spf_trace(instance, SPF_PREFIX_BIT);
+                    enable_spf_trace(instance, ROUTING_TABLE_BIT);
                     break;
                 case CONFIG_DISABLE:
                     disable_spf_trace(instance, DIJKSTRA_BIT);
-                    disable_spf_trace(instance, SPF_POST_PROCESSING_BIT);
+                    disable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     disable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
                     disable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     disable_spf_trace(instance, LFA_COMPUTATION_BIT);
                     disable_spf_trace(instance, RLFA_COMPUTATION_BIT);
+                    disable_spf_trace(instance, SPF_PREFIX_BIT);
+                    disable_spf_trace(instance, ROUTING_TABLE_BIT);
                     break;
                 default:
                     assert(0);
@@ -1138,12 +1145,6 @@ spf_init_dcm(){
                         set_param_cmd_code(&trace_type_dijkastra, CMDCODE_DEBUG_TRACEOPTIONS_DIJKASTRA);
                     }
                     {
-                        static param_t spf_post_processing;
-                        init_param(&spf_post_processing, CMD, "spf-post-processing", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for SPF post processing");
-                        libcli_register_param(&trace, &spf_post_processing);
-                        set_param_cmd_code(&spf_post_processing, CMDCODE_DEBUG_TRACEOPTIONS_SPF_POSTPROCESSING);
-                    }
-                    {
                         static param_t route_installation;
                         init_param(&route_installation, CMD, "route-installation", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for Route Installation");
                         libcli_register_param(&trace, &route_installation);
@@ -1166,6 +1167,18 @@ spf_init_dcm(){
                         init_param(&rlfa, CMD, "rlfa", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for RLFA");
                         libcli_register_param(&trace, &rlfa);
                         set_param_cmd_code(&rlfa, CMDCODE_DEBUG_TRACEOPTIONS_RLFA);
+                    }
+                    {
+                        static param_t prefixes;
+                        init_param(&prefixes, CMD, "prefixes", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for prefixes");
+                        libcli_register_param(&trace, &prefixes);
+                        set_param_cmd_code(&prefixes, CMDCODE_DEBUG_TRACEOPTIONS_PREFIXES);
+                    }
+                    {
+                        static param_t rt;
+                        init_param(&rt, CMD, "routing-table", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for routing table");
+                        libcli_register_param(&trace, &rt);
+                        set_param_cmd_code(&rt, CMDCODE_DEBUG_TRACEOPTIONS_ROUTING_TABLE);
                     }
                 }
             }
