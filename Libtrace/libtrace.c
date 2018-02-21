@@ -32,7 +32,7 @@
 
 #include "libtrace.h"
 
-char fn_line_buff[32];
+char fn_line_buff[FN_LINE_BUFFER_SIZE];
 
 void
 trace_enable(traceoptions *traceopts, tr_boolean enable){
