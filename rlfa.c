@@ -37,6 +37,7 @@
 #include "spfutil.h"
 #include "bitsop.h"
 #include "spftrace.h"
+#include "routes.h"
 
 extern instance_t *instance;
 
@@ -211,11 +212,88 @@ Compute_LOGICAL_Neighbor_SPFs(node_t *spf_root, LEVEL level){
     ITERATE_NODE_LOGICAL_NBRS_END;
 }
 
+/* If there exists atleast one primary nexthop of a route which can relay traffic to atleast
+ * one destination D of a route without traversing protected_link->to.node Or (primary nexthop via
+ * protected_link in case of broadcast link) 
+ * then backup nexthops - LFA/Or RLFA is not required for this route to protect this link.
+ *
+ * Take the example : build_rlfa_topo() , route - 12.1.1.0/30 
+ * primary nexthops - B and C
+ * Destinations of a route - E and D
+ * protected_link - eth0/0 
+ *
+ * Now if link eth0/0 fails, ECMP alternate path via B can still send
+ * traffic to subnet 12.1.1.0/30 at Destination E. Hence, there is no
+ * need to compute backs for this route for eth0/0 in this case.
+ * */
+
+boolean
+p2p_is_ecmp_overrides_backup_nxt_hops(routes_t *route, 
+                      edge_t *protected_link){
+
+    LEVEL level = route->level;
+    nh_type_t nh;
+    singly_ll_node_t *list_node = NULL,
+                     *list_node1 = NULL;
+    internal_nh_t *primary_nh = NULL;
+    prefix_t *prefix = NULL;
+    node_t *D = NULL,
+           *E = protected_link->to.node;
+
+    unsigned int dist_PRNH_to_D = 0,
+                 dist_PRNH_to_E = 0,
+                 dist_E_to_D = 0,
+                 nh_count = 0;
+
+    if(!IS_LEVEL_SET(protected_link->level, route->level))
+        return FALSE;
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+        nh_count += GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]);
+    } ITERATE_NH_TYPE_END;
+
+    if(nh_count < 2)
+        return FALSE;
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+        ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
+            
+            primary_nh = list_node->data;
+            if(primary_nh->oif == &protected_link->from)
+                continue;
+            
+            /*take care of reverse SPF here*/
+            dist_PRNH_to_E = DIST_X_Y(primary_nh->node, E, level);
+
+            ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
+                
+                prefix = list_node1->data;
+                D = prefix->hosting_node;                        
+                /*if dist_PRNH_to_D < dist_PRNH_to_E + dist_E_to_D, then return TRUE*/
+                dist_PRNH_to_D = DIST_X_Y(primary_nh->node, D, level);
+                dist_E_to_D = DIST_X_Y(E, D, level);
+                if(dist_PRNH_to_D < dist_PRNH_to_E + dist_E_to_D)
+                    return TRUE;
+            } ITERATE_LIST_END;
+        } ITERATE_LIST_END;
+    } ITERATE_NH_TYPE_END;
+    return FALSE;
+}
+
+static boolean
+broadcast_is_ecmp_overrides_backup_nxt_hops(routes_t *route, 
+                      edge_t *protected_link){
+
+    LEVEL level = route->level;
+
+    return TRUE;
+}
 
 static boolean
 broadcast_node_protection_critera(node_t *S, 
                                   LEVEL level, edge_t *protected_link, 
                                   node_t *dest, node_t *nbr_node){
+
     /* nbr_node Must be able to send traffic to dest by-passing all nodes directly
      * attached to LAN segment of protected_link*/
     /* This routine assumes all required SPF runs has been run*/
@@ -341,7 +419,8 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
 
             if(!(d_S_to_nbr <  d_S_to_PN + d_PN_to_nbr)){
                 sprintf(instance->traceopts->b, "Node : %s : Nbr %s will not be considered for computing P-space," 
-                        "nbr traverses protected link", S->node_name, nbr_node->node_name); trace(instance->traceopts, RLFA_COMPUTATION_BIT);
+                        "nbr traverses protected link", S->node_name, nbr_node->node_name); 
+                trace(instance->traceopts, RLFA_COMPUTATION_BIT);
                 ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
             }   
 

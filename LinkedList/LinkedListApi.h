@@ -47,7 +47,6 @@ void copy_singly_ll(ll_t *src, ll_t *dst);
 ll_t * union_singly_ll(ll_t *list1, ll_t *list2);
 void singly_ll_delete_data_by_key(ll_t *list, void *key);
 
-/* delete safe loop*/
 #define ITERATE_LIST_BEGIN(list_ptr, node_ptr)                              \
     {                                                                       \
     singly_ll_node_t *_node_ptr = NULL;                                     \
@@ -56,6 +55,35 @@ void singly_ll_delete_data_by_key(ll_t *list, void *key);
         _node_ptr = node_ptr->next; 
 
 #define ITERATE_LIST_END  }} 
+
+/* delete safe loop*/
+#define ITERATE_LIST_BEGIN2(list_ptr, node_ptr, prev)                       \
+    {                                                                       \
+    singly_ll_node_t *_node_ptr = NULL; prev = NULL;                        \
+    node_ptr = GET_HEAD_SINGLY_LL(list_ptr);                                \
+    for(; node_ptr!= NULL; node_ptr = _node_ptr){                           \
+        _node_ptr = node_ptr->next; 
+         
+#define ITERATE_LIST_CONTINUE2(list_ptr, node_ptr, prev)    \
+         {if(node_ptr) prev = node_ptr; \
+         continue;}
+            
+#define ITERATE_LIST_BREAK2(list_ptr, node_ptr, prev)    \
+         break
+
+#define ITERATIVE_LIST_NODE_DELETE2(list_ptr, node_ptr, prev)    \
+        {if(node_ptr && prev == NULL){                           \
+            list_ptr->head = node_ptr->next;                    \
+            }                                                   \
+        else if(node_ptr && prev){                              \
+            prev->next = node_ptr->next;                        \
+        }                                                       \
+        free(node_ptr);                                         \
+        list_ptr->node_count--;                                 \
+        node_ptr = NULL;}
+            
+#define ITERATE_LIST_END2(list_ptr, node_ptr, prev)   \
+             if(node_ptr) prev = node_ptr; }} 
 
 #define LL_LESS_THAN(listptr, data1ptr, data2ptr)      \
     (listptr->order_comparison_fn(data1ptr, data2ptr) == -1)

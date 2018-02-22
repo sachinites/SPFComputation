@@ -50,6 +50,10 @@ void
 install_route_in_rib(spf_info_t *spf_info,
         LEVEL level, routes_t *route);
 
+extern boolean
+p2p_is_ecmp_overrides_backup_nxt_hops(routes_t *route,
+                      edge_t *protected_link);
+
 #if 0
 THREAD_NODE_TO_STRUCT(prefix_t,
         like_prefix_thread,
@@ -616,6 +620,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
             free(list_node->data);
         } ITERATE_LIST_END;
+
         delete_singly_ll(route->like_prefix_list);
         route->ecmp_dest_count = 1;
         route_set_key(route, prefix->prefix, prefix->mask); 
@@ -1457,13 +1462,16 @@ build_routing_table(spf_info_t *spf_info,
                     node_t *spf_root, LEVEL level){
 
     singly_ll_node_t *list_node = NULL,
-                     *prefix_list_node = NULL;
+                     *prefix_list_node = NULL,
+                     *list_node1 = NULL,
+                     *temp = NULL;
 
     routes_t *route = NULL;
     prefix_t *prefix = NULL;
     spf_result_t *result = NULL,
                  *L1L2_result = NULL;
 
+    unsigned int i = 0;
     rttable_entry_t *rt_entry = NULL;
     
     sprintf(instance->traceopts->b, "Entered ... spf_root : %s, Level : %s", spf_root->node_name, get_str_level(level));
@@ -1517,21 +1525,63 @@ build_routing_table(spf_info_t *spf_info,
 
     } ITERATE_LIST_END;
 
-    /*Remove backups which do not protect any primary next hops oif from route's backup list*/
-
-
     /*Iterate over all UPDATED routes and figured out which one needs to be updated
      * in RIB*/
     ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
 
         route = list_node->data;
-        //remove_not_protecting_backups(route);
-        if(route->install_state != RTE_UPDATED)
-            continue;
-
+        
         if(!IS_LEVEL_SET(route->level, level))
             continue;
+#if 1
+        /*Iterate over links being protected on this node, and test if route need to
+         * delete backups which protect this link due to ECMP*/
+        boolean is_ecmp_overrides_backup = FALSE;
+        nh_type_t nh;
+        internal_nh_t *backup = NULL;
 
+        for( i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+            
+            edge_end_t *interface = spf_root->edges[i];
+            if(!interface) break;
+            if(interface->dirn == INCOMING) continue;
+            edge_t *edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(interface);
+
+            if(!IS_LEVEL_SET(edge->level, level)) continue;
+
+            if(!IS_LINK_PROTECTION_ENABLED(edge) &&
+                    !IS_LINK_NODE_PROTECTION_ENABLED(edge)){
+                continue;
+            }
+            is_ecmp_overrides_backup = FALSE;
+            if(is_broadcast_link(edge, level) == FALSE){
+                is_ecmp_overrides_backup = p2p_is_ecmp_overrides_backup_nxt_hops(route, edge);
+                if(is_ecmp_overrides_backup){
+                    /*Flush all backups of the route which protects edge/interface*/
+                    ITERATE_NH_TYPE_BEGIN(nh){
+                        ITERATE_LIST_BEGIN2(route->backup_nh_list[nh], list_node1, temp){
+                            backup = list_node1->data;
+                            if(backup->protected_link != interface){
+                                ITERATE_LIST_CONTINUE2(route->backup_nh_list[nh], list_node1, temp);   
+                            }
+                            sprintf(instance->traceopts->b, "Node : %s : protected link : %s, route %s/%u at %s,"
+                            " ECMP obsolete backup %s(oif=%s)", spf_root->node_name, interface->intf_name, 
+                                route->rt_key.prefix, route->rt_key.mask, 
+                                get_str_level(route->level),
+                                backup->node->node_name,
+                                backup->oif->intf_name); 
+                            trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+                            free(backup);
+                            ITERATIVE_LIST_NODE_DELETE2(route->backup_nh_list[nh], list_node1, temp);
+                        } ITERATE_LIST_END2(route->backup_nh_list[nh], list_node1, temp);
+                    } ITERATE_NH_TYPE_END;
+                }
+            }
+        }
+        
+        if(route->install_state != RTE_UPDATED)
+            continue;
+#endif
         rt_entry = rt_route_lookup(spf_info->rttable, route->rt_key.prefix, route->rt_key.mask);
         assert(rt_entry); /*This entry MUST exist in RIB*/
 

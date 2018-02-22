@@ -62,17 +62,16 @@ ${DSOBJ}:
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Queue/Queue.c -o Queue/Queue.o
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 clean:
-	rm *.o
-	rm rpd
+	rm -f *.o
+	rm -f rpd
 all:
 	(cd CommandParser; make)
 	make
 cleanall:
-	rm Heap/*.o
-	rm Queue/*.o
-	rm logging/*.o
-	rm Libtrace/*.o
-	rm mpls/*.o
+	rm -f Heap/*.o
+	rm -f Queue/*.o
+	rm -f Libtrace/*.o
+	rm -f mpls/*.o
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	make clean

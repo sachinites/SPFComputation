@@ -766,7 +766,8 @@ spf_computation(node_t *spf_root,
     /* Route Building After SPF computation*/
     /*We dont build routing table for reverse spf run*/
     if(spf_type == FULL_RUN){
-        sprintf(instance->traceopts->b, "Route building starts After SPF FORWARD run"); trace(instance->traceopts, DIJKSTRA_BIT);
+        sprintf(instance->traceopts->b, "Route building starts After SPF FORWARD run"); 
+        trace(instance->traceopts, DIJKSTRA_BIT);
         spf_postprocessing(spf_info, spf_root, level);
 #if 0
         /*backup routine must not impact main spf computation*/
@@ -790,8 +791,9 @@ partial_spf_run(node_t *spf_root, LEVEL level){
     sprintf(instance->traceopts->b, "Root : %s, %s", spf_root->node_name, get_str_level(level)); trace(instance->traceopts, DIJKSTRA_BIT);
     
     if(spf_root->spf_info.spf_level_info[level].version == 0){
-        sprintf(instance->traceopts->b, "Root : %s, %s. No full SPF run till now. Runnig ...", spf_root->node_name, get_str_level(level)); trace(instance->traceopts, DIJKSTRA_BIT);
-        
+        sprintf(instance->traceopts->b, "Root : %s, %s. No full SPF run till now. Runnig ...", 
+        spf_root->node_name, get_str_level(level)); 
+        trace(instance->traceopts, DIJKSTRA_BIT);
         spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);      
         return;
     }

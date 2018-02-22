@@ -71,23 +71,29 @@
 #define CMDCODE_SHOW_NODE_TRACEROUTE_PRIMARY                34 /*show instance node <node-name> traceroute <destination prefix>*/
 #define CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP                 35 /*show instance node <node-name> traceroute <destination prefix> backup*/
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_EXPSPACE               36 /*debug show instance node <node-name> interface <slot-no> expspace*/
-#define CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE                38 /*debug show instance node <node-name> interface <slot-no> pqspace*/
+#define CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE                37 /*debug show instance node <node-name> interface <slot-no> pqspace*/
 
-#define CMDCODE_SHOW_SPF_RUN_INIT                           39 /*show spf run level <level-no> [root <node-name>] init*/
-#define CMDCODE_DEBUG_SHOW_IMPACTED_DESTINATIONS            40 /*debug show instance node <node-name> interface <slot-no> impacted destination*/
+#define CMDCODE_SHOW_SPF_RUN_INIT                           38 /*show spf run level <level-no> [root <node-name>] init*/
+#define CMDCODE_DEBUG_SHOW_IMPACTED_DESTINATIONS            39 /*debug show instance node <node-name> interface <slot-no> impacted destination*/
 
-#define CMDCODE_CONFIG_NODE_LINK_DEGRADATION                41 /*config node <node-name> backup-spf-options node-link-degradation*/
-#define CMDCODE_SHOW_BACKUP_SPF_RESULTS                     42 /*show instance node <node-name> backup-spf-results*/
+#define CMDCODE_CONFIG_NODE_LINK_DEGRADATION                40 /*config node <node-name> backup-spf-options node-link-degradation*/
+#define CMDCODE_SHOW_BACKUP_SPF_RESULTS                     41 /*show instance node <node-name> backup-spf-results*/
 
-#define CMDCODE_DEBUG_TRACEOPTIONS_DIJKASTRA                43 /*conf debug set trace dijkastra*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_INSTALLATION       45 /*conf debug set trace route-installation*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_CALCULATION        46 /*conf debug set trace route-calculation*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_LFA                      47 /*conf debug set trace lfa*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_RLFA                     48 /*conf debug set trace rlfa*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_ALL                      49 /*conf debug set trace all*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_PREFIXES                 50 /*conf debug set trace prefixes*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTING_TABLE            51 /*conf debug set trace routing-table*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_DIJKASTRA                42 /*conf debug set trace dijkastra*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_INSTALLATION       43 /*conf debug set trace route-installation*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_CALCULATION        44 /*conf debug set trace route-calculation*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_LFA                      45 /*conf debug set trace lfa*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_RLFA                     46 /*conf debug set trace rlfa*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_ALL                      47 /*conf debug set trace all*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_PREFIXES                 48 /*conf debug set trace prefixes*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_ROUTING_TABLE            49 /*conf debug set trace routing-table*/
 
-#define CMDCODE_DEBUG_LOG_ENABLE_DISABLE                    52 /*debug log enable|disable*/
-#define CMDCODE_DEBUG_LOG_FILE_ENABLE_DISABLE               53 /*debug log enable|disable file*/
+#define CMDCODE_DEBUG_LOG_ENABLE_DISABLE                    50 /*debug log enable|disable*/
+#define CMDCODE_DEBUG_LOG_FILE_ENABLE_DISABLE               51 /*debug log enable|disable file*/
+
+/*Segment routing*/
+
+#define CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE          52 /*config node <node-name> source-packet-routing*/
+#define CMDCODE_CONFIG_NODE_SRGB_RANGE                      53 /*config node <node-name> source-packet-routing global-block X Y*/
+
 #endif /* __SPFCMDCODES__H */

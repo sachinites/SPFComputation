@@ -91,6 +91,7 @@ typedef struct prefix_{
     FLAG prefix_flags;
     node_t *hosting_node;   /*back pointer to hosting node*/
     LEVEL level;
+    unsigned int prefix_sid;
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;

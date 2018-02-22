@@ -81,6 +81,8 @@ typedef struct _node_t{
     internal_nh_t pq_nodes[MAX_LEVEL][MAX_NXT_HOPS];
     unsigned int backup_spf_options;
 
+    /*segment routing related members*/
+    unsigned int nodal_sid;
 } node_t;
 
 struct edge_end_{
@@ -90,8 +92,7 @@ struct edge_end_{
     prefix_t * prefix[MAX_LEVEL];
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
     FLAG edge_config_flags;
-    ll_t *lfas[MAX_LEVEL];  /*Holds list of LFAs protecting this link*/
-    ll_t *rlfas[MAX_LEVEL]; /*Holds list of RLFAs protecting this link*/
+    unsigned int adj_sid;/*Adjacency sid*/
 };
 
 typedef enum {
