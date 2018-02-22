@@ -65,16 +65,16 @@ void singly_ll_delete_data_by_key(ll_t *list, void *key);
         _node_ptr = node_ptr->next; 
          
 #define ITERATE_LIST_CONTINUE2(list_ptr, node_ptr, prev)    \
-         {if(node_ptr) prev = node_ptr; \
+         {if(node_ptr) prev = node_ptr;                     \
          continue;}
             
-#define ITERATE_LIST_BREAK2(list_ptr, node_ptr, prev)    \
+#define ITERATE_LIST_BREAK2(list_ptr, node_ptr, prev)       \
          break
 
-#define ITERATIVE_LIST_NODE_DELETE2(list_ptr, node_ptr, prev)    \
-        {if(node_ptr && prev == NULL){                           \
+#define ITERATIVE_LIST_NODE_DELETE2(list_ptr, node_ptr, prev)   \
+        {if(node_ptr && prev == NULL){                          \
             list_ptr->head = node_ptr->next;                    \
-            }                                                   \
+        }                                                       \
         else if(node_ptr && prev){                              \
             prev->next = node_ptr->next;                        \
         }                                                       \

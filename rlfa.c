@@ -737,12 +737,14 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                             rlfa->is_eligible = TRUE; /*Not known yet*/
                         }
                         sprintf(instance->traceopts->b, "Node : %s : P_node = %s provide link protection to S = %s, Nbr = %s(oif=%s)",
-                                S->node_name, P_node->node_name, S->node_name, nbr_node->node_name, edge1->from.intf_name); trace(instance->traceopts, RLFA_COMPUTATION_BIT);
+                                S->node_name, P_node->node_name, S->node_name, nbr_node->node_name, edge1->from.intf_name); 
+                        trace(instance->traceopts, RLFA_COMPUTATION_BIT);
                         ITERATE_NODE_PHYSICAL_NBRS_BREAK(S, nbr_node, pn_node, level);
                     }
                     sprintf(instance->traceopts->b, "Node : %s : candidate P_node = %s do not provide link protection" 
                             " rejected to qualify as p-node for S = %s, Nbr = %s(oif=%s)",
-                            S->node_name, P_node->node_name, S->node_name, nbr_node->node_name, edge1->from.intf_name); trace(instance->traceopts, RLFA_COMPUTATION_BIT);
+                            S->node_name, P_node->node_name, S->node_name, nbr_node->node_name, edge1->from.intf_name); 
+                    trace(instance->traceopts, RLFA_COMPUTATION_BIT);
                 }
             }
         } ITERATE_NODE_PHYSICAL_NBRS_END(S, nbr_node, pn_node, level);
@@ -848,7 +850,8 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
             }
 
             sprintf(instance->traceopts->b, "Node : %s : Node protected p-node %s failed to qualify as node protection Q node for Dest %s",
-                S->node_name, p_node->rlfa->node_name, D_res->node->node_name); trace(instance->traceopts, RLFA_COMPUTATION_BIT);
+                S->node_name, p_node->rlfa->node_name, D_res->node->node_name); 
+            trace(instance->traceopts, RLFA_COMPUTATION_BIT);
             /*p_node fails to provide node protection, demote the p_node to LINK_PROTECTION
              * if it provides atleast link protection to Destination D*/
             if(IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED == FALSE){

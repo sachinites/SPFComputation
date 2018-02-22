@@ -109,19 +109,22 @@ merge_route_backup_nexthops(routes_t *route,
     unsigned int i = 0;
     internal_nh_t *int_nxt_hop = NULL,
                   *backup = NULL;
-    singly_ll_node_t *list_node = NULL;
+    singly_ll_node_t *list_node = NULL,
+                     *temp = NULL;
 
-    /*clean LFAs*/
+    /*clean link protecting LFAs/RLFAs. If route has ECMP, we dont need any
+     * link protecting LFAs/RLFAs*/
     if(route->ecmp_dest_count == 2){
-            ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+            ITERATE_LIST_BEGIN2(route->backup_nh_list[nh], list_node, temp){
                 backup = list_node->data;
                 if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
                         backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
+                        backup->lfa_type == LINK_PROTECTION_RLFA                     ||
+                        backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
                         backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
-                    singly_ll_remove_node(route->backup_nh_list[nh], list_node);
                     sprintf(instance->traceopts->b, "\t ECMP : LFA backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", 
                             backup->oif->intf_name,
                             next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
@@ -130,9 +133,9 @@ merge_route_backup_nexthops(routes_t *route,
                             backup->protected_link->intf_name); 
                     trace(instance->traceopts, ROUTE_CALCULATION_BIT);
                     free(backup);
-                    free(list_node);
+                    ITERATIVE_LIST_NODE_DELETE2(route->backup_nh_list[nh], list_node, temp);
                 }
-            } ITERATE_LIST_END;
+            } ITERATE_LIST_END2(route->backup_nh_list[nh], list_node, temp);
     }
 
     for( i = 0; i < MAX_NXT_HOPS ; i++){
@@ -144,6 +147,8 @@ merge_route_backup_nexthops(routes_t *route,
         if(route->ecmp_dest_count >= 2                                    &&
             (backup->lfa_type == LINK_PROTECTION_LFA                      ||
              backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
+             backup->lfa_type == LINK_PROTECTION_RLFA                     ||
+             backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
              backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
              backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
              backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
@@ -816,7 +821,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
     if(!route){
         sprintf(instance->traceopts->b, "prefix : %s/%u is a New route (malloc'd) in %s, hosting_node %s", 
-                prefix->prefix, prefix->mask, get_str_level(level), prefix->hosting_node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                prefix->prefix, prefix->mask, get_str_level(level), prefix->hosting_node->node_name); 
+        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
         route = route_malloc();
         route_set_key(route, prefix->prefix, prefix->mask); 
@@ -957,16 +963,19 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 if(IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
                     /*Decide pref based on external metric*/
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on External metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);; 
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); 
+                    trace(instance->traceopts, ROUTE_CALCULATION_BIT);; 
 
                     if(prefix->metric < route->ext_metric){
                         sprintf(instance->traceopts->b, "Node : %s : prefix external metric ( = %u) is better than routes external metric( = %u), will overwrite",
-                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); 
+                        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(prefix->metric > route->ext_metric){
                         sprintf(instance->traceopts->b, "Node : %s : prefix external metric ( = %u) is no better than routes external metric( = %u), will not overwrite",
-                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); 
+                        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     }
                     else{
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
@@ -989,17 +998,20 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 }else{
                     /*Decide pref based on internal metric*/
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on Internal metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); 
+                    trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     if(result->spf_metric + prefix->metric < route->spf_metric){
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
                                 route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
-                                result->spf_metric + prefix->metric, route->spf_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                result->spf_metric + prefix->metric, route->spf_metric); 
+                        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(result->spf_metric + prefix->metric == route->spf_metric){
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                route->rt_key.prefix, route->rt_key.mask); 
+                        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
                         route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
@@ -1089,16 +1101,19 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 if(IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
                     /*Decide pref based on external metric*/
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on External metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);; 
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); 
+                    trace(instance->traceopts, ROUTE_CALCULATION_BIT);; 
 
                     if(prefix->metric < route->ext_metric){
                         sprintf(instance->traceopts->b, "Node : %s : prefix external metric ( = %u) is better than routes external metric( = %u), will overwrite",
-                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); 
+                        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(prefix->metric > route->ext_metric){
                         sprintf(instance->traceopts->b, "Node : %s : prefix external metric ( = %u) is no better than routes external metric( = %u), will not overwrite",
-                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                GET_SPF_INFO_NODE(spf_info, level)->node_name, prefix->metric, route->ext_metric); 
+                        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     }
                     else{
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
@@ -1121,7 +1136,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 }else{
                     /*Decide pref based on internal metric*/
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on Internal metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); 
+                    trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     if(result->spf_metric + prefix->metric < route->spf_metric){
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
@@ -1166,10 +1182,12 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
             sprintf(instance->traceopts->b, "Node : %s : route : %s/%u, old spf_metric = %u, new spf metric = %u, marked RTE_UPDATED for level%u",  
                     GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
-                    route->spf_metric, result->spf_metric + prefix->metric, route->level); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                    route->spf_metric, result->spf_metric + prefix->metric, route->level); 
+            trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
             sprintf(instance->traceopts->b, "Node : %s : route : %s/%u %s is mandatorily over-written because of version mismatch",
-                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(level)); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(level)); 
+            trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
             overwrite_route(spf_info, route, prefix, result, level);
             route->version = spf_info->spf_level_info[level].version;
@@ -1565,11 +1583,12 @@ build_routing_table(spf_info_t *spf_info,
                                 ITERATE_LIST_CONTINUE2(route->backup_nh_list[nh], list_node1, temp);   
                             }
                             sprintf(instance->traceopts->b, "Node : %s : protected link : %s, route %s/%u at %s,"
-                            " ECMP obsolete backup %s(oif=%s)", spf_root->node_name, interface->intf_name, 
+                            " ECMP obsolete backup %s(oif=%s) lfa_type = %s", spf_root->node_name, interface->intf_name, 
                                 route->rt_key.prefix, route->rt_key.mask, 
                                 get_str_level(route->level),
-                                backup->node->node_name,
-                                backup->oif->intf_name); 
+                                backup->node ? backup->node->node_name : backup->rlfa->node_name,
+                                backup->oif->intf_name,
+                                get_str_lfa_type(backup->lfa_type)); 
                             trace(instance->traceopts, ROUTE_CALCULATION_BIT);
                             free(backup);
                             ITERATIVE_LIST_NODE_DELETE2(route->backup_nh_list[nh], list_node1, temp);
