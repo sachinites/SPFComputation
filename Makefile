@@ -1,12 +1,12 @@
 CC=gcc
 #GCOV=-fprofile-arcs -ftest-coverage
 CFLAGS=-g -Wall -O0 ${GCOV}
-INCLUDES=-I . -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./mpls -I ./BitOp -I ./Libtrace
+INCLUDES=-I . -I ./Stack -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./mpls -I ./BitOp -I ./Libtrace
 USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
-DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o ${DSOBJ}
+DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o igp_sr_ext.o sr.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -15,6 +15,12 @@ ${TARGET_NAME}:testapp.o ${OBJ}
 testapp.o:testapp.c
 	@echo "Building testapp.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} testapp.c -o testapp.o
+sr.o:sr.c
+	@echo "Building sr.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} sr.c -o sr.o
+igp_sr_ext.o:igp_sr_ext.c
+	@echo "Building igp_sr_ext.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} igp_sr_ext.c -o igp_sr_ext.o
 instance.o:instance.c
 	@echo "Building instance.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} instance.c -o instance.o
@@ -59,8 +65,12 @@ libtrace.o:./Libtrace/libtrace.c
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./Libtrace/libtrace.c -o ./Libtrace/libtrace.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
+	@echo "Building Queue/Queue.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Queue/Queue.c -o Queue/Queue.o
+	@echo "Building Heap/heap.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
+	@echo "Building Stack/stack.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} Stack/stack.c -o Stack/stack.o
 clean:
 	rm -f *.o
 	rm -f rpd
@@ -72,6 +82,7 @@ cleanall:
 	rm -f Queue/*.o
 	rm -f Libtrace/*.o
 	rm -f mpls/*.o
+	rm -f Stack/*.o
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	make clean

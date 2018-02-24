@@ -745,7 +745,6 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     enable_spf_trace(instance, DIJKSTRA_BIT);
                     enable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     enable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
-                    enable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     enable_spf_trace(instance, LFA_COMPUTATION_BIT);
                     enable_spf_trace(instance, RLFA_COMPUTATION_BIT);
                     enable_spf_trace(instance, SPF_PREFIX_BIT);
@@ -753,7 +752,6 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     break;
                 case CONFIG_DISABLE:
                     disable_spf_trace(instance, DIJKSTRA_BIT);
-                    disable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     disable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
                     disable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     disable_spf_trace(instance, LFA_COMPUTATION_BIT);
@@ -1211,6 +1209,15 @@ spf_init_dcm(){
             }
         }
 
+        /*SPRING config Commands*/
+        /*config node <node-name> source-packet-routing*/
+        {
+            static param_t spring;
+            init_param(&spring, CMD, "source-packet-routing", instance_node_spring_config_handler, 0, INVALID, 0, "Enable Spring");
+            libcli_register_param(&config_node_node_name, &spring);
+            set_param_cmd_code(&spring, CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE);
+        }
+
         static param_t config_node_node_name_slot;
         init_param(&config_node_node_name_slot, CMD, "interface", 0, 0, INVALID, 0, "interface");
         libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
@@ -1637,12 +1644,16 @@ dump_node_info(node_t *node){
         printf("\tnode-link-degradation : %s\n", IS_BIT_SET(node->backup_spf_options, SPF_BACKUP_OPTIONS_NODE_LINK_DEG) ? \
             "ENABLED" : "DISABLED");
     }
-    
+    printf("SPRING : %s\n", node->spring_enabled ? "ENABLED" : "DISABLED");    
+
     printf("Slots :\n");
     for(; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = node->edges[i];
         if(!edge_end)
             break;
+
+        if(edge_end->dirn == INCOMING)
+            continue;
 
         edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
         printf("    slot%u : %s, L1 prefix : %s/%d, L2 prefix : %s/%d, DIRN: %s, backup protection type : %s", 

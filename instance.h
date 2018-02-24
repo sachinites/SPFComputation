@@ -82,6 +82,7 @@ typedef struct _node_t{
     unsigned int backup_spf_options;
 
     /*segment routing related members*/
+    boolean spring_enabled;
     unsigned int nodal_sid;
 } node_t;
 
@@ -92,7 +93,9 @@ struct edge_end_{
     prefix_t * prefix[MAX_LEVEL];
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
     FLAG edge_config_flags;
-    unsigned int adj_sid;/*Adjacency sid*/
+    /*SR support*/
+    unsigned int adj_sid_count; /*A node MAY allocate multiple Adj-SIDs for the same adjacency. draft-ietf-spring-segment-routing-13 pg 15*/
+    ajd_sid_t adj_sid[0];/*Also, in case of LAN segment, an interface can have multiple adjacecies bcoz of multile LSN nbrs. Section 3.4.3 draft-ietf-spring-segment-routing-13 pg 16 is enhanced project scenario*/
 };
 
 typedef enum {

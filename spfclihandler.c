@@ -693,3 +693,38 @@ display_logging_status(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
     spf_display_trace_options();
     return 0;
 }
+
+int
+instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    node_t *node = NULL;
+    char *node_name = NULL;
+    tlv_struct_t *tlv = NULL;
+    int cmd_code = -1;
+
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+    } TLV_LOOP_END;
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+    cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+
+    switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE:
+                node->spring_enabled = TRUE;
+                break;
+            case CONFIG_DISABLE:
+                node->spring_enabled = FALSE;
+                break;
+            default:
+                ;
+        }
+        break;
+        default:
+        ;
+    }
+    return 0;
+}

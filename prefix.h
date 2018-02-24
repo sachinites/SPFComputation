@@ -35,6 +35,7 @@
 
 #include "instanceconst.h"
 #include "LinkedListApi.h"
+#include "igp_sr_ext.h"
 
 #define DEFAULT_LOCAL_PREFIX_METRIC         0
 #define DEFAULT_PHYSICAL_INTF_PFX_METRIC    LINK_DEFAULT_METRIC
@@ -91,7 +92,8 @@ typedef struct prefix_{
     FLAG prefix_flags;
     node_t *hosting_node;   /*back pointer to hosting node*/
     LEVEL level;
-    unsigned int prefix_sid;
+    /*SR*/
+    prefix_sid_t prefix_sid;
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;
