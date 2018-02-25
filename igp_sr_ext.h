@@ -36,48 +36,223 @@
 #include "sr.h"
 #include "instanceconst.h"
 
-typedef enum {
+#define SHORTEST_PATH_FIRST  0 
+#define STRICT_SHORTEST_PATH 1
 
-    SHORTEST_PATH,
-    STRICT_SHORTEST_PATH
-} sr_algo_t;
+/*Segment ID SUB-TLV structure
+ * contains a SID or a MPLS Label*/
+typedef struct _segment_id_tlv_t{
+    BYTE type;      /*constant = 1*/
+    BYTE length;    /*if 3, then 20 rightmost bit represents label, if 4 then index into srgb*/
+    unsigned int sid;
+} segment_id_tlv_t; 
+
+/* SR Capability TLV FLAGS*/
+
+/*If set, then the router is capable of
+processing SR MPLS encapsulated IPv4 packets on all interfaces*/
+#define SR_CAPABILITY_I_FLAG    7
+
+/* If set, then the router is capable of
+ * processing SR MPLS encapsulated IPv6 packets on all interfaces.
+ * */
+#define SR_CAPABILITY_V_FLAG    6
+
+
+/*Used to advertise the srgb block*/
+typedef struct _sr_capability_tlv{
+
+   BYTE type;      /*constant = 2 for SRGB. 22 for SRLB*/ 
+   BYTE length;
+   BYTE flags;      /*Not defined for SRLB*/
+   /*The below two members could be repeated multiple times
+    * We can iterate through them using length*/
+   unsigned int range;  /*only last three bytes, must > 0*/   
+   segment_id_tlv_t first_sid; /*SID/Label sub-TLV contains the first value of the SRGB while the
+   range contains the number of SRGB elements*/
+} sr_capability_tlv_t;
+
+unsigned int
+get_available_srgb_index(sr_capability_tlv_t *srgb);
+
+void
+init_srgb_default_range(sr_capability_tlv_t *srgb);
+
+void
+mark_srgb_index_available(unsigned int index, 
+                          sr_capability_tlv_t *srgb);
+
+/*SR algorithm TLV
+ * allows the router to advertise the algorithms
+ * that the router is currently using*/
+typedef struct _sr_algorithm{
+   BYTE type;
+   BYTE length;
+   BYTE algos[0]; /*list of algos supported*/ 
+} sr_algorithm_tlv_t;
+
+/*Router capability TLV*/
+typedef struct _router_cap_tlv{
+    BYTE type;
+    BYTE length;
+    // ...
+    sr_capability_tlv_t srgb;
+    sr_algorithm_tlv_t sr_algo;
+    sr_capability_tlv_t srlb;
+} router_cap_tlv_t;
+
+/*PREFIX SID flags*/
+/*
+   If set, then the prefix to
+   which this Prefix-SID is attached, has been propagated by the
+   router either from another level (i.e., from level-1 to level-2
+   or the opposite) or from redistribution (e.g.: from another
+   protocol). Note that Router MUST NOT be a original 
+   hosting node of the prefix. The R-bit MUST be set only for prefixes 
+   that are not local to the router and advertised by the router 
+   because of propagation and/or leaking.
+*/
+#define RE_ADVERTISEMENT_R_FLAG   7
+
+/*
+ * Set if the attached prefix is a local prefix of the router AND
+ *        its mask length is /32 or /128.
+ * Error handling : If remote router recieved the prefix TLV with
+ * N FLAG set but mask len is not /32(/128), then routr MUST ignore
+ * N flag
+ * */
+#define NODE_SID_N_FLAG           6
+
+/* If set, then the penultimate hop MUST NOT
+ * pop the Prefix-SID before delivering the packet to the node
+ * that advertised the Prefix-SID.
+ * The IGP signaling extension for IGP-Prefix segment includes a flag
+ * to indicate whether directly connected neighbors of the node on
+ * which the prefix is attached should perform the NEXT operation or
+ * the CONTINUE operation when processing the SID. This behavior is
+ * equivalent to Penultimate Hop Popping (NEXT) or Ultimate Hop
+ * Popping (CONTINUE) in MPLS.
+ * pg 10 - Segment Routing Architecture-2
+ * When a non-local router leak the prefix(in any dirn), Router MUST
+ * set P flag*/
+#define NO_PHP_P_FLAG             5
+
+/* This flag is processed only when P flag is set. If E flag is set, 
+ * any upstream neighbor of
+ * the Prefix-SID originator MUST replace the Prefix-SID with a
+ * Prefix-SID having an Explicit-NULL value (0 for IPv4 and 2 for
+ * IPv6) before forwarding the packet.
+ * If E flag is not set, then any upstream neighbor of the
+ * Prefix-SID originator MUST keep the Prefix-SID on top of the
+ * stack.
+ * If the E-flag is set then any upstream neighbor of the Prefix-
+ * SID originator MUST replace the PrefixSID with a Prefix-SID
+ * having an Explicit-NULL value. This is useful, e.g., when the
+ * originator of the Prefix-SID is the final destination for the
+ * related prefix and the originator wishes to receive the packet
+ * with the original EXP bits.
+ * This flag is unset when non local router leaks the prefix (in any dirn)
+ * If the P-flag is unset the received E-flag is ignored.
+ * */
+#define EXPLICIT_NULL_E_FLAG      4
+
+/* If set, then the Prefix-SID carries a
+ * value (instead of an index). By default the flag is UNSET.
+ * */
+#define VALUE_V_FLAG              3
+
+/* If set, then the value/index carried by
+ * the Prefix-SID has local significance. By default the flag is
+ * UNSET.
+ * */
+#define LOCAL_SIGNIFICANCE_L_FLAG 2
 
 /*prefix SID */
 typedef struct _prefix_sid_t{
 
-    unsigned int sid;
-    sr_algo_t algo_id;
-    unsigned int prefix;
-    char mask;
-    /* the IGP signaling extension for IGP-Prefix segment includes a flag
+    BYTE type;  /*constant = 3*/
+    BYTE length;
+    BYTE flags; /*0th bit = not used, 1st bit = unused, 2 bit = L, 3rd bit = V, 4th bit = E, 5th bit = P, 6th bit = N; 7th bit = R*/
+    BYTE algorithm; /*0 value - Shortest Path First, 1 value - strict Shortest Path First*/
+    segment_id_tlv_t sid; /*Index into srgb block. V and L bit are not set in this case Or
+                        3 byte value whose 20 right most bits are used for encoding label value. V and L bits are set in this case.
+                        This field can be eithther the SID value Or index into SRGB or absolute MPLS label value*/
+    /* The IGP signaling extension for IGP-Prefix segment includes a flag
      * to indicate whether directly connected neighbors of the node on
      * which the prefix is attached should perform the NEXT operation or
      * the CONTINUE operation when processing the SID. This behavior is
      * equivalent to Penultimate Hop Popping (NEXT) or Ultimate Hop
      * Popping (CONTINUE) in MPLS.
      * pg 10 - Segment Routing Architecture-2*/
-    HOP_POPPING hopping_flag;
 } prefix_sid_t;
 
 /*Adjacecncy SID*/
 
-/*If this bit set, this Adj is eligible for protection using IPFRR or MPLS-FRR*/
-#define ADJ_SID_FLAG_ELIGIBLE_FOR_PROTECTION    0
 /*If this bit set, this Adj has global scope, else local scope*/
 #define ADJ_SID_FLAG_SCOPE  1
 
-/*All these members are advertised by IGP SR TLVs*/
-typedef struct _adj_sid_t{
+/*If unset, Adj is IPV4, else IPV6*/
+#define ADJ_SID_ADDRESS_FAMILY_F_FLAG   7
 
-   unsigned int sid;
-   FLAG adj_sid_flags;
+/*If set, the Adj-SID is eligible for
+ * protection*/
+#define ADJ_SID_BACKUP_B_FLAG   6
+
+/*If set, then the Adj-SID carries a value.
+ * By default the flag is SET.*/
+#define ADJ_SID_BACKUP_VALUE_V_FLAG 5
+
+/*If set, then the value/index carried by
+the Adj-SID has local significance. By default the flag is
+SET.*/
+#define ADJ_SID_LOCAL_SIGNIFICANCE_L_FLAG   4
+
+/*When set, the S-Flag indicates that the
+Adj-SID refers to a set of adjacencies (and therefore MAY be
+assigned to other adjacencies as well).*/
+#define ADJ_SID_SET_S_FLAG  3
+
+/* When set, the P-Flag indicates that
+ * the Adj-SID is persistently allocated, i.e., the Adj-SID value
+ * remains consistent across router restart and/or interface flap
+ * */
+#define ADJ_SID_PERSISTENT_P_FLAG   2
+
+
+/*All these members are advertised by IGP SR TLVs*/
+typedef struct _p2p_adj_sid_t{
+
+    BYTE type;      /*Constant = 31*/
+    BYTE length;
+    BYTE flags;
+    BYTE weight;    /*Used for parallel Adjacencies, section 3.4.1,
+                      draft-ietf-spring-segment-routing-13 pg 15*/
+    /*If local label value is specified (L and V flag sets), then
+     * this field contains label value encoded as last 20 bits.
+     * if index into srgb is specified, then this field contains
+     * is a 4octet value indicating the offset in the SID/Label space
+     * advertised bu this router. In this case L and V flag are unset.
+     * */
+    segment_id_tlv_t sid;
    /*draft-ietf-spring-segment-routing-13 pg 15*/
-   unsigned int weight; /*Used for parallel Adjacencies, section 3.4.1*/
-} ajd_sid_t;
+} p2p_ajd_sid_tlv_t;
+
+
+/*LAN ADJ SID*/
+typedef struct _lan_adj_sid_t{
+
+    BYTE type;      /*Constant = 32*/
+    BYTE length;
+    BYTE flags;
+    BYTE weight;
+    BYTE system_id[6];  /*RFC compliant*/
+    //node_t *nbr_node; /*Our implementation compliant*/
+    segment_id_tlv_t sid;
+} lan_adg_sid_tlv_t;
 
 
 boolean
-is_pfx_sid_lies_within_srgb(prefix_sid_t *pfx_sid, srgb_t *srgb);
+is_pfx_sid_lies_within_srgb(prefix_sid_t *pfx_sid, sr_capability_tlv_t *srgb);
 
 typedef struct _node_t node_t;
 typedef struct prefix_ prefix_t;
@@ -140,7 +315,7 @@ void
 allocate_local_adj_sid(node_t *node, edge_end_t *adjacency);
 
 void
-allocate_global_adj_sid(node_t *node, edge_end_t *adjacency, srgb_t *srgb);
+allocate_global_adj_sid(node_t *node, edge_end_t *adjacency, sr_capability_tlv_t *srgb);
 
 /*
  *When a node binds an Adj-SID to a local data-link L, the node MUST
@@ -154,5 +329,5 @@ void
 sr_install_local_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency);
 
 void
-sr_install_global_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency, srgb_t *srgb);
+sr_install_global_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency, sr_capability_tlv_t *srgb);
 #endif /* __SR__ */ 

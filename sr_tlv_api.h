@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  sr.h
+ *       Filename:  sr_tlv_api.h
  *
- *    Description: defines the common Segment routing APIs and constants 
+ *    Description: Defines the APIs to process SR related TLVs 
  *
  *        Version:  1.0
- *        Created:  Saturday 24 February 2018 11:52:09  IST
+ *        Created:  Monday 26 February 2018 01:48:38  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,57 +30,4 @@
  * =====================================================================================
  */
 
-#ifndef __SR__
-#define __SR__
 
-#include "Stack/stack.h"
-
-#define SRGB_DEF_LOWER_BOUND    16000
-#define SRGB_DEF_UPPER_BOUND    23999
-#define SRGB_MAX_SIZE           65536
-
-typedef unsigned int mpls_label;
-
-typedef enum {
-    CONTINUE,
-    NEXT,
-    POP
-} SR_SEGMENT_OP;
-
-typedef enum{
-    PENULTIMATE_HOP_POPPING,
-    ULTIMATE_HOP_POPPING,
-    HOP_POPPING_NONE
-} HOP_POPPING;
-
-typedef enum{
-
-    NODAL_SEGMENT,
-    ADJ_SEGMENT_LOCAL,
-    ADJ_SEGMENT_GLOBAL,
-    PREFIX_SEGMENT = NODAL_SEGMENT,
-    SEGMENT_TYPE_MAX,
-    UNKNOWN_SEGMENT = SEGMENT_TYPE_MAX
-} SEGMENT_TYPE;
-
-typedef struct _prefix_sid_t prefix_sid_t;
-typedef struct _adj_sid_t ajd_sid_t;
-
-typedef struct _segment_t{
-    
-    SEGMENT_TYPE seg_type;
-    union{
-        prefix_sid_t *psid;
-        ajd_sid_t *adj_sid;
-    } seg;
-} segment_t;
-
-typedef struct _sr_policy_stack{
-    stack_t *stack;
-} sr_policy_stack_t;
-
-/*SR policy stack operations*/
-void
-process_active_segment(sr_policy_stack_t *sr_stack);
-
-#endif /* __SR__ */

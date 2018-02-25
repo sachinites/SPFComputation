@@ -6,7 +6,7 @@ USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o igp_sr_ext.o sr.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o igp_sr_ext.o sr.o sr_tlv_api.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -18,6 +18,9 @@ testapp.o:testapp.c
 sr.o:sr.c
 	@echo "Building sr.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} sr.c -o sr.o
+sr_tlv_api.o:sr_tlv_api.c
+	@echo "Building sr_tlv_api.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} sr_tlv_api.c -o sr_tlv_api.o
 igp_sr_ext.o:igp_sr_ext.c
 	@echo "Building igp_sr_ext.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} igp_sr_ext.c -o igp_sr_ext.o
