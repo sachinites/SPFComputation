@@ -245,7 +245,7 @@ dettach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
         prefix->ref_count--;
         singly_ll_delete_node(GET_NODE_PREFIX_LIST(node, level), prefix_list_node);
         if(prefix->ref_count == 0){
-            free(prefix);
+            free_prefix(prefix);
             prefix = NULL;
         }
     }
@@ -440,7 +440,7 @@ attach_prefix_on_node(node_t *node,
     if(add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level), _prefix, 0))
         return _prefix;
 
-    free(_prefix);
+    free_prefix(_prefix);
     _prefix = NULL;
     return NULL;
 }
@@ -467,7 +467,7 @@ deattach_prefix_on_node(node_t *node,
         node->node_name, prefix, mask, _prefix->metric); 
     trace(instance->traceopts, SPF_PREFIX_BIT);
     singly_ll_remove_node_by_dataptr(GET_NODE_PREFIX_LIST(node, level), _prefix);
-    free(_prefix);
+    free_prefix(_prefix);
     _prefix = NULL;
 }
 

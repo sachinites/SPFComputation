@@ -41,11 +41,12 @@
 
 /*Segment ID SUB-TLV structure
  * contains a SID or a MPLS Label*/
-typedef struct _segment_id_tlv_t{
+typedef struct _segment_id_subtlv_t{
     BYTE type;      /*constant = 1*/
     BYTE length;    /*if 3, then 20 rightmost bit represents label, if 4 then index into srgb*/
-    unsigned int sid;
-} segment_id_tlv_t; 
+    //char *sid;    /*RFC compliant*/
+    unsigned int sid; /*our implementation compliant*/
+} segment_id_subtlv_t; 
 
 /* SR Capability TLV FLAGS*/
 
@@ -68,19 +69,22 @@ typedef struct _sr_capability_tlv{
    /*The below two members could be repeated multiple times
     * We can iterate through them using length*/
    unsigned int range;  /*only last three bytes, must > 0*/   
-   segment_id_tlv_t first_sid; /*SID/Label sub-TLV contains the first value of the SRGB while the
+   segment_id_subtlv_t first_sid; /*SID/Label sub-TLV contains the first value of the SRGB while the
    range contains the number of SRGB elements*/
-} sr_capability_tlv_t;
+} sr_capability_subtlv_t;
+
+typedef struct sr_capability_subtlv_t srgb_t;
+typedef struct sr_capability_subtlv_t srlb_t;
 
 unsigned int
-get_available_srgb_index(sr_capability_tlv_t *srgb);
+get_available_srgb_index(srgb_t *srgb);
 
 void
-init_srgb_default_range(sr_capability_tlv_t *srgb);
+init_srgb_default_range(srgb_t *srgb);
 
 void
 mark_srgb_index_available(unsigned int index, 
-                          sr_capability_tlv_t *srgb);
+                          srgb_t *srgb);
 
 /*SR algorithm TLV
  * allows the router to advertise the algorithms
@@ -89,17 +93,17 @@ typedef struct _sr_algorithm{
    BYTE type;
    BYTE length;
    BYTE algos[0]; /*list of algos supported*/ 
-} sr_algorithm_tlv_t;
+} sr_algorithm_subtlv_t;
 
 /*Router capability TLV*/
 typedef struct _router_cap_tlv{
     BYTE type;
     BYTE length;
     // ...
-    sr_capability_tlv_t srgb;
-    sr_algorithm_tlv_t sr_algo;
-    sr_capability_tlv_t srlb;
-} router_cap_tlv_t;
+    srgb_t *srgb;
+    sr_algorithm_subtlv_t sr_algo;
+    srlb_t *srlb;
+} router_cap_subtlv_t;
 
 /*PREFIX SID flags*/
 /*
@@ -167,14 +171,16 @@ typedef struct _router_cap_tlv{
  * */
 #define LOCAL_SIGNIFICANCE_L_FLAG 2
 
+typedef struct _sr_mapping_entry_t sr_mapping_entry_t;
+
 /*prefix SID */
-typedef struct _prefix_sid_t{
+typedef struct _prefix_sid_subtlv_t{
 
     BYTE type;  /*constant = 3*/
     BYTE length;
     BYTE flags; /*0th bit = not used, 1st bit = unused, 2 bit = L, 3rd bit = V, 4th bit = E, 5th bit = P, 6th bit = N; 7th bit = R*/
     BYTE algorithm; /*0 value - Shortest Path First, 1 value - strict Shortest Path First*/
-    segment_id_tlv_t sid; /*Index into srgb block. V and L bit are not set in this case Or
+    segment_id_subtlv_t sid; /*Index into srgb block. V and L bit are not set in this case Or
                         3 byte value whose 20 right most bits are used for encoding label value. V and L bits are set in this case.
                         This field can be eithther the SID value Or index into SRGB or absolute MPLS label value*/
     /* The IGP signaling extension for IGP-Prefix segment includes a flag
@@ -184,7 +190,12 @@ typedef struct _prefix_sid_t{
      * equivalent to Penultimate Hop Popping (NEXT) or Ultimate Hop
      * Popping (CONTINUE) in MPLS.
      * pg 10 - Segment Routing Architecture-2*/
-} prefix_sid_t;
+
+     /*conflict resolution : From prefix_sid_subtlv_t , recieving router computes the 
+     * sr_mapping_entry_t data structure for all prefixes advertised 
+     * with SID. It is not a part of subtlv.*/
+    sr_mapping_entry_t *mapping_entry;
+} prefix_sid_subtlv_t;
 
 /*Adjacecncy SID*/
 
@@ -220,7 +231,7 @@ assigned to other adjacencies as well).*/
 
 
 /*All these members are advertised by IGP SR TLVs*/
-typedef struct _p2p_adj_sid_t{
+typedef struct _p2p_adj_sid_subtlv_t{
 
     BYTE type;      /*Constant = 31*/
     BYTE length;
@@ -233,13 +244,13 @@ typedef struct _p2p_adj_sid_t{
      * is a 4octet value indicating the offset in the SID/Label space
      * advertised bu this router. In this case L and V flag are unset.
      * */
-    segment_id_tlv_t sid;
+    segment_id_subtlv_t sid;
    /*draft-ietf-spring-segment-routing-13 pg 15*/
-} p2p_ajd_sid_tlv_t;
+} p2p_ajd_sid_subtlv_t;
 
 
 /*LAN ADJ SID*/
-typedef struct _lan_adj_sid_t{
+typedef struct _lan_adj_sid_subtlv_t{
 
     BYTE type;      /*Constant = 32*/
     BYTE length;
@@ -247,12 +258,12 @@ typedef struct _lan_adj_sid_t{
     BYTE weight;
     BYTE system_id[6];  /*RFC compliant*/
     //node_t *nbr_node; /*Our implementation compliant*/
-    segment_id_tlv_t sid;
-} lan_adg_sid_tlv_t;
+    segment_id_subtlv_t sid;
+} lan_adg_sid_subtlv_t;
 
 
 boolean
-is_pfx_sid_lies_within_srgb(prefix_sid_t *pfx_sid, sr_capability_tlv_t *srgb);
+is_pfx_sid_lies_within_srgb(prefix_sid_subtlv_t *pfx_sid, srgb_t *srgb);
 
 typedef struct _node_t node_t;
 typedef struct prefix_ prefix_t;
@@ -315,7 +326,7 @@ void
 allocate_local_adj_sid(node_t *node, edge_end_t *adjacency);
 
 void
-allocate_global_adj_sid(node_t *node, edge_end_t *adjacency, sr_capability_tlv_t *srgb);
+allocate_global_adj_sid(node_t *node, edge_end_t *adjacency, srgb_t *srgb);
 
 /*
  *When a node binds an Adj-SID to a local data-link L, the node MUST
@@ -329,5 +340,79 @@ void
 sr_install_local_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency);
 
 void
-sr_install_global_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency, sr_capability_tlv_t *srgb);
+sr_install_global_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency, srgb_t *srgb);
+
+/*
++-------------------------------------------------+
+|Conflict Resolution Related APIs                 |
++-------------------------------------------------+
+*/
+
+/*srgb ranges should not overlap. If they overlap, the entire SRGB advertised by
+ * remote_node is discarded
+ * return TRUE if overlap, else return FALSE*/
+boolean
+is_srgb_ranges_overlap(srgb_t *remote_node_srgb);
+
+/*Iterate over the list of all prefix-reach TLVs of remote_node at a given level
+ * and check if prefix conflist is detected. */
+/* Two types of conflicts may occur - Prefix Conflicts and SID
+ * Conflicts*/
+boolean
+is_prefix_conflict_detected(node_t *remote_node, LEVEL level);
+
+boolean
+is_prefix_sid_conflict_detected(node_t *remote_node, LEVEL level);
+
+
+#define IGP_DEFAULT_SID_PFX_PREFERENCE_VALUE         192 /*for prefix-SID advertised by IGP running on non-SRMS*/
+#define IGP_DEFAULT_SID_SRMS_PFX_PREFERENCE_VALUE    128 /*for prefix-SID advertised by IGP running on SRMS*/
+
+/* This structure is computed by a node for every other level reachable prefix 
+ * advertised by remote nodes in the network. This structure is per PFX SID.
+ * The mapping entry is defined uniquely by the following tuple : 
+ *  (Prf, Pi/L, Si, R, T, A)
+ * */
+struct _sr_mapping_entry_t{
+
+    unsigned char prf;  /*if 0, SID should be ignored. [0-255] preference value, 
+                          default is 192 for any IGP node which do not advertise preference. 
+                          Mapping server nodes MAY advertise this preference*/
+    unsigned int pi;    /*initial prefix*/
+    unsigned int pe;    /*End prefix*/
+    char pfx_len;
+    char max_pfx_len;   /*32 for IPV4 and 128 for IPV6*/
+    unsigned int si;    /*Initial sid value*/
+    unsigned int se;    /*End sid value*/
+    BYTE range_value;   /*range value , always 1 for IGP*/
+    BYTE topology;      /*0 for IPV4, 2 for IPV6*/
+    BYTE algorithm;     /*SHORTEST_PATH_FIRST = 0, STRICT_SHORTEST_PATH = 1*/
+} ;
+
+/*Fn to check if the two prefix conflicts. Two Prefixes p1/m1 and p2/m2 are said to be conflicting 
+ * if in sr_mapping_entry_t : topology, algorithm, address-family, and prefix length
+ * is equal AND different SID is assigned to same prefix. section 3.2.1 conflict resolution*/
+ /*Algorithm to be implemented is defined in  3.2.1.2*/
+
+boolean 
+is_prefixes_conflicting(sr_mapping_entry_t *pfx_mapping_entry1, 
+    sr_mapping_entry_t *pfx_mapping_entry2);
+
+/*Fn to construct the mapping entry from prefix SID*/
+sr_mapping_entry_t *
+construct_prefix_mapping_entry(prefix_t *prefix);
+
+/*SID conflict*/
+boolean
+is_prefixes_sid_conflicting(sr_mapping_entry_t *pfx_mapping_entry1,
+    sr_mapping_entry_t *pfx_mapping_entry2);
+
+/*returns the preferred mapping entry.
+ *        NULL if none of the mapping entry is preferred
+ *        section 3.4 RFC sr-conflict-resolution*/
+
+sr_mapping_entry_t *
+conflict_resolution(sr_mapping_entry_t *pfx_mapping_entry1, 
+    sr_mapping_entry_t *pfx_mapping_entry2);
+
 #endif /* __SR__ */ 

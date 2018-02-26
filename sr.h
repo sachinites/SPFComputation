@@ -63,15 +63,15 @@ typedef enum{
     UNKNOWN_SEGMENT = SEGMENT_TYPE_MAX
 } SEGMENT_TYPE;
 
-typedef struct _prefix_sid_t prefix_sid_t;
-typedef struct _adj_sid_t ajd_sid_t;
+typedef struct _prefix_sid_subtlv_t prefix_sid_subtlv_t;
+typedef struct _adj_sid_subtlv_t ajd_sid_subtlv_t;
 
 typedef struct _segment_t{
     
     SEGMENT_TYPE seg_type;
     union{
-        prefix_sid_t *psid;
-        ajd_sid_t *adj_sid;
+        prefix_sid_subtlv_t *psid;
+        ajd_sid_subtlv_t *adj_sid;
     } seg;
 } segment_t;
 

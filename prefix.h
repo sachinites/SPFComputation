@@ -93,7 +93,7 @@ typedef struct prefix_{
     node_t *hosting_node;   /*back pointer to hosting node*/
     LEVEL level;
     /*SR*/
-    prefix_sid_t prefix_sid;
+    prefix_sid_subtlv_t *prefix_sid;
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;
@@ -105,6 +105,8 @@ is_prefix_byte_equal(prefix_t *prefix1,
 
 prefix_t *
 create_new_prefix(const char *prefix, unsigned char mask, LEVEL level);
+
+void free_prefix(prefix_t *prefix);
 
 #define STR_PREFIX(prefix_t_ptr)    (prefix_t_ptr ? prefix_t_ptr->prefix : "NIL")
 #define PREFIX_MASK(prefix_t_ptr)   (prefix_t_ptr ? prefix_t_ptr->mask : 0)
@@ -120,7 +122,7 @@ create_new_prefix(const char *prefix, unsigned char mask, LEVEL level);
     if(target_ptr){                                 \
         target_ptr->ref_count--;                    \
         if(!target_ptr->ref_count){                 \
-            free(target_ptr);                       \
+            free_prefix(target_ptr);                       \
         }                                           \
         target_ptr = NULL;                          \
     }

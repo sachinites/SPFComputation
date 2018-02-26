@@ -83,8 +83,9 @@ typedef struct _node_t{
 
     /*segment routing related members*/
     boolean spring_enabled;
-    unsigned int sr_algorithm; /*What are the SR algorithm supported by this node - section 3.2 RFC*/
-    sr_capability_tlv_t sr_cap;
+    sr_capability_subtlv_t sr_cap[MAX_LEVEL];
+    /*conflict resolution*/
+    ll_t *sr_mapping_entry[MAX_LEVEL];
 } node_t;
 
 struct edge_end_{

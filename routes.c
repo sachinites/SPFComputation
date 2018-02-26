@@ -505,7 +505,7 @@ mark_all_routes_stale_except_direct_routes(spf_info_t *spf_info, LEVEL level){
               * will leave holes in the list. Hence memory leak*/ 
              prefix = list_node1->data;
              if(prefix->hosting_node != GET_SPF_INFO_NODE(spf_info, level)){
-                free(list_node1->data);
+                free_prefix(list_node1->data);
                 free(list_node1);
              }
            } ITERATE_LIST_END;
@@ -530,7 +530,7 @@ mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
         route->install_state = RTE_STALE;
         ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
 
-            free(list_node1->data);
+            free_prefix(list_node1->data);
         } ITERATE_LIST_END;
 
         delete_singly_ll(route->like_prefix_list);
@@ -558,7 +558,7 @@ delete_all_routes_except_direct_from_rib(node_t *node, LEVEL level){
         
         ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
 
-            free(list_node1->data);
+            free_prefix(list_node1->data);
         } ITERATE_LIST_END;
 
         delete_singly_ll(route->like_prefix_list);
@@ -623,7 +623,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
          * time the route is overwritten with better prefix. We will revisit 
          * once we find the use of this list.*/
         ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
-            free(list_node->data);
+            free_prefix(list_node->data);
         } ITERATE_LIST_END;
 
         delete_singly_ll(route->like_prefix_list);

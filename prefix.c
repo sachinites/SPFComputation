@@ -467,8 +467,15 @@ delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask){
     old_prefix = singly_ll_search_by_key(prefix_list, &key);
     assert(old_prefix);
     singly_ll_delete_node_by_data_ptr(prefix_list, old_prefix);
-    free(old_prefix);
+    free_prefix(old_prefix);
     old_prefix = NULL;
 }
 
-
+void 
+free_prefix(prefix_t *prefix){
+    if(prefix->prefix_sid){
+        free(prefix->prefix_sid->mapping_entry);
+        free(prefix->prefix_sid);
+    }
+    free(prefix);
+}

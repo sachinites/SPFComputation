@@ -305,6 +305,45 @@ build_multi_area_topo(){
     return instance;
 }
 
+instance_t *
+build_lfa_topo(){
+
+#if 0
+
+                          +----------+
+                      0/1 |          |0/0 10.1.1.1/24
+         +----------------+   R0_re  +--------------8------------+
+         |    12.1.1.1/24 |          |                           |
+         |                +----------+                           |
+         |                                                       |
+         5                                                       |
+         |                                                       |
+         |                                                       |
+         |0/0 12.1.1.2/24                                        |0/0 10.1.1.2/24
+     +---+---+                                              +----+-----+
+     |       |0/1                                        0/1|          |
+     | R2_re +----------------------5-----------------------+    R1_re |
+     |       |11.1.1.2/24                        11.1.1.1/24|          |
+     +-------+                                              +----------+
+
+#endif
+
+
+    instance_t *instance = get_new_instance();
+    node_t *R0_re = create_new_node(instance, "R0_re", AREA1, "192.168.0.1");
+    node_t *R1_re = create_new_node(instance, "R1_re", AREA1, "192.168.0.2");
+    node_t *R2_re = create_new_node(instance, "R2_re", AREA1, "192.168.0.3");
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/0", 8, create_new_prefix("10.1.1.1", 24, LEVEL1 ), create_new_prefix("10.1.1.2", 24, LEVEL1), LEVEL1)), 
+                                R0_re, R1_re, BIDIRECTIONAL);
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/1", 5, create_new_prefix("11.1.1.1", 24, LEVEL1 ), create_new_prefix("11.1.1.2", 24, LEVEL1), LEVEL1)), 
+                                R1_re, R2_re, BIDIRECTIONAL);
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 5, create_new_prefix("12.1.1.2", 24, LEVEL1 ), create_new_prefix("12.1.1.1", 24, LEVEL1), LEVEL1)), 
+                                R2_re, R0_re, BIDIRECTIONAL);
+    set_instance_root(instance, R0_re);
+    return instance;
+}
+
 
 instance_t *
 build_rlfa_topo(){
