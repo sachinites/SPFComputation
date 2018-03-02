@@ -88,14 +88,14 @@ deque(Queue_t *q){
 
 void
 print_Queue(Queue_t *q){
-	uint32_t i = 0;
+	unsigned int i = 0;
 	printf("q->front = %d, q->rear = %d, q->count = %d\n", q->front, q->rear, q->count);
 	for(i = 0; i < Q_DEFAULT_SIZE; i++){
 		#if 1
 		if(q->elem[i] == NULL)
 			continue;
 		#endif
-		printf("index = %u, elem = 0x%x\n", i, (uint32_t)q->elem[i]);
+		printf("index = %u, elem = 0x%x\n", i, (unsigned int)q->elem[i]);
 	}
 }
 

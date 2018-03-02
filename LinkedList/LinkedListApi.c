@@ -350,4 +350,54 @@ void singly_ll_delete_data_by_key(ll_t *list, void *key){
 }
 #endif
 
+void
+singly_ll_add_ordered_data(ll_t *ll, void *data){
 
+    singly_ll_node_t *list_node_prev = NULL,
+                     *list_node_next = NULL;
+
+    if(is_singly_ll_empty(ll)){
+        singly_ll_add_node_by_val(ll, data);
+        return;
+    }
+
+    /* Only one node*/
+    if(GET_NODE_COUNT_SINGLY_LL(ll) == 1){
+        if(ll->comparison_fn(ll->head->data, data) == -1){
+            singly_ll_add_node_by_val(ll, data);
+        }
+        else{
+            singly_ll_node_t *new_node = singly_ll_init_node(data);
+            ll->head->next = new_node;
+            INC_NODE_COUNT_SINGLY_LL(ll);
+        }
+        return;
+    }
+    
+    if(ll->comparison_fn(data, ll->head->data) == -1){
+        singly_ll_node_t *new_node = singly_ll_init_node(data);
+        new_node->next = GET_HEAD_SINGLY_LL(ll);
+        ll->head = new_node;
+        INC_NODE_COUNT_SINGLY_LL(ll);
+        return;
+    }
+    
+    ITERATE_LIST_BEGIN(ll, list_node_next){
+
+        if(ll->comparison_fn(data, list_node_next->data) != -1){
+            list_node_prev = list_node_next;
+            continue;
+        }
+
+        singly_ll_node_t *new_node = singly_ll_init_node(data);
+        new_node->next = list_node_next;
+        list_node_prev->next = new_node;
+        INC_NODE_COUNT_SINGLY_LL(ll);
+        return;
+
+    }ITERATE_LIST_END;
+
+    /*Add in the end*/
+    singly_ll_node_t *new_node = singly_ll_init_node(data);
+    list_node_prev->next = new_node;
+}

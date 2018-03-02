@@ -95,5 +95,5 @@
 
 #define CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE          52 /*config node <node-name> source-packet-routing*/
 #define CMDCODE_CONFIG_NODE_SRGB_RANGE                      53 /*config node <node-name> source-packet-routing global-block X Y*/
-
+#define CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT           54 /*debug show instance node <node-name> level <level-no> prefix-conflict-result*/
 #endif /* __SPFCMDCODES__H */

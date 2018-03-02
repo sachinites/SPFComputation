@@ -1541,6 +1541,24 @@ spf_init_dcm(){
                     validate_node_extistence, STRING, "node-name", "Node Name");
                 libcli_register_param(&instance_node, &instance_node_name);
                 {
+                    /*debug show instance node <node-name> level <level-no> prefix-conflict-result*/    
+                    
+                    static param_t level;
+                    init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
+                    libcli_register_param(&instance_node_name, &level);
+                    {
+                        static param_t level_no;
+                        init_param(&level_no, LEAF, 0, 0, validate_level_no, INT, "level-no", "level : 1 | 2");
+                        libcli_register_param(&level, &level_no);
+                        {
+                            static param_t prefix_conflict_result;
+                            init_param(&prefix_conflict_result, CMD, "prefix-conflict-result", instance_node_spring_show_handler, 0, INVALID, 0, "SR : prefix-conflict results"); 
+                            libcli_register_param(&level_no, &prefix_conflict_result);
+                            set_param_cmd_code(&prefix_conflict_result, CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT);
+                        }
+                    }
+                }
+                {
                     /*debug show instance node <node-name> interface*/
                     static param_t interface;
                     init_param(&interface, CMD, "interface", 0, 0, INVALID, 0, "interface");

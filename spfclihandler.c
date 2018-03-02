@@ -728,3 +728,38 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
     }
     return 0;
 }
+
+extern void
+show_all_prefix_conflicts(node_t *node, LEVEL level);
+
+int
+instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    char *node_name = NULL;
+    node_t *node = NULL;
+    LEVEL level = MAX_LEVEL;
+    tlv_struct_t *tlv = NULL;
+    int cmd_code = -1;
+
+    cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
+            level = atoi(tlv->value);
+        else
+            assert(0);
+    } TLV_LOOP_END;
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
+    switch(cmd_code){
+        case CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT:
+            show_all_prefix_conflicts(node, level);
+            break;
+        default:
+            ;
+    } 
+    return 0;
+}

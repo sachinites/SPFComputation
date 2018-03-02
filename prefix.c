@@ -474,8 +474,9 @@ delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask){
 void 
 free_prefix(prefix_t *prefix){
     if(prefix->prefix_sid){
-        free(prefix->prefix_sid->mapping_entry);
         free(prefix->prefix_sid);
     }
+    delete_singly_ll(prefix->conflicting_prefix_list);
+    free(prefix->conflicting_prefix_list);
     free(prefix);
 }

@@ -39,6 +39,8 @@
 #define SHORTEST_PATH_FIRST  0 
 #define STRICT_SHORTEST_PATH 1
 
+#define PREFIX_SID_VALUE(prefix_ptr)    (prefix_ptr->prefix_sid->sid.sid)
+
 /*Segment ID SUB-TLV structure
  * contains a SID or a MPLS Label*/
 typedef struct _segment_id_subtlv_t{
@@ -173,6 +175,11 @@ typedef struct _router_cap_tlv{
 
 typedef struct _sr_mapping_entry_t sr_mapping_entry_t;
 
+typedef enum{
+    CONFLICT_RES_ACCEPTED,
+    CONFLICT_RES_DISCARD
+} CONFLICT_RES_RESULT;
+
 /*prefix SID */
 typedef struct _prefix_sid_subtlv_t{
 
@@ -191,10 +198,11 @@ typedef struct _prefix_sid_subtlv_t{
      * Popping (CONTINUE) in MPLS.
      * pg 10 - Segment Routing Architecture-2*/
 
+    /*supporting fields, Not a TLV part as per the standards*/
      /*conflict resolution : From prefix_sid_subtlv_t , recieving router computes the 
      * sr_mapping_entry_t data structure for all prefixes advertised 
      * with SID. It is not a part of subtlv.*/
-    sr_mapping_entry_t *mapping_entry;
+    CONFLICT_RES_RESULT conflct_res; /*default is CONFLICT_RES_ACCEPTED*/
 } prefix_sid_subtlv_t;
 
 /*Adjacecncy SID*/
@@ -354,17 +362,6 @@ sr_install_global_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency, srgb_t
 boolean
 is_srgb_ranges_overlap(srgb_t *remote_node_srgb);
 
-/*Iterate over the list of all prefix-reach TLVs of remote_node at a given level
- * and check if prefix conflist is detected. */
-/* Two types of conflicts may occur - Prefix Conflicts and SID
- * Conflicts*/
-boolean
-is_prefix_conflict_detected(node_t *remote_node, LEVEL level);
-
-boolean
-is_prefix_sid_conflict_detected(node_t *remote_node, LEVEL level);
-
-
 #define IGP_DEFAULT_SID_PFX_PREFERENCE_VALUE         192 /*for prefix-SID advertised by IGP running on non-SRMS*/
 #define IGP_DEFAULT_SID_SRMS_PFX_PREFERENCE_VALUE    128 /*for prefix-SID advertised by IGP running on SRMS*/
 
@@ -389,18 +386,18 @@ struct _sr_mapping_entry_t{
     BYTE algorithm;     /*SHORTEST_PATH_FIRST = 0, STRICT_SHORTEST_PATH = 1*/
 } ;
 
-/*Fn to check if the two prefix conflicts. Two Prefixes p1/m1 and p2/m2 are said to be conflicting 
+/*Fn to construct the mapping entry from prefix SID*/
+void
+construct_prefix_mapping_entry(prefix_t *prefix, 
+            sr_mapping_entry_t *mapping_entry_out);
+
+/* Fn to check if the two prefix conflicts. Two Prefixes p1/m1 and p2/m2 are said to be conflicting 
  * if in sr_mapping_entry_t : topology, algorithm, address-family, and prefix length
  * is equal AND different SID is assigned to same prefix. section 3.2.1 conflict resolution*/
  /*Algorithm to be implemented is defined in  3.2.1.2*/
-
 boolean 
 is_prefixes_conflicting(sr_mapping_entry_t *pfx_mapping_entry1, 
     sr_mapping_entry_t *pfx_mapping_entry2);
-
-/*Fn to construct the mapping entry from prefix SID*/
-sr_mapping_entry_t *
-construct_prefix_mapping_entry(prefix_t *prefix);
 
 /*SID conflict*/
 boolean
@@ -414,5 +411,17 @@ is_prefixes_sid_conflicting(sr_mapping_entry_t *pfx_mapping_entry1,
 sr_mapping_entry_t *
 conflict_resolution(sr_mapping_entry_t *pfx_mapping_entry1, 
     sr_mapping_entry_t *pfx_mapping_entry2);
+
+typedef struct LL ll_t ;
+
+ll_t *
+prefix_conflict_generic_algorithm(node_t *node, LEVEL level);
+
+
+/*show functions*/
+
+void
+show_all_prefix_conflicts(node_t *node, LEVEL level);
+
 
 #endif /* __SR__ */ 

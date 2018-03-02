@@ -88,7 +88,7 @@ init_instance_traversal(instance_t * instance){
 }
 
 static void
-init_instance_lsp_distrution_traversal(instance_t * instance){
+init_instance_lsp_distribution_traversal(instance_t * instance){
 
     singly_ll_node_t *list_node = NULL;
     node_t *node = NULL;
@@ -127,7 +127,7 @@ generate_lsp(instance_t *instance,
         if(!IS_LEVEL_SET(level_of_info_dist, level_it))
             continue;
 
-        init_instance_lsp_distrution_traversal(instance);
+        init_instance_lsp_distribution_traversal(instance);
 
         lsp_generator->lsp_distribution_bit = 1;
         enqueue(q, lsp_generator);

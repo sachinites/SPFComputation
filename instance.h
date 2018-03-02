@@ -84,6 +84,7 @@ typedef struct _node_t{
     /*segment routing related members*/
     boolean spring_enabled;
     sr_capability_subtlv_t sr_cap[MAX_LEVEL];
+    boolean is_srms;
     /*conflict resolution*/
     ll_t *sr_mapping_entry[MAX_LEVEL];
 } node_t;

@@ -83,4 +83,7 @@ display_logging_status(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
 
 int
 instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
+
+int
+instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 #endif /* __SPFCLIHANDLER__ */

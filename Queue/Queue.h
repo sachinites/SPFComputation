@@ -2,14 +2,12 @@
 #define __QUEUE__
 
 
-#define uint32_t unsigned int
-
 #define Q_DEFAULT_SIZE  50
 typedef struct _Queue{
         void *elem[Q_DEFAULT_SIZE];
-        uint32_t front;
-        uint32_t rear;
-        uint32_t count;
+        unsigned int front;
+        unsigned int rear;
+        unsigned int count;
 } Queue_t;
 
 Queue_t* initQ();
