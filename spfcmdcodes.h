@@ -97,4 +97,7 @@
 #define CMDCODE_CONFIG_NODE_SRGB_RANGE                      53 /*config node <node-name> source-packet-routing global-block X Y*/
 #define CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT           54 /*debug show instance node <node-name> level <level-no> prefix-conflict-result*/
 #define CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT       55 /*debug show instance node <node-name> level <level-no> sid-prefix-conflict-result*/
+#define CMDCODE_CONFIG_NODE_SR_PREFIX_SID                   56 /*config node <node-name> prefix-sid <prefix-sid>*/
+#define CMDCODE_CONFIG_NODE_SR_PREFIX_SID_INTF              57 /*config node <node-name> interface <if-name> prefix-sid <prefix-sid>*/
+#define CMDCODE_CONFIG_NODE_SR_ADJ_SID                      58 /*config node <node-name> interface <if-name> adjacency-sid <adj-sid>*/
 #endif /* __SPFCMDCODES__H */

@@ -1186,6 +1186,20 @@ spf_init_dcm(){
         init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
         libcli_register_param(&config_node, &config_node_node_name);
 
+        /*config node <node-name> prefix-sid <prefix-sid>*/
+        {
+            static param_t prefix_sid;
+            init_param(&prefix_sid, CMD, "prefix-sid", 0, 0, INVALID, 0, "Configure NODE SID");
+            libcli_register_param(&config_node_node_name, &prefix_sid);
+            {
+                static param_t prefix_sid_val;
+                init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, 0, INT, "prefix-sid" , "Prefix SID value");  
+                libcli_register_param(&prefix_sid, &prefix_sid_val);
+                set_param_cmd_code(&prefix_sid_val, CMDCODE_CONFIG_NODE_SR_PREFIX_SID);
+            }
+        }
+
+
         /*config node <node-name> backup-spf-options*/
         
         {
@@ -1227,6 +1241,31 @@ spf_init_dcm(){
         init_param(&config_node_node_name_slot_slotname, LEAF, 0, 0, 0, STRING, "slot-no", "interface name ethx/y format");
         libcli_register_param(&config_node_node_name_slot, &config_node_node_name_slot_slotname);
 
+        /*config node <node-name> interface <if-name> prefix-sid <prefix-sid>*/
+        {
+            static param_t prefix_sid;
+            init_param(&prefix_sid, CMD, "prefix-sid", 0, 0, INVALID, 0, "Configure intf prefix SID");
+            libcli_register_param(&config_node_node_name_slot_slotname, &prefix_sid);
+            {
+                static param_t prefix_sid_val;
+                init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, 0, INT, "prefix-sid" , "Prefix SID value");  
+                libcli_register_param(&prefix_sid, &prefix_sid_val);
+                set_param_cmd_code(&prefix_sid_val, CMDCODE_CONFIG_NODE_SR_PREFIX_SID_INTF);
+            }
+        }
+
+        /*config node <node-name> interface <if-name> adjacency-sid <adj-sid>*/
+        {
+            static param_t adj_sid;
+            init_param(&adj_sid, CMD, "adj-sid", 0, 0, INVALID, 0, "Configure Adjacency SID");
+            libcli_register_param(&config_node_node_name_slot_slotname, &adj_sid);
+            {
+                static param_t adj_sid_val;
+                init_param(&adj_sid_val, LEAF, 0, instance_node_spring_config_handler, 0, INT, "adj-sid" , "Adjacency SID value");  
+                libcli_register_param(&adj_sid, &adj_sid_val);
+                set_param_cmd_code(&adj_sid_val, CMDCODE_CONFIG_NODE_SR_ADJ_SID);
+            }
+        }
         /*config node <node-name> [no] interface <slot-no> level <level-no> metric <metric_val>*/
         {
             static param_t level;

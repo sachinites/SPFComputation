@@ -349,5 +349,7 @@ create_new_lsp_adj(char *lsp_name,
         unsigned int metric,
         LEVEL level);
 
+edge_end_t *
+get_interface_from_intf_name(node_t *node, char *intf_name);
 
 #endif /* __INSTANCE__ */

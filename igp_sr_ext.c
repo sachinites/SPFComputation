@@ -187,6 +187,7 @@ build_global_prefix_list(node_t *node, LEVEL level){
            *edge2 = NULL;
 
     singly_ll_node_t *list_node = NULL;
+    prefix_t *prefix = NULL;
 
     init_instance_traversal(instance);
     Queue_t *q = initQ();
@@ -207,7 +208,9 @@ build_global_prefix_list(node_t *node, LEVEL level){
             }
 
             ITERATE_LIST_BEGIN(nbr_node->local_prefix_list[level], list_node){
-                singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
+                prefix = list_node->data;
+                if(prefix->prefix_sid)
+                    singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
             } ITERATE_LIST_END;
             
             nbr_node->traversing_bit = 1;
@@ -217,7 +220,9 @@ build_global_prefix_list(node_t *node, LEVEL level){
 
     /*Add self list*/
     ITERATE_LIST_BEGIN(node->local_prefix_list[level], list_node){
-        singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
+        prefix = list_node->data;
+        if(prefix->prefix_sid)
+            singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
     } ITERATE_LIST_END;
 
     return global_pfx_lst;

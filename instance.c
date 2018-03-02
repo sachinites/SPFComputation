@@ -598,3 +598,26 @@ get_min_oif(node_t *node, node_t *node_nbr,
     return min_edge_oif;
 }
 
+edge_end_t *
+get_interface_from_intf_name(node_t *node, char *intf_name){
+
+    unsigned int i = 0;
+    edge_end_t *interface = NULL;
+
+    for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ){
+        interface = node->edges[i];
+        if(interface == NULL){
+            printf("Error : slot-no %s do not exist\n", intf_name);
+            return NULL;
+        }
+
+        if(strncmp(intf_name, interface->intf_name, strlen(interface->intf_name)))
+            continue;
+
+        if(interface->dirn != OUTGOING)
+            continue;
+
+        return interface;
+    }
+}
+

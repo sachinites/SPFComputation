@@ -202,7 +202,7 @@ typedef struct _prefix_sid_subtlv_t{
      /*conflict resolution : From prefix_sid_subtlv_t , recieving router computes the 
      * sr_mapping_entry_t data structure for all prefixes advertised 
      * with SID. It is not a part of subtlv.*/
-    conflict_result_t conflct_res; /*default is CONFLICT_RES_ACCEPTED*/
+    conflict_result_t conflct_res; /*default is SID_ACTIVE*/
 } prefix_sid_subtlv_t;
 
 #define IS_PREFIX_SR_ACTIVE(prefixptr)  (prefixptr->prefix_sid->conflct_res == SID_ACTIVE)

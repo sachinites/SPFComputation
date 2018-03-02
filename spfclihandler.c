@@ -40,6 +40,7 @@
 #include "advert.h"
 #include "rlfa.h"
 #include "spftrace.h"
+#include "sr_tlv_api.h"
 
 extern instance_t * instance;
 
@@ -701,13 +702,22 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
     char *node_name = NULL;
     tlv_struct_t *tlv = NULL;
     int cmd_code = -1;
+    char *intf_name = NULL;
+    unsigned int prefix_sid = 0;
 
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
+            intf_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "prefix-sid", strlen("prefix-sid")) ==0)
+            prefix_sid = atoi(tlv->value);
+        else
+            assert(0);
     } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
     switch(cmd_code){
@@ -723,6 +733,42 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
                 ;
         }
         break;
+        case CMDCODE_CONFIG_NODE_SR_PREFIX_SID:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE:
+                set_node_sid(node, prefix_sid);
+                break;
+            case CONFIG_DISABLE:
+                unset_node_sid(node);
+                break;
+             default:
+                ;
+        }
+        break;
+        case CMDCODE_CONFIG_NODE_SR_PREFIX_SID_INTF:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE:
+                set_interface_address_prefix_sid(intf_name, prefix_sid);
+                break;
+            case CONFIG_DISABLE:
+                unset_interface_address_prefix_sid(intf_name);
+                break;
+             default:
+                ;
+        }
+            break;
+        case CMDCODE_CONFIG_NODE_SR_ADJ_SID:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE:
+                set_interface_adj_sid(intf_name, prefix_sid);
+                break;
+            case CONFIG_DISABLE:
+                unset_interface_adj_sid(intf_name);
+                break;
+             default:
+                ;
+        }
+            break;
         default:
         ;
     }

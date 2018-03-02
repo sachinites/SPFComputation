@@ -31,3 +31,34 @@
  */
 
 #include "sr_tlv_api.h"
+#include "instance.h"
+
+void
+set_node_sid(node_t *node, unsigned int node_sid_value){
+
+}
+
+void
+unset_node_sid(node_t *node){
+
+}
+
+void
+set_interface_address_prefix_sid(char *interface, unsigned int prefix_sid_value){
+
+}
+
+void
+unset_interface_address_prefix_sid(char *interface){
+
+}
+
+void
+set_interface_adj_sid(char *interface, unsigned int adj_sid_value){
+
+}
+
+void
+unset_interface_adj_sid(char *interface){
+
+}
