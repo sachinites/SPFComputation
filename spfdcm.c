@@ -1556,6 +1556,12 @@ spf_init_dcm(){
                             libcli_register_param(&level_no, &prefix_conflict_result);
                             set_param_cmd_code(&prefix_conflict_result, CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT);
                         }
+                        {
+                            static param_t sid_prefix_conflict_result;
+                            init_param(&sid_prefix_conflict_result, CMD, "sid-prefix-conflict-result", instance_node_spring_show_handler, 0, INVALID, 0, "SR : sid-prefix-conflict results"); 
+                            libcli_register_param(&level_no, &sid_prefix_conflict_result);
+                            set_param_cmd_code(&sid_prefix_conflict_result, CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT);
+                        }
                     }
                 }
                 {

@@ -176,9 +176,9 @@ typedef struct _router_cap_tlv{
 typedef struct _sr_mapping_entry_t sr_mapping_entry_t;
 
 typedef enum{
-    CONFLICT_RES_ACCEPTED,
-    CONFLICT_RES_DISCARD
-} CONFLICT_RES_RESULT;
+    SID_ACTIVE,
+    SID_INACTIVE
+} conflict_result_t;
 
 /*prefix SID */
 typedef struct _prefix_sid_subtlv_t{
@@ -202,8 +202,12 @@ typedef struct _prefix_sid_subtlv_t{
      /*conflict resolution : From prefix_sid_subtlv_t , recieving router computes the 
      * sr_mapping_entry_t data structure for all prefixes advertised 
      * with SID. It is not a part of subtlv.*/
-    CONFLICT_RES_RESULT conflct_res; /*default is CONFLICT_RES_ACCEPTED*/
+    conflict_result_t conflct_res; /*default is CONFLICT_RES_ACCEPTED*/
 } prefix_sid_subtlv_t;
+
+#define IS_PREFIX_SR_ACTIVE(prefixptr)  (prefixptr->prefix_sid->conflct_res == SID_ACTIVE)
+#define MARK_PREFIX_INACTIVE(prefixptr) (prefixptr->prefix_sid->conflct_res = SID_INACTIVE)
+#define MARK_PREFIX_ACTIVE(prefixptr)   (prefixptr->prefix_sid->conflct_res = SID_ACTIVE)
 
 /*Adjacecncy SID*/
 
@@ -404,24 +408,41 @@ boolean
 is_prefixes_sid_conflicting(sr_mapping_entry_t *pfx_mapping_entry1,
     sr_mapping_entry_t *pfx_mapping_entry2);
 
-/*returns the preferred mapping entry.
- *        NULL if none of the mapping entry is preferred
- *        section 3.4 RFC sr-conflict-resolution*/
-
-sr_mapping_entry_t *
-conflict_resolution(sr_mapping_entry_t *pfx_mapping_entry1, 
-    sr_mapping_entry_t *pfx_mapping_entry2);
+boolean
+is_identical_mapping_entries(sr_mapping_entry_t *mapping_entry1,
+    sr_mapping_entry_t *mapping_entry2);
 
 typedef struct LL ll_t ;
 
+#if 0
 ll_t *
 prefix_conflict_generic_algorithm(node_t *node, LEVEL level);
 
+ll_t *
+prefix_sid_conflict_generic_algorithm(node_t *node, LEVEL level);
+#endif
 
+ll_t *
+prefix_conflict_resolution(node_t *node, LEVEL level);
+
+ll_t *
+prefix_sid_conflict_resolution(ll_t *global_prefix_list);
 /*show functions*/
 
 void
+resolve_prefix_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry1, 
+        prefix_t *prefix2, sr_mapping_entry_t *pfx_mapping_entry2);
+
+void
+resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry1, 
+        prefix_t *prefix2, sr_mapping_entry_t *pfx_mapping_entry2);
+
+#if 0
+void
 show_all_prefix_conflicts(node_t *node, LEVEL level);
 
+void
+show_all_prefix_sid_conflicts(node_t *node, LEVEL level);
+#endif
 
 #endif /* __SR__ */ 

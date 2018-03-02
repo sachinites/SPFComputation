@@ -93,7 +93,6 @@ typedef struct prefix_{
     node_t *hosting_node;   /*back pointer to hosting node*/
     LEVEL level;
     /*SR*/
-    ll_t *conflicting_prefix_list;
     prefix_sid_subtlv_t *prefix_sid;
     /*Extras*/
     unsigned char ref_count; /*For internal use*/

@@ -40,6 +40,23 @@
 
 extern instance_t *instance;
 
+boolean
+is_identical_mapping_entries(sr_mapping_entry_t *mapping_entry1,
+    sr_mapping_entry_t *mapping_entry2){
+
+    if(mapping_entry1->prf == mapping_entry2->prf &&
+        mapping_entry1->pi == mapping_entry2->pi &&
+        mapping_entry1->pe == mapping_entry2->pe &&
+        mapping_entry1->pfx_len == mapping_entry2->pfx_len &&
+        mapping_entry1->si == mapping_entry2->si &&
+        mapping_entry1->se == mapping_entry2->se &&
+        mapping_entry1->range_value == mapping_entry2->range_value &&
+        mapping_entry1->algorithm == mapping_entry2->algorithm &&
+        mapping_entry1->topology == mapping_entry2->topology)
+            return TRUE;
+     return FALSE;
+}
+
 void
 construct_prefix_mapping_entry(prefix_t *prefix, 
             sr_mapping_entry_t *mapping_entry_out){
@@ -59,7 +76,7 @@ construct_prefix_mapping_entry(prefix_t *prefix,
     mapping_entry_out->pe          = binary_prefix;
     mapping_entry_out->pfx_len     = prefix->mask;
     mapping_entry_out->si          = PREFIX_SID_VALUE(prefix);
-    mapping_entry_out->si          = PREFIX_SID_VALUE(prefix);
+    mapping_entry_out->se          = PREFIX_SID_VALUE(prefix);
     mapping_entry_out->range_value = 1;
     mapping_entry_out->algorithm   = prefix->prefix_sid->algorithm;
     mapping_entry_out->topology    = 0;
@@ -83,7 +100,7 @@ is_prefixes_conflicting(sr_mapping_entry_t *pfx_mapping_entry1,
         return FALSE;
 
     /*prefix length*/
-    if(pfx_mapping_entry1->max_pfx_len != pfx_mapping_entry2->max_pfx_len)
+    if(pfx_mapping_entry1->pfx_len != pfx_mapping_entry2->pfx_len)
         return FALSE;
 
     /*simplifying by assuming Range is always 1*/
@@ -93,20 +110,29 @@ is_prefixes_conflicting(sr_mapping_entry_t *pfx_mapping_entry1,
 
     /*SID*/
     if(pfx_mapping_entry1->si != pfx_mapping_entry2->si)
-        return FALSE;
+        return TRUE;
 
-    return TRUE;
+    return FALSE;
 }
 
 boolean
 is_prefixes_sid_conflicting(sr_mapping_entry_t *pfx_mapping_entry1,
     sr_mapping_entry_t *pfx_mapping_entry2){
 
-    if(pfx_mapping_entry1->pi == pfx_mapping_entry2->pi)
+    if(is_identical_mapping_entries(pfx_mapping_entry1, pfx_mapping_entry2))
         return FALSE;
-    if(pfx_mapping_entry1->si != pfx_mapping_entry2->si)
-        return FALSE;
-    return TRUE;    /*Two different prefixes are advertised with same SID*/
+
+    /* If the two prefixes have same SIDs but they different in some way, 
+     * then it is SID conflict*/
+    if((pfx_mapping_entry1->si == pfx_mapping_entry2->si)                   &&
+        (pfx_mapping_entry1->algorithm != pfx_mapping_entry2->algorithm     ||
+         pfx_mapping_entry1->pi != pfx_mapping_entry2->pi                   ||
+         pfx_mapping_entry1->topology != pfx_mapping_entry2->topology       ||
+         pfx_mapping_entry1->max_pfx_len != pfx_mapping_entry2->max_pfx_len ||
+         pfx_mapping_entry1->pfx_len != pfx_mapping_entry2->pfx_len))
+        return TRUE;
+
+    return FALSE;
 }
 
 static void
@@ -147,6 +173,9 @@ global_prefix_list_comparison_fn(void *data1, void *data2){
     return 0; 
 }
 
+/* Generate a global prefix list. This list contains all prefixes advertised by
+ * all nodes in a given level*/
+
 static ll_t *
 build_global_prefix_list(node_t *node, LEVEL level){
 
@@ -179,13 +208,12 @@ build_global_prefix_list(node_t *node, LEVEL level){
 
             ITERATE_LIST_BEGIN(nbr_node->local_prefix_list[level], list_node){
                 singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
-                //singly_ll_add_ordered_data(global_pfx_lst, list_node);
             } ITERATE_LIST_END;
             
             nbr_node->traversing_bit = 1;
             enqueue(q, nbr_node);
         } ITERATE_NODE_PHYSICAL_NBRS_END(curr_node, nbr_node, pn_node, level);
-    } // while ends
+    }
 
     /*Add self list*/
     ITERATE_LIST_BEGIN(node->local_prefix_list[level], list_node){
@@ -195,86 +223,236 @@ build_global_prefix_list(node_t *node, LEVEL level){
     return global_pfx_lst;
 }
 
-/*node checking pfx conflicts over all the advertised prefixes
- * in a given level*/
-ll_t *
-prefix_conflict_generic_algorithm(node_t *node, LEVEL level){
+
+void
+resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry1,
+        prefix_t *prefix2, sr_mapping_entry_t *pfx_mapping_entry2){
+
+    assert(IS_PREFIX_SR_ACTIVE(prefix1) && 
+            IS_PREFIX_SR_ACTIVE(prefix2));
+
+    if(pfx_mapping_entry1->prf != pfx_mapping_entry2->prf){
         
-    ll_t *global_prefix_list = build_global_prefix_list(node, level);
-    singly_ll_node_t *list_node1 = NULL,
-                     *list_node2 = NULL;
-
-     prefix_t *prefix1 = NULL,
-              *prefix2 = NULL;
-
-     sr_mapping_entry_t mapping_entry1, 
-                        mapping_entry2;
-
-     /*clean up*/
-     ITERATE_LIST_BEGIN(global_prefix_list, list_node1){
-        prefix1 = list_node1->data;
-        if(prefix1->conflicting_prefix_list){
-            delete_singly_ll(prefix1->conflicting_prefix_list);
-        }
-     } ITERATE_LIST_END;
-
-     ITERATE_LIST_BEGIN(global_prefix_list, list_node1){
-        prefix1 = list_node1->data;
-        if(prefix1->conflicting_prefix_list == NULL){
-            prefix1->conflicting_prefix_list = init_singly_ll();
-            prefix1->conflicting_prefix_list->comparison_fn = get_prefix_comparison_fn();
-        }
+        if(pfx_mapping_entry1->prf > pfx_mapping_entry2->prf)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+         return;
+    }
         
-        for(list_node2 = list_node1->next; list_node2; list_node2 = list_node2->next){
-            prefix2 = list_node2->data;
-            
-            if(prefix2->conflicting_prefix_list == NULL){
-                prefix2->conflicting_prefix_list = init_singly_ll();
-                prefix2->conflicting_prefix_list->comparison_fn = get_prefix_comparison_fn();
-            }
+    
+    if(pfx_mapping_entry1->range_value != pfx_mapping_entry2->range_value){
 
-            /*Compare prefix1 and prefix 2 here*/
-            construct_prefix_mapping_entry(prefix1, &mapping_entry1);
-            construct_prefix_mapping_entry(prefix2, &mapping_entry2);
+        if(pfx_mapping_entry1->range_value < pfx_mapping_entry2->range_value)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+        return;
+    }
 
-            /*Apply constraints in mapping entries*/
-            if(is_prefixes_conflicting(&mapping_entry1, &mapping_entry2) == FALSE)
-                continue;
 
-            singly_ll_add_node_by_val(prefix1->conflicting_prefix_list, prefix2);
-            singly_ll_add_node_by_val(prefix2->conflicting_prefix_list, prefix1);
-        }
-     } ITERATE_LIST_END;
-     
-     return global_prefix_list;
+    if(pfx_mapping_entry1->pfx_len != pfx_mapping_entry2->pfx_len){
+
+        if(pfx_mapping_entry1->pfx_len < pfx_mapping_entry2->pfx_len)
+            MARK_PREFIX_INACTIVE(prefix1);
+        else
+            MARK_PREFIX_INACTIVE(prefix2);
+        return;
+    }
+
+    if(pfx_mapping_entry1->pi != pfx_mapping_entry2->pi){
+
+        if(pfx_mapping_entry1->pi < pfx_mapping_entry2->pi)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+        return;
+    }
+
+    if(pfx_mapping_entry1->algorithm != pfx_mapping_entry2->algorithm){
+
+        if(pfx_mapping_entry1->algorithm < pfx_mapping_entry2->algorithm)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+        return;
+    }
+
+#if 0
+    if(pfx_mapping_entry1->si != pfx_mapping_entry2->si){
+
+        if(pfx_mapping_entry1->si < pfx_mapping_entry2->si)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+        return;
+    }
+#endif
+
+    if(pfx_mapping_entry1->topology != pfx_mapping_entry2->topology){
+        MARK_PREFIX_INACTIVE(prefix1);
+        MARK_PREFIX_INACTIVE(prefix2);
+        return;
+    }
+    else{
+        return;
+    }
+    assert(0);
 }
 
 void
-show_all_prefix_conflicts(node_t *node, LEVEL level){
-    
-      ll_t *global_prefix_list = prefix_conflict_generic_algorithm(node, level);
-      
-      singly_ll_node_t *list_node1 = NULL,
-                       *list_node2 = NULL;
-    
-      prefix_t *prefix1 = NULL,
-               *prefix2 = NULL;
+resolve_prefix_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry1,
+        prefix_t *prefix2, sr_mapping_entry_t *pfx_mapping_entry2){
 
-      ITERATE_LIST_BEGIN(global_prefix_list, list_node1){
+    assert(IS_PREFIX_SR_ACTIVE(prefix1) && 
+            IS_PREFIX_SR_ACTIVE(prefix2));
+
+    if(pfx_mapping_entry1->prf != pfx_mapping_entry2->prf){
+        
+        if(pfx_mapping_entry1->prf > pfx_mapping_entry2->prf)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+         return;
+    }
+        
+    
+    if(pfx_mapping_entry1->range_value != pfx_mapping_entry2->range_value){
+
+        if(pfx_mapping_entry1->range_value < pfx_mapping_entry2->range_value)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+        return;
+    }
+
+
+    if(pfx_mapping_entry1->pfx_len != pfx_mapping_entry2->pfx_len){
+
+        if(pfx_mapping_entry1->pfx_len < pfx_mapping_entry2->pfx_len)
+            MARK_PREFIX_INACTIVE(prefix1);
+        else
+            MARK_PREFIX_INACTIVE(prefix2);
+        return;
+    }
+
+    if(pfx_mapping_entry1->pi != pfx_mapping_entry2->pi){
+
+        if(pfx_mapping_entry1->pi < pfx_mapping_entry2->pi)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+        return;
+    }
+
+    if(pfx_mapping_entry1->si != pfx_mapping_entry2->si){
+
+        if(pfx_mapping_entry1->si < pfx_mapping_entry2->si)
+            MARK_PREFIX_INACTIVE(prefix2);
+        else
+            MARK_PREFIX_INACTIVE(prefix1);
+        return;
+    }
+    assert(0);
+}
+
+ll_t *
+prefix_sid_conflict_resolution(ll_t *global_prefix_list){
+
+    singly_ll_node_t *list_node1 = NULL,
+                     *list_node2 = NULL;
+
+    sr_mapping_entry_t mapping_entry1, 
+                       mapping_entry2;
+                     
+    prefix_t *prefix1 = NULL,
+             *prefix2 = NULL;
+
+    ITERATE_LIST_BEGIN(global_prefix_list, list_node1){
+
         prefix1 = list_node1->data;
-        if(!prefix1->conflicting_prefix_list || (prefix1->conflicting_prefix_list &&
-            is_singly_ll_empty(prefix1->conflicting_prefix_list))){
-            printf("prefix : %s/%u(%s)  : No conflicts\n", 
-                prefix1->prefix, prefix1->mask, prefix1->hosting_node->node_name);
-            continue;
-        }
+        if(!IS_PREFIX_SR_ACTIVE(prefix1)) continue;
 
-        printf("prefix : %s/%u(%s)  :\n", prefix1->prefix, prefix1->mask, prefix1->hosting_node->node_name);
-        ITERATE_LIST_BEGIN(prefix1->conflicting_prefix_list, list_node2){
+        construct_prefix_mapping_entry(prefix1, &mapping_entry1); 
+        for(list_node2 = list_node1->next; list_node2; list_node2 = list_node2->next){
+            
             prefix2 = list_node2->data;
-            printf("\tprefix : %s/%u(%s)\n", prefix2->prefix, 
-                prefix2->mask, prefix2->hosting_node->node_name);
-        } ITERATE_LIST_END;
-      } ITERATE_LIST_END;
-     free_global_prefix_list(global_prefix_list);
+            if(!IS_PREFIX_SR_ACTIVE(prefix2)) continue;
+            
+             construct_prefix_mapping_entry(prefix2, &mapping_entry2); 
+             if(is_prefixes_sid_conflicting(&mapping_entry1, &mapping_entry2) == FALSE)
+                 continue;
+
+             resolve_prefix_sid_conflict(prefix1, &mapping_entry1, 
+                    prefix2, &mapping_entry2);
+        } 
+    } ITERATE_LIST_END;
+
+    /*Clean up the weed out ones from the global list*/ 
+    ITERATE_LIST_BEGIN2(global_prefix_list, list_node1, list_node2){
+
+        prefix1 = list_node1->data;
+        if(!IS_PREFIX_SR_ACTIVE(prefix1)){
+            ITERATIVE_LIST_NODE_DELETE2(global_prefix_list, list_node1, list_node2);
+        }
+    } ITERATE_LIST_END2(global_prefix_list, list_node1, list_node2);
+
+    return global_prefix_list;    
+}
+/*This is the highest level function which takes responsibility 
+ * to resolve prefix conflicts */
+
+ll_t *
+prefix_conflict_resolution(node_t *node, LEVEL level){
+
+   singly_ll_node_t *list_node1 = NULL,
+                    *list_node2 = NULL;
+                    
+   sr_mapping_entry_t mapping_entry1, 
+                      mapping_entry2;
+                     
+   prefix_t *prefix1 = NULL,
+            *prefix2 = NULL;
+
+
+   ll_t *global_prefix_list = build_global_prefix_list(node, level);
+                    
+   ITERATE_LIST_BEGIN(global_prefix_list, list_node1){
+       
+       prefix1 = list_node1->data;
+       if(!IS_PREFIX_SR_ACTIVE(prefix1)) 
+           continue;
+
+       construct_prefix_mapping_entry(prefix1, &mapping_entry1);
+
+       for(list_node2 = list_node1->next; list_node2; list_node2 = list_node2->next){
+        
+         prefix2 = list_node2->data;
+         if(!IS_PREFIX_SR_ACTIVE(prefix2))
+             continue;
+
+         construct_prefix_mapping_entry(prefix2,  &mapping_entry2);
+
+         if(is_prefixes_conflicting(&mapping_entry1, &mapping_entry2) == FALSE)
+             continue;
+        /*Now resolve the conflict between prefix1 and prefix 2*/
+         resolve_prefix_conflict(prefix1, &mapping_entry1, prefix2, &mapping_entry2);
+         
+         assert((IS_PREFIX_SR_ACTIVE(prefix1) && !IS_PREFIX_SR_ACTIVE(prefix2)) || 
+            (!IS_PREFIX_SR_ACTIVE(prefix1) &&  IS_PREFIX_SR_ACTIVE(prefix2)));
+       }
+   } ITERATE_LIST_END;
+
+   /*Now cleanup the prefixes which are filtered out and will not be considered
+    * for SID conflict resolution phase*/
+
+    ITERATE_LIST_BEGIN2(global_prefix_list, list_node1, list_node2){
+
+        prefix1 = list_node1->data;
+        if(!IS_PREFIX_SR_ACTIVE(prefix1)){
+            ITERATIVE_LIST_NODE_DELETE2(global_prefix_list, list_node1, list_node2);
+        }
+    } ITERATE_LIST_END2(global_prefix_list, list_node1, list_node2);
+   
+   return global_prefix_list;
 }

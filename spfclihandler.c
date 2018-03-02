@@ -732,6 +732,9 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
 extern void
 show_all_prefix_conflicts(node_t *node, LEVEL level);
 
+extern void
+show_all_prefix_sid_conflicts(node_t *node, LEVEL level);
+
 int
 instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
@@ -756,7 +759,40 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
 
     switch(cmd_code){
         case CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT:
-            show_all_prefix_conflicts(node, level);
+            {
+                ll_t *res = prefix_conflict_resolution(node, level);
+                singly_ll_node_t *list_node = NULL;
+                prefix_t *prefix = NULL;
+                printf("prefix-conflict free prefixes :\n");
+                ITERATE_LIST_BEGIN(res, list_node){
+                    
+                    prefix = list_node->data;
+                    assert(IS_PREFIX_SR_ACTIVE(prefix));
+                    printf("\t%s/%-10u %-20s\n", 
+                        prefix->prefix, prefix->mask, prefix->hosting_node->node_name);
+                } ITERATE_LIST_END;
+                delete_singly_ll(res);
+                free(res);
+            }
+            break;
+        case CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT:
+            {
+                ll_t *res = prefix_conflict_resolution(node, level);
+                res = prefix_sid_conflict_resolution(res);
+                
+                singly_ll_node_t *list_node = NULL;
+                prefix_t *prefix = NULL;
+                printf("prefixSID-conflict free prefixes :\n");
+                ITERATE_LIST_BEGIN(res, list_node){
+                    
+                    prefix = list_node->data;
+                    assert(IS_PREFIX_SR_ACTIVE(prefix));
+                    printf("\t%s/%-10u %-20s\n", 
+                        prefix->prefix, prefix->mask, prefix->hosting_node->node_name);
+                } ITERATE_LIST_END;
+                delete_singly_ll(res);
+                free(res);
+            }
             break;
         default:
             ;
