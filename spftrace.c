@@ -55,6 +55,8 @@ char
             return "SPF_PREFIX_BIT";
         case ROUTING_TABLE_BIT:
             return "ROUTING_TABLE_BIT";
+        case CONFLICT_RESOLUTION_BIT:
+            return "CONFLICT_RESOLUTION_BIT";
         case TRACE_MAX_BIT:
             return "TRACE_MAX_BIT";
         default:

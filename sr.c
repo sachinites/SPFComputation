@@ -32,6 +32,14 @@
 
 #include "sr.h"
 
+boolean
+is_global_sid_value_valid(unsigned int sid_value){
+
+    if(sid_value >= SRGB_DEF_LOWER_BOUND && sid_value <= SRGB_DEF_UPPER_BOUND)
+        return TRUE;
+     return FALSE;
+}
+
 void
 process_active_segment(sr_policy_stack_t *sr_stack){
 

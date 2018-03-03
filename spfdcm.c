@@ -44,6 +44,7 @@
 #include "rttable.h"
 #include "routes.h"
 #include "advert.h"
+#include "sr.h"
 
 extern
 instance_t *instance;
@@ -117,6 +118,18 @@ validate_level_no(char *value_passed){
         return VALIDATION_SUCCESS;
 
     printf("Error : Incorrect Level Value.\n");
+    return VALIDATION_FAILED;
+}
+
+static int
+validate_global_sid_value(char *value_passed){
+
+    boolean rc = is_global_sid_value_valid(atoi(value_passed));
+    if(rc == TRUE)
+        return VALIDATION_SUCCESS;
+
+    printf("Error : Incorrct SID value. Valid range : [%u,%u]\n", 
+        SRGB_DEF_LOWER_BOUND, SRGB_DEF_UPPER_BOUND);
     return VALIDATION_FAILED;
 }
 
@@ -739,6 +752,10 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, ROUTING_TABLE_BIT):
                 disable_spf_trace(instance, ROUTING_TABLE_BIT);
             break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_CONFLICT_RESOLUTION:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, CONFLICT_RESOLUTION_BIT):
+                disable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
+            break;
         case CMDCODE_DEBUG_TRACEOPTIONS_ALL:
             switch(enable_or_disable){
                 case CONFIG_ENABLE:
@@ -749,6 +766,7 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     enable_spf_trace(instance, RLFA_COMPUTATION_BIT);
                     enable_spf_trace(instance, SPF_PREFIX_BIT);
                     enable_spf_trace(instance, ROUTING_TABLE_BIT);
+                    enable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
                     break;
                 case CONFIG_DISABLE:
                     disable_spf_trace(instance, DIJKSTRA_BIT);
@@ -758,6 +776,7 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     disable_spf_trace(instance, RLFA_COMPUTATION_BIT);
                     disable_spf_trace(instance, SPF_PREFIX_BIT);
                     disable_spf_trace(instance, ROUTING_TABLE_BIT);
+                    disable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
                     break;
                 default:
                     assert(0);
@@ -1034,7 +1053,15 @@ spf_init_dcm(){
     init_param(&instance_node_name_level_level, LEAF, 0, show_instance_handler, validate_level_no, INT, "level-no", "level");
     libcli_register_param(&instance_node_name_level, &instance_node_name_level_level);
     set_param_cmd_code(&instance_node_name_level_level, CMDCODE_SHOW_INSTANCE_NODE_LEVEL);
-    
+   
+    {
+        /*show instance node <node-name> spring*/
+        static param_t spring;
+        init_param(&spring, CMD, "spring", 
+                instance_node_spring_show_handler, 0, INVALID, 0, "Spring Config");  
+        libcli_register_param(&instance_node_name_level_level, &spring);
+        set_param_cmd_code(&spring, CMDCODE_SHOW_NODE_SPRING);
+    }
     /*show spf run*/
 
     static param_t show_spf;
@@ -1178,6 +1205,12 @@ spf_init_dcm(){
                         libcli_register_param(&trace, &rt);
                         set_param_cmd_code(&rt, CMDCODE_DEBUG_TRACEOPTIONS_ROUTING_TABLE);
                     }
+                    {
+                        static param_t conflict_res;
+                        init_param(&conflict_res, CMD, "conflict-resolution", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for Conflict-Resolution");
+                        libcli_register_param(&trace, &conflict_res);
+                        set_param_cmd_code(&conflict_res, CMDCODE_DEBUG_TRACEOPTIONS_CONFLICT_RESOLUTION);
+                    }
                 }
             }
         }
@@ -1193,7 +1226,7 @@ spf_init_dcm(){
             libcli_register_param(&config_node_node_name, &prefix_sid);
             {
                 static param_t prefix_sid_val;
-                init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, 0, INT, "prefix-sid" , "Prefix SID value");  
+                init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, validate_global_sid_value, INT, "prefix-sid" , "Prefix SID value");  
                 libcli_register_param(&prefix_sid, &prefix_sid_val);
                 set_param_cmd_code(&prefix_sid_val, CMDCODE_CONFIG_NODE_SR_PREFIX_SID);
             }
@@ -1248,7 +1281,7 @@ spf_init_dcm(){
             libcli_register_param(&config_node_node_name_slot_slotname, &prefix_sid);
             {
                 static param_t prefix_sid_val;
-                init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, 0, INT, "prefix-sid" , "Prefix SID value");  
+                init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, validate_global_sid_value, INT, "prefix-sid" , "Prefix SID value");  
                 libcli_register_param(&prefix_sid, &prefix_sid_val);
                 set_param_cmd_code(&prefix_sid_val, CMDCODE_CONFIG_NODE_SR_PREFIX_SID_INTF);
             }

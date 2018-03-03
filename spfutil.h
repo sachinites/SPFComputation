@@ -79,6 +79,9 @@ spf_determine_multi_area_attachment(spf_info_t *spf_info,
 void
 apply_mask(char *prefix, char mask, char *str_prefix);
 
+void
+apply_mask2(char *prefix, char mask, char *str_prefix);
+
 node_t *
 get_system_id_from_router_id(node_t *ingress_lsr,
         char *tail_end_ip, LEVEL level);

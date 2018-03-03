@@ -39,6 +39,9 @@
 #define SHORTEST_PATH_FIRST  0 
 #define STRICT_SHORTEST_PATH 1
 
+#define PREFIX_SID_SUBTLV_TYPE  3
+#define SID_SUBTLV_TYPE         1
+
 #define PREFIX_SID_VALUE(prefix_ptr)    (prefix_ptr->prefix_sid->sid.sid)
 
 /*Segment ID SUB-TLV structure
@@ -202,12 +205,11 @@ typedef struct _prefix_sid_subtlv_t{
      /*conflict resolution : From prefix_sid_subtlv_t , recieving router computes the 
      * sr_mapping_entry_t data structure for all prefixes advertised 
      * with SID. It is not a part of subtlv.*/
-    conflict_result_t conflct_res; /*default is SID_ACTIVE*/
 } prefix_sid_subtlv_t;
 
-#define IS_PREFIX_SR_ACTIVE(prefixptr)  (prefixptr->prefix_sid->conflct_res == SID_ACTIVE)
-#define MARK_PREFIX_INACTIVE(prefixptr) (prefixptr->prefix_sid->conflct_res = SID_INACTIVE)
-#define MARK_PREFIX_ACTIVE(prefixptr)   (prefixptr->prefix_sid->conflct_res = SID_ACTIVE)
+#define IS_PREFIX_SR_ACTIVE(prefixptr)     (prefixptr->conflct_res == SID_ACTIVE)
+#define MARK_PREFIX_SR_INACTIVE(prefixptr) (prefixptr->conflct_res = SID_INACTIVE)
+#define MARK_PREFIX_SR_ACTIVE(prefixptr)   (prefixptr->conflct_res = SID_ACTIVE)
 
 /*Adjacecncy SID*/
 

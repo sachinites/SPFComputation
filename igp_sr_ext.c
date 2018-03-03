@@ -68,7 +68,8 @@ construct_prefix_mapping_entry(prefix_t *prefix,
 
     char subnet[PREFIX_LEN + 1];
     unsigned int binary_prefix = 0;
-
+    
+    memset(subnet, 0, PREFIX_LEN + 1);
     apply_mask(prefix->prefix, prefix->mask, subnet);
     inet_pton(AF_INET, subnet, &binary_prefix);
     binary_prefix = htonl(binary_prefix);
@@ -239,9 +240,9 @@ resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_e
     if(pfx_mapping_entry1->prf != pfx_mapping_entry2->prf){
         
         if(pfx_mapping_entry1->prf > pfx_mapping_entry2->prf)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
          return;
     }
         
@@ -249,9 +250,9 @@ resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_e
     if(pfx_mapping_entry1->range_value != pfx_mapping_entry2->range_value){
 
         if(pfx_mapping_entry1->range_value < pfx_mapping_entry2->range_value)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         return;
     }
 
@@ -259,27 +260,27 @@ resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_e
     if(pfx_mapping_entry1->pfx_len != pfx_mapping_entry2->pfx_len){
 
         if(pfx_mapping_entry1->pfx_len < pfx_mapping_entry2->pfx_len)
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         else
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         return;
     }
 
     if(pfx_mapping_entry1->pi != pfx_mapping_entry2->pi){
 
         if(pfx_mapping_entry1->pi < pfx_mapping_entry2->pi)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         return;
     }
 
     if(pfx_mapping_entry1->algorithm != pfx_mapping_entry2->algorithm){
 
         if(pfx_mapping_entry1->algorithm < pfx_mapping_entry2->algorithm)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         return;
     }
 
@@ -287,16 +288,16 @@ resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_e
     if(pfx_mapping_entry1->si != pfx_mapping_entry2->si){
 
         if(pfx_mapping_entry1->si < pfx_mapping_entry2->si)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         return;
     }
 #endif
 
     if(pfx_mapping_entry1->topology != pfx_mapping_entry2->topology){
-        MARK_PREFIX_INACTIVE(prefix1);
-        MARK_PREFIX_INACTIVE(prefix2);
+        MARK_PREFIX_SR_INACTIVE(prefix1);
+        MARK_PREFIX_SR_INACTIVE(prefix2);
         return;
     }
     else{
@@ -315,9 +316,9 @@ resolve_prefix_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry
     if(pfx_mapping_entry1->prf != pfx_mapping_entry2->prf){
         
         if(pfx_mapping_entry1->prf > pfx_mapping_entry2->prf)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
          return;
     }
         
@@ -325,9 +326,9 @@ resolve_prefix_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry
     if(pfx_mapping_entry1->range_value != pfx_mapping_entry2->range_value){
 
         if(pfx_mapping_entry1->range_value < pfx_mapping_entry2->range_value)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         return;
     }
 
@@ -335,27 +336,27 @@ resolve_prefix_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry
     if(pfx_mapping_entry1->pfx_len != pfx_mapping_entry2->pfx_len){
 
         if(pfx_mapping_entry1->pfx_len < pfx_mapping_entry2->pfx_len)
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         else
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         return;
     }
-
+#if 0
     if(pfx_mapping_entry1->pi != pfx_mapping_entry2->pi){
 
         if(pfx_mapping_entry1->pi < pfx_mapping_entry2->pi)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         return;
     }
-
+#endif
     if(pfx_mapping_entry1->si != pfx_mapping_entry2->si){
 
         if(pfx_mapping_entry1->si < pfx_mapping_entry2->si)
-            MARK_PREFIX_INACTIVE(prefix2);
+            MARK_PREFIX_SR_INACTIVE(prefix2);
         else
-            MARK_PREFIX_INACTIVE(prefix1);
+            MARK_PREFIX_SR_INACTIVE(prefix1);
         return;
     }
     assert(0);

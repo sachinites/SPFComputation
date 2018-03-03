@@ -33,24 +33,34 @@
 #ifndef __SR_TLV_API__
 #define __SR_TLV_API__
 
-typedef struct _node_t node_t;
+#include "instanceconst.h"
 
-void
+typedef struct _node_t node_t;
+typedef struct prefix_ prefix_t;
+
+boolean
 set_node_sid(node_t *node, unsigned int node_sid_value);
 
-void
+boolean
 unset_node_sid(node_t *node);
 
-void
-set_interface_address_prefix_sid(char *interface, unsigned int prefix_sid_value);
+boolean
+set_interface_address_prefix_sid(node_t *node, char *interface, 
+        unsigned int prefix_sid_value);
+
+boolean
+unset_interface_address_prefix_sid(node_t *node, char *interface);
+
+boolean
+set_interface_adj_sid(node_t *node, char *interface, 
+        unsigned int adj_sid_value);
+
+boolean
+unset_interface_adj_sid(node_t *node, char *interface);
+
+boolean
+update_prefix_sid(prefix_t *prefix, unsigned int prefix_sid_value);
 
 void
-unset_interface_address_prefix_sid(char *interface);
-
-void
-set_interface_adj_sid(char *interface, unsigned int adj_sid_value);
-
-void
-unset_interface_adj_sid(char *interface);
-
+diplay_prefix_sid(prefix_t *prefix);
 #endif /* __SR_TLV_API__ */

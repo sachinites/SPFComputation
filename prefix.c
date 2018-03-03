@@ -52,6 +52,7 @@ create_new_prefix(const char *prefix, unsigned char mask, LEVEL level){
     _prefix->prefix[PREFIX_LEN] = '\0';
     _prefix->mask = mask;
      _prefix->level = level;
+     MARK_PREFIX_SR_ACTIVE(_prefix);
     set_prefix_property_metric(_prefix, DEFAULT_LOCAL_PREFIX_METRIC);
     return _prefix;
 }

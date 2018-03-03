@@ -131,6 +131,26 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
     }
 }
 
+
+static void
+show_node_spring_details(node_t *node, LEVEL level){
+
+    if(!node->spring_enabled){
+        printf("Spring Disabled on this node\n");
+        return;
+    }
+
+    prefix_t *prefix = NULL;
+    singly_ll_node_t *list_node = NULL;
+
+    printf("Node : %s, %s Prefix SID Database :\n", node->node_name, get_str_level(level));
+    ITERATE_LIST_BEGIN(node->local_prefix_list[level], list_node){
+    
+        prefix = list_node->data;
+        diplay_prefix_sid(prefix);
+    } ITERATE_LIST_END;
+}
+
 void
 spf_node_slot_metric_change(node_t *node, char *slot_name,
                             LEVEL level, unsigned int new_metric){
@@ -748,10 +768,10 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
         case CMDCODE_CONFIG_NODE_SR_PREFIX_SID_INTF:
         switch(enable_or_disable){
             case CONFIG_ENABLE:
-                set_interface_address_prefix_sid(intf_name, prefix_sid);
+                set_interface_address_prefix_sid(node, intf_name, prefix_sid);
                 break;
             case CONFIG_DISABLE:
-                unset_interface_address_prefix_sid(intf_name);
+                unset_interface_address_prefix_sid(node, intf_name);
                 break;
              default:
                 ;
@@ -760,10 +780,10 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
         case CMDCODE_CONFIG_NODE_SR_ADJ_SID:
         switch(enable_or_disable){
             case CONFIG_ENABLE:
-                set_interface_adj_sid(intf_name, prefix_sid);
+                set_interface_adj_sid(node, intf_name, prefix_sid);
                 break;
             case CONFIG_DISABLE:
-                unset_interface_adj_sid(intf_name);
+                unset_interface_adj_sid(node, intf_name);
                 break;
              default:
                 ;
@@ -774,12 +794,6 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
     }
     return 0;
 }
-
-extern void
-show_all_prefix_conflicts(node_t *node, LEVEL level);
-
-extern void
-show_all_prefix_sid_conflicts(node_t *node, LEVEL level);
 
 int
 instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
@@ -840,6 +854,9 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                 free(res);
             }
             break;
+        case CMDCODE_SHOW_NODE_SPRING:
+            show_node_spring_details(node, level);
+        break;
         default:
             ;
     } 

@@ -100,9 +100,6 @@ do{                                       \
 #define ITERATE_PR_NH_END  }}while(0)
 
 void
-apply_mask(char *prefix, char mask, char *subnet);
-
-void
 add_primary_nh(rttable_entry_t *rt_entry, nh_t *nh);
 
 void

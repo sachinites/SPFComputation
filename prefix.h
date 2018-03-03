@@ -94,6 +94,7 @@ typedef struct prefix_{
     LEVEL level;
     /*SR*/
     prefix_sid_subtlv_t *prefix_sid;
+    conflict_result_t conflct_res; /*default is SID_ACTIVE*/
     /*Extras*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;

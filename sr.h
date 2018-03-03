@@ -34,6 +34,7 @@
 #define __SR__
 
 #include "Stack/stack.h"
+#include "instanceconst.h"
 
 #define SRGB_DEF_LOWER_BOUND    16000
 #define SRGB_DEF_UPPER_BOUND    23999
@@ -82,5 +83,8 @@ typedef struct _sr_policy_stack{
 /*SR policy stack operations*/
 void
 process_active_segment(sr_policy_stack_t *sr_stack);
+
+boolean
+is_global_sid_value_valid(unsigned int sid_value);
 
 #endif /* __SR__ */

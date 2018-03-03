@@ -234,6 +234,15 @@ apply_mask(char *prefix, char mask, char *str_prefix){
     str_prefix[PREFIX_LEN] = '\0';
 }
 
+void
+apply_mask2(char *prefix, char mask, char *str_prefix){
+
+    apply_mask(prefix, mask, str_prefix);
+    char *mask_ptr = str_prefix + strlen(str_prefix);
+    str_prefix[PREFIX_LEN] = 48;
+    sprintf(mask_ptr, "/%u", mask);
+    str_prefix[PREFIX_LEN_WITH_MASK] = '\0';
+} 
 /* Iterate over all 'level' reachable routers in the network from
  *  * ingress_lsr and get the node_t * of router whose router_id is tail_end_ip*/
 

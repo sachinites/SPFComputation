@@ -619,5 +619,6 @@ get_interface_from_intf_name(node_t *node, char *intf_name){
 
         return interface;
     }
+    return NULL;
 }
 
