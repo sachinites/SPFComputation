@@ -71,10 +71,15 @@ set_node_sid(node_t *node, unsigned int node_sid_value){
         printf("Error : SPRING not enabled\n");
         return FALSE;
     }
+
+    if(is_mpls_label_in_use(node->srgb, node_sid_value)){
+        printf("Warning : Conflict Detected\n");
+    }
+
     for(level_it = LEVEL1 ; level_it < MAX_LEVEL; level_it++){
         router_id = node_local_prefix_search(node, level_it, node->router_id, 32);
         assert(router_id);
-        is_prefix_sid_updated = update_prefix_sid(router_id, node_sid_value); 
+        is_prefix_sid_updated = update_prefix_sid(node, router_id, node_sid_value); 
         if(is_prefix_sid_updated)
             trigger_conflict_res = TRUE;
     }
@@ -87,6 +92,7 @@ unset_node_sid(node_t *node){
     LEVEL level_it;
     boolean trigger_conflict_res = FALSE;
     prefix_t *router_id = NULL;
+    mpls_label label = 0 ;
 
     if(!node->spring_enabled){
         printf("Error : SPRING not enabled\n");
@@ -98,12 +104,13 @@ unset_node_sid(node_t *node){
         if(!router_id->prefix_sid){
             continue;
         }
+        label = PREFIX_SID_VALUE(router_id);
+        mark_srgb_mpls_label_not_in_use(node->srgb, label); 
         free(router_id->prefix_sid);
         router_id->prefix_sid = NULL;
         trigger_conflict_res = TRUE;
-    }
-    if(trigger_conflict_res)
         MARK_PREFIX_SR_INACTIVE(router_id);
+    }
     return trigger_conflict_res;
 }
 
@@ -129,13 +136,17 @@ set_interface_address_prefix_sid(node_t *node, char *intf_name,
         return FALSE;
     }
 
+    if(is_mpls_label_in_use(node->srgb, prefix_sid_value)){
+        printf("Warning : Conflict Detected\n");
+    }
+
     for(level_it = LEVEL1 ; level_it < MAX_LEVEL; level_it++){
         intf_prefix = interface->prefix[level_it];
         if(!intf_prefix) continue;
         prefix = node_local_prefix_search(node, level_it, intf_prefix->prefix, intf_prefix->mask);
         assert(prefix);
-        is_prefix_sid_updated = update_prefix_sid(prefix, prefix_sid_value);
-        update_prefix_sid(intf_prefix, prefix_sid_value);
+        is_prefix_sid_updated = update_prefix_sid(node, prefix, prefix_sid_value);
+        //update_prefix_sid(node, intf_prefix, prefix_sid_value);
         if(is_prefix_sid_updated)
             trigger_conflict_res = TRUE;
     }
@@ -149,6 +160,7 @@ unset_interface_address_prefix_sid(node_t *node, char *intf_name){
     boolean trigger_conflict_res = FALSE;
     prefix_t *prefix = NULL, *intf_prefix = NULL;
     edge_end_t *interface = NULL;
+    mpls_label label = 0;
 
     if(!node->spring_enabled){
         printf("Error : SPRING not enabled\n");
@@ -165,13 +177,12 @@ unset_interface_address_prefix_sid(node_t *node, char *intf_name){
     for(level_it = LEVEL1 ; level_it < MAX_LEVEL; level_it++){
         intf_prefix = interface->prefix[level_it];
         if(!intf_prefix) continue;
-        if(!intf_prefix->prefix_sid)
-            continue;
-        free(intf_prefix->prefix_sid);
-        intf_prefix->prefix_sid = NULL;
-        MARK_PREFIX_SR_INACTIVE(intf_prefix);
         prefix = node_local_prefix_search(node, level_it, intf_prefix->prefix, intf_prefix->mask);
         assert(prefix);
+        if(!prefix->prefix_sid)
+            continue;
+        label = PREFIX_SID_VALUE(prefix);
+        mark_srgb_mpls_label_not_in_use(node->srgb, label);
         free(prefix->prefix_sid);
         prefix->prefix_sid = NULL;
         MARK_PREFIX_SR_INACTIVE(prefix);
@@ -192,10 +203,11 @@ unset_interface_adj_sid(node_t *node, char *interface){
 }
 
 boolean
-update_prefix_sid(prefix_t *prefix, unsigned int prefix_sid_value){
+update_prefix_sid(node_t *node, prefix_t *prefix, 
+        unsigned int prefix_sid_value){
 
     boolean trigger_conflict_res = FALSE;
-
+                    
     if(!prefix->prefix_sid){
         prefix->prefix_sid = calloc(1, sizeof(prefix_sid_subtlv_t));
         prefix->prefix_sid->type = PREFIX_SID_SUBTLV_TYPE;
@@ -206,10 +218,15 @@ update_prefix_sid(prefix_t *prefix, unsigned int prefix_sid_value){
         PREFIX_SID_VALUE(prefix) = prefix_sid_value;
         MARK_PREFIX_SR_ACTIVE(prefix);
         trigger_conflict_res = TRUE;
+        mark_srgb_mpls_label_in_use(node->srgb, prefix_sid_value);
         return trigger_conflict_res;
     }
-    if(prefix_sid_value != PREFIX_SID_VALUE(prefix))
+
+    if(prefix_sid_value != PREFIX_SID_VALUE(prefix)){
         trigger_conflict_res = TRUE;
+        mark_srgb_mpls_label_in_use(node->srgb, prefix_sid_value);
+        mark_srgb_mpls_label_not_in_use(node->srgb, PREFIX_SID_VALUE(prefix));
+    }
 
     PREFIX_SID_VALUE(prefix) = prefix_sid_value;
 

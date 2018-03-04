@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  sr.h
+ *       Filename:  rt_mpls.c
  *
- *    Description: defines the common Segment routing APIs and constants 
+ *    Description:  Interface API Implementation for MPLS forwarding table
  *
  *        Version:  1.0
- *        Created:  Saturday 24 February 2018 11:52:09  IST
+ *        Created:  Sunday 04 March 2018 08:39:15  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,47 +30,6 @@
  * =====================================================================================
  */
 
-#ifndef __SR__
-#define __SR__
+#include "rt_mpls.h"
 
-#include "Stack/stack.h"
-#include "instanceconst.h"
 
-#define SRGB_DEF_LOWER_BOUND    16000
-#define SRGB_DEF_UPPER_BOUND    23999
-#define SRGB_MAX_SIZE           65536
-
-typedef enum{
-
-    NODAL_SEGMENT,
-    ADJ_SEGMENT_LOCAL,
-    ADJ_SEGMENT_GLOBAL,
-    PREFIX_SEGMENT = NODAL_SEGMENT,
-    SEGMENT_TYPE_MAX,
-    UNKNOWN_SEGMENT = SEGMENT_TYPE_MAX
-} SEGMENT_TYPE;
-
-typedef struct _prefix_sid_subtlv_t prefix_sid_subtlv_t;
-typedef struct _adj_sid_subtlv_t ajd_sid_subtlv_t;
-
-typedef struct _segment_t{
-    
-    SEGMENT_TYPE seg_type;
-    union{
-        prefix_sid_subtlv_t *psid;
-        ajd_sid_subtlv_t *adj_sid;
-    } seg;
-} segment_t;
-
-typedef struct _sr_policy_stack{
-    stack_t *stack;
-} sr_policy_stack_t;
-
-/*SR policy stack operations*/
-void
-process_active_segment(sr_policy_stack_t *sr_stack);
-
-boolean
-is_global_sid_value_valid(unsigned int sid_value);
-
-#endif /* __SR__ */

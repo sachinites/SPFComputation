@@ -38,9 +38,12 @@
 
 #define SHORTEST_PATH_FIRST  0 
 #define STRICT_SHORTEST_PATH 1
+    
 
 #define PREFIX_SID_SUBTLV_TYPE  3
 #define SID_SUBTLV_TYPE         1
+#define SR_CAPABILITY_SRGB_SUBTLV_TYPE  2
+#define SR_CAPABILITY_SRLB_SUBTLV_TYPE  22
 
 #define PREFIX_SID_VALUE(prefix_ptr)    (prefix_ptr->prefix_sid->sid.sid)
 
@@ -66,7 +69,7 @@ processing SR MPLS encapsulated IPv4 packets on all interfaces*/
 
 
 /*Used to advertise the srgb block*/
-typedef struct _sr_capability_tlv{
+typedef struct _sr_capability_subtlv{
 
    BYTE type;      /*constant = 2 for SRGB. 22 for SRLB*/ 
    BYTE length;
@@ -76,20 +79,27 @@ typedef struct _sr_capability_tlv{
    unsigned int range;  /*only last three bytes, must > 0*/   
    segment_id_subtlv_t first_sid; /*SID/Label sub-TLV contains the first value of the SRGB while the
    range contains the number of SRGB elements*/
+   /*Out of RFC  :Bits to track the index allocation*/
+   char *index_array;
 } sr_capability_subtlv_t;
 
-typedef struct sr_capability_subtlv_t srgb_t;
-typedef struct sr_capability_subtlv_t srlb_t;
+typedef sr_capability_subtlv_t srgb_t;
+typedef sr_capability_subtlv_t srlb_t;
 
-unsigned int
-get_available_srgb_index(srgb_t *srgb);
-
-void
-init_srgb_default_range(srgb_t *srgb);
+mpls_label
+get_available_srgb_mpls_label(srgb_t *srgb);
 
 void
-mark_srgb_index_available(unsigned int index, 
-                          srgb_t *srgb);
+init_srgb_defaults(srgb_t *srgb);
+
+void
+mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label label);
+
+void
+mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label label);
+
+boolean
+is_mpls_label_in_use(srgb_t *srgb, mpls_label label);
 
 /*SR algorithm TLV
  * allows the router to advertise the algorithms
@@ -275,9 +285,6 @@ typedef struct _lan_adj_sid_subtlv_t{
     segment_id_subtlv_t sid;
 } lan_adg_sid_subtlv_t;
 
-
-boolean
-is_pfx_sid_lies_within_srgb(prefix_sid_subtlv_t *pfx_sid, srgb_t *srgb);
 
 typedef struct _node_t node_t;
 typedef struct prefix_ prefix_t;

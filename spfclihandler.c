@@ -143,7 +143,23 @@ show_node_spring_details(node_t *node, LEVEL level){
     prefix_t *prefix = NULL;
     singly_ll_node_t *list_node = NULL;
 
-    printf("Node : %s, %s Prefix SID Database :\n", node->node_name, get_str_level(level));
+    srgb_t *srgb = node->srgb;
+
+    printf("Node : %s SRGB Details:\n",  node->node_name);
+    printf("\tRange : [%u,%u]\n", node->srgb->first_sid.sid, 
+        node->srgb->first_sid.sid + srgb->range -1);
+
+    unsigned int i = 0, in_use_count = 0, 
+                        avail_count = 0;
+    for(; i < srgb->range; i++){
+        if(*(srgb->index_array + i))
+            in_use_count++;
+        else
+            avail_count++;
+    }
+    printf("\t# Mpls labels in Use : %u, Available : %u\n", in_use_count, avail_count);
+
+    printf("\tPrefix SID Database :\n");
     ITERATE_LIST_BEGIN(node->local_prefix_list[level], list_node){
     
         prefix = list_node->data;
@@ -745,6 +761,9 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
         switch(enable_or_disable){
             case CONFIG_ENABLE:
                 node->spring_enabled = TRUE;
+                if(!node->srgb)
+                    node->srgb = calloc(1, sizeof(srgb_t));
+                init_srgb_defaults(node->srgb);
                 break;
             case CONFIG_DISABLE:
                 node->spring_enabled = FALSE;

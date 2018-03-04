@@ -1,12 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  sr.h
+ *       Filename:  rt_mpls.h
  *
- *    Description: defines the common Segment routing APIs and constants 
+ *    Description:  Interface API for MPLS forwarding table
  *
  *        Version:  1.0
- *        Created:  Saturday 24 February 2018 11:52:09  IST
+ *        Created:  Sunday 04 March 2018 08:37:35  IST
  *       Revision:  1.0
  *       Compiler:  gcc
  *
@@ -30,47 +30,57 @@
  * =====================================================================================
  */
 
-#ifndef __SR__
-#define __SR__
+#ifndef __MPLS_RT__
+#define __MPLS_RT__
 
-#include "Stack/stack.h"
 #include "instanceconst.h"
+#include "LinkedList/LinkedListApi.h"
 
-#define SRGB_DEF_LOWER_BOUND    16000
-#define SRGB_DEF_UPPER_BOUND    23999
-#define SRGB_MAX_SIZE           65536
+typedef enum {
+
+    UNKNOWN,
+    SWAP,
+    CONTINUE = SWAP,
+    NEXT,
+    POP
+} MPLS_STACK_OP;
 
 typedef enum{
 
-    NODAL_SEGMENT,
-    ADJ_SEGMENT_LOCAL,
-    ADJ_SEGMENT_GLOBAL,
-    PREFIX_SEGMENT = NODAL_SEGMENT,
-    SEGMENT_TYPE_MAX,
-    UNKNOWN_SEGMENT = SEGMENT_TYPE_MAX
-} SEGMENT_TYPE;
+    PENULTIMATE_HOP_POPPING,
+    ULTIMATE_HOP_POPPING,
+    HOP_POPPING_NONE
+} HOP_POPPING;
 
-typedef struct _prefix_sid_subtlv_t prefix_sid_subtlv_t;
-typedef struct _adj_sid_subtlv_t ajd_sid_subtlv_t;
 
-typedef struct _segment_t{
-    
-    SEGMENT_TYPE seg_type;
-    union{
-        prefix_sid_subtlv_t *psid;
-        ajd_sid_subtlv_t *adj_sid;
-    } seg;
-} segment_t;
+typedef struct _mpls_rt_entry{
 
-typedef struct _sr_policy_stack{
-    stack_t *stack;
-} sr_policy_stack_t;
+    mpls_label incoming_label; /*key*/
+    mpls_label outgoing_label;
+    char gwip[PREFIX_LEN + 1];
+    char oif[IF_NAME_SIZE];
+    MPLS_STACK_OP stack_op;
+    HOP_POPPING hop_popping_type;   
+    unsigned int version; 
+} mpls_rt_entry_t;
 
-/*SR policy stack operations*/
+typedef struct _mpls_rt_table{
+
+    ll_t *entries;    
+} mpls_rt_table;
+
 void
-process_active_segment(sr_policy_stack_t *sr_stack);
+install_mpls_forwarding_entry(mpls_rt_entry_t *mpls_rt_entry);
 
-boolean
-is_global_sid_value_valid(unsigned int sid_value);
+void
+delete_mpls_forwarding_entry(mpls_label incoming_label);
 
-#endif /* __SR__ */
+void
+update_mpls_forwarding_entry(mpls_label incoming_label, 
+    mpls_rt_entry_t *mpls_rt_entry);
+
+mpls_rt_table *
+init_mpls_rt_table(char *table_name);
+
+
+#endif /* __MPLS_RT__ */

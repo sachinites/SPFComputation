@@ -105,6 +105,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     node->lsp_distribution_bit = 0;
     node->backup_spf_options = 0;
     node->spring_enabled = FALSE;
+    node->srgb = NULL;
     node->is_srms = FALSE;
     add_node_to_owning_instance(instance, node);
     return node;    

@@ -1324,6 +1324,42 @@ is_route_eligible_for_backups(routes_t *route){
 #endif
 /*Routine to build the routing table*/
 
+static mpls_label
+get_prefix_sid_from_route(routes_t *route){
+    
+    node_t *node = route->hosting_node;
+    LEVEL level = route->level;
+    prefix_t *prefix = node_local_prefix_search(node, level, 
+        route->rt_key.prefix, route->rt_key.mask);
+    assert(prefix);
+    if(!IS_PREFIX_SR_ACTIVE(prefix))
+        return 0;
+    return PREFIX_SID_VALUE(prefix);
+}
+
+
+static void
+start_mpls_route_installation(spf_info_t *spf_info, LEVEL level){
+
+    singly_ll_node_t *list_node = NULL;
+    routes_t *route = NULL;
+
+    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
+
+        route = list_node->data;
+        if(route->level != level)
+            continue;
+
+        if(route->install_state != RTE_NO_CHANGE &&
+            route->install_state != RTE_STALE){
+        
+        
+        }
+
+    } ITERATE_LIST_END;
+}
+
+
 void
 start_route_installation(spf_info_t *spf_info,
                          LEVEL level){

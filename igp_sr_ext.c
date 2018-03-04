@@ -204,7 +204,8 @@ build_global_prefix_list(node_t *node, LEVEL level){
         ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, pn_node, edge1,
                 edge2, level){
 
-            if(nbr_node->traversing_bit){
+            if(nbr_node->traversing_bit ||
+                nbr_node->spring_enabled == FALSE){
                 ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(curr_node, nbr_node, pn_node, level);
             }
 
@@ -391,6 +392,9 @@ prefix_sid_conflict_resolution(ll_t *global_prefix_list){
 
              resolve_prefix_sid_conflict(prefix1, &mapping_entry1, 
                     prefix2, &mapping_entry2);
+        
+             if(!IS_PREFIX_SR_ACTIVE(prefix1))
+                 break;
         } 
     } ITERATE_LIST_END;
 
@@ -443,6 +447,9 @@ prefix_conflict_resolution(node_t *node, LEVEL level){
              continue;
         /*Now resolve the conflict between prefix1 and prefix 2*/
          resolve_prefix_conflict(prefix1, &mapping_entry1, prefix2, &mapping_entry2);
+ 
+         if(!IS_PREFIX_SR_ACTIVE(prefix1))
+             break;
          
          assert((IS_PREFIX_SR_ACTIVE(prefix1) && !IS_PREFIX_SR_ACTIVE(prefix2)) || 
             (!IS_PREFIX_SR_ACTIVE(prefix1) &&  IS_PREFIX_SR_ACTIVE(prefix2)));
@@ -461,4 +468,77 @@ prefix_conflict_resolution(node_t *node, LEVEL level){
     } ITERATE_LIST_END2(global_prefix_list, list_node1, list_node2);
    
    return global_prefix_list;
+}
+
+/*SRGB operations*/
+
+/*Opimize . ..*/
+void
+init_srgb_defaults(srgb_t *srgb){
+   
+    srgb->type = SR_CAPABILITY_SRGB_SUBTLV_TYPE;
+    srgb->length = 0;
+    srgb->flags = 0;
+    srgb->range = SRGB_DEF_UPPER_BOUND - SRGB_DEF_LOWER_BOUND + 1;
+    srgb->first_sid.type = SID_SUBTLV_TYPE;
+    srgb->first_sid.length = 0;
+    srgb->first_sid.type = SID_SUBTLV_TYPE;
+    srgb->first_sid.sid = SRGB_DEF_LOWER_BOUND;
+    if(!srgb->index_array)
+        srgb->index_array = calloc(1, srgb->range);
+    else
+        memset(srgb->index_array, 0, srgb->range);
+}
+
+mpls_label
+get_available_srgb_label(srgb_t *srgb){
+
+   unsigned int i = 0;
+   for(; i < srgb->range; i++){
+    if(*(srgb->index_array + i))
+        continue;
+    break;    
+   }
+   if(i == srgb->range)
+       return 0;
+   return srgb->first_sid.sid + i;
+}
+
+void
+mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label label){
+
+    if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
+        printf("Error : Invalid label specified\n");
+        return;
+    }
+
+    unsigned int index = label - srgb->first_sid.sid;
+    assert(*(srgb->index_array + index) < 255);
+    (*(srgb->index_array + index))++;
+}
+
+
+void
+mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label label){
+
+    if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
+        printf("Error : Invalid label specified\n");
+        return;
+    }
+
+    unsigned int index = label - srgb->first_sid.sid;
+    if(*(srgb->index_array + index) > 0)
+        (*(srgb->index_array + index))--;
+}
+
+boolean
+is_mpls_label_in_use(srgb_t *srgb, mpls_label label){
+
+    if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
+        printf("Error : Invalid label specified\n");
+        return TRUE;
+    }
+
+    unsigned int index = label - srgb->first_sid.sid;
+    return *(srgb->index_array + index) >= 1;
 }
