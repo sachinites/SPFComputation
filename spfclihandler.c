@@ -41,6 +41,8 @@
 #include "rlfa.h"
 #include "spftrace.h"
 #include "sr_tlv_api.h"
+#include "igp_sr_ext.h"
+#include "rt_mpls.h"
 
 extern instance_t * instance;
 
@@ -52,7 +54,7 @@ _run_spf_run_all_nodes(){
     node_t *node = NULL;;
 
     /*Ist run LEVEL2 spf run on all nodes, so that L1L2 routers would set multi_area bit appropriately*/
-    for(level_it = LEVEL2; level_it >= LEVEL1; level_it--){
+    for(level_it = LEVEL1; level_it <= LEVEL2; level_it++){
 
         ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
             node = list_node->data;
@@ -740,6 +742,8 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
     int cmd_code = -1;
     char *intf_name = NULL;
     unsigned int prefix_sid = 0;
+    char *prefix = NULL;
+    char mask = 0;
 
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
@@ -748,6 +752,10 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
             intf_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "prefix-sid", strlen("prefix-sid")) ==0)
             prefix_sid = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "prefix",  strlen("prefix")) ==0)
+            prefix = tlv->value;
+        else if(strncmp(tlv->leaf_id, "mask",  strlen("mask")) ==0)
+            mask = atoi(tlv->value);
         else
             assert(0);
     } TLV_LOOP_END;
@@ -795,7 +803,7 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
              default:
                 ;
         }
-            break;
+        break;
         case CMDCODE_CONFIG_NODE_SR_ADJ_SID:
         switch(enable_or_disable){
             case CONFIG_ENABLE:
@@ -807,7 +815,18 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
              default:
                 ;
         }
-            break;
+        break;
+        case CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE:
+                igp_install_mpls_static_route(node, prefix, mask);
+                break;
+            case CONFIG_DISABLE:
+                igp_uninstall_mpls_static_route(node, prefix, mask);
+                break;
+             default:
+                ;
+        }
         default:
         ;
     }
@@ -843,12 +862,15 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                 singly_ll_node_t *list_node = NULL;
                 prefix_t *prefix = NULL;
                 printf("prefix-conflict free prefixes :\n");
+                printf("\t%s/%-10s %-20s   %s\n", "prefix", "mask", "Hosting node", "mpls-label");
+                printf("\t--------------------------------------------------------\n");
                 ITERATE_LIST_BEGIN(res, list_node){
                     
                     prefix = list_node->data;
                     assert(IS_PREFIX_SR_ACTIVE(prefix));
-                    printf("\t%s/%-10u %-20s\n", 
-                        prefix->prefix, prefix->mask, prefix->hosting_node->node_name);
+                    printf("\t%s/%-10u %-20s %u\n", 
+                        prefix->prefix, prefix->mask, 
+                        prefix->hosting_node->node_name, PREFIX_SID_VALUE(prefix));
                 } ITERATE_LIST_END;
                 delete_singly_ll(res);
                 free(res);
@@ -862,12 +884,15 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                 singly_ll_node_t *list_node = NULL;
                 prefix_t *prefix = NULL;
                 printf("prefixSID-conflict free prefixes :\n");
+                printf("\t%s/%-10s %-20s   %s\n", "prefix", "mask", "Hosting node", "mpls-label");
+                printf("\t--------------------------------------------------------\n");
                 ITERATE_LIST_BEGIN(res, list_node){
                     
                     prefix = list_node->data;
                     assert(IS_PREFIX_SR_ACTIVE(prefix));
-                    printf("\t%s/%-10u %-20s\n", 
-                        prefix->prefix, prefix->mask, prefix->hosting_node->node_name);
+                    printf("\t%s/%-10u %-20s %u\n", 
+                        prefix->prefix, prefix->mask, 
+                        prefix->hosting_node->node_name, PREFIX_SID_VALUE(prefix));
                 } ITERATE_LIST_END;
                 delete_singly_ll(res);
                 free(res);
@@ -876,6 +901,9 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
         case CMDCODE_SHOW_NODE_SPRING:
             show_node_spring_details(node, level);
         break;
+        case CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE:
+            show_mpls_rt_table(node);
+            break;
         default:
             ;
     } 

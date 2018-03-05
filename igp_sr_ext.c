@@ -37,6 +37,10 @@
 #include "Queue.h"
 #include "spfutil.h"
 #include <arpa/inet.h>
+#include "routes.h"
+#include "rt_mpls.h"
+#include "bitsop.h"
+#include "spftrace.h"
 
 extern instance_t *instance;
 
@@ -211,8 +215,10 @@ build_global_prefix_list(node_t *node, LEVEL level){
 
             ITERATE_LIST_BEGIN(nbr_node->local_prefix_list[level], list_node){
                 prefix = list_node->data;
-                if(prefix->prefix_sid)
+                if(prefix->prefix_sid){
+                    MARK_PREFIX_SR_ACTIVE(prefix);
                     singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
+                }
             } ITERATE_LIST_END;
             
             nbr_node->traversing_bit = 1;
@@ -223,8 +229,10 @@ build_global_prefix_list(node_t *node, LEVEL level){
     /*Add self list*/
     ITERATE_LIST_BEGIN(node->local_prefix_list[level], list_node){
         prefix = list_node->data;
-        if(prefix->prefix_sid)
+        if(prefix->prefix_sid){
+            MARK_PREFIX_SR_ACTIVE(prefix);
             singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
+        }
     } ITERATE_LIST_END;
 
     return global_pfx_lst;
@@ -490,7 +498,7 @@ init_srgb_defaults(srgb_t *srgb){
         memset(srgb->index_array, 0, srgb->range);
 }
 
-mpls_label
+mpls_label_t
 get_available_srgb_label(srgb_t *srgb){
 
    unsigned int i = 0;
@@ -505,7 +513,7 @@ get_available_srgb_label(srgb_t *srgb){
 }
 
 void
-mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label label){
+mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label_t label){
 
     if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
         printf("Error : Invalid label specified\n");
@@ -519,7 +527,7 @@ mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label label){
 
 
 void
-mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label label){
+mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label_t label){
 
     if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
         printf("Error : Invalid label specified\n");
@@ -532,7 +540,7 @@ mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label label){
 }
 
 boolean
-is_mpls_label_in_use(srgb_t *srgb, mpls_label label){
+is_mpls_label_in_use(srgb_t *srgb, mpls_label_t label){
 
     if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
         printf("Error : Invalid label specified\n");
@@ -542,3 +550,203 @@ is_mpls_label_in_use(srgb_t *srgb, mpls_label label){
     unsigned int index = label - srgb->first_sid.sid;
     return *(srgb->index_array + index) >= 1;
 }
+
+/*This fn blinkdly copies all IPV4 route members to mpls route.
+ * You need to override the fields in the called appropriately*/
+
+static mpls_rt_entry_t *
+prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
+
+   singly_ll_node_t *list_node = NULL;
+   internal_nh_t *ipv4_prim_nh = NULL;
+   mpls_rt_nh_t *mpls_prim_nh = NULL;
+   unsigned int i = 0, 
+                prim_nh_count = 0;
+   
+   prim_nh_count = GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[IPNH]);
+   mpls_rt_entry_t *mpls_rt_entry = NULL;
+
+   /*Add atleast 1 mpls next hop so that we can add POP operation
+    * when labelled packet is recieved for local mpls SIDs*/
+   if(prim_nh_count) 
+       mpls_rt_entry = calloc(1, sizeof(mpls_rt_entry_t) + \
+               (prim_nh_count * sizeof(mpls_rt_nh_t)));
+   else
+       mpls_rt_entry = calloc(1, sizeof(mpls_rt_entry_t) + \
+               sizeof(mpls_rt_nh_t));
+
+   prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
+
+   mpls_rt_entry->incoming_label = PREFIX_SID_VALUE(prefix);
+   mpls_rt_entry->version = route->version;
+   mpls_rt_entry->prim_nh_count = prim_nh_count;
+    
+   ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node){
+        
+        ipv4_prim_nh = list_node->data;
+        mpls_prim_nh = &mpls_rt_entry->mpls_nh[i];
+        mpls_prim_nh->outgoing_label = mpls_rt_entry->incoming_label;
+        strncpy(mpls_prim_nh->gwip, ipv4_prim_nh->gw_prefix, PREFIX_LEN);
+        mpls_prim_nh->gwip[PREFIX_LEN] = '\0';
+        strncpy(mpls_prim_nh->oif, ipv4_prim_nh->oif->intf_name, IF_NAME_SIZE);
+        mpls_prim_nh->oif[IF_NAME_SIZE]= '\0';
+        mpls_prim_nh->stack_op = SWAP;
+        i++;
+   } ITERATE_LIST_END;
+
+   if(prim_nh_count == 0){
+        mpls_prim_nh = &mpls_rt_entry->mpls_nh[0];
+        mpls_prim_nh->outgoing_label = 0;
+        strncpy(mpls_prim_nh->gwip, "0.0.0.0" , PREFIX_LEN);
+        mpls_prim_nh->gwip[PREFIX_LEN] = '\0'; 
+        strncpy(mpls_prim_nh->oif, "Nil", IF_NAME_SIZE); 
+        mpls_prim_nh->oif[IF_NAME_SIZE]= '\0';
+        mpls_prim_nh->stack_op = POP;
+        mpls_rt_entry->prim_nh_count = 1;
+   }
+
+   return mpls_rt_entry;
+}
+
+void
+sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
+
+    /*route should be local route*/
+    assert(route->hosting_node == node);
+
+    prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
+
+    if(!prefix->prefix_sid){
+        printf("Error : No prefix SID assigned\n");
+        return;
+    }
+
+    if(!IS_PREFIX_SR_ACTIVE(prefix)){
+        sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u was not installed. Reason : Conflicted prefix", 
+                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        return;
+    }
+    
+    /* If Router recieves unlabelled pkt because nbr has performed PHP, 
+     * hence no need to insall mpls entry*/
+
+    if(!IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG)){
+        sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u was not installed. Reason : PHP enabled", 
+                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        return;
+    }
+
+    /*If current router do not want nbrs to perform PHP, then current router
+     * should implment POP and OIF - NULL in mpls table*/
+    mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(route);
+    
+    /*sanity checks*/
+    assert(!mpls_rt_entry->prim_nh_count);
+
+    /*Current router would recieve this prefix with label, install the
+     * entry to pop the label*/
+    mpls_rt_entry->mpls_nh[0].stack_op = POP;
+    mpls_rt_entry->mpls_nh[0].outgoing_label = 0;
+    sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u Installed, Opn : POP",
+                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+    trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+    install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
+}
+
+void
+sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
+
+   /*route should be for remote destination*/
+    assert(route->hosting_node != node); 
+
+    unsigned int i = 0;
+    singly_ll_node_t *list_node = NULL;
+    internal_nh_t *ipv4_prim_nh = NULL;
+    mpls_rt_nh_t *mpls_nh = NULL;
+    prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
+
+    if(!prefix->prefix_sid){
+        printf("Error : No prefix SID assigned\n");
+        return;
+    }
+
+    if(!IS_PREFIX_SR_ACTIVE(prefix)){
+        sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u was not installed. Reason : Conflicted prefix", 
+                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        return;
+    }
+  
+    mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(route);
+
+    if(!IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG)){
+        /*I am suppose to perform PHP. I will do PHP Only when the 
+         * primary next of this route is a destination*/
+        /*@override*/ 
+        ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node){
+            
+            ipv4_prim_nh = list_node->data;
+            if(ipv4_prim_nh->node != prefix->hosting_node){
+                i++;
+                continue;
+            }
+            
+            mpls_nh = &mpls_rt_entry->mpls_nh[i];        
+            mpls_nh->stack_op = POP;
+            i++;
+        } ITERATE_LIST_END;
+    }
+    else{
+        /*I dont have to do any PHP, nothing to do*/
+    }
+
+    sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u Installed",
+                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+    trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+    install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
+}
+
+void
+igp_install_mpls_static_route(node_t *node, char *str_prefix, char mask){
+
+    prefix_t prefix, *prefix2 = NULL;
+
+    init_prefix_key(&prefix, str_prefix, mask);
+    routes_t *route = search_route_in_spf_route_list(&(node->spf_info), &prefix, LEVEL1/*unused*/);
+    if(!route){
+        printf("Info : No Unicast Route exist\n");
+        return;
+    }
+    
+    prefix2 = ROUTE_GET_BEST_PREFIX(route);
+    
+    if(!IS_PREFIX_SR_ACTIVE(prefix2)){
+        printf("Warning : Conflicted prefix\n");
+    }
+
+    if(route->hosting_node == node)
+        sr_install_local_prefix_mpls_fib_entry(node, route);           
+    else
+        sr_install_remote_prefix_mpls_fib_entry(node, route);
+}
+
+void
+igp_uninstall_mpls_static_route(node_t *node, char *str_prefix, char mask){
+
+    
+    prefix_t prefix, *prefix2 = NULL;
+
+    init_prefix_key(&prefix, str_prefix, mask);
+    routes_t *route = search_route_in_spf_route_list(&node->spf_info, &prefix, LEVEL1/*unused*/);
+    if(!route){
+        printf("Info : No Unicast Route exist\n");
+        return;
+    }
+    
+    prefix2 = ROUTE_GET_BEST_PREFIX(route);
+    mpls_label_t label = PREFIX_SID_VALUE(prefix2);
+    delete_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), label);
+}
+

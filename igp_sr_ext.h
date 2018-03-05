@@ -67,6 +67,7 @@ processing SR MPLS encapsulated IPv4 packets on all interfaces*/
  * */
 #define SR_CAPABILITY_V_FLAG    6
 
+typedef struct routes_ routes_t;
 
 /*Used to advertise the srgb block*/
 typedef struct _sr_capability_subtlv{
@@ -86,20 +87,20 @@ typedef struct _sr_capability_subtlv{
 typedef sr_capability_subtlv_t srgb_t;
 typedef sr_capability_subtlv_t srlb_t;
 
-mpls_label
+mpls_label_t
 get_available_srgb_mpls_label(srgb_t *srgb);
 
 void
 init_srgb_defaults(srgb_t *srgb);
 
 void
-mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label label);
+mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label_t label);
 
 void
-mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label label);
+mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label_t label);
 
 boolean
-is_mpls_label_in_use(srgb_t *srgb, mpls_label label);
+is_mpls_label_in_use(srgb_t *srgb, mpls_label_t label);
 
 /*SR algorithm TLV
  * allows the router to advertise the algorithms
@@ -302,7 +303,7 @@ Egress interface: NULL
 */
 
 void
-sr_install_local_prefix_mpls_fib_entry(node_t *node, prefix_t *prefix);
+sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route);
 
 /*
 A remote node M MUST maintain the following FIB entry for any
@@ -319,7 +320,7 @@ the SID toward prefix R.
 */
 
 void
-sr_install_remote_prefix_mpls_fib_entry(node_t *node, prefix_t *prefix);
+sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route);
 
 /*For ipv6 Data plane*/
 /*A node N advertising an IPv6 address R usable as a segment identifier
@@ -445,6 +446,13 @@ resolve_prefix_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry
 void
 resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry1, 
         prefix_t *prefix2, sr_mapping_entry_t *pfx_mapping_entry2);
+
+void
+igp_install_mpls_static_route(node_t *node, char *prefix, char mask);
+
+void
+igp_uninstall_mpls_static_route(node_t *node, char *prefix, char mask);
+
 
 #if 0
 void

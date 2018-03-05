@@ -37,7 +37,9 @@
 #include "instance.h"
 #include "spfutil.h"
 #include "rttable.h"
+#include "rt_mpls.h"
 #include "spftrace.h"
+
 
 extern instance_t *instance;
 
@@ -99,6 +101,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     singly_ll_set_comparison_fn(node->spf_info.deferred_routes_list, route_search_comparison_fn);
 
     node->spf_info.rttable = init_rttable("inet.0");
+    node->spf_info.mpls_rt_table = init_mpls_rt_table("mpls.0");
     node->attached = 1; /*By default attached bit is enabled*/
 
     node->traversing_bit = 0;

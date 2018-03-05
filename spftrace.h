@@ -44,6 +44,7 @@ typedef enum{
     ROUTING_TABLE_BIT,
     CONFLICT_RESOLUTION_BIT,
     SPF_EVENTS_BIT,
+    MPLS_ROUTE_INSTALLATION_BIT,
     TRACE_MAX_BIT
 } spf_trace_t;
 

@@ -40,27 +40,27 @@ typedef struct _node_t node_t;
 typedef struct prefix_ prefix_t;
 
 boolean
-set_node_sid(node_t *node, mpls_label node_sid_value);
+set_node_sid(node_t *node, mpls_label_t node_sid_value);
 
 boolean
 unset_node_sid(node_t *node);
 
 boolean
 set_interface_address_prefix_sid(node_t *node, char *interface, 
-        mpls_label prefix_sid_value);
+        mpls_label_t prefix_sid_value);
 
 boolean
 unset_interface_address_prefix_sid(node_t *node, char *interface);
 
 boolean
 set_interface_adj_sid(node_t *node, char *interface, 
-        mpls_label adj_sid_value);
+        mpls_label_t adj_sid_value);
 
 boolean
 unset_interface_adj_sid(node_t *node, char *interface);
 
 boolean
-update_prefix_sid(node_t *node, prefix_t *prefix, mpls_label prefix_sid_value);
+update_prefix_sid(node_t *node, prefix_t *prefix, mpls_label_t prefix_sid_value);
 
 void
 diplay_prefix_sid(prefix_t *prefix);

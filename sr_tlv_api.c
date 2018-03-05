@@ -92,7 +92,7 @@ unset_node_sid(node_t *node){
     LEVEL level_it;
     boolean trigger_conflict_res = FALSE;
     prefix_t *router_id = NULL;
-    mpls_label label = 0 ;
+    mpls_label_t label = 0 ;
 
     if(!node->spring_enabled){
         printf("Error : SPRING not enabled\n");
@@ -160,7 +160,7 @@ unset_interface_address_prefix_sid(node_t *node, char *intf_name){
     boolean trigger_conflict_res = FALSE;
     prefix_t *prefix = NULL, *intf_prefix = NULL;
     edge_end_t *interface = NULL;
-    mpls_label label = 0;
+    mpls_label_t label = 0;
 
     if(!node->spring_enabled){
         printf("Error : SPRING not enabled\n");

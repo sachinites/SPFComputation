@@ -101,4 +101,7 @@
 #define CMDCODE_CONFIG_NODE_SR_PREFIX_SID_INTF              58 /*config node <node-name> interface <if-name> prefix-sid <prefix-sid>*/
 #define CMDCODE_CONFIG_NODE_SR_ADJ_SID                      59 /*config node <node-name> interface <if-name> adjacency-sid <adj-sid>*/
 #define CMDCODE_SHOW_NODE_SPRING                            60 /*show instance node <node-name> level <level-no> spring*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION  61 /*conf debug set trace mpls-route-installation*/
+#define CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE       62 /*conf node <node-name> mpls install route <dst-prefix> <mask>*/
+#define CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE            63 /*show instance node <node-name> mpls forwarding-table*/
 #endif /* __SPFCMDCODES__H */

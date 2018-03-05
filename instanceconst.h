@@ -53,7 +53,7 @@
 
 typedef char FLAG;
 typedef char BYTE;
-typedef unsigned int mpls_label;
+typedef unsigned int mpls_label_t;
 
 /*Edge properties*/
 typedef enum{

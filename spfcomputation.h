@@ -172,9 +172,11 @@ static inline spf_result_t *
 get_forward_spf_result_t(){
 
     unsigned int next_hop_offset = (unsigned int)((char *)(&(((spf_result_t *)0)->lsp_metric)) + \
-                sizeof(((spf_result_t *)0)->lsp_metric));
+            sizeof(((spf_result_t *)0)->lsp_metric));
     return calloc(1, next_hop_offset);
 }
+
+
 /* spf result of a node wrt to spf_root */
 typedef struct self_spf_result_{
 
@@ -204,6 +206,7 @@ typedef struct spf_level_info_{
 
 typedef struct rttable_ rttable;
 typedef struct _node_t node_t;
+typedef struct _mpls_rt_table mpls_rt_table_t;
 
 typedef struct spf_info_{
 
@@ -217,6 +220,7 @@ typedef struct spf_info_{
 
     /*Routing table*/
     rttable *rttable;
+    mpls_rt_table_t *mpls_rt_table;
 } spf_info_t;
 
 #define GET_SPF_INFO_NODE(spf_info_ptr, _level)  \

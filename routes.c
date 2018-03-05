@@ -198,12 +198,13 @@ free_route(routes_t *route){
         route->backup_nh_list[nh] = 0;
     } ITERATE_NH_TYPE_END;
 
+#if 0
     ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
         
         free(list_node->data);
         list_node->data = NULL;
     } ITERATE_LIST_END;
-    
+#endif
     delete_singly_ll(route->like_prefix_list);
     free(route->like_prefix_list);
     route->like_prefix_list = NULL;
@@ -622,10 +623,11 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
          * of maintingin this list. We feel we should renew this list every
          * time the route is overwritten with better prefix. We will revisit 
          * once we find the use of this list.*/
+#if 0
         ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
             free_prefix(list_node->data);
         } ITERATE_LIST_END;
-
+#endif
         delete_singly_ll(route->like_prefix_list);
         route->ecmp_dest_count = 1;
         route_set_key(route, prefix->prefix, prefix->mask); 
@@ -883,9 +885,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         /*Linkage*/
         if(linkage){
-            route_prefix = calloc(1, sizeof(prefix_t));
-            memcpy(route_prefix, prefix, sizeof(prefix_t));
-            link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+            //route_prefix = calloc(1, sizeof(prefix_t));
+            //memcpy(route_prefix, prefix, sizeof(prefix_t));
+            link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
         }
 
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
@@ -921,9 +923,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 /*Linkage*/
                 if(linkage){
-                    route_prefix = calloc(1, sizeof(prefix_t));
-                    memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                    //route_prefix = calloc(1, sizeof(prefix_t));
+                    //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                    link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                 }
                 return;
             }
@@ -937,9 +939,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
                 if(linkage){
-                    route_prefix = calloc(1, sizeof(prefix_t));
-                    memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                    //route_prefix = calloc(1, sizeof(prefix_t));
+                    //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                    link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                 }
                 return;
             }
@@ -989,9 +991,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     /*Linkage*/
                     if(linkage){
-                        route_prefix = calloc(1, sizeof(prefix_t));
-                        memcpy(route_prefix, prefix, sizeof(prefix_t));
-                        link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                        //route_prefix = calloc(1, sizeof(prefix_t));
+                        //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                        link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                     }
                     return;
 
@@ -1027,9 +1029,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     /*Linkage*/
                     if(linkage){
-                        route_prefix = calloc(1, sizeof(prefix_t));
-                        memcpy(route_prefix, prefix, sizeof(prefix_t));
-                        link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                        //route_prefix = calloc(1, sizeof(prefix_t));
+                        //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                        link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                     }
                     return;
                 }
@@ -1059,9 +1061,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 /*Linkage*/
                 if(linkage){
-                    route_prefix = calloc(1, sizeof(prefix_t));
-                    memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                    //route_prefix = calloc(1, sizeof(prefix_t));
+                    //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                    link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                 }
                 return;
             }
@@ -1075,9 +1077,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
                 if(linkage){
-                    route_prefix = calloc(1, sizeof(prefix_t));
-                    memcpy(route_prefix, prefix, sizeof(prefix_t));
-                    link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                    //route_prefix = calloc(1, sizeof(prefix_t));
+                    //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                    link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                 }
                 return;
             }
@@ -1127,9 +1129,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     /*Linkage*/
                     if(linkage){
-                        route_prefix = calloc(1, sizeof(prefix_t));
-                        memcpy(route_prefix, prefix, sizeof(prefix_t));
-                        link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                        //route_prefix = calloc(1, sizeof(prefix_t));
+                        //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                        link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                     }
                     return;
 
@@ -1163,9 +1165,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     /*Linkage*/
                     if(linkage){
-                        route_prefix = calloc(1, sizeof(prefix_t));
-                        memcpy(route_prefix, prefix, sizeof(prefix_t));
-                        link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                        //route_prefix = calloc(1, sizeof(prefix_t));
+                        //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                        link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                     }
                     return;
                 }
@@ -1194,9 +1196,9 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
             /*Linkage*/ 
             if(linkage){
-                route_prefix = calloc(1, sizeof(prefix_t));
-                memcpy(route_prefix, prefix, sizeof(prefix_t));
-                link_prefix_to_route(route, route_prefix, result->spf_metric, spf_info);
+                //route_prefix = calloc(1, sizeof(prefix_t));
+                //memcpy(route_prefix, prefix, sizeof(prefix_t));
+                link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
             }
         }
     }
@@ -1324,7 +1326,7 @@ is_route_eligible_for_backups(routes_t *route){
 #endif
 /*Routine to build the routing table*/
 
-static mpls_label
+static mpls_label_t
 get_prefix_sid_from_route(routes_t *route){
     
     node_t *node = route->hosting_node;

@@ -756,6 +756,10 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, CONFLICT_RESOLUTION_BIT):
                 disable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
             break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT):
+                disable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
+            break;
         case CMDCODE_DEBUG_TRACEOPTIONS_ALL:
             switch(enable_or_disable){
                 case CONFIG_ENABLE:
@@ -767,6 +771,7 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     enable_spf_trace(instance, SPF_PREFIX_BIT);
                     enable_spf_trace(instance, ROUTING_TABLE_BIT);
                     enable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
+                    enable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
                     break;
                 case CONFIG_DISABLE:
                     disable_spf_trace(instance, DIJKSTRA_BIT);
@@ -777,6 +782,7 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     disable_spf_trace(instance, SPF_PREFIX_BIT);
                     disable_spf_trace(instance, ROUTING_TABLE_BIT);
                     disable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
+                    disable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
                     break;
                 default:
                     assert(0);
@@ -1044,6 +1050,19 @@ spf_init_dcm(){
             libcli_register_param(&prefix, &mask);
         }
     }
+
+    /*show instance node <node-name> mpls forwarding-table*/
+    {
+        static param_t mpls;
+        init_param(&mpls, CMD, "mpls", 0, 0, INVALID, 0, "MPLS protocol");
+        libcli_register_param(&instance_node_name, &mpls);
+        {
+            static param_t mpls_table;
+            init_param(&mpls_table, CMD, "forwarding-table", instance_node_spring_show_handler, 0, INVALID, 0, "MPLS LFIB");
+            libcli_register_param(&mpls, &mpls_table);
+            set_param_cmd_code(&mpls_table, CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE);
+        }
+    }
     /*show instance node <node-name> level <level-no>*/ 
     static param_t instance_node_name_level;
     init_param(&instance_node_name_level, CMD, "level", 0, 0, INVALID, 0, "level");
@@ -1211,6 +1230,12 @@ spf_init_dcm(){
                         libcli_register_param(&trace, &conflict_res);
                         set_param_cmd_code(&conflict_res, CMDCODE_DEBUG_TRACEOPTIONS_CONFLICT_RESOLUTION);
                     }
+                    {
+                        static param_t mpls_installation;
+                        init_param(&mpls_installation, CMD, "mpls-route-installation", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for MPLS route installation");
+                        libcli_register_param(&trace, &mpls_installation);
+                        set_param_cmd_code(&mpls_installation, CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION);
+                    }
                 }
             }
         }
@@ -1265,6 +1290,33 @@ spf_init_dcm(){
             set_param_cmd_code(&spring, CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE);
         }
 
+        /* config node <node-name> mpls install route <dst-prefix> <mask>*/
+        {
+            static param_t mpls;
+            init_param(&mpls, CMD, "mpls", 0, 0, INVALID, 0, "MPLS configurations");
+            libcli_register_param(&config_node_node_name, &mpls);
+            {
+                static param_t install;
+                init_param(&install, CMD, "install", 0, 0, INVALID, 0, "Install static Configuration");
+                libcli_register_param(&mpls, &install);
+                {
+                    static param_t route;
+                    init_param(&route, CMD, "route", 0, 0, INVALID, 0, "Install static route");
+                    libcli_register_param(&install, &route);
+                    {
+                        static param_t prefix;
+                        init_param(&prefix, LEAF, 0, 0, 0, IPV4, "prefix", "Ipv4 prefix without mask");
+                        libcli_register_param(&route, &prefix);
+                        {
+                            static param_t mask;
+                            init_param(&mask, LEAF, 0, instance_node_spring_config_handler, validate_ipv4_mask, INT, "mask", "mask (0-32)");
+                            libcli_register_param(&prefix, &mask);
+                            set_param_cmd_code(&mask, CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE);
+                        }
+                    }
+                }
+            }
+        }
         static param_t config_node_node_name_slot;
         init_param(&config_node_node_name_slot, CMD, "interface", 0, 0, INVALID, 0, "interface");
         libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
