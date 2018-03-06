@@ -33,17 +33,24 @@
 #ifndef __IGP_SR_EXT__
 #define __IGP_SR_EXT__
 
-#include "sr.h"
 #include "instanceconst.h"
 
 #define SHORTEST_PATH_FIRST  0 
 #define STRICT_SHORTEST_PATH 1
+
+
+/*SRGB constants*/
+#define SRGB_DEF_LOWER_BOUND    16000
+#define SRGB_DEF_UPPER_BOUND    23999
+#define SRGB_MAX_SIZE           65536
     
 
-#define PREFIX_SID_SUBTLV_TYPE  3
-#define SID_SUBTLV_TYPE         1
+/*TLV types*/
+#define PREFIX_SID_SUBTLV_TYPE          3
+#define SID_SUBTLV_TYPE                 1
 #define SR_CAPABILITY_SRGB_SUBTLV_TYPE  2
 #define SR_CAPABILITY_SRLB_SUBTLV_TYPE  22
+
 
 #define PREFIX_SID_VALUE(prefix_ptr)    (prefix_ptr->prefix_sid->sid.sid)
 

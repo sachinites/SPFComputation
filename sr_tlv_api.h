@@ -34,7 +34,6 @@
 #define __SR_TLV_API__
 
 #include "instanceconst.h"
-#include "sr.h"
 
 typedef struct _node_t node_t;
 typedef struct prefix_ prefix_t;

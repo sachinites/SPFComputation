@@ -46,15 +46,15 @@ extern instance_t *instance;
 prefix_t *
 create_new_prefix(const char *prefix, unsigned char mask, LEVEL level){
 
-    prefix_t *_prefix = calloc(1, sizeof(prefix_t));
+    prefix_t *prefix2 = calloc(1, sizeof(prefix_t));
     if(prefix)
-        strncpy(_prefix->prefix, prefix, strlen(prefix));
-    _prefix->prefix[PREFIX_LEN] = '\0';
-    _prefix->mask = mask;
-     _prefix->level = level;
-     MARK_PREFIX_SR_ACTIVE(_prefix);
-    set_prefix_property_metric(_prefix, DEFAULT_LOCAL_PREFIX_METRIC);
-    return _prefix;
+        strncpy(prefix2->prefix, prefix, strlen(prefix));
+    prefix2->prefix[PREFIX_LEN] = '\0';
+    prefix2->mask = mask;
+    prefix2->level = level;
+    MARK_PREFIX_SR_INACTIVE(prefix2);
+    set_prefix_property_metric(prefix2, DEFAULT_LOCAL_PREFIX_METRIC);
+    return prefix2;
 }
 
 void

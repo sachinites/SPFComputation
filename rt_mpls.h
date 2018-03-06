@@ -53,12 +53,15 @@ typedef enum{
     HOP_POPPING_NONE
 } HOP_POPPING;
 
+typedef struct _node_t node_t;
+
 typedef struct _mpls_rt_nh{
 
     mpls_label_t outgoing_label;
     MPLS_STACK_OP stack_op;
     char gwip[PREFIX_LEN + 1];
     char oif[IF_NAME_SIZE];
+    node_t *nh_node;
 } mpls_rt_nh_t;
 
 typedef struct _mpls_rt_entry{
@@ -70,7 +73,8 @@ typedef struct _mpls_rt_entry{
 } mpls_rt_entry_t;
 
 typedef struct _mpls_rt_table{
-    ll_t *entries;    
+    char table_name[16];
+    ll_t *entries;  
 } mpls_rt_table_t;
 
 void
@@ -138,8 +142,6 @@ SWAP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label);
 void
 show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix);
 
-
-typedef struct _node_t node_t;
 
 void
 process_mpls_label_stack(node_t *node, mpls_label_stack_t *mpls_label_stack);

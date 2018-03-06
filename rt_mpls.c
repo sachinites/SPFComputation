@@ -34,18 +34,26 @@
 #include "rttable.h"
 #include "instance.h"
 #include "routes.h"
-#include "LinkedList/LinkedListApi.h"
+#include "LinkedListApi.h"
 
 extern instance_t *instance;
+
+/*An mpls rt entry is local if oif is NULL*/
+
+boolean
+is_mpls_rt_entry_local(mpls_rt_entry_t *mpls_rt_entry){
+
+    return strlen(mpls_rt_entry->mpls_nh[0].oif) == 0;
+}
 
 void
 show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
 
     rttable_entry_t * rt_entry = NULL;
     node_t *node = NULL;
-    unsigned int i = 0;
-    nh_t *prim_nh = NULL;
     mpls_label_t mpls_label = 0;
+    boolean is_trace_complete = FALSE;
+    unsigned int i = 1;
 
     printf("Source Node : %s, Prefix traced : %s\n", ingress_lsr_name, dst_prefix);
 
@@ -53,7 +61,7 @@ show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
     rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
 
     if(!rt_entry){
-        printf("Node %s : No unicast route to prefix : %s\n", ingress_lsr_name, dst_prefix);
+        printf("Error : Route not present in inet.0\n");
         return;
     }
 
@@ -68,12 +76,18 @@ show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
     }
 
     node_t *hosting_node = unicast_route->hosting_node;
-    prefix = node_local_prefix_search(hosting_node, rt_entry->level, dst_prefix, rt_entry->dest.mask);
+
+    if(!hosting_node->spring_enabled){
+        printf("Desitnation %s is not SR Enabled\n", hosting_node->node_name);
+        return;
+    }
+
+    prefix = ROUTE_GET_BEST_PREFIX(unicast_route);
 
     assert(prefix);
 
     if(!prefix->prefix_sid){
-        printf("Desitnation is not SR Enabled (No Prefix SID assigned)\n");
+        printf("No Prefix SID assigned on Destination node %s\n", hosting_node->node_name);
         return;
     }
     mpls_label = PREFIX_SID_VALUE(prefix);
@@ -95,44 +109,41 @@ show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
             return;
         }
 
-        if(mpls_rt_entry->prim_nh_count == 0){
-            printf("Node : %s : No Next hop entry for InLabel : %u\n", 
-            node->node_name, mpls_rt_entry->incoming_label);
-            return;
-        }
-
         switch(mpls_rt_entry->mpls_nh[0].stack_op){
             case SWAP:
                 SWAP_MPLS_LABEL(mpls_stack, mpls_rt_entry->mpls_nh[0].outgoing_label);
-                printf("SWAP : [%u,%u]", mpls_rt_entry->incoming_label, mpls_rt_entry->mpls_nh[0].outgoing_label);
+                printf("%u. SWAP : [%u,%u]", i++, mpls_rt_entry->incoming_label, mpls_rt_entry->mpls_nh[0].outgoing_label);
              break;
             case NEXT:
                 PUSH_MPLS_LABEL(mpls_stack, mpls_rt_entry->mpls_nh[0].outgoing_label);
-                printf("PUSH : [%u,%u]", mpls_rt_entry->incoming_label, mpls_rt_entry->mpls_nh[0].outgoing_label);
+                printf("%u. PUSH : [%u,%u]", i++, mpls_rt_entry->incoming_label, mpls_rt_entry->mpls_nh[0].outgoing_label);
              break;
             case POP:
                 POP_MPLS_LABEL(mpls_stack);
-                printf("POP : [%u, ]", mpls_rt_entry->incoming_label);
+                printf("%u. POP : [%u, ]", i++, mpls_rt_entry->incoming_label);
             break;
             default:
               ;
         }
 
-        printf(" -- > %s (%s)\n", mpls_rt_entry->mpls_nh[0].oif, mpls_rt_entry->mpls_nh[0].gwip);
-        /*Now get the primary nexthop via mpls_rt_entry->oif && mpls_rt_entry->gwip
-         * from unicast routing table only*/         
-        rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
-        node = NULL;
-        for(i = 0; i < rt_entry->primary_nh_count[IPNH]; i++){
-            
-            prim_nh = &rt_entry->primary_nh[IPNH][i];
-            if(strncmp(prim_nh->oif, mpls_rt_entry->mpls_nh[0].oif, IF_NAME_SIZE) == 0 &&
-                strncmp(prim_nh->gwip, mpls_rt_entry->mpls_nh[0].gwip, PREFIX_LEN + 1) == 0){
-                node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, prim_nh->nh_name);
-                break;
-            }
+        if(is_mpls_rt_entry_local(mpls_rt_entry)){
+            printf("TRACE COMPLETE\n");
+            is_trace_complete = TRUE;
+            break;
+        }
+        else{
+            printf(" %s(%s) -- > %s", node->node_name, mpls_rt_entry->mpls_nh[0].oif, 
+                    mpls_rt_entry->mpls_nh[0].gwip);
+            node = mpls_rt_entry->mpls_nh[0].nh_node;
+            printf("(%s)\n", node->node_name);
         }
     } while(!IS_MPLS_LABEL_STACK_EMPTY(mpls_stack));
+
+    assert(IS_MPLS_LABEL_STACK_EMPTY(mpls_stack));
+    if(!is_trace_complete){
+        printf("TRACE COMPLETE\n");
+    }
+    free_mpls_label_stack(mpls_stack);
 }
 
 void
@@ -188,6 +199,7 @@ init_mpls_rt_table(char *table_name){
 
     mpls_rt_table_t *mpls_rt_table = calloc(1, sizeof(mpls_rt_table_t));
     mpls_rt_table->entries = init_singly_ll();
+    strncpy(mpls_rt_table->table_name, table_name, strlen(table_name));
     return mpls_rt_table;
 }
 
@@ -216,6 +228,7 @@ get_new_mpls_label_stack(){
 
 void
 free_mpls_label_stack(mpls_label_stack_t *mpls_label_stack){
+
     free_stack(mpls_label_stack->stack);
     free(mpls_label_stack);
 }
@@ -228,13 +241,14 @@ PUSH_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label){
 
 mpls_label_t
 POP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack){
+
     return (mpls_label_t)pop(mpls_label_stack->stack);
 }
 
 void
 SWAP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label){
 
-    pop(mpls_label_stack->stack);
+    POP_MPLS_LABEL(mpls_label_stack);
     PUSH_MPLS_LABEL(mpls_label_stack, label);
 }
 
@@ -294,6 +308,7 @@ show_mpls_rt_table(node_t *node){
    mpls_rt_table_t *mpls_rt_table = GET_MPLS_TABLE_HANDLE(node);
    
    /*Hdr*/
+   printf("Table %s\n", mpls_rt_table->table_name);
    printf("%-12s %-12s %-12s %-12s %-12s %-12s %s\n", "InLabel", "OutLabel", "Version","Pfx Idx", "Action", "Gateway", "Oif");
    printf("===================================================================================\n");
 

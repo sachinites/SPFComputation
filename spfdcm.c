@@ -42,9 +42,9 @@
 #include "spfcmdcodes.h"
 #include "spfclihandler.h"
 #include "rttable.h"
+#include "rt_mpls.h"
 #include "routes.h"
 #include "advert.h"
-#include "sr.h"
 
 extern
 instance_t *instance;
@@ -119,6 +119,14 @@ validate_level_no(char *value_passed){
 
     printf("Error : Incorrect Level Value.\n");
     return VALIDATION_FAILED;
+}
+
+static boolean
+is_global_sid_value_valid(unsigned int sid_value){
+
+    if(sid_value >= SRGB_DEF_LOWER_BOUND && sid_value <= SRGB_DEF_UPPER_BOUND)
+        return TRUE;
+    return FALSE;
 }
 
 static int
@@ -233,6 +241,9 @@ show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             break;
         case CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP:
             show_backup_traceroute(node_name, prefix);
+            break;
+        case CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS:
+            show_mpls_traceroute(node_name, prefix); 
             break;
         default:
             assert(0);
@@ -1034,6 +1045,14 @@ spf_init_dcm(){
         init_param(&backup, CMD, "backup", show_traceroute_handler, 0, INVALID, 0, "trace backup route");
         libcli_register_param(&traceroute_prefix, &backup);
         set_param_cmd_code(&backup, CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP);
+    }
+
+        /*show instance node <node-name> traceroute <prefix> sr-mpls*/
+    {
+        static param_t mpls;
+        init_param(&mpls, CMD, "sr-mpls", show_traceroute_handler, 0, INVALID, 0, "trace SR-tunnel");
+        libcli_register_param(&traceroute_prefix, &mpls);
+        set_param_cmd_code(&mpls, CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS);
     }
 
     /*show instance node <node-name> route*/

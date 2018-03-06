@@ -67,11 +67,11 @@ main(int argc, char **argv){
     //instance = lsp_ecmp_topo();
     //instance = build_multi_area_topo();
     //instance = build_ring_topo();
-    instance = build_ring_topo_7nodes();
+    //instance = build_ring_topo_7nodes();
     //instance = build_ecmp_topo2();
     //instance = build_cisco_example_topo();
     //instance = broadcast_link_protecting_lfa();
-    //instance = build_multi_link_topo();
+    instance = build_multi_link_topo();
     //instance = build_rlfa_topo();
     //instance = build_lfa_topo();
     //instance = overload_router_topo();

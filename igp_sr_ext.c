@@ -591,6 +591,7 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
         strncpy(mpls_prim_nh->oif, ipv4_prim_nh->oif->intf_name, IF_NAME_SIZE);
         mpls_prim_nh->oif[IF_NAME_SIZE]= '\0';
         mpls_prim_nh->stack_op = SWAP;
+        mpls_prim_nh->nh_node = ipv4_prim_nh->node;
         i++;
    } ITERATE_LIST_END;
 
@@ -602,6 +603,7 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
         strncpy(mpls_prim_nh->oif, "Nil", IF_NAME_SIZE); 
         mpls_prim_nh->oif[IF_NAME_SIZE]= '\0';
         mpls_prim_nh->stack_op = POP;
+        mpls_prim_nh->nh_node = NULL;
         mpls_rt_entry->prim_nh_count = 1;
    }
 
@@ -617,7 +619,8 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
 
     if(!prefix->prefix_sid){
-        printf("Error : No prefix SID assigned\n");
+        printf("Error : No prefix SID assigned on best originator node %s\n", 
+            prefix->hosting_node->node_name);
         return;
     }
 
@@ -668,7 +671,11 @@ sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
 
     if(!prefix->prefix_sid){
-        printf("Error : No prefix SID assigned\n");
+        printf(instance->traceopts->b, "Node : %s : Error : Best prefix %s/%u is not assigned prefix-SID", 
+                node->node_name, prefix->prefix, prefix->mask);
+        sprintf(instance->traceopts->b, "Node : %s : Error : Best prefix %s/%u is not assigned prefix-SID", 
+                node->node_name, prefix->prefix, prefix->mask);
+        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
         return;
     }
 
@@ -721,6 +728,20 @@ igp_install_mpls_static_route(node_t *node, char *str_prefix, char mask){
     }
     
     prefix2 = ROUTE_GET_BEST_PREFIX(route);
+  
+    /*If the best originator of the prefix is not SR enabled, then SR will try setup
+     * SR tunnel to best prefix originator as SR tunnels are setup along IGP shortest path.
+     * In such scenario, SR tunnelled traffic will be black holed at best originator
+     * of the prefix. Hence, this problem mandates that SPRING must be enabled on all
+     * routers in the same LAN and all prefixes in the same subnet should assigned the
+     * prefix SID. If these criteria are not met, we will not allow configuring static mpls 
+     * route*/
+     
+    if(!prefix2->prefix_sid || prefix2->hosting_node->spring_enabled == FALSE){
+        printf("Error : Best prefix originator (%s) is not SR enabled\n", 
+            route->hosting_node->node_name);
+        return;
+    }
     
     if(!IS_PREFIX_SR_ACTIVE(prefix2)){
         printf("Warning : Conflicted prefix\n");

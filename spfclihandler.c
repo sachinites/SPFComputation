@@ -768,13 +768,18 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
         case CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE:
         switch(enable_or_disable){
             case CONFIG_ENABLE:
+                if(node->spring_enabled == TRUE){
+                    printf("Source Packet Routing Already Enabled\n");
+                    return 0;
+                }
                 node->spring_enabled = TRUE;
-                if(!node->srgb)
-                    node->srgb = calloc(1, sizeof(srgb_t));
+                node->srgb = calloc(1, sizeof(srgb_t));
                 init_srgb_defaults(node->srgb);
                 break;
             case CONFIG_DISABLE:
                 node->spring_enabled = FALSE;
+                free(node->srgb->index_array);
+                free(node->srgb);
                 break;
             default:
                 ;
@@ -841,6 +846,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
     LEVEL level = MAX_LEVEL;
     tlv_struct_t *tlv = NULL;
     int cmd_code = -1;
+    char str_prefix_with_mask[PREFIX_LEN_WITH_MASK + 1];
 
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
@@ -868,8 +874,10 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                     
                     prefix = list_node->data;
                     assert(IS_PREFIX_SR_ACTIVE(prefix));
-                    printf("\t%s/%-10u %-20s %u\n", 
-                        prefix->prefix, prefix->mask, 
+                    memset(str_prefix_with_mask, 0, PREFIX_LEN_WITH_MASK + 1);
+                    apply_mask2(prefix->prefix, prefix->mask, str_prefix_with_mask);
+                    printf("\t%-20s %-20s %u\n", 
+                        str_prefix_with_mask, 
                         prefix->hosting_node->node_name, PREFIX_SID_VALUE(prefix));
                 } ITERATE_LIST_END;
                 delete_singly_ll(res);
@@ -890,8 +898,10 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                     
                     prefix = list_node->data;
                     assert(IS_PREFIX_SR_ACTIVE(prefix));
-                    printf("\t%s/%-10u %-20s %u\n", 
-                        prefix->prefix, prefix->mask, 
+                    memset(str_prefix_with_mask, 0, PREFIX_LEN_WITH_MASK + 1);
+                    apply_mask2(prefix->prefix, prefix->mask, str_prefix_with_mask);
+                    printf("\t%-20s %-20s %u\n", 
+                        str_prefix_with_mask, 
                         prefix->hosting_node->node_name, PREFIX_SID_VALUE(prefix));
                 } ITERATE_LIST_END;
                 delete_singly_ll(res);

@@ -3,7 +3,7 @@
  *
  *       Filename:  spfdcm.h
  *
- *    Description:  This file decaleres the structures and conmmand code constants for spf clis
+ *    Description:  This file declares the structures and conmmand code constants for spf clis
  *
  *        Version:  1.0
  *        Created:  Sunday 03 September 2017 10:32:31  IST
@@ -104,4 +104,6 @@
 #define CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION  61 /*conf debug set trace mpls-route-installation*/
 #define CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE       62 /*conf node <node-name> mpls install route <dst-prefix> <mask>*/
 #define CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE            63 /*show instance node <node-name> mpls forwarding-table*/
+#define CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS                64 /*show instance node <node-name> traceroute <prefix> sr-mpls*/
+
 #endif /* __SPFCMDCODES__H */
