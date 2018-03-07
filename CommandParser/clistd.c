@@ -153,7 +153,7 @@ repeat_last_command(param_t *param, ser_buff_t *b, op_mode enable_or_disable){
  int
 mode_enter_callback(param_t *param, ser_buff_t *b, op_mode enable_or_disable){
  
-    if(param == libcli_get_root()){
+    if(param == libcli_get_root_hook()){
         printf(ANSI_COLOR_YELLOW "Info : Mode not supported at root level\n" ANSI_COLOR_RESET);
         return 0;   
     }
@@ -370,7 +370,7 @@ show_resgistered_cmd_handler(param_t *param, ser_buff_t *b, op_mode enable_or_di
     /*Implement DFS and dump all complete commands*/
     re_init_tokens(MAX_CMD_TREE_DEPTH);
 
-    param_t *root = libcli_get_root();
+    param_t *root = libcli_get_root_hook();
     
     unsigned int index = 0;
     dump_all_commands(root, index);

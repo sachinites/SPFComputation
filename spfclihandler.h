@@ -86,4 +86,7 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
 
 int
 instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
+
+int
+debug_trace_mpls_stack_label(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 #endif /* __SPFCLIHANDLER__ */

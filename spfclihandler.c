@@ -919,3 +919,34 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
     } 
     return 0;
 }
+
+int
+debug_trace_mpls_stack_label(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+   
+    char *node_name = NULL;
+    node_t *node = NULL;
+    tlv_struct_t *tlv = NULL;
+    mpls_label_t label[4] = {0,0,0,0};
+    int i = 0;
+
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "label", strlen("label")) ==0)
+            label[i++] = atoi(tlv->value);
+        else
+            assert(0);
+    } TLV_LOOP_END;
+
+    mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
+    i--;
+    
+    for(; i >= 0; i-- )
+        PUSH_MPLS_LABEL(mpls_label_stack, label[i]);
+    
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+    mpls_forwarding_engine(node, mpls_label_stack);
+    free_mpls_label_stack(mpls_label_stack); 
+    return 0;
+}

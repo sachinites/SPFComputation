@@ -35,6 +35,7 @@
 #include "instance.h"
 #include "routes.h"
 #include "LinkedListApi.h"
+#include "stack.h"
 
 extern instance_t *instance;
 
@@ -47,13 +48,66 @@ is_mpls_rt_entry_local(mpls_rt_entry_t *mpls_rt_entry){
 }
 
 void
+mpls_forwarding_engine(node_t *node, mpls_label_stack_t *mpls_stack){
+
+    unsigned int i = 1;
+    boolean is_trace_complete = FALSE;
+
+    do{
+        mpls_rt_table_t *mpls_0 = GET_MPLS_TABLE_HANDLE(node);
+        mpls_rt_entry_t *mpls_rt_entry = look_up_mpls_rt_entry(mpls_0, 
+                GET_MPLS_LABEL_STACK_TOP(mpls_stack));
+
+        if(!mpls_rt_entry){
+            printf("Error : MPLS incoming label %u enrty not found\n", GET_MPLS_LABEL_STACK_TOP(mpls_stack));
+            return;
+        }
+
+        switch(mpls_rt_entry->mpls_nh[0].stack_op){
+            case SWAP:
+                SWAP_MPLS_LABEL(mpls_stack, mpls_rt_entry->mpls_nh[0].outgoing_label);
+                printf("%u. SWAP : [%u,%u]", i++, mpls_rt_entry->incoming_label, mpls_rt_entry->mpls_nh[0].outgoing_label);
+                break;
+            case NEXT:
+                PUSH_MPLS_LABEL(mpls_stack, mpls_rt_entry->mpls_nh[0].outgoing_label);
+                printf("%u. PUSH : [%u,%u]", i++, mpls_rt_entry->incoming_label, mpls_rt_entry->mpls_nh[0].outgoing_label);
+                break;
+            case POP:
+                POP_MPLS_LABEL(mpls_stack);
+                printf("%u. POP : [%u, %u]", i++, mpls_rt_entry->incoming_label, 
+                       IS_MPLS_LABEL_STACK_EMPTY(mpls_stack) ?  0  :
+                       GET_MPLS_LABEL_STACK_TOP(mpls_stack));
+                break;
+            default:
+                ;
+        }
+
+        if(is_mpls_rt_entry_local(mpls_rt_entry)){
+            printf("TRACE COMPLETE\n");
+            is_trace_complete = TRUE;
+            break;
+        }
+        else{
+            printf(" %s(%s) -- > %s", node->node_name, mpls_rt_entry->mpls_nh[0].oif, 
+                    mpls_rt_entry->mpls_nh[0].gwip);
+            node = mpls_rt_entry->mpls_nh[0].nh_node;
+            printf("(%s)\n", node->node_name);
+        }
+    } while(!IS_MPLS_LABEL_STACK_EMPTY(mpls_stack));
+
+    assert(IS_MPLS_LABEL_STACK_EMPTY(mpls_stack));
+    if(!is_trace_complete){
+        printf("TRACE COMPLETE\n");
+    }
+}
+
+
+void
 show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
 
     rttable_entry_t * rt_entry = NULL;
     node_t *node = NULL;
     mpls_label_t mpls_label = 0;
-    boolean is_trace_complete = FALSE;
-    unsigned int i = 1;
 
     printf("Source Node : %s, Prefix traced : %s\n", ingress_lsr_name, dst_prefix);
 
@@ -95,54 +149,8 @@ show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
     mpls_label_stack_t *mpls_stack = get_new_mpls_label_stack();
     PUSH_MPLS_LABEL(mpls_stack, mpls_label);
 
-    /*Now feed the mpls stack to MPLS forwarding Engine in a do..while(1) loop*/
-
-    do{
-
-        mpls_rt_table_t *mpls_0 = GET_MPLS_TABLE_HANDLE(node);
-        mpls_rt_entry_t *mpls_rt_entry = look_up_mpls_rt_entry(mpls_0, 
-                    GET_MPLS_LABEL_STACK_TOP(mpls_stack));
-
-        if(!mpls_rt_entry){
-            printf("Node %s : No MPLS route to %s\n", node->node_name, dst_prefix);
-            free_mpls_label_stack(mpls_stack);
-            return;
-        }
-
-        switch(mpls_rt_entry->mpls_nh[0].stack_op){
-            case SWAP:
-                SWAP_MPLS_LABEL(mpls_stack, mpls_rt_entry->mpls_nh[0].outgoing_label);
-                printf("%u. SWAP : [%u,%u]", i++, mpls_rt_entry->incoming_label, mpls_rt_entry->mpls_nh[0].outgoing_label);
-             break;
-            case NEXT:
-                PUSH_MPLS_LABEL(mpls_stack, mpls_rt_entry->mpls_nh[0].outgoing_label);
-                printf("%u. PUSH : [%u,%u]", i++, mpls_rt_entry->incoming_label, mpls_rt_entry->mpls_nh[0].outgoing_label);
-             break;
-            case POP:
-                POP_MPLS_LABEL(mpls_stack);
-                printf("%u. POP : [%u, ]", i++, mpls_rt_entry->incoming_label);
-            break;
-            default:
-              ;
-        }
-
-        if(is_mpls_rt_entry_local(mpls_rt_entry)){
-            printf("TRACE COMPLETE\n");
-            is_trace_complete = TRUE;
-            break;
-        }
-        else{
-            printf(" %s(%s) -- > %s", node->node_name, mpls_rt_entry->mpls_nh[0].oif, 
-                    mpls_rt_entry->mpls_nh[0].gwip);
-            node = mpls_rt_entry->mpls_nh[0].nh_node;
-            printf("(%s)\n", node->node_name);
-        }
-    } while(!IS_MPLS_LABEL_STACK_EMPTY(mpls_stack));
-
-    assert(IS_MPLS_LABEL_STACK_EMPTY(mpls_stack));
-    if(!is_trace_complete){
-        printf("TRACE COMPLETE\n");
-    }
+    /*Now feed the mpls stack to MPLS forwarding Engine */
+    mpls_forwarding_engine(node, mpls_stack);
     free_mpls_label_stack(mpls_stack);
 }
 
@@ -268,7 +276,7 @@ get_str_stackops(MPLS_STACK_OP stackop){
             return "POP";
         case SWAP:
             return "SWAP";
-         default:
+        default:
             return "STACK_OPS_UNKNOWN"; 
     }
 }

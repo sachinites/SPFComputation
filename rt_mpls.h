@@ -131,7 +131,6 @@ SWAP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label);
     {singly_ll_delete_node_by_data_ptr(mpls_rt_table_t_ptr->entries, mpls_rt_entry_ptr); \
     free(mpls_rt_entry_ptr);}
 
-
     
 /*MPLS table contains only incoming/outgoing labels. For dst_prefix, if
  * IGP and MPLS path both are present, then MPLS path is preferred over IGP.
@@ -151,6 +150,9 @@ show_mpls_rt_table(node_t *node);
 
 char *
 get_str_stackops(MPLS_STACK_OP stackop);
+
+void
+mpls_forwarding_engine(node_t *node, mpls_label_stack_t *mpls_stack);
 
 #define GET_MPLS_TABLE_HANDLE(nodeptr)  (nodeptr->spf_info.mpls_rt_table)
 

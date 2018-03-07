@@ -261,7 +261,7 @@ parse_input_cmd(char *input, unsigned int len){
 
     if(token_cnt > 1 && 
             ((strncmp(tokens[0], DO, 2) == 0)) &&
-            (get_cmd_tree_cursor() != libcli_get_root())) /*do commands are not allowed from root*/
+            (get_cmd_tree_cursor() != libcli_get_root_hook())) /*do commands are not allowed from root*/
 
     {
         if(IS_CURRENT_MODE_CONFIG()) /*Do commands are allowed only when user is operating in config mode*/
@@ -288,7 +288,7 @@ parse_input_cmd(char *input, unsigned int len){
                 /*User is in the config mode only */
                 set_cmd_tree_cursor(old_cursor_state);
                 /*We need to rebuild the TLV buffer afresh*/
-                build_cmd_tree_leaves_data(tlv_buff, libcli_get_root(), get_cmd_tree_cursor());
+                build_cmd_tree_leaves_data(tlv_buff, libcli_get_root_hook(), get_cmd_tree_cursor());
                 mark_checkpoint_serialize_buffer(tlv_buff);
             }
         }

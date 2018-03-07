@@ -116,7 +116,7 @@ param_t *
 libcli_get_do_hook(void);
 
 param_t *
-libcli_get_root(void);
+libcli_get_root_hook(void);
 
 param_t *
 libcli_get_mode_param();

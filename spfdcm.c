@@ -970,7 +970,21 @@ spf_init_dcm(){
     param_t *config = libcli_get_config_hook();
     param_t *run    = libcli_get_run_hook();
     param_t *debug_show = libcli_get_debug_show_hook();
+    param_t *root = libcli_get_root_hook();
 
+    /*ping prefix*/
+
+    {
+        static param_t ping;
+        init_param(&ping, CMD, "ping", 0, 0, INVALID, 0, "Ping utility");
+        libcli_register_param(root, &ping);
+        {
+            static param_t prefix;
+            init_param(&prefix, LEAF, 0, show_traceroute_handler, 0, IPV4, "prefix", "Ipv4 prefix without mask");
+            libcli_register_param(&ping, &prefix);
+            set_param_cmd_code(&prefix, CMDCODE_NODE_PING);
+        }
+    }
     /*run commands*/
 
     /*run instance sync*/
@@ -1606,7 +1620,7 @@ spf_init_dcm(){
     }
 
     /*Debug commands*/
-
+    
     /*debug log*/
     static param_t debug_log;
     init_param(&debug_log, CMD, "log", 0, 0, INVALID, 0, "logging"); 
@@ -1640,6 +1654,52 @@ spf_init_dcm(){
         static param_t instance_node_name;
         init_param(&instance_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
         libcli_register_param(&instance_node, &instance_node_name);
+
+        /*debug instance node <node-name> trace mpls stack labels <label> <label> <label> <label>*/
+        {
+            static param_t trace;
+            init_param(&trace, CMD, "trace", 0, 0, INVALID, 0, "trace"); 
+            libcli_register_param(&instance_node_name, &trace);
+            {
+                static param_t mpls;
+                init_param(&mpls, CMD, "mpls", 0, 0, INVALID, 0, "MPLS protocol"); 
+                libcli_register_param(&trace, &mpls);
+                {
+                    static param_t stack;
+                    init_param(&stack, CMD, "stack", 0, 0, INVALID, 0, "stack"); 
+                    libcli_register_param(&mpls, &stack);
+                    {
+                        static param_t labels;
+                        init_param(&labels, CMD, "labels", 0, 0, INVALID, 0, "labels"); 
+                        libcli_register_param(&stack, &labels);
+                        {
+                            static param_t label1;
+                            init_param(&label1, LEAF, 0, debug_trace_mpls_stack_label, validate_global_sid_value, INT, "label", "SR MPLS label value"); 
+                            libcli_register_param(&stack, &label1);
+                            set_param_cmd_code(&label1, CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK);
+                            {
+                                static param_t label2;
+                                init_param(&label2, LEAF, 0, debug_trace_mpls_stack_label, validate_global_sid_value, INT, "label", "SR MPLS label value"); 
+                                libcli_register_param(&label1, &label2);
+                                set_param_cmd_code(&label2, CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK);
+                                {
+                                    static param_t label3;
+                                    init_param(&label3, LEAF, 0, debug_trace_mpls_stack_label, validate_global_sid_value, INT, "label", "SR MPLS label value"); 
+                                    libcli_register_param(&label2, &label3);
+                                    set_param_cmd_code(&label3, CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK);
+                                    {
+                                        static param_t label4;
+                                        init_param(&label4, LEAF, 0, debug_trace_mpls_stack_label, validate_global_sid_value, INT, "label", "SR MPLS label value"); 
+                                        libcli_register_param(&label3, &label4);
+                                        set_param_cmd_code(&label4, CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         static param_t route;
         init_param(&route, CMD, "route", show_route_tree_handler, 0, INVALID, 0,  "route on a node");

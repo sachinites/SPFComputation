@@ -225,9 +225,12 @@ typedef struct _prefix_sid_subtlv_t{
      * with SID. It is not a part of subtlv.*/
 } prefix_sid_subtlv_t;
 
+
 #define IS_PREFIX_SR_ACTIVE(prefixptr)     (prefixptr->conflct_res == SID_ACTIVE)
 #define MARK_PREFIX_SR_INACTIVE(prefixptr) (prefixptr->conflct_res = SID_INACTIVE)
 #define MARK_PREFIX_SR_ACTIVE(prefixptr)   (prefixptr->conflct_res = SID_ACTIVE)
+
+
 
 /*Adjacecncy SID*/
 
@@ -429,6 +432,16 @@ boolean
 is_identical_mapping_entries(sr_mapping_entry_t *mapping_entry1,
     sr_mapping_entry_t *mapping_entry2);
 
+
+/*Test if the route has SPRING path also. If the best prefix
+ * prefix originator of the route could not pass conflict-resolution
+ * test, then route is said to have no spring path, otherwise it will
+ * lead to traffic black-holing
+ * */
+
+boolean 
+IS_ROUTE_SPRING_CAPABLE(routes_t *route);
+        
 typedef struct LL ll_t ;
 
 #if 0

@@ -598,7 +598,7 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
    if(prim_nh_count == 0){
         mpls_prim_nh = &mpls_rt_entry->mpls_nh[0];
         mpls_prim_nh->outgoing_label = 0;
-        strncpy(mpls_prim_nh->gwip, "0.0.0.0" , PREFIX_LEN);
+        strncpy(mpls_prim_nh->gwip, "Direct" , PREFIX_LEN);
         mpls_prim_nh->gwip[PREFIX_LEN] = '\0'; 
         strncpy(mpls_prim_nh->oif, "Nil", IF_NAME_SIZE); 
         mpls_prim_nh->oif[IF_NAME_SIZE]= '\0';
@@ -634,20 +634,23 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     /* If Router recieves unlabelled pkt because nbr has performed PHP, 
      * hence no need to insall mpls entry*/
 
+    /*We have decided to install the local mpls forwarding entry even when
+     * router is advertising NO_PHP flag. Reason being, some notorious nbr 
+     * may not perform PHP. In that case, our dude will be able to process
+     * the packet, thus preventing the traffic black-holing*/
+
+#if 0
     if(!IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG)){
         sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u was not installed. Reason : PHP enabled", 
                 node->node_name, route->rt_key.prefix, route->rt_key.mask);
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
         return;
     }
-
+#endif
     /*If current router do not want nbrs to perform PHP, then current router
      * should implment POP and OIF - NULL in mpls table*/
     mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(route);
     
-    /*sanity checks*/
-    assert(!mpls_rt_entry->prim_nh_count);
-
     /*Current router would recieve this prefix with label, install the
      * entry to pop the label*/
     mpls_rt_entry->mpls_nh[0].stack_op = POP;
@@ -770,4 +773,20 @@ igp_uninstall_mpls_static_route(node_t *node, char *str_prefix, char mask){
     mpls_label_t label = PREFIX_SID_VALUE(prefix2);
     delete_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), label);
 }
+
+/* Test if the route has SPRING path also. If the best prefix
+ * prefix originator of the route could not pass conflict-resolution
+ * test, then route is said to have no spring path, otherwise it will
+ * lead to traffic black-holing
+ * */
+
+boolean
+IS_ROUTE_SPRING_CAPABLE(routes_t *route) {
+
+    prefix_t *prefix = ROUTE_GET_BEST_PREFIX(route);
+    if(prefix->prefix_sid && IS_PREFIX_SR_ACTIVE(prefix))
+        return TRUE;
+    return FALSE;
+}
+
 
