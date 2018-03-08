@@ -36,6 +36,7 @@
 #include "routes.h"
 #include "LinkedListApi.h"
 #include "stack.h"
+#include "spfutil.h"
 
 extern instance_t *instance;
 
@@ -44,7 +45,7 @@ extern instance_t *instance;
 boolean
 is_mpls_rt_entry_local(mpls_rt_entry_t *mpls_rt_entry){
 
-    return strlen(mpls_rt_entry->mpls_nh[0].oif) == 0;
+    return strncmp(mpls_rt_entry->mpls_nh[0].oif, "Nil", strlen("Nil")) == 0;
 }
 
 void
@@ -82,15 +83,35 @@ mpls_forwarding_engine(node_t *node, mpls_label_stack_t *mpls_stack){
                 ;
         }
 
-        if(is_mpls_rt_entry_local(mpls_rt_entry)){
+        /* case 1 : When nbr did not perform PHP, I will recieve labelled packet
+         * which maps to local entry in mpls.0 table. Trace is complete
+         * if the stack is empty. In this case, current node is processing its
+         * own label*/
+        if(is_mpls_rt_entry_local(mpls_rt_entry) && 
+                IS_MPLS_LABEL_STACK_EMPTY(mpls_stack)){
+            printf(" %s(%s) -- > %s", node->node_name, mpls_rt_entry->mpls_nh[0].oif, 
+                    mpls_rt_entry->mpls_nh[0].gwip);
+            printf("(%s)\n", node->node_name);
             printf("TRACE COMPLETE\n");
             is_trace_complete = TRUE;
             break;
         }
-        else{
+        /*When nbr did not perform PHP, and stack is not empty, 
+         * current node is processing its own label and then execute the
+         * next label in the stack*/
+        else if(is_mpls_rt_entry_local(mpls_rt_entry) &&
+                !IS_MPLS_LABEL_STACK_EMPTY(mpls_stack)){
             printf(" %s(%s) -- > %s", node->node_name, mpls_rt_entry->mpls_nh[0].oif, 
                     mpls_rt_entry->mpls_nh[0].gwip);
-            node = mpls_rt_entry->mpls_nh[0].nh_node;
+            printf("(%s)\n", node->node_name);
+            continue;/*It will execute POP only in the next iteration*/
+        }
+
+        else{ // PHP is handled here
+            printf(" %s(%s) -- > %s", node->node_name, mpls_rt_entry->mpls_nh[0].oif, 
+                    mpls_rt_entry->mpls_nh[0].gwip);
+            if(mpls_rt_entry->mpls_nh[0].nh_node)
+                node = mpls_rt_entry->mpls_nh[0].nh_node;
             printf("(%s)\n", node->node_name);
         }
     } while(!IS_MPLS_LABEL_STACK_EMPTY(mpls_stack));
@@ -154,7 +175,7 @@ show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
     free_mpls_label_stack(mpls_stack);
 }
 
-void
+int
 install_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table, 
                     mpls_rt_entry_t *mpls_rt_entry){
 
@@ -163,13 +184,14 @@ install_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table,
 
     if(existing_mpls_rt_entry){
         printf("Error : Entry for InLabel %u already exists\n", mpls_rt_entry->incoming_label);
-        return;
+        return -1;
     }
-    INSTALL_MPLS_RT_ENTRY(mpls_rt_table, mpls_rt_entry);
+    mpls_rt_entry->last_refresh_time = time(NULL);
+    return INSTALL_MPLS_RT_ENTRY(mpls_rt_table, mpls_rt_entry);
 }
 
 
-void
+int
 delete_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table,
                     mpls_label_t incoming_label){
 
@@ -177,14 +199,15 @@ delete_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table,
     
     if(!mpls_rt_entry){
         printf("Warning : InLabel : %u, Mpls forwarding entry do not exist\n", incoming_label);
-        return;
+        return -1;
     }
 
     DELETE_MPLS_RT_ENTRY(mpls_rt_table, mpls_rt_entry);
+    return 0;
 }
 
 
-void
+int
 update_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table, mpls_label_t incoming_label,
                     mpls_rt_entry_t *mpls_rt_entry){
 
@@ -195,11 +218,13 @@ update_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table, mpls_label_t incomi
     
     if(!list_node){
         printf("Warning : InLabel : %u, Mpls forwarding entry do not exist\n", incoming_label);
-        return;
+        return -1;
     }
 
     free(list_node->data);
+    mpls_rt_entry->last_refresh_time = time(NULL);
     list_node->data = mpls_rt_entry;
+    return 0;
 }
 
 mpls_rt_table_t *
@@ -286,6 +311,7 @@ show_mpls_rt_entry(mpls_rt_entry_t *mpls_rt_entry){
 
     unsigned int i = 0;
     mpls_rt_nh_t *mpls_nh = NULL;
+    time_t curr_time = time(NULL);
 
     printf("%-12u ", mpls_rt_entry->incoming_label);
 
@@ -295,10 +321,10 @@ show_mpls_rt_entry(mpls_rt_entry_t *mpls_rt_entry){
             printf("%-12u ", mpls_nh->outgoing_label);
         else
             printf("%-12s ", "-");
-        printf("%-12u %-12s %-12s %-12s %-12s\n", mpls_rt_entry->version,
-                "-",
-                get_str_stackops(mpls_nh->stack_op),
-                mpls_nh->gwip, mpls_nh->oif);
+        printf("%-12u %-7u %-10s %-11s %-12s %-12s %s\n", mpls_rt_entry->version,
+                mpls_rt_entry->level, "-", get_str_stackops(mpls_nh->stack_op),
+                mpls_nh->gwip, mpls_nh->oif, 
+                hrs_min_sec_format((unsigned int)difftime(curr_time, mpls_rt_entry->last_refresh_time)));
         if(i < mpls_rt_entry->prim_nh_count -1) 
             printf("%-12s ", "");
     }
@@ -317,8 +343,8 @@ show_mpls_rt_table(node_t *node){
    
    /*Hdr*/
    printf("Table %s\n", mpls_rt_table->table_name);
-   printf("%-12s %-12s %-12s %-12s %-12s %-12s %s\n", "InLabel", "OutLabel", "Version","Pfx Idx", "Action", "Gateway", "Oif");
-   printf("===================================================================================\n");
+   printf("%-12s %-12s %-10s %-8s %-10s %-12s %-12s %-12s %s\n", "InLabel", "OutLabel", "Version", "Level", "Pfx Idx", "Action", "Gateway", "Oif", "Age");
+   printf("=========================================================================================================\n");
 
    ITERATE_LIST_BEGIN(mpls_rt_table->entries, list_node){
 

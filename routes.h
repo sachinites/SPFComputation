@@ -64,6 +64,10 @@ typedef struct routes_{
     ll_t *like_prefix_list; 
     route_intall_status install_state; 
     unsigned int ecmp_dest_count;
+
+    /*SR support*/
+    mpls_label_t prev_mpls_label;/*MPLS label of this route in its previous incarnation*/
+
 } routes_t;
 
 routes_t *route_malloc();
@@ -138,6 +142,10 @@ delete_all_routes(node_t *node, LEVEL level);
 
 void
 start_route_installation(spf_info_t *spf_info, 
+                         LEVEL level);
+
+void
+start_spring_routes_installation(spf_info_t *spf_info, 
                          LEVEL level);
 
 int

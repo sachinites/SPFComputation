@@ -35,6 +35,7 @@
 
 #include "instanceconst.h"
 #include "LinkedList/LinkedListApi.h"
+#include <time.h>
 
 typedef enum {
 
@@ -68,6 +69,8 @@ typedef struct _mpls_rt_entry{
 
     mpls_label_t incoming_label; /*key*/
     unsigned int version;
+    LEVEL level;
+    time_t last_refresh_time;
     unsigned int prim_nh_count;
     mpls_rt_nh_t mpls_nh[0]; 
 } mpls_rt_entry_t;
@@ -77,15 +80,15 @@ typedef struct _mpls_rt_table{
     ll_t *entries;  
 } mpls_rt_table_t;
 
-void
+int
 install_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table, 
                     mpls_rt_entry_t *mpls_rt_entry);
 
-void
+int
 delete_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table,
                     mpls_label_t incoming_label);
 
-void
+int
 update_mpls_forwarding_entry(mpls_rt_table_t *mpls_rt_table, mpls_label_t incoming_label, 
                     mpls_rt_entry_t *mpls_rt_entry);
 

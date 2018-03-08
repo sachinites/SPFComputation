@@ -36,6 +36,8 @@
 #include "rttable.h"
 #include "advert.h"
 #include "spftrace.h"
+#include "rt_mpls.h"
+#include "igp_sr_ext.h"
 
 extern instance_t *instance;
 
@@ -186,7 +188,6 @@ free_route(routes_t *route){
 
     if(!route)  return;
     nh_type_t nh; 
-    singly_ll_node_t* list_node = NULL; 
     route->hosting_node = 0;
     
     ITERATE_NH_TYPE_BEGIN(nh){
@@ -197,14 +198,7 @@ free_route(routes_t *route){
         free(route->backup_nh_list[nh]);
         route->backup_nh_list[nh] = 0;
     } ITERATE_NH_TYPE_END;
-
-#if 0
-    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
-        
-        free(list_node->data);
-        list_node->data = NULL;
-    } ITERATE_LIST_END;
-#endif
+    
     delete_singly_ll(route->like_prefix_list);
     free(route->like_prefix_list);
     route->like_prefix_list = NULL;
@@ -617,17 +611,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         unsigned int i = 0;
         nh_type_t nh = NH_MAX;
         internal_nh_t *int_nxt_hop = NULL;
-        singly_ll_node_t* list_node = NULL;
 
-        /*Delete the older prefix list. We dont know what is the use
-         * of maintingin this list. We feel we should renew this list every
-         * time the route is overwritten with better prefix. We will revisit 
-         * once we find the use of this list.*/
-#if 0
-        ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
-            free_prefix(list_node->data);
-        } ITERATE_LIST_END;
-#endif
         delete_singly_ll(route->like_prefix_list);
         route->ecmp_dest_count = 1;
         route_set_key(route, prefix->prefix, prefix->mask); 
@@ -1505,7 +1489,6 @@ start_route_installation(spf_info_t *spf_info,
         }
     }ITERATE_LIST_END;
     
-    delete_stale_routes(spf_info, level);
     sprintf(instance->traceopts->b, "SPF Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
             level, spf_info->spf_level_info[level].node->node_name, rt_added, rt_removed, rt_updated, rt_no_change); 
     trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
@@ -1684,6 +1667,9 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
 
     build_routing_table(spf_info, spf_root, level);
     start_route_installation(spf_info, level);
+    if(is_node_spring_enabled(spf_root, level))
+        start_spring_routes_installation(spf_info, level);
+    delete_stale_routes(spf_info, level);
 }
 
 internal_nh_t *
@@ -1702,4 +1688,157 @@ backup_selection_policy(routes_t *route){
         } ITERATE_LIST_END;     
    } ITERATE_NH_TYPE_END;
    return NULL;
+}
+
+
+/* Route has changed with respect to Unicast topology. Since, SPRING
+ * routes are MPLS labelled version of unicast routes, we need to update
+ * in mpls.0 table the changed routes*/
+        
+void
+start_spring_routes_installation(spf_info_t *spf_info,
+                                 LEVEL level){
+
+    sprintf(instance->traceopts->b, "Entered ... Level : %u", level);
+    trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+    singly_ll_node_t *list_node = NULL, 
+                     *list_node2 = NULL;
+
+    routes_t *route = NULL;
+    mpls_rt_entry_t *rt_entry_template = NULL;
+    mpls_rt_entry_t *existing_rt_route = NULL;
+    prefix_t *best_prefix = NULL;
+
+    unsigned int i = 0,
+                 rt_added = 0,
+                 rt_removed = 0, 
+                 rt_updated = 0, 
+                 rt_no_change = 0;
+    
+    mpls_label_t mpls_label = 0;
+
+    int rc = 0;
+
+    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
+        
+        route = list_node->data;
+
+        if(route->level != level)
+            continue;
+
+        best_prefix = ROUTE_GET_BEST_PREFIX(route);
+#if 0
+        if(!best_prefix->prefix_sid || 
+            !IS_PREFIX_SR_ACTIVE(best_prefix)){
+            sprintf(instance->traceopts->b, "Node : %s : Spring route for 0:%s/%u %s not installed in mpls.0."
+                    "Reason : Prefix SID not assigned Or conflict prefix",
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, 
+                    route->rt_key.mask, get_str_level(route->level));
+            trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+            continue; 
+        }
+#endif
+        if(IS_ROUTE_SPRING_CAPABLE(route)){
+            mpls_label = PREFIX_SID_VALUE(best_prefix);
+            route->prev_mpls_label = mpls_label;
+        }
+        
+        sprintf(instance->traceopts->b, "mpls.0 RIB modification : route : %u:%s/%u, Level%u, metric = %u, Action : %s", 
+                mpls_label, route->rt_key.prefix, route->rt_key.mask, 
+                route->level, route->spf_metric, route_intall_status_str(route->install_state)); 
+        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        
+
+        switch(route->install_state){
+            
+            case RTE_STALE:
+                if(delete_mpls_forwarding_entry(spf_info->mpls_rt_table, mpls_label) < 0){
+                    printf("%s() : Error : Could not delete MPLS route  : %u:%s/%u, Level%u\n", __FUNCTION__, 
+                                    mpls_label, route->rt_key.prefix, route->rt_key.mask, route->level);
+                    break;
+                }
+                rt_removed++;
+                break;
+            case RTE_UPDATED:
+                assert(0);
+            case RTE_ADDED:
+                if(!IS_ROUTE_SPRING_CAPABLE(route)) 
+                    break;
+                if(route->hosting_node == GET_SPF_INFO_NODE(spf_info, level))
+                    rc = sr_install_local_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
+                else
+                    rc = sr_install_remote_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
+
+                if(rc < 0){
+                    printf("%s() : Error : Could not Add route : %u:%s/%u, Level%u\n", __FUNCTION__,
+                            mpls_label, route->rt_key.prefix, route->rt_key.mask, route->level);
+                    break;
+                }
+                rt_added++;
+                break;
+            case RTE_CHANGED:
+                rt_entry_template = prepare_mpls_entry_template_from_ipv4_route(route);
+                update_mpls_forwarding_entry(spf_info->mpls_rt_table, mpls_label, rt_entry_template);
+                rt_updated++;
+                break;
+            case RTE_NO_CHANGE:
+                    
+                /* It means, the route has not been changed wrt to UNICAST topology, But wrt to SPRING
+                 * , it could be Ist installation of SPRING route in mpls.0 table. We need to take folloing action : 
+                 * 1. If the route do not exist already in mpls.0, install it and set install state to RTE_ADDED
+                 * 2. If the route exist in mpls.0 table AND route is spring enabled, then fetch the entry from mpls.0 and do the following :*
+                 *  a. if mpls_label mismatch, update the mpls label and version number and set install state to RTE_CHANGED
+                 *  b. if mpls label is same, update the version no and set install state to RTE_NO_CHANGE
+                 * 3. If the route exist in mpls.0 table AND new route is not spring capable, delete it from mpls.0
+                 */
+                existing_rt_route = look_up_mpls_rt_entry(spf_info->mpls_rt_table, route->prev_mpls_label);
+                if(!existing_rt_route){
+                    if(!IS_ROUTE_SPRING_CAPABLE(route))
+                        break;
+                    rt_entry_template = prepare_mpls_entry_template_from_ipv4_route(route);
+                    if(route->hosting_node == GET_SPF_INFO_NODE(spf_info, level))
+                        rc = sr_install_local_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
+                    else
+                        rc = sr_install_remote_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
+
+                    if(rc < 0){
+                        printf("%s() : Error : Could not Add route in mpls.0 : %u:%s/%u, Level%u\n", __FUNCTION__,
+                                mpls_label, route->rt_key.prefix, route->rt_key.mask, route->level);
+                        break;
+                    }
+                    rt_added++;
+                }
+                else if(IS_ROUTE_SPRING_CAPABLE(route)){
+                    if(mpls_label != existing_rt_route->incoming_label){
+                        existing_rt_route->incoming_label = mpls_label;
+                        existing_rt_route->version = route->version;
+                        route->install_state = RTE_CHANGED;
+                        rt_updated++;
+                    }
+                    else{
+                        existing_rt_route->version = route->version;
+                        route->install_state = RTE_NO_CHANGE;
+                        rt_no_change++;
+                    }
+                }
+                else {
+                    if(delete_mpls_forwarding_entry(spf_info->mpls_rt_table, route->prev_mpls_label) < 0){
+                        printf("%s(%u) : Error : Could not delete MPLS route  : %u:%s/%u, Level%u\n", __FUNCTION__, __LINE__,
+                                route->prev_mpls_label, route->rt_key.prefix, route->rt_key.mask, route->level);
+                        break;
+                    }
+                    route->prev_mpls_label = 0;
+                    rt_removed++;
+                }
+                break;
+            default:
+                assert(0);
+        }
+    }ITERATE_LIST_END;
+    
+    sprintf(instance->traceopts->b, "SPRING Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
+            level, GET_SPF_INFO_NODE(spf_info, level)->node_name, rt_added, rt_removed, rt_updated, rt_no_change); 
+    trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+    printf("SPRING Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
+            level, GET_SPF_INFO_NODE(spf_info, level)->node_name, rt_added, rt_removed, rt_updated, rt_no_change);
 }

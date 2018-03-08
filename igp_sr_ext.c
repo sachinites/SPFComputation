@@ -554,7 +554,7 @@ is_mpls_label_in_use(srgb_t *srgb, mpls_label_t label){
 /*This fn blinkdly copies all IPV4 route members to mpls route.
  * You need to override the fields in the called appropriately*/
 
-static mpls_rt_entry_t *
+mpls_rt_entry_t *
 prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
 
    singly_ll_node_t *list_node = NULL;
@@ -562,7 +562,8 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
    mpls_rt_nh_t *mpls_prim_nh = NULL;
    unsigned int i = 0, 
                 prim_nh_count = 0;
-   
+  
+   boolean perform_PHP = FALSE; 
    prim_nh_count = GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[IPNH]);
    mpls_rt_entry_t *mpls_rt_entry = NULL;
 
@@ -579,8 +580,11 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
 
    mpls_rt_entry->incoming_label = PREFIX_SID_VALUE(prefix);
    mpls_rt_entry->version = route->version;
+   mpls_rt_entry->level = route->level;
    mpls_rt_entry->prim_nh_count = prim_nh_count;
-    
+   mpls_rt_entry->last_refresh_time = time(NULL); 
+   perform_PHP = IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG) ? FALSE : TRUE;
+
    ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node){
         
         ipv4_prim_nh = list_node->data;
@@ -592,6 +596,18 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
         mpls_prim_nh->oif[IF_NAME_SIZE]= '\0';
         mpls_prim_nh->stack_op = SWAP;
         mpls_prim_nh->nh_node = ipv4_prim_nh->node;
+        
+        if(!perform_PHP) {
+            i++;
+            continue;
+        }
+
+        if(ipv4_prim_nh->node != prefix->hosting_node){
+            i++;
+            continue;
+        }
+
+        mpls_prim_nh->stack_op = POP;
         i++;
    } ITERATE_LIST_END;
 
@@ -610,7 +626,7 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
    return mpls_rt_entry;
 }
 
-void
+int 
 sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
 
     /*route should be local route*/
@@ -621,14 +637,14 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     if(!prefix->prefix_sid){
         printf("Error : No prefix SID assigned on best originator node %s\n", 
             prefix->hosting_node->node_name);
-        return;
+        return -1;
     }
 
     if(!IS_PREFIX_SR_ACTIVE(prefix)){
         sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u was not installed. Reason : Conflicted prefix", 
                 node->node_name, route->rt_key.prefix, route->rt_key.mask);
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
-        return;
+        return -1;
     }
     
     /* If Router recieves unlabelled pkt because nbr has performed PHP, 
@@ -658,19 +674,20 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u Installed, Opn : POP",
                 node->node_name, route->rt_key.prefix, route->rt_key.mask);
     trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
-    install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
+    return install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
 }
 
-void
+int
 sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
 
-   /*route should be for remote destination*/
-    assert(route->hosting_node != node); 
 
     unsigned int i = 0;
     singly_ll_node_t *list_node = NULL;
     internal_nh_t *ipv4_prim_nh = NULL;
     mpls_rt_nh_t *mpls_nh = NULL;
+   
+   /*route should be for remote destination*/
+    assert(route->hosting_node != node); 
     prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
 
     if(!prefix->prefix_sid){
@@ -679,47 +696,25 @@ sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
         sprintf(instance->traceopts->b, "Node : %s : Error : Best prefix %s/%u is not assigned prefix-SID", 
                 node->node_name, prefix->prefix, prefix->mask);
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
-        return;
+        return -1;
     }
 
     if(!IS_PREFIX_SR_ACTIVE(prefix)){
         sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u was not installed. Reason : Conflicted prefix", 
                 node->node_name, route->rt_key.prefix, route->rt_key.mask);
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
-        return;
+        return -1;
     }
-  
     mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(route);
-
-    if(!IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG)){
-        /*I am suppose to perform PHP. I will do PHP Only when the 
-         * primary next of this route is a destination*/
-        /*@override*/ 
-        ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node){
-            
-            ipv4_prim_nh = list_node->data;
-            if(ipv4_prim_nh->node != prefix->hosting_node){
-                i++;
-                continue;
-            }
-            
-            mpls_nh = &mpls_rt_entry->mpls_nh[i];        
-            mpls_nh->stack_op = POP;
-            i++;
-        } ITERATE_LIST_END;
-    }
-    else{
-        /*I dont have to do any PHP, nothing to do*/
-    }
 
     sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u Installed",
                 node->node_name, route->rt_key.prefix, route->rt_key.mask);
     trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
-    install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
+    return install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
 }
 
-void
-igp_install_mpls_static_route(node_t *node, char *str_prefix, char mask){
+int
+igp_install_mpls_spring_route(node_t *node, char *str_prefix, char mask){
 
     prefix_t prefix, *prefix2 = NULL;
 
@@ -727,7 +722,7 @@ igp_install_mpls_static_route(node_t *node, char *str_prefix, char mask){
     routes_t *route = search_route_in_spf_route_list(&(node->spf_info), &prefix, LEVEL1/*unused*/);
     if(!route){
         printf("Info : No Unicast Route exist\n");
-        return;
+        return -1;
     }
     
     prefix2 = ROUTE_GET_BEST_PREFIX(route);
@@ -743,7 +738,7 @@ igp_install_mpls_static_route(node_t *node, char *str_prefix, char mask){
     if(!prefix2->prefix_sid || prefix2->hosting_node->spring_enabled == FALSE){
         printf("Error : Best prefix originator (%s) is not SR enabled\n", 
             route->hosting_node->node_name);
-        return;
+        return -1;
     }
     
     if(!IS_PREFIX_SR_ACTIVE(prefix2)){
@@ -751,13 +746,13 @@ igp_install_mpls_static_route(node_t *node, char *str_prefix, char mask){
     }
 
     if(route->hosting_node == node)
-        sr_install_local_prefix_mpls_fib_entry(node, route);           
+        return sr_install_local_prefix_mpls_fib_entry(node, route);           
     else
-        sr_install_remote_prefix_mpls_fib_entry(node, route);
+        return sr_install_remote_prefix_mpls_fib_entry(node, route);
 }
 
-void
-igp_uninstall_mpls_static_route(node_t *node, char *str_prefix, char mask){
+int
+igp_uninstall_mpls_spring_route(node_t *node, char *str_prefix, char mask){
 
     
     prefix_t prefix, *prefix2 = NULL;
@@ -766,12 +761,12 @@ igp_uninstall_mpls_static_route(node_t *node, char *str_prefix, char mask){
     routes_t *route = search_route_in_spf_route_list(&node->spf_info, &prefix, LEVEL1/*unused*/);
     if(!route){
         printf("Info : No Unicast Route exist\n");
-        return;
+        return -1;
     }
     
     prefix2 = ROUTE_GET_BEST_PREFIX(route);
     mpls_label_t label = PREFIX_SID_VALUE(prefix2);
-    delete_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), label);
+    return delete_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), label);
 }
 
 /* Test if the route has SPRING path also. If the best prefix
@@ -789,4 +784,18 @@ IS_ROUTE_SPRING_CAPABLE(routes_t *route) {
     return FALSE;
 }
 
+boolean
+is_node_spring_enabled(node_t *node, LEVEL level){
 
+    if(node->spring_enabled == FALSE)
+        return FALSE;
+
+    prefix_t *router_id = node_local_prefix_search(node, level, node->router_id, 32);
+    assert(router_id);
+
+    if(router_id->prefix_sid &&
+            IS_PREFIX_SR_ACTIVE(router_id)){
+        return TRUE;
+    }
+    return FALSE;
+}

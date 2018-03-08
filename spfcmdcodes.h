@@ -105,7 +105,12 @@
 #define CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE       62 /*conf node <node-name> mpls install route <dst-prefix> <mask>*/
 #define CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE            63 /*show instance node <node-name> mpls forwarding-table*/
 #define CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS                64 /*show instance node <node-name> traceroute <prefix> sr-mpls*/
-#define CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK               67 /*debug trace mpls stack labels <label1> <label2> <label3> <label4>*/
+#define CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK               65 /*debug trace mpls stack labels <label1> <label2> <label3> <label4>*/
 /* Global CLIs*/
 #define CMDCODE_NODE_PING                                   66 /*ping <prefix>*/
+
+/* CLEAR Commands*/
+#define CMDCODE_CLEAR_NODE_ROUTE_DB                         67 /*clear instance node <node-name> routes level <level-no>*/
+
+
 #endif /* __SPFCMDCODES__H */

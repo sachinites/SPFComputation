@@ -312,7 +312,7 @@ Egress interface: NULL
     Segment routing Architecture-2, pg11
 */
 
-void
+int
 sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route);
 
 /*
@@ -329,7 +329,7 @@ the SID toward prefix R.
     Segment routing Architecture-2, pg11
 */
 
-void
+int
 sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route);
 
 /*For ipv6 Data plane*/
@@ -467,12 +467,19 @@ void
 resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry1, 
         prefix_t *prefix2, sr_mapping_entry_t *pfx_mapping_entry2);
 
-void
-igp_install_mpls_static_route(node_t *node, char *prefix, char mask);
+int
+igp_install_mpls_spring_route(node_t *node, char *prefix, char mask);
 
-void
-igp_uninstall_mpls_static_route(node_t *node, char *prefix, char mask);
+int
+igp_uninstall_mpls_spring_route(node_t *node, char *prefix, char mask);
 
+boolean
+is_node_spring_enabled(node_t *node, LEVEL level);
+
+typedef struct _mpls_rt_entry mpls_rt_entry_t ;
+
+mpls_rt_entry_t *
+prepare_mpls_entry_template_from_ipv4_route(routes_t *route);
 
 #if 0
 void
