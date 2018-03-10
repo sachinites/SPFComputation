@@ -171,10 +171,22 @@ route_intall_status_str(route_intall_status install_status);
 void
 mark_all_routes_stale(spf_info_t *spf_info, LEVEL level);
 
-void
-delete_all_application_routes(node_t *node, LEVEL level);
-
 internal_nh_t *
 backup_selection_policy(routes_t *route);
+
+static inline boolean
+is_route_local(routes_t *route){
+
+    nh_type_t nh;
+    unsigned int nhcount = 0;
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+        nhcount += GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]) ;   
+    } ITERATE_NH_TYPE_END;
+    return nhcount == 0;
+}
+
+boolean
+is_independant_primary_next_hop_list(routes_t *route);
 
 #endif /* __ROUTES__ */

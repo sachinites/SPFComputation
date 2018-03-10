@@ -252,6 +252,8 @@ p2p_is_ecmp_overrides_backup_nxt_hops(routes_t *route,
         nh_count += GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]);
     } ITERATE_NH_TYPE_END;
 
+    /*It means, route dont have ECMP, hence whatever backups it has 
+     * computed, it needs them*/
     if(nh_count < 2)
         return FALSE;
 

@@ -195,12 +195,14 @@ is_un_nh_t_equal(internal_un_nh_t *nh1, internal_un_nh_t *nh2){
             }
             return TRUE; 
     }
+    assert(0);
+    return FALSE;
 }
 
 void
 free_un_nexthop(internal_un_nh_t *nh){
 
-    if(nh->type == SPRNH){
+    if(nh->nh_type == SPRNH){
         if(nh->nh.sprnh.mpls_label_stack.stack)
             free_stack(nh->nh.sprnh.mpls_label_stack.stack);
     }

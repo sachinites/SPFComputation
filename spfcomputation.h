@@ -207,7 +207,9 @@ typedef struct self_spf_result_{
 
 typedef enum {
 
+    SPF_RUN_UNKNOWN,
     FORWARD_RUN,/*To compute LFA and RLFAs*/
+    REVERSE_SPF_RUN,
     FULL_RUN,     /*To compute Main routes*/
     PRC_RUN
 } spf_type_t;

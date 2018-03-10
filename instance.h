@@ -74,7 +74,6 @@ typedef struct _node_t{
     unsigned int instance_flags;                            /*Hope instance flags are not level specific, is there any ? If we come across later, we will have level specific flags*/
     boolean is_node_on_heap;
 
-    /*Not in use currently*/
     char attributes[MAX_LEVEL];                             /*1 Bytes of router attributes*/
     char traversing_bit;                                    /*This bit is only used to traverse the instance, otherwise it is not specification requirement. 1 if the node has been visited, zero otherwise*/
     char lsp_distribution_bit;
@@ -87,6 +86,8 @@ typedef struct _node_t{
     boolean is_srms;
     /*conflict resolution*/
     ll_t *sr_mapping_entry[MAX_LEVEL];
+
+    /*Our implementation specific*/
 } node_t;
 
 struct edge_end_{
