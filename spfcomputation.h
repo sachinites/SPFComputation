@@ -157,7 +157,24 @@ typedef struct internal_nh_t_{
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->node_name : _internal_nh_t_ptr->rlfa->node_name,   \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->router_id : _internal_nh_t_ptr->rlfa->router_id,   \
             _internal_nh_t_ptr->protected_link->intf_name, get_str_lfa_type(_internal_nh_t_ptr->lfa_type)) 
-         
+
+/*A backup LSPNH nexthop could be LDPNH or RSVPNH, this fn is used to check which
+ *  *  * one is the backup nexthop type. This fn should be called to test backup nexthops only.
+ *   *   * Primary nexthops are never LDP nexthops in IGPs*/
+
+static inline boolean
+is_internal_backup_nexthop_rsvp(internal_nh_t *nh){
+
+    if(nh->nh_type != LSPNH)
+        return FALSE;
+    /*It is either LDP Or RSVP nexthop. We know that RSVP nexthop are filled
+     *      *     *exactly in IPNH manner in the internal_nh_t structure since they are treared as
+     *           *          IP adjacency (called forward Adjacencies) in the topology during SPF run*/
+    if(nh->rlfa == NULL)
+        return TRUE;
+    return FALSE;
+}
+
 
 typedef struct spf_result_{
 

@@ -131,7 +131,8 @@ merge_route_backup_nexthops(routes_t *route,
                             backup->oif->intf_name,
                             next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
                             next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
-                            backup->node->node_name, backup->node->router_id,
+                            backup->node ? backup->node->node_name : backup->rlfa->node_name,
+                            backup->node ? backup->node->router_id : backup->rlfa->router_id, 
                             backup->protected_link->intf_name); 
                     trace(instance->traceopts, ROUTE_CALCULATION_BIT);
                     free(backup);
@@ -159,7 +160,8 @@ merge_route_backup_nexthops(routes_t *route,
                     backup->oif->intf_name,
                     next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
                     next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
-                    backup->node->node_name, backup->node->router_id,
+                    backup->node ? backup->node->node_name : backup->rlfa->node_name,
+                    backup->node ? backup->node->router_id : backup->rlfa->router_id,
                     backup->protected_link->intf_name); 
             trace(instance->traceopts, ROUTE_CALCULATION_BIT);
             continue;
@@ -799,7 +801,8 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             prefix->prefix, get_str_level(level), prefix->metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
     if(prefix->metric == INFINITE_METRIC){
-        sprintf(instance->traceopts->b, "prefix : %s/%u discarded because of infinite metric", prefix->prefix, prefix->mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+        sprintf(instance->traceopts->b, "prefix : %s/%u discarded because of infinite metric", 
+        prefix->prefix, prefix->mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
         return;
     }
 
@@ -869,8 +872,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         /*Linkage*/
         if(linkage){
-            //route_prefix = calloc(1, sizeof(prefix_t));
-            //memcpy(route_prefix, prefix, sizeof(prefix_t));
             link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
         }
 
@@ -907,8 +908,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 /*Linkage*/
                 if(linkage){
-                    //route_prefix = calloc(1, sizeof(prefix_t));
-                    //memcpy(route_prefix, prefix, sizeof(prefix_t));
                     link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                 }
                 return;
@@ -923,8 +922,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
                 if(linkage){
-                    //route_prefix = calloc(1, sizeof(prefix_t));
-                    //memcpy(route_prefix, prefix, sizeof(prefix_t));
                     link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                 }
                 return;
@@ -975,8 +972,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     /*Linkage*/
                     if(linkage){
-                        //route_prefix = calloc(1, sizeof(prefix_t));
-                        //memcpy(route_prefix, prefix, sizeof(prefix_t));
                         link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                     }
                     return;
@@ -1013,8 +1008,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     /*Linkage*/
                     if(linkage){
-                        //route_prefix = calloc(1, sizeof(prefix_t));
-                        //memcpy(route_prefix, prefix, sizeof(prefix_t));
                         link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                     }
                     return;
@@ -1045,8 +1038,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 /*Linkage*/
                 if(linkage){
-                    //route_prefix = calloc(1, sizeof(prefix_t));
-                    //memcpy(route_prefix, prefix, sizeof(prefix_t));
                     link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                 }
                 return;
@@ -1061,8 +1052,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 overwrite_route(spf_info, route, prefix, result, level);
                 /*Linkage*/
                 if(linkage){
-                    //route_prefix = calloc(1, sizeof(prefix_t));
-                    //memcpy(route_prefix, prefix, sizeof(prefix_t));
                     link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                 }
                 return;
@@ -1113,8 +1102,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     /*Linkage*/
                     if(linkage){
-                        //route_prefix = calloc(1, sizeof(prefix_t));
-                        //memcpy(route_prefix, prefix, sizeof(prefix_t));
                         link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                     }
                     return;
@@ -1149,8 +1136,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     /*Linkage*/
                     if(linkage){
-                        //route_prefix = calloc(1, sizeof(prefix_t));
-                        //memcpy(route_prefix, prefix, sizeof(prefix_t));
                         link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
                     }
                     return;
@@ -1180,8 +1165,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
             /*Linkage*/ 
             if(linkage){
-                //route_prefix = calloc(1, sizeof(prefix_t));
-                //memcpy(route_prefix, prefix, sizeof(prefix_t));
                 link_prefix_to_route(route, prefix, result->spf_metric, spf_info);
             }
         }
@@ -1322,29 +1305,6 @@ get_prefix_sid_from_route(routes_t *route){
         return 0;
     return PREFIX_SID_VALUE(prefix);
 }
-
-
-static void
-start_mpls_route_installation(spf_info_t *spf_info, LEVEL level){
-
-    singly_ll_node_t *list_node = NULL;
-    routes_t *route = NULL;
-
-    ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
-
-        route = list_node->data;
-        if(route->level != level)
-            continue;
-
-        if(route->install_state != RTE_NO_CHANGE &&
-            route->install_state != RTE_STALE){
-        
-        
-        }
-
-    } ITERATE_LIST_END;
-}
-
 
 void
 start_route_installation(spf_info_t *spf_info,
@@ -1592,6 +1552,7 @@ build_routing_table(spf_info_t *spf_info,
                     !IS_LINK_NODE_PROTECTION_ENABLED(edge)){
                 continue;
             }
+
             is_ecmp_overrides_backup = FALSE;
             if(is_broadcast_link(edge, level) == FALSE){
                 is_ecmp_overrides_backup = p2p_is_ecmp_overrides_backup_nxt_hops(route, edge);

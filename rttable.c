@@ -198,7 +198,6 @@ init_rttable(char *table_name){
     strncpy(rttable->table_name, table_name, 15);
     rttable->table_name[15] = '\0';
     rttable->rt_list = init_singly_ll();
-    UNMARK_RT_TABLE_VISITED(rttable);
     return rttable;
 }
 
@@ -291,9 +290,11 @@ show_routing_table(rttable *rttable, char *prefix, char mask){
                             5000, hrs_min_sec_format((unsigned int)difftime(curr_time, rt_entry->last_refresh_time)));
                     break;
                 case LSPNH:
-                    printf("%-15s    LDP->%-s|%-17s   %-12s    %-10s       %-5u    %s\n",
+                    printf("%-15s    %s->%s|%-17s   %-12s    %-10s       %-5u    %s\n",
                             "",
-                            rt_entry->backup_nh[i].rlfa_name,
+                            is_backup_nexthop_rsvp(&rt_entry->backup_nh[i]) ? "RSVP" : "LDP",
+                            is_backup_nexthop_rsvp(&rt_entry->backup_nh[i]) ? rt_entry->backup_nh[i].nh_name : 
+                                rt_entry->backup_nh[i].rlfa_name,
                             rt_entry->backup_nh[i].router_id,
                             rt_entry->backup_nh[i].oif,
                             rt_entry->backup_nh[i].protected_link,
@@ -307,23 +308,6 @@ show_routing_table(rttable *rttable, char *prefix, char mask){
             return;
     }ITERATE_LIST_END;
 }
-
-#if 0
-static void
-mark_all_rttables_unvisited(){
-
-    singly_ll_node_t *list_node = NULL;
-    node_t *node = NULL;
-    rttable *rt_table = NULL;
-
-    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
-        
-        node = list_node->data;
-        rt_table = node->spf_info.rttable;
-        UNMARK_RT_TABLE_VISITED(rt_table);
-    } ITERATE_LIST_END;
-}
-#endif
 
 /*-----------------------------------------------------------------------------
  *  Path trace for Destination dst_prefix is invoked on node node_name
@@ -348,11 +332,6 @@ show_traceroute(char *node_name, char *dst_prefix){
 
     do{
         node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-
-        if(IS_RT_TABLE_VISITED(node->spf_info.rttable)){
-            printf("Node %s : encountered again. Loop Detected\n", node_name);
-            return 1;
-        }
 
         rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
 
@@ -408,11 +387,6 @@ show_backup_traceroute(char *node_name, char *dst_prefix){
 
     printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-
-    if(IS_RT_TABLE_VISITED(node->spf_info.rttable)){
-        printf("Node %s : encountered again. Loop Detected\n", node_name);
-        return 1;
-    }
 
     rt_entry = get_longest_prefix_match(node->spf_info.rttable, dst_prefix);
     if(!rt_entry){

@@ -35,6 +35,7 @@
 
 #include "instanceconst.h"
 #include <time.h>
+#include <string.h>
 
 typedef struct LL ll_t;
 
@@ -74,7 +75,6 @@ typedef struct rttable_{
     
     char table_name[16];
     ll_t *rt_list;
-    char visit_flag;
 } rttable;
 
 #define RT_ENTRY_MATCH(rtptr, _prefix, _mask) \
@@ -82,22 +82,24 @@ typedef struct rttable_{
 
 #define GET_NEW_RT_ENTRY()                  (calloc(1, sizeof(rttable_entry_t)));
 #define FLUSH_RT_ENTRY(rtptr)               (memset(rtptr, 0, sizeof(rttable_entry_t)));
-#define GET_BACK_UP_NH(rtptr)               (&(rtptr->backup_nh))
-#define SET_BACK_UP_NH(rtptr, bnhptr)       (rtptr->backup_nh = *bnhptr)
 #define GET_RT_TABLE(rttableptr)            (rttableptr->rt_list)
-#define MARK_RT_TABLE_VISITED(rttableptr)   (rttableptr->visit_flag = 1)
-#define UNMARK_RT_TABLE_VISITED(rttableptr) (rttableptr->visit_flag = 0)
-#define IS_RT_TABLE_VISITED(rttableptr)     (rttableptr->visit_flag == 1)
 
+/* A backup LSPNH nexthop could be LDPNH or RSVPNH, this fn is used to check which
+ * one is the backup nexthop type. This fn should be called to test backup nexthops only.
+ * Primary nexthops are never LDP nexthops in IGPs*/
 
-#define ITERATE_PR_NH_BEGIN(rt_entry)     \
-do{                                       \
-    unsigned int _i = 0;                  \
-    nh_t *_nh = NULL;                     \
-    for(_i = 0; _i < MAX_NXT_HOPS; _i++){ \
-        _nh = &rt_entry->primary_nh[i];
-                
-#define ITERATE_PR_NH_END  }}while(0)
+static inline boolean
+is_backup_nexthop_rsvp(nh_t *nh){
+
+    if(nh->nh_type != LSPNH)
+        return FALSE;
+    /*It is either LDP Or RSVP nexthop. We know that RSVP nexthop are filled
+     *exactly in IPNH manner in the internal_nh_t structure since they are treared as
+     *IP adjacency (called forward Adjacencies) in the topology during SPF run*/
+    if(strlen(nh->rlfa_name) == 0)
+        return TRUE;
+    return FALSE;
+}
 
 void
 add_primary_nh(rttable_entry_t *rt_entry, nh_t *nh);
