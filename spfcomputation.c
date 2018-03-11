@@ -674,7 +674,9 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
     unsigned int i = 0;
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
-   
+    singly_ll_node_t *list_node = NULL;
+    node_t *res_node = NULL;
+
     if(!IS_BIT_SET(spf_root->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED))
         return;
 
@@ -682,6 +684,19 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
     trace(instance->traceopts, SPF_EVENTS_BIT); 
     boolean strict_down_stream_lfa = FALSE;
     init_back_up_computation(spf_root, level); 
+
+    /* 1. Run SPF on S to know DIST(S,D) */
+    Compute_and_Store_Forward_SPF(spf_root, level);
+    /* 2. Run SPF on all nbrs of S to know DIST(N,D) and DIST(N,S)*/
+    Compute_PHYSICAL_Neighbor_SPFs(spf_root, level);
+
+    /*Weed out the nodes which do not need any backup support because they
+     * are blessed with independant ECMP primary nexthops*/
+
+    ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
+        res_node = ((spf_result_t *)list_node->data)->node;
+        is_independant_primary_next_hop_list_for_nodes(spf_root, res_node, level);
+    } ITERATE_LIST_END;
 
     for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
         edge_end = spf_root->edges[i];
@@ -697,7 +712,7 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
             !IS_LINK_PROTECTION_ENABLED(edge))
             continue;
        strict_down_stream_lfa = TRUE;
-      
+
        compute_lfa(spf_root, edge, level, strict_down_stream_lfa);
        
        if(!IS_BIT_SET(spf_root->backup_spf_options, 

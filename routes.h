@@ -189,6 +189,9 @@ is_route_local(routes_t *route){
 boolean
 is_independant_primary_next_hop_list(routes_t *route);
 
+boolean
+is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVEL level);
+
 void
 show_internal_routing_tree(node_t *node, char *prefix, char mask);
 

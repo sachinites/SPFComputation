@@ -575,7 +575,7 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
   singly_ll_node_t *list_node = NULL;
   char impact_reason[STRING_REASON_LEN];
   boolean is_impacted = FALSE,
-           IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = FALSE;
+           MANDATORY_NODE_PROTECTION = TRUE;
 
   for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
 
@@ -589,9 +589,9 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
     ITERATE_LIST_BEGIN(node->spf_run_result[level_it], list_node){
         D_res = list_node->data;
         memset(impact_reason , 0 , 256);
-        IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED = FALSE;
+        MANDATORY_NODE_PROTECTION = TRUE;
         is_impacted = is_destination_impacted(node, edge, D_res->node, level_it, impact_reason,
-                        &IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED);
+                        &MANDATORY_NODE_PROTECTION);
         printf(" %-20s     %-15s   %s\n", D_res->node->node_name, is_impacted ? "IMPACTED" : "NOT IMPACTED", impact_reason);
     }ITERATE_LIST_END;
   }

@@ -175,6 +175,6 @@ boolean
 is_destination_impacted(node_t *S, edge_t *failed_edge,
         node_t *D, LEVEL level,
         char impact_reason[],
-        boolean *IS_ONLY_LINK_PROTECTION_BACKUP_REQUIRED);
+        boolean *MANDATORY_NODE_PROTECTION);
 
 #endif /* __RLFA__ */

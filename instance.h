@@ -88,7 +88,9 @@ typedef struct _node_t{
     ll_t *sr_mapping_entry[MAX_LEVEL];
 
     /*Our implementation specific*/
+    char flags[MAX_LEVEL];
 } node_t;
+
 
 struct edge_end_{
     node_t *node;

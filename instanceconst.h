@@ -147,6 +147,35 @@ typedef enum{
     UNKNOWN_LFA_TYPE
 } lfa_type_t;
 
+typedef enum{
+
+    BACKUP_REQ_UNKNOWN,
+    /*SET when Destination node do not need any backups by virtue of independant ECMP*/
+    NO_BACKUP_REQUIRED,
+    /*SET by default*/
+    BACKUPS_REQUIRED,
+    /*SET when Destination has ECMP*/
+    NO_LINK_PROTECTING_BACKUPS_REQUIRED
+} node_backup_req_t;
+
+
+static char *
+get_str_node_backup_req(node_backup_req_t node_bckup_requirement){
+
+    switch(node_bckup_requirement){
+        case NO_BACKUP_REQUIRED:
+            return "NO_BACKUP_REQUIRED";
+        case BACKUPS_REQUIRED:
+            return "BACKUPS_REQUIRED";
+        case NO_LINK_PROTECTING_BACKUPS_REQUIRED:
+            return "NO_LINK_PROTECTING_BACKUPS_REQUIRED";
+        case BACKUP_REQ_UNKNOWN:
+            return "BACKUP_REQ_UNKNOWN";
+        default:
+            assert(0);
+    }
+    return 0;
+}
 
 
 #endif /* __GRAPHCONST__ */

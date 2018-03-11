@@ -48,9 +48,6 @@ spf_computation(node_t *spf_root,
 extern int
 instance_node_comparison_fn(void *_node, void *input_node_name);
 
-extern boolean
-p2p_is_ecmp_overrides_backup_nxt_hops(routes_t *route,
-                      edge_t *protected_link);
 
 #if 0
 THREAD_NODE_TO_STRUCT(prefix_t,
@@ -1273,8 +1270,68 @@ start_route_installation(spf_info_t *spf_info,
  * there exist atleast 1 nexthop in the set which could relay the traffic to atleast one ECMP destination
  * of route without bypassing any other primary nexthop node in the set. The below function returns True
  * if this condn is satified for the route, else false. If this fn return is TRUE, we can safely remove all
- * backup nexthops of all types from the route's backup nexthop lists.*/
+ * backup nexthops of all types from the route's backup nexthop lists. This function is written for routes 
+ * and will be used in phase2 to weed out the routes which do not need any backups. Function 
+ * is_independant_primary_next_hop_list(node_t *node, LEVEL level) serves the same purpose but for Destination
+ * and in phase 1 of backup route calculation*/
 /* This is very Expensive function, need optimization, will revisit . . . */
+
+/*This fn should be used in phase 1 in backup route calculation*/
+boolean
+is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVEL level){
+
+    internal_nh_t *prim_next_hop1 = NULL,
+                  *prim_next_hop2 = NULL;
+    nh_type_t nh,nh1;
+    unsigned int dist_prim_nh1_to_D = 0,
+                 dist_prim_nh2_to_D = 0,
+                 dist_prim_nh1_to_prim_nh2 = 0,
+                 i = 0, j = 0;
+
+    /*This fn assumes that all requires SPF runs has been triggered*/
+    //Compute_PHYSICAL_Neighbor_SPFs(S, level);
+
+    spf_result_t *D_res = GET_SPF_RESULT((&S->spf_info), dst_node, level); 
+    D_res->backup_requirement[level] = BACKUPS_REQUIRED;
+
+    sprintf(instance->traceopts->b, "Node : %s : Testing for Independant primary nexthops at %s for Dest %s",
+                    S->node_name, get_str_level(level), dst_node->node_name);
+    trace(instance->traceopts, LFA_COMPUTATION_BIT);
+    
+    ITERATE_NH_TYPE_BEGIN(nh){
+        for(i = 0; i < MAX_NXT_HOPS; i++){
+            prim_next_hop1 = &dst_node->next_hop[nh][i];
+            if(is_nh_list_empty2(&(dst_node->next_hop[nh][i])))
+                break;
+            dist_prim_nh1_to_D = DIST_X_Y(prim_next_hop1->node, dst_node, level);
+
+            ITERATE_NH_TYPE_BEGIN(nh1){
+                for(j = 0; j < MAX_NXT_HOPS; j++){
+                    prim_next_hop2 = &dst_node->next_hop[nh1][j];
+                    if(is_nh_list_empty2(&(dst_node->next_hop[nh1][j])))
+                        break;
+                    if(prim_next_hop1 == prim_next_hop2) continue;
+                    dist_prim_nh2_to_D = DIST_X_Y(prim_next_hop2->node, dst_node, level);
+                    dist_prim_nh1_to_prim_nh2 = DIST_X_Y(prim_next_hop1->node, prim_next_hop2->node, level);
+
+                    if(dist_prim_nh1_to_D < dist_prim_nh1_to_prim_nh2 + dist_prim_nh2_to_D){
+                        D_res->backup_requirement[level] = NO_BACKUP_REQUIRED;
+                        sprintf(instance->traceopts->b, "Node : %s : Dest %s has independent Primary nexthops at %s",
+                            S->node_name, dst_node->node_name, get_str_level(level));
+                        trace(instance->traceopts, LFA_COMPUTATION_BIT);
+                        return TRUE;
+                    }
+                }
+            } ITERATE_NH_TYPE_END;
+        }
+    }
+    sprintf(instance->traceopts->b, "Node : %s : Dest %s do not have independent Primary nexthops at %s",
+            S->node_name, dst_node->node_name, get_str_level(level));
+    trace(instance->traceopts, LFA_COMPUTATION_BIT);
+    return FALSE;
+}
+
+/*This fn should be used in phase 2 in backup route calculation*/
 boolean
 is_independant_primary_next_hop_list(routes_t *route){
 
