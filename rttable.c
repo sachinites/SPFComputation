@@ -202,9 +202,8 @@ init_rttable(char *table_name){
 }
 
 void
-show_routing_table(rttable *rttable, char *prefix, char mask){
+show_routing_table_inet(rttable *rttable, char *prefix, char mask){
 
-    assert(rttable);
     singly_ll_node_t *list_node = NULL;
     rttable_entry_t *rt_entry = NULL;
     char subnet[PREFIX_LEN_WITH_MASK + 1];

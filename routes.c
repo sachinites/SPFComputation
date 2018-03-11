@@ -1639,3 +1639,113 @@ start_spring_routes_installation(spf_info_t *spf_info,
     printf("SPRING Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
             level, GET_SPF_INFO_NODE(spf_info, level)->node_name, rt_added, rt_removed, rt_updated, rt_no_change);
 }
+
+void
+show_internal_routing_tree(node_t *node, char *prefix, char mask){
+
+        singly_ll_node_t *list_node = NULL;
+        routes_t *route = NULL;
+        char subnet[PREFIX_LEN_WITH_MASK + 1];
+        nh_type_t nh;
+        unsigned int j = 0,
+                     total_nx_hops = 0;
+
+        time_t curr_time = time(NULL);
+
+        printf("Internal Routes\n");
+        printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF           protection    Backup Score\n");
+        printf("--------------------------------------------------------------------------------------------------------------------------------------------------\n");
+
+        ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
+
+            route = list_node->data;
+
+            /*filter*/
+            if(prefix){
+                if(!(strncmp(prefix, route->rt_key.prefix, PREFIX_LEN) == 0 &&
+                            mask == route->rt_key.mask))
+                    continue;
+            }
+            memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
+            sprintf(subnet, "%s/%d", route->rt_key.prefix, route->rt_key.mask);
+
+            /*handling local prefixes*/
+
+            if(GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[IPNH]) == 0 &&
+                    GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[LSPNH]) == 0){
+
+                sprintf(subnet, "%s/%d", route->rt_key.prefix, route->rt_key.mask);
+                printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-12s      %-16s\n",
+                        subnet, route->version, route->spf_metric,
+                        IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT",
+                        route->level,
+                        "Direct", "",
+                        "--", "--", "");
+                if(prefix)
+                    return;
+                else
+                    continue;
+            }
+
+            printf("%-20s      %-4d        %-3d (%-3s)     %-2d    ",
+                    subnet, route->version, route->spf_metric,
+                    IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT",
+                    route->level);
+
+            ITERATE_NH_TYPE_BEGIN(nh){
+                total_nx_hops += GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]);
+            } ITERATE_NH_TYPE_END;
+
+            singly_ll_node_t *list_node = NULL;
+            internal_nh_t *nexthop = NULL;
+
+            ITERATE_NH_TYPE_BEGIN(nh){
+                ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
+                    nexthop = list_node->data;
+                    printf("%-15s    %-s|%-22s   %-26s\n",
+                            nh == IPNH ? next_hop_gateway_pfx(nexthop) : "--",
+                            nexthop->node->node_name,
+                            next_hop_type(*nexthop) == IPNH ? "IPNH" : "LSPNH",
+                            next_hop_oif_name(*nexthop));
+                    if(j < total_nx_hops -1)
+                        printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
+                    j++;
+                } ITERATE_LIST_END;
+            } ITERATE_NH_TYPE_END;
+
+                /*print the back up here*/
+                ITERATE_NH_TYPE_BEGIN(nh){
+                    ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+                        nexthop = list_node->data;
+                        printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
+                        nh = next_hop_type(*nexthop);
+                        /*print the back as per its type*/
+                        switch(nh){
+                            case IPNH:
+                                printf("%-15s    %s|%-22s   %-12s    %-10s       %-5u\n",
+                                        next_hop_gateway_pfx(nexthop),
+                                        nexthop->node->node_name,
+                                        "IPNH",
+                                        next_hop_oif_name(*nexthop),
+                                        backup_next_hop_protection_name(*nexthop), 5000);
+                                break;
+                            case LSPNH:
+                                printf("%-15s    %s->%s|%-17s   %-12s    %-10s       %-5u\n",
+                                        "",
+                                        is_internal_backup_nexthop_rsvp(nexthop) ? "RSVP" : "LDP",
+                                        is_internal_backup_nexthop_rsvp(nexthop) ?  nexthop->node->node_name :
+                                        nexthop->rlfa->node_name,
+                                        nexthop->rlfa->router_id,
+                                        next_hop_oif_name(*nexthop),
+                                        backup_next_hop_protection_name(*nexthop), 6000);
+                                break;
+                            default:
+                                assert(0);
+                        }
+                    } ITERATE_LIST_END;
+                } ITERATE_NH_TYPE_END;
+                if(prefix)
+                    return;
+        }ITERATE_LIST_END;
+}
+

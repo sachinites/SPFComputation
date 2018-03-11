@@ -112,5 +112,7 @@
 /* CLEAR Commands*/
 #define CMDCODE_CLEAR_NODE_ROUTE_DB                         67 /*clear instance node <node-name> routes level <level-no>*/
 
-
+/*Routing table commands*/
+#define CMDCODE_SHOW_NODE_INTERNAL_ROUTES                   68 /*show instance node <node-name> routes*/
+#define CMDCODE_SHOW_NODE_FORWARDING_TABLE                  69 /*show instance node <node-name> inet|mpls forwarding-table*/
 #endif /* __SPFCMDCODES__H */

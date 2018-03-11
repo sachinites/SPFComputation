@@ -189,4 +189,7 @@ is_route_local(routes_t *route){
 boolean
 is_independant_primary_next_hop_list(routes_t *route);
 
+void
+show_internal_routing_tree(node_t *node, char *prefix, char mask);
+
 #endif /* __ROUTES__ */
