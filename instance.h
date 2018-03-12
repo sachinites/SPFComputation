@@ -42,6 +42,7 @@
 #include "heap_interface.h"
 #include "rlfa.h"
 #include "Libtrace/libtrace.h"
+#include "glthread.h"
 
 typedef struct edge_end_ edge_end_t;
 
@@ -84,6 +85,9 @@ typedef struct _node_t{
     boolean spring_enabled;
     srgb_t *srgb;
     boolean is_srms;
+    glthread_t prefix_sids_thread_lst[MAX_LEVEL];
+    boolean use_spring_backups;
+    
     /*conflict resolution*/
     ll_t *sr_mapping_entry[MAX_LEVEL];
 

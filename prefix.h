@@ -36,6 +36,7 @@
 #include "instanceconst.h"
 #include "LinkedListApi.h"
 #include "igp_sr_ext.h"
+#include "glthread.h"
 
 #define DEFAULT_LOCAL_PREFIX_METRIC         0
 #define DEFAULT_PHYSICAL_INTF_PFX_METRIC    LINK_DEFAULT_METRIC
@@ -93,7 +94,8 @@ typedef struct prefix_{
     node_t *hosting_node;   /*back pointer to hosting node*/
     LEVEL level;
     /*SR*/
-    prefix_sid_subtlv_t *prefix_sid;
+    glthread_t *psid_thread_ptr;
+    //prefix_sid_subtlv_t *prefix_sid;
     conflict_result_t conflct_res; /*default is SID_ACTIVE*/
     /*Extras*/
     unsigned char ref_count; /*For internal use*/

@@ -295,7 +295,7 @@ prepare_new_nxt_hop_template(node_t *computing_node,
         nh_template->rlfa_name[NODE_NAME_SIZE - 1] = '\0';
     }
 #endif
-    nh_template->ldplabel = nxt_hop_node->ldplabel;
+    nh_template->mpls_label_in = nxt_hop_node->mpls_label_in;
 }
 
 routes_t *
@@ -541,7 +541,8 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         route_set_key(route, prefix->prefix, prefix->mask); 
 
         sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.prefix, 
-                    route->rt_key.mask, get_str_level(level)); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                    route->rt_key.mask, get_str_level(level)); 
+        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
         route->version = spf_info->spf_level_info[level].version;
         route->flags = prefix->prefix_flags;
@@ -1805,4 +1806,13 @@ show_internal_routing_tree(node_t *node, char *prefix, char mask){
                     return;
         }ITERATE_LIST_END;
 }
+
+/*SR related APIs*/
+/*It is essentially a routing table building routine for SR node/prefix segment routes*/
+void
+update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
+
+    
+}
+
 

@@ -123,17 +123,17 @@ is_un_next_hop_empty(internal_un_nh_t *nh){
 void
 init_un_next_hop(internal_un_nh_t *nh, NH_TYPE2 nh_type){
 
-    if(nh_type == SPRNH){
-        if(nh->nh.sprnh.mpls_label_stack.stack)
-            reset_stack(nh->nh.sprnh.mpls_label_stack.stack);
-        else
-            nh->nh.sprnh.mpls_label_stack.stack = get_new_stack();
-    }
+    unsigned int i = 0;
     nh->nh_type = nh_type;
     nh->level = MAX_LEVEL;
     nh->oif = NULL;
     nh->nh_node = 0;
     nh->lfa_type = UNKNOWN_LFA_TYPE;
+    nh->nh.sprnh.mpls_label_in = 0;
+    for(; i < MPLS_STACK_OP_LIMIT_MAX; i++){
+        nh->nh.sprnh.mpls_label_out[i] = 0;
+        nh->nh.sprnh.stack_op[i] = STACK_OPS_UNKNOWN;
+    }
     nh->protected_link = NULL;
     nh->ref_count = 0;
     nh->flags = 0;
@@ -143,10 +143,6 @@ void
 copy_un_next_hop_t(internal_un_nh_t *src, internal_un_nh_t *dst){
 
     memcpy(dst, src, sizeof(internal_un_nh_t));
-    if(dst->nh_type == SPRNH){
-        dst->nh.sprnh.mpls_label_stack.stack = get_new_stack();
-        memcpy(dst->nh.sprnh.mpls_label_stack.stack, src->nh.sprnh.mpls_label_stack.stack, sizeof(stack_t));
-    }
 }
 
 boolean
@@ -186,14 +182,19 @@ is_un_nh_t_equal(internal_un_nh_t *nh1, internal_un_nh_t *nh2){
         case SPRNH:
             if(strncmp(nh1->nh.sprnh.gw_prefix, nh2->nh.sprnh.gw_prefix, PREFIX_LEN + 1))
                 return FALSE;
-            if(nh1->nh.sprnh.mpls_label_stack.stack->top != nh2->nh.sprnh.mpls_label_stack.stack->top)
-                return FALSE;        
-            for(; i < nh1->nh.sprnh.mpls_label_stack.stack->top; i++){
-                if((mpls_label_t)(nh1->nh.sprnh.mpls_label_stack.stack->slot[i]) != 
-                        (mpls_label_t)(nh2->nh.sprnh.mpls_label_stack.stack->slot[i]))
+            if(nh1->nh.sprnh.mpls_label_in != nh2->nh.sprnh.mpls_label_in)
+                return FALSE;
+            for(i = 0 ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
+                if(nh1->nh.sprnh.mpls_label_out[i] != nh2->nh.sprnh.mpls_label_out[i])
                     return FALSE;
             }
-            return TRUE; 
+            for(i = 0 ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
+                if(nh1->nh.sprnh.stack_op[i] != nh2->nh.sprnh.stack_op[i])
+                    return FALSE;
+            }
+            return TRUE;
+        default:
+            assert(0);
     }
     assert(0);
     return FALSE;
@@ -201,10 +202,5 @@ is_un_nh_t_equal(internal_un_nh_t *nh1, internal_un_nh_t *nh2){
 
 void
 free_un_nexthop(internal_un_nh_t *nh){
-
-    if(nh->nh_type == SPRNH){
-        if(nh->nh.sprnh.mpls_label_stack.stack)
-            free_stack(nh->nh.sprnh.mpls_label_stack.stack);
-    }
     free(nh);
 }

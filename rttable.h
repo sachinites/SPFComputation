@@ -47,7 +47,7 @@ typedef struct nh_t_{
     nh_type_t nh_type;            /*IPNH | LSPNH*/
     char proxy_nbr_name[NODE_NAME_SIZE];    /*RLFAs only*/
     char rlfa_name[NODE_NAME_SIZE]; /*same as nh_name in case of RLFA*/
-    unsigned int ldplabel;
+    unsigned int mpls_label_in;
     char router_id[PREFIX_LEN]; /*FA| RLFA only*/
     //unsigned int root_metric;
     //unsigned int dest_metric;

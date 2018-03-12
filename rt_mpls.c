@@ -161,7 +161,7 @@ show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
 
     assert(prefix);
 
-    if(!prefix->prefix_sid){
+    if(!prefix->psid_thread_ptr){
         printf("No Prefix SID assigned on Destination node %s\n", hosting_node->node_name);
         return;
     }

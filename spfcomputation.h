@@ -34,6 +34,7 @@
 #define __SPFCOMPUTATION__
 
 #include "instanceconst.h"
+#include "rt_mpls.h"
 
 /*-----------------------------------------------------------------------------
  *  Do not #include graph.h in this file, as it will create circular dependency.
@@ -62,7 +63,9 @@ typedef struct internal_nh_t_{
     lfa_type_t lfa_type;
     node_t *proxy_nbr;
     node_t *rlfa;
-    unsigned int ldplabel;
+    mpls_label_t mpls_label_in; /*Used for LDP/RSVP and SR routes*/
+    mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];/*For SR routes only*/
+    MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
     unsigned int root_metric;
     unsigned int dest_metric;
     /*No of destinations covered by this RLFA backup*/
@@ -109,7 +112,7 @@ typedef struct internal_nh_t_{
     (_internal_nh_t).lfa_type = UNKNOWN_LFA_TYPE;                            \
     (_internal_nh_t).proxy_nbr = NULL;                                       \
     (_internal_nh_t).rlfa = NULL;                                            \
-    (_internal_nh_t).ldplabel = 0;                                           \
+    (_internal_nh_t).mpls_label_in = 0;                                           \
     (_internal_nh_t).root_metric = 0;                                        \
     (_internal_nh_t).dest_metric = 0;                                        \
     (_internal_nh_t).is_eligible = FALSE
@@ -124,7 +127,7 @@ typedef struct internal_nh_t_{
     (_dst).lfa_type = (_src).lfa_type;                  \
     (_dst).proxy_nbr = (_src).proxy_nbr;                \
     (_dst).rlfa = (_src).rlfa;                          \
-    (_dst).ldplabel = (_src).ldplabel;                  \
+    (_dst).mpls_label_in = (_src).mpls_label_in;                  \
     (_dst).root_metric = (_src).root_metric;            \
     (_dst).dest_metric = (_src).dest_metric;            \
     (_dst).is_eligible = (_src).is_eligible
@@ -134,7 +137,7 @@ typedef struct internal_nh_t_{
     _nh1.oif == _nh2.oif && _nh1.nh_type == _nh2.nh_type &&  \
     _nh1.protected_link == _nh2.protected_link &&            \
     _nh1.lfa_type == _nh2.lfa_type &&                        \
-    _nh1.rlfa == _nh2.rlfa && _nh1.ldplabel == _nh2.ldplabel && \
+    _nh1.rlfa == _nh2.rlfa && _nh1.mpls_label_in == _nh2.mpls_label_in && \
     _nh1.root_metric == _nh2.root_metric &&                     \
     _nh1.dest_metric == _nh2.dest_metric)
 

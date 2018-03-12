@@ -1304,20 +1304,6 @@ spf_init_dcm(){
         init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
         libcli_register_param(&config_node, &config_node_node_name);
 
-        /*config node <node-name> prefix-sid <prefix-sid>*/
-        {
-            static param_t prefix_sid;
-            init_param(&prefix_sid, CMD, "prefix-sid", 0, 0, INVALID, 0, "Configure NODE SID");
-            libcli_register_param(&config_node_node_name, &prefix_sid);
-            {
-                static param_t prefix_sid_val;
-                init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, validate_global_sid_value, INT, "prefix-sid" , "Prefix SID value");  
-                libcli_register_param(&prefix_sid, &prefix_sid_val);
-                set_param_cmd_code(&prefix_sid_val, CMDCODE_CONFIG_NODE_SR_PREFIX_SID);
-            }
-        }
-
-
         /*config node <node-name> backup-spf-options*/
         
         {
@@ -1339,6 +1325,13 @@ spf_init_dcm(){
                 libcli_register_param(&backup_spf_options, &node_link_degradation);
                 set_param_cmd_code(&node_link_degradation, CMDCODE_CONFIG_NODE_LINK_DEGRADATION);
             }
+            {
+                /*config node <node-name> backup-spf-options use-source-packet-routing*/
+                static param_t use_spring_backups;
+                init_param(&use_spring_backups, CMD, "use-source-packet-routing", instance_node_spring_config_handler, 0, INVALID, 0, "Use SPRING backups if possible");
+                libcli_register_param(&backup_spf_options, &use_spring_backups);
+                set_param_cmd_code(&use_spring_backups, CMDCODE_CONFIG_NODE_SPRING_BACKUPS);
+            }
         }
 
         /*SPRING config Commands*/
@@ -1348,6 +1341,18 @@ spf_init_dcm(){
             init_param(&spring, CMD, "source-packet-routing", instance_node_spring_config_handler, 0, INVALID, 0, "Enable Spring");
             libcli_register_param(&config_node_node_name, &spring);
             set_param_cmd_code(&spring, CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE);
+            {
+                /*config node <node-name> source-packet-routing node-segment <node-sid-value>*/ 
+                static param_t node_segment;
+                init_param(&node_segment, CMD, "node-segment", 0, 0, INVALID, 0, "Configure NODE SID");
+                libcli_register_param(&spring, &node_segment);
+                {
+                    static param_t prefix_sid_val;
+                    init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, validate_global_sid_value, INT, "node-segment" , "Node SID value");  
+                    libcli_register_param(&node_segment, &prefix_sid_val);
+                    set_param_cmd_code(&prefix_sid_val, CMDCODE_CONFIG_NODE_SR_PREFIX_SID);
+                }
+            }
         }
 
         /* config node <node-name> mpls install route <dst-prefix> <mask>*/
@@ -1897,6 +1902,7 @@ dump_node_info(node_t *node){
             "ENABLED" : "DISABLED");
         printf("\tnode-link-degradation : %s\n", IS_BIT_SET(node->backup_spf_options, SPF_BACKUP_OPTIONS_NODE_LINK_DEG) ? \
             "ENABLED" : "DISABLED");
+        printf("\tuse-spring-backups : %s\n", node->use_spring_backups ? "ENABLED" : "DISABLED");    
     }
     printf("SPRING : %s\n", node->spring_enabled ? "ENABLED" : "DISABLED");    
 

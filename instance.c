@@ -89,6 +89,8 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
         node->self_spf_result[level] = init_singly_ll();
         singly_ll_set_comparison_fn(node->self_spf_result[level], 
                         self_spf_run_result_comparison_fn);
+        
+        init_glthread(&node->prefix_sids_thread_lst[level]);
     }
 
     node->spf_info.routes_list = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
@@ -107,6 +109,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     node->lsp_distribution_bit = 0;
     node->backup_spf_options = 0;
     node->spring_enabled = FALSE;
+    node->use_spring_backups = FALSE;
     node->srgb = NULL;
     node->is_srms = FALSE;
     add_node_to_owning_instance(instance, node);

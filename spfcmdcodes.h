@@ -97,7 +97,8 @@
 #define CMDCODE_CONFIG_NODE_SRGB_RANGE                      54 /*config node <node-name> source-packet-routing global-block X Y*/
 #define CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT           55 /*debug show instance node <node-name> level <level-no> prefix-conflict-result*/
 #define CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT       56 /*debug show instance node <node-name> level <level-no> sid-prefix-conflict-result*/
-#define CMDCODE_CONFIG_NODE_SR_PREFIX_SID                   57 /*config node <node-name> prefix-sid <prefix-sid>*/
+#define CMDCODE_CONFIG_NODE_SR_PREFIX_SID                   57 /*config node <node-name> source-packet-routing node-segment <node-sid-value>*/
+#define CMDCODE_CONFIG_NODE_SPRING_BACKUPS                  70 /*config node <node-name> backup-spf-options use-source-packet-routing*//*MAX*/
 #define CMDCODE_CONFIG_NODE_SR_PREFIX_SID_INTF              58 /*config node <node-name> interface <if-name> prefix-sid <prefix-sid>*/
 #define CMDCODE_CONFIG_NODE_SR_ADJ_SID                      59 /*config node <node-name> interface <if-name> adjacency-sid <adj-sid>*/
 #define CMDCODE_SHOW_NODE_SPRING                            60 /*show instance node <node-name> level <level-no> spring*/

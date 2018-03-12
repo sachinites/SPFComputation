@@ -86,7 +86,9 @@ typedef struct internal_un_nh_t_{
     /*Spring Primary nexthop and LFAs and RLFAs*/
     struct spr_nh_t{
         char gw_prefix[PREFIX_LEN + 1];
-        mpls_label_stack_t mpls_label_stack;
+        mpls_label_t mpls_label_in;
+        mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
+        MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
     };
 
     union u_t{

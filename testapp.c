@@ -71,8 +71,8 @@ main(int argc, char **argv){
     //instance = build_ecmp_topo2();
     //instance = build_cisco_example_topo();
     //instance = broadcast_link_protecting_lfa();
-    //instance = build_multi_link_topo();
-    instance = build_rlfa_topo();
+    instance = build_multi_link_topo();
+    //instance = build_rlfa_topo();
     //instance = build_lfa_topo();
     //instance = overload_router_topo();
     //leak_prefix("R3", "100.1.1.1", 24, LEVEL2, LEVEL1);

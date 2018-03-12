@@ -41,6 +41,7 @@
 #include "rt_mpls.h"
 #include "bitsop.h"
 #include "spftrace.h"
+#include "sr_tlv_api.h"
 
 extern instance_t *instance;
 
@@ -72,7 +73,8 @@ construct_prefix_mapping_entry(prefix_t *prefix,
 
     char subnet[PREFIX_LEN + 1];
     unsigned int binary_prefix = 0;
-    
+    prefix_sid_subtlv_t *prefix_sid = get_prefix_sid(prefix); 
+     
     memset(subnet, 0, PREFIX_LEN + 1);
     apply_mask(prefix->prefix, prefix->mask, subnet);
     inet_pton(AF_INET, subnet, &binary_prefix);
@@ -80,10 +82,10 @@ construct_prefix_mapping_entry(prefix_t *prefix,
     mapping_entry_out->pi          = binary_prefix;
     mapping_entry_out->pe          = binary_prefix;
     mapping_entry_out->pfx_len     = prefix->mask;
-    mapping_entry_out->si          = PREFIX_SID_VALUE(prefix);
-    mapping_entry_out->se          = PREFIX_SID_VALUE(prefix);
+    mapping_entry_out->si          = prefix_sid->sid.sid;
+    mapping_entry_out->se          = prefix_sid->sid.sid;
     mapping_entry_out->range_value = 1;
-    mapping_entry_out->algorithm   = prefix->prefix_sid->algorithm;
+    mapping_entry_out->algorithm   = prefix_sid->algorithm;
     mapping_entry_out->topology    = 0;
 }
 
@@ -208,28 +210,34 @@ build_global_prefix_list(node_t *node, LEVEL level){
         ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, pn_node, edge1,
                 edge2, level){
 
-            if(nbr_node->traversing_bit ||
-                nbr_node->spring_enabled == FALSE){
+            if(nbr_node->traversing_bit)
                 ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(curr_node, nbr_node, pn_node, level);
+
+            if(nbr_node->spring_enabled == FALSE){
+                goto NEXT_NODE;
             }
 
             ITERATE_LIST_BEGIN(nbr_node->local_prefix_list[level], list_node){
                 prefix = list_node->data;
-                if(prefix->prefix_sid){
+                if(prefix->psid_thread_ptr){
                     MARK_PREFIX_SR_ACTIVE(prefix);
                     singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
                 }
             } ITERATE_LIST_END;
-            
+     
+     NEXT_NODE:
             nbr_node->traversing_bit = 1;
             enqueue(q, nbr_node);
         } ITERATE_NODE_PHYSICAL_NBRS_END(curr_node, nbr_node, pn_node, level);
     }
 
     /*Add self list*/
+    if(node->spring_enabled == FALSE)
+        return global_pfx_lst;
+
     ITERATE_LIST_BEGIN(node->local_prefix_list[level], list_node){
         prefix = list_node->data;
-        if(prefix->prefix_sid){
+        if(prefix->psid_thread_ptr){
             MARK_PREFIX_SR_ACTIVE(prefix);
             singly_ll_add_node_by_val(global_pfx_lst, list_node->data);
         }
@@ -577,13 +585,14 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
                sizeof(mpls_rt_nh_t));
 
    prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
-
+   prefix_sid_subtlv_t *prefix_sid = NULL;
    mpls_rt_entry->incoming_label = PREFIX_SID_VALUE(prefix);
    mpls_rt_entry->version = route->version;
    mpls_rt_entry->level = route->level;
    mpls_rt_entry->prim_nh_count = prim_nh_count;
-   mpls_rt_entry->last_refresh_time = time(NULL); 
-   perform_PHP = IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG) ? FALSE : TRUE;
+   mpls_rt_entry->last_refresh_time = time(NULL);
+   get_prefix_sid(prefix); 
+   perform_PHP = IS_BIT_SET(prefix_sid->flags, NO_PHP_P_FLAG) ? FALSE : TRUE;
 
    ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node){
         
@@ -634,7 +643,7 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
 
     prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
 
-    if(!prefix->prefix_sid){
+    if(!prefix->psid_thread_ptr){
         printf("Error : No prefix SID assigned on best originator node %s\n", 
             prefix->hosting_node->node_name);
         return -1;
@@ -690,7 +699,7 @@ sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     assert(route->hosting_node != node); 
     prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
 
-    if(!prefix->prefix_sid){
+    if(!prefix->psid_thread_ptr){
         printf(instance->traceopts->b, "Node : %s : Error : Best prefix %s/%u is not assigned prefix-SID", 
                 node->node_name, prefix->prefix, prefix->mask);
         sprintf(instance->traceopts->b, "Node : %s : Error : Best prefix %s/%u is not assigned prefix-SID", 
@@ -735,7 +744,7 @@ igp_install_mpls_spring_route(node_t *node, char *str_prefix, char mask){
      * prefix SID. If these criteria are not met, we will not allow configuring static mpls 
      * route*/
      
-    if(!prefix2->prefix_sid || prefix2->hosting_node->spring_enabled == FALSE){
+    if(!prefix2->psid_thread_ptr || prefix2->hosting_node->spring_enabled == FALSE){
         printf("Error : Best prefix originator (%s) is not SR enabled\n", 
             route->hosting_node->node_name);
         return -1;
@@ -779,7 +788,7 @@ boolean
 IS_ROUTE_SPRING_CAPABLE(routes_t *route) {
 
     prefix_t *prefix = ROUTE_GET_BEST_PREFIX(route);
-    if(prefix->prefix_sid && IS_PREFIX_SR_ACTIVE(prefix))
+    if(prefix->psid_thread_ptr && IS_PREFIX_SR_ACTIVE(prefix))
         return TRUE;
     return FALSE;
 }
@@ -793,9 +802,29 @@ is_node_spring_enabled(node_t *node, LEVEL level){
     prefix_t *router_id = node_local_prefix_search(node, level, node->router_id, 32);
     assert(router_id);
 
-    if(router_id->prefix_sid &&
+    if(router_id->psid_thread_ptr &&
             IS_PREFIX_SR_ACTIVE(router_id)){
         return TRUE;
     }
     return FALSE;
 }
+
+void
+spring_disable_cleanup(node_t *node){
+    
+    free(node->srgb->index_array);
+    free(node->srgb);
+    node->use_spring_backups = FALSE;
+    
+    /*ToDo : Clean prefix SID list*/
+    
+    /*Break the association between prefixes and prefix SIDs*/
+    glthread_t *curr = NULL;
+    prefix_sid_subtlv_t *prefix_sid = NULL;
+
+    ITERATE_GLTHREAD_BEGIN(&node->prefix_sids_thread_lst[LEVEL1], curr){
+        prefix_sid = glthread_to_prefix_sid(curr);
+        free_prefix_sid(prefix_sid); 
+    } ITERATE_GLTHREAD_END(&node->prefix_sids_thread_lst[LEVEL1], curr);
+}
+

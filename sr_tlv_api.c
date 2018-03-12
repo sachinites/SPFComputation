@@ -35,6 +35,7 @@
 #include "prefix.h"
 #include "spfutil.h"
 #include "bitsop.h"
+#include "glthread.h"
 
 void
 diplay_prefix_sid(prefix_t *prefix){
@@ -43,16 +44,18 @@ diplay_prefix_sid(prefix_t *prefix){
 
     memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
     apply_mask2(prefix->prefix, prefix->mask, subnet);
-    if(prefix->prefix_sid){
-        printf("\t%-18s : %-8u %s\n", subnet, PREFIX_SID_VALUE(prefix), 
+    prefix_sid_subtlv_t *prefix_sid = get_prefix_sid(prefix);
+
+    if(prefix_sid){
+        printf("\t%-18s : %-8u %s\n", subnet, prefix_sid->sid.sid, 
             IS_PREFIX_SR_ACTIVE(prefix) ? "ACTIVE" : "INACTIVE");
         printf("\t\tFLAGS : R:%c N:%c P:%c E:%c V:%c L:%c\n", 
-        IS_BIT_SET(prefix->prefix_sid->flags, RE_ADVERTISEMENT_R_FLAG) ? '1' : '0',
-        IS_BIT_SET(prefix->prefix_sid->flags, NODE_SID_N_FLAG) ? '1' : '0',
-        IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG) ? '1' : '0',
-        IS_BIT_SET(prefix->prefix_sid->flags, EXPLICIT_NULL_E_FLAG) ? '1' : '0',
-        IS_BIT_SET(prefix->prefix_sid->flags, VALUE_V_FLAG) ? '1' : '0',
-        IS_BIT_SET(prefix->prefix_sid->flags, LOCAL_SIGNIFICANCE_L_FLAG) ? '1' : '0');
+        IS_BIT_SET(prefix_sid->flags, RE_ADVERTISEMENT_R_FLAG) ? '1' : '0',
+        IS_BIT_SET(prefix_sid->flags, NODE_SID_N_FLAG) ? '1' : '0',
+        IS_BIT_SET(prefix_sid->flags, NO_PHP_P_FLAG) ? '1' : '0',
+        IS_BIT_SET(prefix_sid->flags, EXPLICIT_NULL_E_FLAG) ? '1' : '0',
+        IS_BIT_SET(prefix_sid->flags, VALUE_V_FLAG) ? '1' : '0',
+        IS_BIT_SET(prefix_sid->flags, LOCAL_SIGNIFICANCE_L_FLAG) ? '1' : '0');
     }
     else{
         printf("\t%-18s : Not assigned\n", subnet);
@@ -79,7 +82,7 @@ set_node_sid(node_t *node, unsigned int node_sid_value){
     for(level_it = LEVEL1 ; level_it < MAX_LEVEL; level_it++){
         router_id = node_local_prefix_search(node, level_it, node->router_id, 32);
         assert(router_id);
-        is_prefix_sid_updated = update_prefix_sid(node, router_id, node_sid_value); 
+        is_prefix_sid_updated = update_prefix_sid(node, router_id, node_sid_value, level_it); 
         if(is_prefix_sid_updated)
             trigger_conflict_res = TRUE;
     }
@@ -101,13 +104,12 @@ unset_node_sid(node_t *node){
     for(level_it = LEVEL1 ; level_it < MAX_LEVEL; level_it++){
         router_id = node_local_prefix_search(node, level_it, node->router_id, 32);
         assert(router_id);
-        if(!router_id->prefix_sid){
+        if(!router_id->psid_thread_ptr){
             continue;
         }
         label = PREFIX_SID_VALUE(router_id);
-        mark_srgb_mpls_label_not_in_use(node->srgb, label); 
-        free(router_id->prefix_sid);
-        router_id->prefix_sid = NULL;
+        mark_srgb_mpls_label_not_in_use(node->srgb, label);
+        free_prefix_sid(router_id);
         trigger_conflict_res = TRUE;
         MARK_PREFIX_SR_INACTIVE(router_id);
     }
@@ -145,8 +147,7 @@ set_interface_address_prefix_sid(node_t *node, char *intf_name,
         if(!intf_prefix) continue;
         prefix = node_local_prefix_search(node, level_it, intf_prefix->prefix, intf_prefix->mask);
         assert(prefix);
-        is_prefix_sid_updated = update_prefix_sid(node, prefix, prefix_sid_value);
-        //update_prefix_sid(node, intf_prefix, prefix_sid_value);
+        is_prefix_sid_updated = update_prefix_sid(node, prefix, prefix_sid_value, level_it);
         if(is_prefix_sid_updated)
             trigger_conflict_res = TRUE;
     }
@@ -179,12 +180,11 @@ unset_interface_address_prefix_sid(node_t *node, char *intf_name){
         if(!intf_prefix) continue;
         prefix = node_local_prefix_search(node, level_it, intf_prefix->prefix, intf_prefix->mask);
         assert(prefix);
-        if(!prefix->prefix_sid)
+        if(!prefix->psid_thread_ptr)
             continue;
         label = PREFIX_SID_VALUE(prefix);
         mark_srgb_mpls_label_not_in_use(node->srgb, label);
-        free(prefix->prefix_sid);
-        prefix->prefix_sid = NULL;
+        free_prefix_sid(prefix);
         MARK_PREFIX_SR_INACTIVE(prefix);
         trigger_conflict_res = TRUE;
     }
@@ -204,21 +204,26 @@ unset_interface_adj_sid(node_t *node, char *interface){
 
 boolean
 update_prefix_sid(node_t *node, prefix_t *prefix, 
-        unsigned int prefix_sid_value){
+        unsigned int prefix_sid_value, LEVEL level){
 
     boolean trigger_conflict_res = FALSE;
-                    
-    if(!prefix->prefix_sid){
-        prefix->prefix_sid = calloc(1, sizeof(prefix_sid_subtlv_t));
-        prefix->prefix_sid->type = PREFIX_SID_SUBTLV_TYPE;
-        prefix->prefix_sid->length = 0; /*never used*/
-        prefix->prefix_sid->flags = 0;
-        prefix->prefix_sid->algorithm = SHORTEST_PATH_FIRST;
-        prefix->prefix_sid->sid.type = SID_SUBTLV_TYPE;
-        PREFIX_SID_VALUE(prefix) = prefix_sid_value;
+    prefix_sid_subtlv_t *prefix_sid = NULL;
+                
+    if(!prefix->psid_thread_ptr){
+        prefix_sid = calloc(1, sizeof(prefix_sid_subtlv_t));
+        prefix_sid->type = PREFIX_SID_SUBTLV_TYPE;
+        prefix_sid->length = 0; /*never used*/
+        prefix_sid->flags = 0;
+        prefix_sid->algorithm = SHORTEST_PATH_FIRST;
+        prefix_sid->sid.type = SID_SUBTLV_TYPE;
+        prefix_sid->sid.sid = prefix_sid_value;
+        /*Bi-Directional association*/
+        prefix->psid_thread_ptr = &prefix_sid->glthread;
+        prefix_sid->prefix = prefix;
         MARK_PREFIX_SR_ACTIVE(prefix);
         trigger_conflict_res = TRUE;
         mark_srgb_mpls_label_in_use(node->srgb, prefix_sid_value);
+        glthread_add_next(&node->prefix_sids_thread_lst[level], &prefix_sid->glthread);
         return trigger_conflict_res;
     }
 
@@ -228,10 +233,39 @@ update_prefix_sid(node_t *node, prefix_t *prefix,
         mark_srgb_mpls_label_not_in_use(node->srgb, PREFIX_SID_VALUE(prefix));
     }
 
-    PREFIX_SID_VALUE(prefix) = prefix_sid_value;
+    prefix_sid->sid.sid = prefix_sid_value;
 
     if(trigger_conflict_res)
         MARK_PREFIX_SR_ACTIVE(prefix);
 
     return trigger_conflict_res;
+}
+
+unsigned int
+PREFIX_SID_VALUE(prefix_t *prefix){
+    assert(prefix->psid_thread_ptr);
+    return (glthread_to_prefix_sid(prefix->psid_thread_ptr))->sid.sid;
+}
+
+prefix_sid_subtlv_t *
+get_prefix_sid(prefix_t *prefix){
+   
+   if(!prefix->psid_thread_ptr) 
+       return NULL;
+
+    return glthread_to_prefix_sid(prefix->psid_thread_ptr);
+}
+
+void
+free_prefix_sid(prefix_t *prefix){
+
+    if(!prefix->psid_thread_ptr)
+        return;
+    /*de-associate the prefix SID and free it*/
+    glthread_t *glthread = prefix->psid_thread_ptr;
+    prefix->psid_thread_ptr = NULL;
+    prefix_sid_subtlv_t *prefix_sid = glthread_to_prefix_sid(glthread);
+    prefix_sid->prefix = NULL;
+    remove_glthread(glthread);
+    free(prefix_sid);
 }

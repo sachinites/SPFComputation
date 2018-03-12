@@ -37,6 +37,7 @@
 
 typedef struct _node_t node_t;
 typedef struct prefix_ prefix_t;
+typedef struct _prefix_sid_subtlv_t prefix_sid_subtlv_t;
 
 boolean
 set_node_sid(node_t *node, mpls_label_t node_sid_value);
@@ -59,8 +60,18 @@ boolean
 unset_interface_adj_sid(node_t *node, char *interface);
 
 boolean
-update_prefix_sid(node_t *node, prefix_t *prefix, mpls_label_t prefix_sid_value);
+update_prefix_sid(node_t *node, prefix_t *prefix, mpls_label_t prefix_sid_value, LEVEL level);
 
 void
 diplay_prefix_sid(prefix_t *prefix);
+
+unsigned int
+PREFIX_SID_VALUE(prefix_t *prefix);
+
+prefix_sid_subtlv_t *
+get_prefix_sid(prefix_t *prefix);
+
+void
+free_prefix_sid(prefix_t *prefix);
+
 #endif /* __SR_TLV_API__ */

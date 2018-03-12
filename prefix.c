@@ -475,8 +475,11 @@ delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask){
 void 
 free_prefix(prefix_t *prefix){
     
-    if(prefix->prefix_sid){
-        free(prefix->prefix_sid);
+    if(!prefix->psid_thread_ptr){
+        free(prefix);
+        return;
     }
+    free_prefix_sid(prefix);    
     free(prefix);
 }
+

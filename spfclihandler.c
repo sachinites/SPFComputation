@@ -625,7 +625,7 @@ dump_next_hop(internal_nh_t *nh){
     else
         printf("rlfa = %-16s\n", "NULL");
 
-    printf("\tldplabel = %-17u", nh->ldplabel);
+    printf("\tmpls_label_in = %-17u", nh->mpls_label_in);
     printf("root_metric = %-8u", nh->root_metric);
     printf("dest_metric = %-8u", nh->dest_metric);
     printf("is_eligible = %-6s\n", nh->is_eligible ? "TRUE" : "FALSE");
@@ -750,8 +750,10 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
             intf_name = tlv->value;
-        else if(strncmp(tlv->leaf_id, "prefix-sid", strlen("prefix-sid")) ==0)
+        else if(strncmp(tlv->leaf_id, "node-segment", strlen("node-segment")) ==0)
             prefix_sid = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "prefix-sid", strlen("prefix-sid")) ==0)
+             prefix_sid = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "prefix",  strlen("prefix")) ==0)
             prefix = tlv->value;
         else if(strncmp(tlv->leaf_id, "mask",  strlen("mask")) ==0)
@@ -765,6 +767,22 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
     switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_SPRING_BACKUPS:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE:
+                if(!node->spring_enabled){
+                    printf("Error : source-packet-routing not enabled\n");
+                    return 0;
+                }
+                node->use_spring_backups = TRUE;
+                break;
+            case CONFIG_DISABLE:
+                node->use_spring_backups = FALSE;
+                break;
+            default:
+                assert(0);
+        }
+        break;
         case CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE:
         switch(enable_or_disable){
             case CONFIG_ENABLE:
@@ -778,8 +796,7 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
                 break;
             case CONFIG_DISABLE:
                 node->spring_enabled = FALSE;
-                free(node->srgb->index_array);
-                free(node->srgb);
+                spring_disable_cleanup(node);
                 break;
             default:
                 ;

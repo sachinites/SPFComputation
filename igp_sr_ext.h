@@ -34,6 +34,11 @@
 #define __IGP_SR_EXT__
 
 #include "instanceconst.h"
+#include "glthread.h"
+
+typedef struct _node_t node_t;
+typedef struct edge_end_ edge_end_t;
+typedef struct prefix_ prefix_t;
 
 #define SHORTEST_PATH_FIRST  0 
 #define STRICT_SHORTEST_PATH 1
@@ -51,8 +56,6 @@
 #define SR_CAPABILITY_SRGB_SUBTLV_TYPE  2
 #define SR_CAPABILITY_SRLB_SUBTLV_TYPE  22
 
-
-#define PREFIX_SID_VALUE(prefix_ptr)    (prefix_ptr->prefix_sid->sid.sid)
 
 /*Segment ID SUB-TLV structure
  * contains a SID or a MPLS Label*/
@@ -223,14 +226,15 @@ typedef struct _prefix_sid_subtlv_t{
      /*conflict resolution : From prefix_sid_subtlv_t , recieving router computes the 
      * sr_mapping_entry_t data structure for all prefixes advertised 
      * with SID. It is not a part of subtlv.*/
+    prefix_t *prefix; /*back pointer to owning prefix*/
+    glthread_t glthread; /*Attachement glue*/
 } prefix_sid_subtlv_t;
 
+GLTHREAD_TO_STRUCT(glthread_to_prefix_sid, prefix_sid_subtlv_t, glthread, glthreadptr);
 
 #define IS_PREFIX_SR_ACTIVE(prefixptr)     (prefixptr->conflct_res == SID_ACTIVE)
 #define MARK_PREFIX_SR_INACTIVE(prefixptr) (prefixptr->conflct_res = SID_INACTIVE)
 #define MARK_PREFIX_SR_ACTIVE(prefixptr)   (prefixptr->conflct_res = SID_ACTIVE)
-
-
 
 /*Adjacecncy SID*/
 
@@ -296,10 +300,6 @@ typedef struct _lan_adj_sid_subtlv_t{
     segment_id_subtlv_t sid;
 } lan_adg_sid_subtlv_t;
 
-
-typedef struct _node_t node_t;
-typedef struct prefix_ prefix_t;
-typedef struct edge_end_ edge_end_t;
 
 /*
 If a node N advertises Prefix-SID SID-R for a prefix R that is
@@ -489,4 +489,11 @@ void
 show_all_prefix_sid_conflicts(node_t *node, LEVEL level);
 #endif
 
+typedef struct spf_info_ spf_info_t;
+
+void
+update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level);
+
+void
+spring_disable_cleanup(node_t *node);
 #endif /* __SR__ */ 
