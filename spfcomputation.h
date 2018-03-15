@@ -64,8 +64,12 @@ typedef struct internal_nh_t_{
     node_t *proxy_nbr;
     node_t *rlfa;
     mpls_label_t mpls_label_in; /*Used for LDP/RSVP and SR routes*/
+
+    /*Spring out information*/
+    char dst_node[MPLS_STACK_OP_LIMIT_MAX][PREFIX_LEN + 1];
     mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];/*For SR routes only*/
     MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
+
     unsigned int root_metric;
     unsigned int dest_metric;
     /*No of destinations covered by this RLFA backup*/
@@ -230,6 +234,13 @@ typedef struct spf_level_info_{
 typedef struct rttable_ rttable;
 typedef struct _node_t node_t;
 typedef struct _mpls_rt_table mpls_rt_table_t;
+
+typedef enum{
+
+    UNICAST_T,
+    SPRING_T,
+    TOPO_MAX
+} rtttype_t;
 
 typedef struct spf_info_{
 

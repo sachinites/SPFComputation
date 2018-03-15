@@ -236,6 +236,22 @@ GLTHREAD_TO_STRUCT(glthread_to_prefix_sid, prefix_sid_subtlv_t, glthread, glthre
 #define MARK_PREFIX_SR_INACTIVE(prefixptr) (prefixptr->conflct_res = SID_INACTIVE)
 #define MARK_PREFIX_SR_ACTIVE(prefixptr)   (prefixptr->conflct_res = SID_ACTIVE)
 
+/*prefix-sid comparison fn*/
+static inline int
+prefix_sid_comparison_fn(void * prefix_sid_value, 
+                         void * prefix_sid){
+
+    if((unsigned int)prefix_sid_value == ((prefix_sid_subtlv_t *)prefix_sid)->sid.sid)
+        return 0;
+    if((unsigned int)prefix_sid_value <  ((prefix_sid_subtlv_t *)prefix_sid)->sid.sid)
+        return -1;
+    return 1;
+}
+
+prefix_sid_subtlv_t *
+PREFIX_SID_SEARCH(node_t *node, LEVEL level, unsigned int prefix_sid_val);
+    
+
 /*Adjacecncy SID*/
 
 /*If this bit set, this Adj has global scope, else local scope*/

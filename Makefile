@@ -5,7 +5,7 @@ INCLUDES=-I . -I ./gluethread -I ./Stack -I ./CommandParser -I ./LinkedList -I .
 USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
-DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethread/glthread.o
+DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o
 OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o igp_sr_ext.o sr_tlv_api.o rt_mpls.o unified_nh.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
@@ -79,6 +79,8 @@ ${DSOBJ}:
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Stack/stack.c -o Stack/stack.o
 	@echo "Building gluethread/glthread.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} gluethread/glthread.c -o gluethread/glthread.o
+	@echo "Building BitOp/bitarr.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} BitOp/bitarr.c -o BitOp/bitarr.o
 clean:
 	rm -f *.o
 	rm -f rpd
@@ -92,6 +94,7 @@ cleanall:
 	rm -f mpls/*.o
 	rm -f Stack/*.o
 	rm -f gluethread/*.o
+	rm -f BitOp/*.o
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	make clean

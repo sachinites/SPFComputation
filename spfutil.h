@@ -113,5 +113,8 @@ hrs_min_sec_format(unsigned int seconds);
 #define get_next_hop_empty_slot(internal_nhlist_ptr) \
         (&(internal_nhlist_ptr[get_nh_count(internal_nhlist_ptr)]))
 
+int
+is_internal_nh_exist(ll_t *lst, internal_nh_t *nh);
+
 #endif /* __SPFUTIL__ */ 
 

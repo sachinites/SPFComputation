@@ -210,8 +210,9 @@ build_global_prefix_list(node_t *node, LEVEL level){
         ITERATE_NODE_PHYSICAL_NBRS_BEGIN(curr_node, nbr_node, pn_node, edge1,
                 edge2, level){
 
-            if(nbr_node->traversing_bit)
+            if(nbr_node->traversing_bit){
                 ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(curr_node, nbr_node, pn_node, level);
+            }
 
             if(nbr_node->spring_enabled == FALSE){
                 goto NEXT_NODE;
@@ -529,8 +530,10 @@ mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label_t label){
     }
 
     unsigned int index = label - srgb->first_sid.sid;
-    assert(*(srgb->index_array + index) < 255);
+    assert(*(srgb->index_array + index) < srgb->range);
     (*(srgb->index_array + index))++;
+    if(*(srgb->index_array + index) > 1)
+        printf("Warning : Multiple assignment of SRGB label %u\n", label);
 }
 
 
@@ -591,7 +594,7 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
    mpls_rt_entry->level = route->level;
    mpls_rt_entry->prim_nh_count = prim_nh_count;
    mpls_rt_entry->last_refresh_time = time(NULL);
-   get_prefix_sid(prefix); 
+   prefix_sid = get_prefix_sid(prefix); 
    perform_PHP = IS_BIT_SET(prefix_sid->flags, NO_PHP_P_FLAG) ? FALSE : TRUE;
 
    ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node){
@@ -651,7 +654,7 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
 
     if(!IS_PREFIX_SR_ACTIVE(prefix)){
         sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u was not installed. Reason : Conflicted prefix", 
-                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+                node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
         return -1;
     }
@@ -667,7 +670,7 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
 #if 0
     if(!IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG)){
         sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u was not installed. Reason : PHP enabled", 
-                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+                node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
         return;
     }
@@ -681,7 +684,7 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     mpls_rt_entry->mpls_nh[0].stack_op = POP;
     mpls_rt_entry->mpls_nh[0].outgoing_label = 0;
     sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u Installed, Opn : POP",
-                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+                node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
     trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
     return install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
 }
@@ -710,14 +713,14 @@ sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
 
     if(!IS_PREFIX_SR_ACTIVE(prefix)){
         sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u was not installed. Reason : Conflicted prefix", 
-                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+                node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
         return -1;
     }
     mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(route);
 
     sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u Installed",
-                node->node_name, route->rt_key.prefix, route->rt_key.mask);
+                node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
     trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
     return install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
 }
@@ -816,15 +819,22 @@ spring_disable_cleanup(node_t *node){
     free(node->srgb);
     node->use_spring_backups = FALSE;
     
-    /*ToDo : Clean prefix SID list*/
-    
     /*Break the association between prefixes and prefix SIDs*/
     glthread_t *curr = NULL;
     prefix_sid_subtlv_t *prefix_sid = NULL;
 
     ITERATE_GLTHREAD_BEGIN(&node->prefix_sids_thread_lst[LEVEL1], curr){
         prefix_sid = glthread_to_prefix_sid(curr);
-        free_prefix_sid(prefix_sid); 
+        free_prefix_sid(prefix_sid->prefix);
     } ITERATE_GLTHREAD_END(&node->prefix_sids_thread_lst[LEVEL1], curr);
 }
 
+#if 0
+prefix_sid_subtlv_t *
+PREFIX_SID_SEARCH(node_t *node, LEVEL level, unsigned int prefix_sid_val){
+
+    return (prefix_sid_subtlv_t *)gl_thread_search(&(node->prefix_sids_thread_lst[level]),
+            glthread_to_prefix_sid,
+            (void *)prefix_sid_val, prefix_sid_comparison_fn);
+}
+#endif

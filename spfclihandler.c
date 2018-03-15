@@ -280,7 +280,7 @@ dump_route_info(routes_t *route){
     prefix_pref_data_t prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, 
                                       "ROUTE_UNKNOWN_PREFERENCE"};
 
-    printf("Route : %s/%u, %s\n", route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level));
+    printf("Route : %s/%u, %s\n", route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, get_str_level(route->level));
     printf("Version : %d, spf_metric = %u, lsp_metric = %u, ext_metric = %u\n", 
                     route->version, route->spf_metric, route->lsp_metric, route->ext_metric);
 
@@ -368,7 +368,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
                 
                 route = (routes_t *)list_node->data;
-                if(strncmp(route->rt_key.prefix, masked_prefix, PREFIX_LEN) != 0)
+                if(strncmp(route->rt_key.u.prefix.prefix, masked_prefix, PREFIX_LEN) != 0)
                     continue;
                 dump_route_info(route);
                 break;

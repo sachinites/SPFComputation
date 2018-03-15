@@ -69,8 +69,8 @@ route_search_comparison_fn(void * route, void *key){
     common_pfx_key_t *_key = (common_pfx_key_t *)key;
     routes_t *_route = (routes_t *)route;
 
-    if(strncmp(_key->prefix, _route->rt_key.prefix, PREFIX_LEN + 1) == 0 &&
-        _key->mask == _route->rt_key.mask)
+    if(strncmp(_key->u.prefix.prefix, _route->rt_key.u.prefix.prefix, PREFIX_LEN + 1) == 0 &&
+        _key->u.prefix.mask == _route->rt_key.u.prefix.mask)
         return 1;
 
     return 0;

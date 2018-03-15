@@ -132,3 +132,13 @@ get_glthread_list_count(glthread_t *base_glthread){
     return count;
 }
 
+#if 0
+void *
+gl_thread_search(glthread_t *base_glthread, 
+                 void *(*thread_to_struct_fn)(glthread_t *), 
+                 void *key, 
+                 int (*comparison_fn)(void *, void *)){
+
+    return NULL;
+}
+#endif

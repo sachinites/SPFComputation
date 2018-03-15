@@ -37,6 +37,7 @@
 #include "LinkedListApi.h"
 #include "stack.h"
 #include "spfutil.h"
+#include "sr_tlv_api.h"
 
 extern instance_t *instance;
 

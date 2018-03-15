@@ -916,3 +916,55 @@ lsp_ecmp_topo(){
     set_instance_root(instance, A);
     return instance;
 }
+
+
+
+instance_t *
+multi_primary_nxt_hops(){
+#if 0
+                                                                       +---------+
+                                                              11.1.1.2 |         |
+                                                  +------------------+-+  R2     |
+                                                  |11.1.1.1       0/1  |         |
+                                                  |0/2                 |         |
+                                             +----+---+                +-----+-+-+
+           +------+10.1.1.1              0/1 |        |                      |0/2 20.1.1.1  
+           |      +--------------------------+   R1   |                      +
+           | R0   |0/0               10.1.1.2|        |                      |
+           +--+--+                          +-+-+----+                      |0/2 20.1.1.2
+              |0/1                        0/3 |  |0/0                   +----++---+
+              |30.1.1.1               30.1.1.2|  |12.1.1.1              |         |
+              |                               |  |                  0/1 |         |
+              +---------------15--------------+  +----------------------+   R3    |
+                                                                12.1.1.2|         |
+                                                                        +---------+
+
+#endif
+              
+    instance_t *instance = get_new_instance();
+
+    node_t *R0 = create_new_node(instance, "R0", AREA1, "192.168.0.1");
+    node_t *R1 = create_new_node(instance, "R1", AREA1, "192.168.0.2");
+    node_t *R2 = create_new_node(instance, "R2", AREA1, "192.168.0.3");
+    node_t *R3 = create_new_node(instance, "R3", AREA1, "192.168.0.4");
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30, LEVEL1), create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R0, R1, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/3", 15, create_new_prefix("30.1.1.1", 30, LEVEL1), create_new_prefix("30.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R0, R1, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 10, create_new_prefix("11.1.1.1", 30, LEVEL1), create_new_prefix("11.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R1, R2, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("12.1.1.1", 30, LEVEL1), create_new_prefix("12.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R1, R3, BIDIRECTIONAL);
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/2", 10, create_new_prefix("20.1.1.1", 30, LEVEL1), create_new_prefix("20.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R2, R3, BIDIRECTIONAL);
+
+    set_instance_root(instance, R0);                                        
+    return instance;                                                        
+}                                                                           
+                                                                     

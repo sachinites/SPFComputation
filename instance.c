@@ -463,8 +463,8 @@ deattach_prefix_on_node(node_t *node,
 
     common_pfx_key_t key;
     memset(&key, 0, sizeof(common_pfx_key_t));
-    strncpy(key.prefix, prefix, strlen(prefix));
-    key.mask = mask;
+    strncpy(key.u.prefix.prefix, prefix, strlen(prefix));
+    key.u.prefix.mask = mask;
     
     prefix_t *_prefix = singly_ll_search_by_key(GET_NODE_PREFIX_LIST(node, level), &key);
     if(!_prefix)
@@ -484,8 +484,8 @@ node_local_prefix_search(node_t *node, LEVEL level,
 
     common_pfx_key_t key;
     memset(&key, 0, sizeof(common_pfx_key_t));
-    strncpy(key.prefix, _prefix, strlen(_prefix));
-    key.mask = mask;
+    strncpy(key.u.prefix.prefix, _prefix, strlen(_prefix));
+    key.u.prefix.mask = mask;
 
     assert(level == LEVEL1 || level == LEVEL2);
     

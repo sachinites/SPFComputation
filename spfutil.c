@@ -386,3 +386,19 @@ hrs_min_sec_format(unsigned int seconds){
     sprintf(time_f, "%u::%u::%u", hrs, min, sec);
     return time_f;
 }
+
+int
+is_internal_nh_exist(ll_t *lst, internal_nh_t *nh){
+
+    singly_ll_node_t *list_node = NULL;
+    internal_nh_t *lst_nh = NULL;
+
+    ITERATE_LIST_BEGIN(lst, list_node){
+
+        lst_nh = list_node->data;
+        if(is_internal_nh_t_equal((*lst_nh), (*nh)))
+            return 1;
+    } ITERATE_LIST_END;
+
+    return 0;
+}

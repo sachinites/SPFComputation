@@ -32,175 +32,66 @@
 
 #include "unified_nh.h"
 #include "instance.h"
-#include "stack.h"
-
-#define un_next_hop_type(un_internal_nh_t_ptr)  \
-    (un_internal_nh_t_ptr->nh_type)
-
 
 unsigned int
-get_direct_un_next_hop_metric(internal_un_nh_t *nh, LEVEL level){
-    
-    /*Direct Nexthops could be IPNH Or RSVP Nexthops only*/
-    switch(nh->nh_type){
-        case IP_NH:
-        case RSVPNH:
-            return (GET_EGDE_PTR_FROM_FROM_EDGE_END(nh->oif))->metric[level];
-        default:
-            assert(0);
-    }
+get_direct_un_next_hop_metric(internal_un_nh_t *nh){
+    return nh->root_metric;
 }
 
 node_t *
-un_next_hop_node(internal_un_nh_t *nh){
-
+get_un_next_hop_node(internal_un_nh_t *nh){
     return nh->nh_node;
-}
-
-char
-get_un_next_hop_gateway_pfx_mask(internal_un_nh_t *nh){
-
-    switch(nh->nh_type){
-        /*RSVPs dont have nexthop gateway and prefix*/
-        case RSVPNH:
-            assert(0);
-        default:
-            return (GET_EGDE_PTR_FROM_FROM_EDGE_END(nh->oif))->to.prefix[nh->level]->mask;
-    }
 }
 
 char *
 get_un_next_hop_gateway_pfx(internal_un_nh_t *nh){
-
-    switch(nh->nh_type){
-        /*RSVPs dont have nexthop gateway and prefix*/
-        case RSVPNH:
-            assert(0);
-        default:
-            return (GET_EGDE_PTR_FROM_FROM_EDGE_END(nh->oif))->to.prefix[nh->level]->prefix;
-    }
+    return nh->gw_prefix;
 }
 
 char *
 get_un_next_hop_oif_name(internal_un_nh_t *nh){
-
-    return nh->oif->intf_name;
+    return nh->oif;
 }
 
 char *
 get_un_next_hop_protected_link_name(internal_un_nh_t *nh){
-
     return nh->protected_link->intf_name;
 }
 
 void
 set_un_next_hop_gw_pfx(internal_un_nh_t *nh, char *pfx){
-
-    switch(nh->nh_type){
-        case IP_NH:
-            strncpy(nh->nh.ipnh.gw_prefix, pfx, PREFIX_LEN);
-            nh->nh.ipnh.gw_prefix[PREFIX_LEN] = '\0';
-            break;
-        case SPRNH:
-            strncpy(nh->nh.sprnh.gw_prefix, pfx, PREFIX_LEN);
-            nh->nh.sprnh.gw_prefix[PREFIX_LEN] = '\0';
-            break;
-        case LDPNH:
-            strncpy(nh->nh.ldpnh.gw_prefix, pfx, PREFIX_LEN);
-            nh->nh.ldpnh.gw_prefix[PREFIX_LEN] = '\0';
-        default:
-            assert(0);
-    }
+    strncpy(nh->gw_prefix, pfx, PREFIX_LEN);
+    nh->gw_prefix[PREFIX_LEN] = '\0';
 }
 
 boolean
 is_un_next_hop_empty(internal_un_nh_t *nh){
-
     return nh->oif == NULL;
 }
 
 /*Fill the nh_type before calling this fn*/
 void
 init_un_next_hop(internal_un_nh_t *nh, NH_TYPE2 nh_type){
-
-    unsigned int i = 0;
+    memset(nh, 0 , sizeof(internal_un_nh_t));
     nh->nh_type = nh_type;
-    nh->level = MAX_LEVEL;
-    nh->oif = NULL;
-    nh->nh_node = 0;
-    nh->lfa_type = UNKNOWN_LFA_TYPE;
-    nh->nh.sprnh.mpls_label_in = 0;
-    for(; i < MPLS_STACK_OP_LIMIT_MAX; i++){
-        nh->nh.sprnh.mpls_label_out[i] = 0;
-        nh->nh.sprnh.stack_op[i] = STACK_OPS_UNKNOWN;
-    }
-    nh->protected_link = NULL;
-    nh->ref_count = 0;
-    nh->flags = 0;
 }
 
 void
 copy_un_next_hop_t(internal_un_nh_t *src, internal_un_nh_t *dst){
-
     memcpy(dst, src, sizeof(internal_un_nh_t));
 }
 
 boolean
 is_un_nh_t_equal(internal_un_nh_t *nh1, internal_un_nh_t *nh2){
-
-    unsigned int i = 0;
-    /*Comparing common properties*/
-    if(nh1->nh_type != nh2->nh_type)
-        return FALSE;
-
-    if(nh1->level != nh2->level)
-        return FALSE;
-
-    if(strncmp(nh1->oif->intf_name, nh2->oif->intf_name, IF_NAME_SIZE))
-        return FALSE;
-
-    if(strncmp(nh1->nh_node->node_name, nh2->nh_node->node_name, NODE_NAME_SIZE))
-        return FALSE; 
-
-    switch(nh1->nh_type){
-        case IP_NH:
-            if(strncmp(nh1->nh.ipnh.gw_prefix, nh2->nh.ipnh.gw_prefix, PREFIX_LEN + 1))
-                return FALSE;
-            return TRUE;
-        case RSVPNH:
-            if(nh1->nh.rsvpnh.mpls_label != nh2->nh.rsvpnh.mpls_label)
-                return FALSE;
-            return TRUE;
-        case LDPNH:
-            if(strncmp(nh1->nh.ldpnh.gw_prefix, nh2->nh.ldpnh.gw_prefix, PREFIX_LEN + 1))
-                return FALSE;
-            if(strncmp(nh1->nh.ldpnh.rlfa->node_name, nh2->nh.ldpnh.rlfa->node_name, NODE_NAME_SIZE))
-                return FALSE;
-            if(nh1->nh.ldpnh.mpls_label != nh2->nh.ldpnh.mpls_label)
-                return FALSE;
-            return TRUE;
-        case SPRNH:
-            if(strncmp(nh1->nh.sprnh.gw_prefix, nh2->nh.sprnh.gw_prefix, PREFIX_LEN + 1))
-                return FALSE;
-            if(nh1->nh.sprnh.mpls_label_in != nh2->nh.sprnh.mpls_label_in)
-                return FALSE;
-            for(i = 0 ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
-                if(nh1->nh.sprnh.mpls_label_out[i] != nh2->nh.sprnh.mpls_label_out[i])
-                    return FALSE;
-            }
-            for(i = 0 ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
-                if(nh1->nh.sprnh.stack_op[i] != nh2->nh.sprnh.stack_op[i])
-                    return FALSE;
-            }
-            return TRUE;
-        default:
-            assert(0);
-    }
-    assert(0);
-    return FALSE;
+    return memcmp(nh1, nh2, sizeof(internal_un_nh_t)) == 0;
 }
 
 void
 free_un_nexthop(internal_un_nh_t *nh){
     free(nh);
+}
+
+internal_un_nh_t *
+malloc_un_nexthop(){
+    return calloc(1, sizeof(internal_un_nh_t));
 }

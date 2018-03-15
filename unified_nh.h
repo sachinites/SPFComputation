@@ -55,44 +55,39 @@ typedef struct internal_un_nh_t_{
     /*Next hop Identifier*/
     NH_TYPE2 nh_type;
 
-    /*Common properties*/
-    LEVEL level;
-    edge_end_t *oif;
+    /*Common properties (All 4 fields are applicable for Unicast Nexthops)*/
+    char oif[IF_NAME_SIZE];
     node_t *nh_node;
-
+    char gw_prefix[PREFIX_LEN + 1];
     /*These fielda are valid only if this
       nexthop is a backup nexthop*/
     lfa_type_t lfa_type;
     edge_end_t *protected_link;
 
-    /*IP NH - primary and backup both*/
-    struct ip_nh_t{
-        char gw_prefix[PREFIX_LEN + 1];
-    };
-
     /*RSVP NH - Primary and backup*/
-
     struct rsvp_nh_t{
-        mpls_label_t mpls_label;
+        mpls_label_t mpls_label;/*We will take the OIF and gateway as per the IGP path to egress lsr*/
+        node_t *egress_lsr;
     };
-
+    
     /*LDP backups (RLFAs)*/
     struct ldp_nh_t{
-        char gw_prefix[PREFIX_LEN + 1];
         node_t *rlfa;
         mpls_label_t mpls_label;
     };
 
     /*Spring Primary nexthop and LFAs and RLFAs*/
     struct spr_nh_t{
-        char gw_prefix[PREFIX_LEN + 1];
         mpls_label_t mpls_label_in;
-        mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
-        MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
+        struct spr_out_info_{
+            mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
+            MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
+            char node_prefixes[MPLS_STACK_OP_LIMIT_MAX][PREFIX_LEN + 1];
+        };
+        struct spr_out_info_ spr_out_info_t; 
     };
 
     union u_t{
-        struct ip_nh_t ipnh;
         struct rsvp_nh_t rsvpnh;
         struct ldp_nh_t ldpnh;
         struct spr_nh_t sprnh;
@@ -122,10 +117,10 @@ init_spring_nexthop(internal_un_nh_t *nh);
     (un_internal_nh_t_ptr->nh_type)
 
 unsigned int 
-get_direct_un_next_hop_metric(internal_un_nh_t *nh, LEVEL level);
+get_direct_un_next_hop_metric(internal_un_nh_t *nh);
 
 node_t *
-un_next_hop_node(internal_un_nh_t *nh);
+get_un_next_hop_node(internal_un_nh_t *nh);
 
 char
 get_un_next_hop_gateway_pfx_mask(internal_un_nh_t *nh);

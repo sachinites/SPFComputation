@@ -55,6 +55,22 @@ THREAD_NODE_TO_STRUCT(prefix_t,
         get_prefix_from_like_prefix_thread);
 #endif
 
+static boolean
+is_destination_has_multiple_primary_nxthops(spf_result_t *D_res){
+
+    if((is_internal_nh_t_empty(D_res->next_hop[IPNH][0]) &&
+                !is_internal_nh_t_empty(D_res->next_hop[LSPNH][0]) &&
+                is_internal_nh_t_empty(D_res->next_hop[LSPNH][1])) 
+            ||
+            (is_internal_nh_t_empty(D_res->next_hop[LSPNH][0]) &&
+             !is_internal_nh_t_empty(D_res->next_hop[IPNH][0]) &&
+             is_internal_nh_t_empty(D_res->next_hop[IPNH][1]))){
+
+        return FALSE;
+    }
+    return TRUE;
+}
+
 routes_t *
 route_malloc(){
 
@@ -84,11 +100,13 @@ merge_route_primary_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh
         if(is_internal_nh_t_empty(result->next_hop[nh][i]))
             break;
 
+        if(is_internal_nh_exist(route->primary_nh_list[nh], &result->next_hop[nh][i]))
+            continue;
         int_nxt_hop = calloc(1, sizeof(internal_nh_t));
         copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->primary_nh_list[nh], int_nxt_hop);
         sprintf(instance->traceopts->b, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
-                     route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                     route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                      result->next_hop[nh][i].node->node_name); 
         trace(instance->traceopts, ROUTE_CALCULATION_BIT);
     }
@@ -106,6 +124,9 @@ merge_route_backup_nexthops(routes_t *route,
                   *backup = NULL;
     singly_ll_node_t *list_node = NULL,
                      *temp = NULL;
+
+#if 0
+    /*Ruling out this logic - this logic is not correct*/
 
     /*clean link protecting LFAs/RLFAs. If route has ECMP, we dont need any
      * link protecting LFAs/RLFAs*/
@@ -134,12 +155,41 @@ merge_route_backup_nexthops(routes_t *route,
             } ITERATE_LIST_END2(route->backup_nh_list[nh], list_node, temp);
     }
 
+#endif
+
+    boolean dont_collect_onlylink_protecting_backups =
+        is_destination_has_multiple_primary_nxthops(result);
+
     for( i = 0; i < MAX_NXT_HOPS ; i++){
         
         backup = &result->node->backup_next_hop[route->level][nh][i];
         if(is_internal_nh_t_empty(*backup)) break;
+        if(is_internal_nh_exist(route->backup_nh_list[nh], backup))
+            continue;
+
+        if(dont_collect_onlylink_protecting_backups){
+            if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
+                    backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
+                    backup->lfa_type == LINK_PROTECTION_RLFA                     ||
+                    backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
+                    backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
+                    backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
+                    backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
+                    backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
+                    sprintf(instance->traceopts->b, "\t ECMP : only link-protecting backup dropped : %s----%s---->%-s(%s(%s)) protecting link: %s", 
+                            backup->oif->intf_name,
+                            next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
+                            next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
+                            backup->node ? backup->node->node_name : backup->rlfa->node_name,
+                            backup->node ? backup->node->router_id : backup->rlfa->router_id, 
+                            backup->protected_link->intf_name); 
+                    trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+                continue;
+            }
+        }
         /*If route has ECMP, then no need to collect Link protecting LFAs from
          * multiple destinations*/
+#if 0
         if(route->ecmp_dest_count >= 2                                    &&
             (backup->lfa_type == LINK_PROTECTION_LFA                      ||
              backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
@@ -159,11 +209,12 @@ merge_route_backup_nexthops(routes_t *route,
             trace(instance->traceopts, ROUTE_CALCULATION_BIT);
             continue;
         }
+#endif
         int_nxt_hop = calloc(1, sizeof(internal_nh_t));
         copy_internal_nh_t(result->node->backup_next_hop[route->level][nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->backup_nh_list[nh], int_nxt_hop);
         sprintf(instance->traceopts->b, "route : %s/%u backup next hop is merged with %s's next hop node %s", 
-                     route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                     route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                      result->node->backup_next_hop[route->level][nh][i].node->node_name); 
         trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
     }
@@ -173,9 +224,9 @@ merge_route_backup_nexthops(routes_t *route,
 void
 route_set_key(routes_t *route, char *ipv4_addr, char mask){
 
-    apply_mask(ipv4_addr, mask, route->rt_key.prefix);
-    route->rt_key.prefix[PREFIX_LEN] = '\0';
-    route->rt_key.mask = mask;
+    apply_mask(ipv4_addr, mask, route->rt_key.u.prefix.prefix);
+    route->rt_key.u.prefix.prefix[PREFIX_LEN] = '\0';
+    route->rt_key.u.prefix.mask = mask;
 }
 
 void
@@ -206,9 +257,9 @@ prepare_new_rt_entry_template(spf_info_t *spf_info, rttable_entry_t *rt_entry_te
         routes_t *route, unsigned int version){
 
     nh_type_t nh;
-    strncpy(rt_entry_template->dest.prefix, route->rt_key.prefix, PREFIX_LEN + 1);
+    strncpy(rt_entry_template->dest.prefix, route->rt_key.u.prefix.prefix, PREFIX_LEN + 1);
     rt_entry_template->dest.prefix[PREFIX_LEN] = '\0';
-    rt_entry_template->dest.mask = route->rt_key.mask;
+    rt_entry_template->dest.mask = route->rt_key.u.prefix.mask;
     rt_entry_template->version = version;
     rt_entry_template->cost = route->spf_metric;
     rt_entry_template->level = route->level;
@@ -309,8 +360,8 @@ search_route_in_spf_route_list(spf_info_t *spf_info,
     prefix_with_mask[PREFIX_LEN] = '\0';
     ITERATE_LIST_BEGIN(spf_info->routes_list, list_node){
         route = list_node->data;
-        if(strncmp(route->rt_key.prefix, prefix_with_mask, PREFIX_LEN) == 0 &&
-                (route->rt_key.mask == prefix->mask))
+        if(strncmp(route->rt_key.u.prefix.prefix, prefix_with_mask, PREFIX_LEN) == 0 &&
+                (route->rt_key.u.prefix.mask == prefix->mask))
             return route;    
     }ITERATE_LIST_END;
     return NULL;
@@ -425,8 +476,8 @@ is_changed_route(spf_info_t *spf_info,
    switch(spf_type){
        case FULL_RUN:
        case PRC_RUN:
-               if((strncmp(rt_entry->dest.prefix, route->rt_key.prefix, PREFIX_LEN + 1) == 0)   &&
-                       (rt_entry->dest.mask == route->rt_key.mask)                              &&
+               if((strncmp(rt_entry->dest.prefix, route->rt_key.u.prefix.prefix, PREFIX_LEN + 1) == 0)   &&
+                       (rt_entry->dest.mask == route->rt_key.u.prefix.mask)                              &&
                        (rt_entry->primary_nh_count[IPNH] == ROUTE_GET_PR_NH_CNT(route, IPNH))   && 
                        (rt_entry->primary_nh_count[LSPNH] == ROUTE_GET_PR_NH_CNT(route, LSPNH)) &&
                        (rt_entry->backup_nh_count == GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[IPNH])
@@ -455,8 +506,8 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level){
            
        route = list_node->data;
        if(route->install_state == RTE_STALE && IS_LEVEL_SET(route->level, level)){
-        sprintf(instance->traceopts->b, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.prefix, 
-                        route->rt_key.mask, level); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+        sprintf(instance->traceopts->b, "route : %s/%u is STALE for Level%d, deleted", route->rt_key.u.prefix.prefix, 
+                        route->rt_key.u.prefix.mask, level); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
         i++;
         ROUTE_DEL_FROM_ROUTE_LIST(spf_info, route);
         free_route(route);
@@ -503,7 +554,6 @@ mark_all_routes_stale_except_direct_routes(spf_info_t *spf_info, LEVEL level){
    }ITERATE_LIST_END;
 }
 
-
 void
 mark_all_routes_stale(spf_info_t *spf_info, LEVEL level){
 
@@ -534,14 +584,15 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
 
         unsigned int i = 0;
         nh_type_t nh = NH_MAX;
-        internal_nh_t *int_nxt_hop = NULL;
+        internal_nh_t *int_nxt_hop = NULL,
+                      *backup = NULL;
 
         delete_singly_ll(route->like_prefix_list);
         route->ecmp_dest_count = 1;
         route_set_key(route, prefix->prefix, prefix->mask); 
 
-        sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.prefix, 
-                    route->rt_key.mask, get_str_level(level)); 
+        sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.u.prefix.prefix, 
+                    route->rt_key.u.prefix.mask, get_str_level(level)); 
         trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
         route->version = spf_info->spf_level_info[level].version;
@@ -561,6 +612,11 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
             route->ext_metric =  prefix->metric;
         }
 
+        /*Check if Destination node has More than one primary next hops, then we need not copy
+         * only-link protecting backups*/
+        boolean dont_collect_onlylink_protecting_backups = 
+            is_destination_has_multiple_primary_nxthops(result);
+        
         ITERATE_NH_TYPE_BEGIN(nh){
 
             ROUTE_FLUSH_PRIMARY_NH_LIST(route, nh);
@@ -572,7 +628,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
                     copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
                     ROUTE_ADD_NH(route->primary_nh_list[nh], int_nxt_hop);   
                     sprintf(instance->traceopts->b, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
-                            route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                            route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                             result->next_hop[nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 }
                 else
@@ -580,11 +636,33 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
             }
             for(i = 0 ; i < MAX_NXT_HOPS; i++){
                 if(!is_internal_nh_t_empty((result->node->backup_next_hop[level][nh][i]))){
+                    backup = &result->node->backup_next_hop[level][nh][i];        
+                    if(dont_collect_onlylink_protecting_backups){
+                        if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
+                                backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
+                                backup->lfa_type == LINK_PROTECTION_RLFA                     ||
+                                backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
+                                backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
+                                backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
+                                backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
+                                backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
+                            sprintf(instance->traceopts->b, "\t ECMP : only link-protecting backup dropped : %s----%s---->%-s(%s(%s)) protecting link: %s", 
+                                    backup->oif->intf_name,
+                                    next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
+                                    next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
+                                    backup->node ? backup->node->node_name : backup->rlfa->node_name,
+                                    backup->node ? backup->node->router_id : backup->rlfa->router_id, 
+                                    backup->protected_link->intf_name); 
+                            trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+                            continue;
+                        }
+                    }
+
                     int_nxt_hop = calloc(1, sizeof(internal_nh_t));
                     copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
                     ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
                     sprintf(instance->traceopts->b, "route : %s/%u backup next hop is merged with %s's backup next hop node %s", 
-                            route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                            route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                             result->node->backup_next_hop[level][nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 }
                 else
@@ -614,7 +692,7 @@ link_prefix_to_route(routes_t *route, prefix_t *new_prefix,
                         new_prefix_pref = route_preference(new_prefix->prefix_flags, new_prefix->level);
 
     sprintf(instance->traceopts->b, "To Route : %s/%u, %s, Appending prefix : %s/%u to Route prefix list",
-                 route->rt_key.prefix, route->rt_key.mask, get_str_level(route->level),
+                 route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, get_str_level(route->level),
                  new_prefix->prefix, new_prefix->mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
     if(is_singly_ll_empty(route->like_prefix_list)){
@@ -773,7 +851,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
                     ROUTE_ADD_NH(route->primary_nh_list[nh], int_nxt_hop);   
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Next hop added : %s|%s at %s", 
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask ,
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask ,
                             result->next_hop[nh][i].node->node_name, nh == IPNH ? "IPNH":"LSPNH", get_str_level(level)); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 }
                 else
@@ -785,7 +863,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
                     ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
                     sprintf(instance->traceopts->b, "route : %s/%u backup next hop is copied with with %s's next hop node %s", 
-                            route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                            route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                             result->node->backup_next_hop[level][nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 }
                 else
@@ -802,7 +880,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         ROUTE_ADD_TO_ROUTE_LIST(spf_info, route);
         route->install_state = RTE_ADDED;
         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u, spf_metric = %u, lsp_metric = %u,  marked RTE_ADDED for level%u",  
-                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
+                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 route->spf_metric, route->lsp_metric, route->level); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
     }
     else{
@@ -828,7 +906,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                 /* if existing route is better*/ 
                 sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Not overwritten",
-                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
+                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 /*Linkage*/
                 if(linkage){
@@ -840,7 +918,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             else if(prefix_pref.pref < route_pref.pref){
 
                 sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, will be overwritten",
-                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
+                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
                 overwrite_route(spf_info, route, prefix, result, level);
@@ -854,7 +932,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             else{
                 /* If route pref = prefix pref, then decide based on metric*/
                 sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Same preference, Trying based on metric",
-                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
+                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
                 /* If the prefix and route are of same pref, both will have internal metric Or both will have external metric*/
@@ -870,7 +948,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 if(IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
                     /*Decide pref based on external metric*/
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on External metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); 
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); 
                     trace(instance->traceopts, ROUTE_CALCULATION_BIT);; 
 
                     if(prefix->metric < route->ext_metric){
@@ -886,7 +964,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     else{
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/
                         route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
@@ -903,19 +981,19 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 }else{
                     /*Decide pref based on internal metric*/
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on Internal metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); 
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); 
                     trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     if(result->spf_metric + prefix->metric < route->spf_metric){
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
-                                route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                                 result->spf_metric + prefix->metric, route->spf_metric); 
                         trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(result->spf_metric + prefix->metric == route->spf_metric){
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); 
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); 
                         trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
                         route->ecmp_dest_count++;
@@ -927,7 +1005,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     else{
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is not over-written because no better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
-                                route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                                 result->spf_metric + prefix->metric, route->spf_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     }
                     /*Linkage*/
@@ -958,7 +1036,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
                 /* if existing route is better*/ 
                 sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Not overwritten",
-                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
+                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                 /*Linkage*/
                 if(linkage){
@@ -970,7 +1048,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             else if(prefix_pref.pref < route_pref.pref){
 
                 sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, will be overwritten",
-                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
+                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
                 overwrite_route(spf_info, route, prefix, result, level);
@@ -984,7 +1062,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             else{
                 /* If route pref = prefix pref, then decide based on metric*/
                 sprintf(instance->traceopts->b, "Node : %s : route : %s/%u preference = %s, prefix  pref = %s, Same preference, Trying based on metric",
-                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask,
+                        GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
                         route_pref.pref_str, prefix_pref.pref_str); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
                 /* If the prefix and route are of same pref, both will have internal metric Or both will have external metric*/
@@ -1000,7 +1078,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 if(IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
                     /*Decide pref based on external metric*/
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on External metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); 
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); 
                     trace(instance->traceopts, ROUTE_CALCULATION_BIT);; 
 
                     if(prefix->metric < route->ext_metric){
@@ -1016,7 +1094,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     }
                     else{
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/
                         route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
@@ -1033,18 +1111,18 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                 }else{
                     /*Decide pref based on internal metric*/
                     sprintf(instance->traceopts->b, "Node : %s : route : %s/%u Deciding based on Internal metric",
-                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask); 
+                            GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); 
                     trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     if(result->spf_metric + prefix->metric < route->spf_metric){
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is over-written because better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
-                                route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                                 result->spf_metric + prefix->metric, route->spf_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         overwrite_route(spf_info, route, prefix, result, level);
                     }
                     else if(result->spf_metric + prefix->metric == route->spf_metric){
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
-                                route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
                         route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
@@ -1055,7 +1133,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                     else{
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u is not over-written because no better metric on node %s is found with metric = %u, old route metric = %u", 
                                 GET_SPF_INFO_NODE(spf_info, level)->node_name, 
-                                route->rt_key.prefix, route->rt_key.mask, result->node->node_name, 
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
                                 result->spf_metric + prefix->metric, route->spf_metric); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                     }
                     /*Linkage*/
@@ -1072,16 +1150,16 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         {
             /*prefix is from prev run and exists. This code hits only once per given route*/
             sprintf(instance->traceopts->b, "route : %s/%u, updated route(?)", 
-                    route->rt_key.prefix, route->rt_key.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+                    route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
             route->install_state = RTE_UPDATED;
 
             sprintf(instance->traceopts->b, "Node : %s : route : %s/%u, old spf_metric = %u, new spf metric = %u, marked RTE_UPDATED for level%u",  
-                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, 
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                     route->spf_metric, result->spf_metric + prefix->metric, route->level); 
             trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
             sprintf(instance->traceopts->b, "Node : %s : route : %s/%u %s is mandatorily over-written because of version mismatch",
-                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(level)); 
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, get_str_level(level)); 
             trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
 
             overwrite_route(spf_info, route, prefix, result, level);
@@ -1103,7 +1181,7 @@ get_prefix_sid_from_route(routes_t *route){
     node_t *node = route->hosting_node;/*This is not correct*/
     LEVEL level = route->level;
     prefix_t *prefix = node_local_prefix_search(node, level, 
-        route->rt_key.prefix, route->rt_key.mask);
+        route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
     assert(prefix);
     if(!IS_PREFIX_SR_ACTIVE(prefix))
         return 0;
@@ -1204,16 +1282,16 @@ start_route_installation(spf_info_t *spf_info,
         }
         
         sprintf(instance->traceopts->b, "RIB modification : route : %s/%u, Level%u, metric = %u, Action : %s", 
-                route->rt_key.prefix, route->rt_key.mask, 
+                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 route->level, route->spf_metric, route_intall_status_str(route->install_state)); 
         trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
 
         switch(route->install_state){
             
             case RTE_STALE:
-                if(rt_route_delete(spf_info->rttable, route->rt_key.prefix, route->rt_key.mask) < 0){
+                if(rt_route_delete(spf_info->rttable, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask) < 0){
                     printf("%s() : Error : Could not delete route : %s/%u, Level%u\n", __FUNCTION__, 
-                                    route->rt_key.prefix, route->rt_key.mask, route->level);
+                                    route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
                     break;
                 }
                 rt_removed++;
@@ -1223,7 +1301,7 @@ start_route_installation(spf_info_t *spf_info,
             case RTE_ADDED:
                     if(rt_route_install(spf_info->rttable, rt_entry_template) < 0){
                         printf("%s() : Error : Could not Add route : %s/%u, Level%u\n", __FUNCTION__,
-                                route->rt_key.prefix, route->rt_key.mask, route->level);
+                                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
                         free(rt_entry_template);
                         rt_entry_template = NULL;
                         break;
@@ -1240,7 +1318,7 @@ start_route_installation(spf_info_t *spf_info,
                     rt_no_change++;
                     /*Update the version number in RIB*/
                     existing_rt_route = rt_route_lookup(spf_info->rttable,
-                        route->rt_key.prefix, route->rt_key.mask);
+                        route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
                     assert(existing_rt_route);
                     
                     if(existing_rt_route->level != route->level)
@@ -1301,15 +1379,15 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
     
     ITERATE_NH_TYPE_BEGIN(nh){
         for(i = 0; i < MAX_NXT_HOPS; i++){
-            prim_next_hop1 = &dst_node->next_hop[nh][i];
-            if(is_nh_list_empty2(&(dst_node->next_hop[nh][i])))
+            prim_next_hop1 = &dst_node->next_hop[level][nh][i];
+            if(is_nh_list_empty2(&(dst_node->next_hop[level][nh][i])))
                 break;
             dist_prim_nh1_to_D = DIST_X_Y(prim_next_hop1->node, dst_node, level);
 
             ITERATE_NH_TYPE_BEGIN(nh1){
                 for(j = 0; j < MAX_NXT_HOPS; j++){
-                    prim_next_hop2 = &dst_node->next_hop[nh1][j];
-                    if(is_nh_list_empty2(&(dst_node->next_hop[nh1][j])))
+                    prim_next_hop2 = &dst_node->next_hop[level][nh1][j];
+                    if(is_nh_list_empty2(&(dst_node->next_hop[level][nh1][j])))
                         break;
                     if(prim_next_hop1 == prim_next_hop2) continue;
                     dist_prim_nh2_to_D = DIST_X_Y(prim_next_hop2->node, dst_node, level);
@@ -1466,17 +1544,54 @@ build_routing_table(spf_info_t *spf_info,
         if(is_independant_primary_next_hop_list(route)){
             sprintf(instance->traceopts->b, "Node %s : route %s/%u at %s has independant "
                         "Primary Nexthops, All backup nexthops deleted", 
-                        spf_root->node_name, route->rt_key.prefix, route->rt_key.mask, get_str_level(level));
+                        spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, get_str_level(level));
             trace(instance->traceopts, ROUTE_CALCULATION_BIT);   
             ITERATE_NH_TYPE_BEGIN(nh){
                 ROUTE_FLUSH_BACKUP_NH_LIST(route, nh);
             } ITERATE_NH_TYPE_END;
+        }else{
+            /*If route has more than one primary nexthops, cleanup all only-link protecting
+             * backups*/
+            unsigned int count = 0;
+            singly_ll_node_t *prev_list_node = NULL;
+            internal_nh_t *backup = NULL;
+
+            ITERATE_NH_TYPE_BEGIN(nh){
+                count += GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]);
+            } ITERATE_NH_TYPE_END;
+
+            if(count > 1){
+                ITERATE_NH_TYPE_BEGIN(nh){
+                    ITERATE_LIST_BEGIN2(route->backup_nh_list[nh], list_node1, prev_list_node){
+                        backup = list_node1->data;
+                        if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
+                                backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
+                                backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
+                                backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
+                                backup->lfa_type == LINK_PROTECTION_RLFA                     ||
+                                backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
+                                backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
+                                backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
+                            sprintf(instance->traceopts->b, "\t ECMP : only link-protecting backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", 
+                                    backup->oif->intf_name,
+                                    next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
+                                    next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
+                                    backup->node ? backup->node->node_name : backup->rlfa->node_name,
+                                    backup->node ? backup->node->router_id : backup->rlfa->router_id, 
+                                    backup->protected_link->intf_name); 
+                            trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+                            free(backup);
+                            ITERATIVE_LIST_NODE_DELETE2(route->backup_nh_list[nh], list_node1, prev_list_node);
+                        }
+                    } ITERATE_LIST_END2(route->backup_nh_list[nh], list_node1, prev_list_node);
+                } ITERATE_NH_TYPE_END;
+            }
         }
 
         if(route->install_state != RTE_UPDATED)
             continue;
 
-        rt_entry = rt_route_lookup(spf_info->rttable, route->rt_key.prefix, route->rt_key.mask);
+        rt_entry = rt_route_lookup(spf_info->rttable, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
         assert(rt_entry); /*This entry MUST exist in RIB*/
 
         if(is_changed_route(spf_info, rt_entry, route, FULL_RUN, level) == TRUE)
@@ -1484,7 +1599,7 @@ build_routing_table(spf_info_t *spf_info,
         else
             route->install_state = RTE_NO_CHANGE;
         sprintf(instance->traceopts->b, "Route : %s/%u is Marked as %s at %s", 
-                route->rt_key.prefix, route->rt_key.mask, 
+                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 route_intall_status_str(route->install_state),
                 get_str_level(level)); 
         trace(instance->traceopts, ROUTE_CALCULATION_BIT); 
@@ -1586,8 +1701,8 @@ start_spring_routes_installation(spf_info_t *spf_info,
             !IS_PREFIX_SR_ACTIVE(best_prefix)){
             sprintf(instance->traceopts->b, "Node : %s : Spring route for 0:%s/%u %s not installed in mpls.0."
                     "Reason : Prefix SID not assigned Or conflict prefix",
-                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.prefix, 
-                    route->rt_key.mask, get_str_level(route->level));
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, 
+                    route->rt_key.u.prefix.mask, get_str_level(route->level));
             trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
             continue; 
         }
@@ -1598,7 +1713,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
         }
         
         sprintf(instance->traceopts->b, "mpls.0 RIB modification : route : %u:%s/%u, Level%u, metric = %u, Action : %s", 
-                mpls_label, route->rt_key.prefix, route->rt_key.mask, 
+                mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 route->level, route->spf_metric, route_intall_status_str(route->install_state)); 
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
         
@@ -1608,7 +1723,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
             case RTE_STALE:
                 if(delete_mpls_forwarding_entry(spf_info->mpls_rt_table, mpls_label) < 0){
                     printf("%s() : Error : Could not delete MPLS route  : %u:%s/%u, Level%u\n", __FUNCTION__, 
-                                    mpls_label, route->rt_key.prefix, route->rt_key.mask, route->level);
+                                    mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
                     break;
                 }
                 rt_removed++;
@@ -1626,7 +1741,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
 
                 if(rc < 0){
                     printf("%s() : Error : Could not Add route : %u:%s/%u, Level%u\n", __FUNCTION__,
-                            mpls_label, route->rt_key.prefix, route->rt_key.mask, route->level);
+                            mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
                     break;
                 }
                 rt_added++;
@@ -1658,7 +1773,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
 
                     if(rc < 0){
                         printf("%s() : Error : Could not Add route in mpls.0 : %u:%s/%u, Level%u\n", __FUNCTION__,
-                                mpls_label, route->rt_key.prefix, route->rt_key.mask, route->level);
+                                mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
                         break;
                     }
                     rt_added++;
@@ -1679,7 +1794,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
                 else {
                     if(delete_mpls_forwarding_entry(spf_info->mpls_rt_table, route->prev_mpls_label) < 0){
                         printf("%s(%u) : Error : Could not delete MPLS route  : %u:%s/%u, Level%u\n", __FUNCTION__, __LINE__,
-                                route->prev_mpls_label, route->rt_key.prefix, route->rt_key.mask, route->level);
+                                route->prev_mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
                         break;
                     }
                     route->prev_mpls_label = 0;
@@ -1720,19 +1835,19 @@ show_internal_routing_tree(node_t *node, char *prefix, char mask){
 
             /*filter*/
             if(prefix){
-                if(!(strncmp(prefix, route->rt_key.prefix, PREFIX_LEN) == 0 &&
-                            mask == route->rt_key.mask))
+                if(!(strncmp(prefix, route->rt_key.u.prefix.prefix, PREFIX_LEN) == 0 &&
+                            mask == route->rt_key.u.prefix.mask))
                     continue;
             }
             memset(subnet, 0, PREFIX_LEN_WITH_MASK + 1);
-            sprintf(subnet, "%s/%d", route->rt_key.prefix, route->rt_key.mask);
+            sprintf(subnet, "%s/%d", route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
 
             /*handling local prefixes*/
 
             if(GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[IPNH]) == 0 &&
                     GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[LSPNH]) == 0){
 
-                sprintf(subnet, "%s/%d", route->rt_key.prefix, route->rt_key.mask);
+                sprintf(subnet, "%s/%d", route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
                 printf("%-20s      %-4d        %-3d (%-3s)     %-2d    %-15s    %-s|%-8s   %-12s      %-16s\n",
                         subnet, route->version, route->spf_metric,
                         IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT",

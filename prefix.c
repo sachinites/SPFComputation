@@ -40,6 +40,7 @@
 #include "bitsop.h"
 #include "routes.h"
 #include "spftrace.h"
+#include "sr_tlv_api.h"
 
 extern instance_t *instance;
 
@@ -69,9 +70,9 @@ prefix_comparison_fn(void *_prefix, void *_key){
 
     prefix_t *prefix = (prefix_t *)_prefix;
     common_pfx_key_t *key = (common_pfx_key_t *)_key;
-    if(strncmp(prefix->prefix, key->prefix, strlen(prefix->prefix)) == 0 &&
-            strlen(prefix->prefix) == strlen(key->prefix) &&
-            prefix->mask == key->mask)
+    if(strncmp(prefix->prefix, key->u.prefix.prefix, strlen(prefix->prefix)) == 0 &&
+            strlen(prefix->prefix) == strlen(key->u.prefix.prefix) &&
+            prefix->mask == key->u.prefix.mask)
         return TRUE;
 
     return FALSE;
@@ -356,8 +357,8 @@ leak_prefix(char *node_name, char *_prefix, char mask,
             SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 
         sprintf(instance->traceopts->b, "Node : %s : prefix %s/%u leaked from %s to %s", 
-                node->node_name, route_to_be_leaked->rt_key.prefix, 
-                route_to_be_leaked->rt_key.mask, get_str_level(from_level), 
+                node->node_name, route_to_be_leaked->rt_key.u.prefix.prefix, 
+                route_to_be_leaked->rt_key.u.prefix.mask, get_str_level(from_level), 
                 get_str_level(to_level)); 
         trace(instance->traceopts, SPF_PREFIX_BIT); 
 
@@ -449,9 +450,9 @@ add_prefix_to_prefix_list(ll_t *prefix_list,
                           unsigned int hosting_node_metric){
 
     common_pfx_key_t key;
-    strncpy(key.prefix, prefix->prefix, PREFIX_LEN);
-    key.prefix[PREFIX_LEN] = '\0'; 
-    key.mask = prefix->mask;
+    strncpy(key.u.prefix.prefix, prefix->prefix, PREFIX_LEN);
+    key.u.prefix.prefix[PREFIX_LEN] = '\0'; 
+    key.u.prefix.mask = prefix->mask;
     assert(!singly_ll_search_by_key(prefix_list, &key));
     add_new_prefix_in_list(prefix_list, prefix, hosting_node_metric);
     return 1;
@@ -462,9 +463,9 @@ delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask){
 
     prefix_t *old_prefix = NULL;
     common_pfx_key_t key;
-    strncpy(key.prefix, prefix, PREFIX_LEN);
-    key.prefix[PREFIX_LEN] = '\0';
-    key.mask = mask;
+    strncpy(key.u.prefix.prefix, prefix, PREFIX_LEN);
+    key.u.prefix.prefix[PREFIX_LEN] = '\0';
+    key.u.prefix.mask = mask;
     old_prefix = singly_ll_search_by_key(prefix_list, &key);
     assert(old_prefix);
     singly_ll_delete_node_by_data_ptr(prefix_list, old_prefix);
