@@ -146,10 +146,9 @@ static int
 validate_index_range_value(char *value_passed){
 
    unsigned int range = atoi(value_passed);
-   if(range >= 1 && range <= 8192)
+   if(range >= 1 && range <= 0xFFFFFFFF)
        return VALIDATION_SUCCESS;
-   printf("Error : Incorrect index range specified. Valid range : [%u,%u]\n",
-        1 , 8192);
+   printf("Error : Incorrect index range specified.\n");
    return VALIDATION_FAILED;
 }
 static int
@@ -789,6 +788,10 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, CONFLICT_RESOLUTION_BIT):
                 disable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
             break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_SPRING_ROUTE_CAL:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, SPRING_ROUTE_CAL_BIT):
+                disable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
+            break;
         case CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION:
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT):
                 disable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
@@ -805,6 +808,7 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     enable_spf_trace(instance, ROUTING_TABLE_BIT);
                     enable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
                     enable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
+                    enable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
                     break;
                 case CONFIG_DISABLE:
                     disable_spf_trace(instance, DIJKSTRA_BIT);
@@ -816,6 +820,7 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     disable_spf_trace(instance, ROUTING_TABLE_BIT);
                     disable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
                     disable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
+                    disable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
                     break;
                 default:
                     assert(0);
@@ -1306,6 +1311,12 @@ spf_init_dcm(){
                         init_param(&mpls_installation, CMD, "mpls-route-installation", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for MPLS route installation");
                         libcli_register_param(&trace, &mpls_installation);
                         set_param_cmd_code(&mpls_installation, CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION);
+                    }
+                    {
+                        static param_t spring_route_cal;
+                        init_param(&spring_route_cal, CMD, "spring-route-calculation", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for SPRING route installation");
+                        libcli_register_param(&trace, &spring_route_cal);
+                        set_param_cmd_code(&spring_route_cal, CMDCODE_DEBUG_TRACEOPTIONS_SPRING_ROUTE_CAL);
                     }
                 }
             }

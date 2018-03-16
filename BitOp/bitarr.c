@@ -30,10 +30,11 @@
  * =====================================================================================
  */
 
-#include "bitarr.h"
-#include "stdlib.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <memory.h>
 #include "bitsop.h"
-#include "stdio.h"
+#include "bitarr.h"
 
 #define CHAR_SIZE   8
 
