@@ -41,11 +41,13 @@ void
 init_bit_array(bit_array_t *bitarr, unsigned int n_bits){
 
     unsigned int n_byte_blocks = n_bits/CHAR_SIZE;
-    
+
     if(n_bits % CHAR_SIZE)
         n_byte_blocks++;
-
-    bitarr->array = calloc(1, n_byte_blocks);
+    if(!bitarr->array)
+        bitarr->array = calloc(1, n_byte_blocks);
+    else
+        memset(bitarr->array, 0, n_byte_blocks);
     bitarr->size = n_bits;
     bitarr->trail_bits = n_bits % CHAR_SIZE;
 }
@@ -60,13 +62,18 @@ set_bit(bit_array_t *bitarr, unsigned int index){
     }
 
     unsigned byte_block = 0,
-             resisual_bit = 0;
+             residual_bit = 0;
 
     byte_block = index / CHAR_SIZE;
-    resisual_bit = index % CHAR_SIZE;
+    residual_bit = index % CHAR_SIZE;
+
+#if 0    
+    assert(bitarr->size/CHAR_SIZE == byte_block && 
+        bitarr->trail_bits >= residual_bit);
+#endif
 
     char *ptr = bitarr->array + byte_block;
-    SET_BIT((*ptr), (CHAR_SIZE - resisual_bit));
+    SET_BIT((*ptr), (CHAR_SIZE - residual_bit));
 }
 
 void
@@ -79,13 +86,18 @@ unset_bit(bit_array_t *bitarr, unsigned int index){
     }
 
     unsigned byte_block = 0,
-             resisual_bit = 0;
+             residual_bit = 0;
 
     byte_block = index / CHAR_SIZE;
-    resisual_bit = index % CHAR_SIZE;
+    residual_bit = index % CHAR_SIZE;
+
+#if 0
+    assert(bitarr->size/CHAR_SIZE == byte_block && 
+        bitarr->trail_bits >= residual_bit);
+#endif
 
     char *ptr = bitarr->array + byte_block;
-    UNSET_BIT((*ptr), (CHAR_SIZE - resisual_bit));
+    UNSET_BIT((*ptr), (CHAR_SIZE - residual_bit));
 }
 
 char
@@ -99,13 +111,29 @@ is_bit_set(bit_array_t *bitarr, unsigned int index){
     }
 
     unsigned byte_block = 0,
-             resisual_bit = 0;
+             residual_bit = 0;
 
     byte_block = index / CHAR_SIZE;
-    resisual_bit = index % CHAR_SIZE;
-
+    residual_bit = index % CHAR_SIZE;
+    
+#if 0
+    assert(bitarr->size/CHAR_SIZE == byte_block && 
+        bitarr->trail_bits >= residual_bit);
+#endif
     char *ptr = bitarr->array + byte_block;
-    return (char)(IS_BIT_SET((*ptr), (CHAR_SIZE - resisual_bit)));
+    return (char)(IS_BIT_SET((*ptr), (CHAR_SIZE - residual_bit)));
+}
+
+unsigned int
+get_next_available_bit(bit_array_t *bitarr){
+
+    unsigned int i = 0;
+    for(; i < bitarr->size; i++){
+        if(is_bit_set(bitarr, i))
+            continue;
+        return i;
+    }
+    return 0xFFFFFFFF;
 }
 
 void
@@ -113,12 +141,13 @@ print_bit_array(bit_array_t *bitarr){
 
     unsigned int i = 0, index = 0,
                  byte_blocks = 0,
-                 resisual_bits = 0;
+                 residual_bits = 0;
 
     int j = 0;
 
     byte_blocks = bitarr->size / CHAR_SIZE;
-    resisual_bits = bitarr->size % CHAR_SIZE;
+    residual_bits = bitarr->size % CHAR_SIZE;
+    //assert(bitarr->trail_bits >= residual_bit);
     char *ptr = bitarr->array;
     char byte = 0;
 
@@ -129,11 +158,11 @@ print_bit_array(bit_array_t *bitarr){
         }
     }
 
-    if(!resisual_bits)
+    if(!residual_bits)
         return;
 
     byte = *(ptr+i);
-    for(j = 7; j >= CHAR_SIZE - resisual_bits; j--, index++){
+    for(j = 7; j >= CHAR_SIZE - residual_bits; j--, index++){
         printf("[%u] : %c\n", index, IS_BIT_SET(byte, j) ? '1' : '0');
     }
 }

@@ -51,4 +51,7 @@ unset_bit(bit_array_t *bitarr, unsigned int index);
 char
 is_bit_set(bit_array_t *bitarr, unsigned int index);
 
+unsigned int
+get_next_available_bit(bit_array_t *bitarr);
+
 #endif /* __BIT_ARRAY__ */

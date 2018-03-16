@@ -66,7 +66,7 @@ void
 diplay_prefix_sid(prefix_t *prefix);
 
 unsigned int
-PREFIX_SID_VALUE(prefix_t *prefix);
+PREFIX_SID_INDEX(prefix_t *prefix);
 
 prefix_sid_subtlv_t *
 get_prefix_sid(prefix_t *prefix);

@@ -132,6 +132,7 @@ is_global_sid_value_valid(unsigned int sid_value){
 static int
 validate_global_sid_value(char *value_passed){
 
+    return VALIDATION_SUCCESS;
     boolean rc = is_global_sid_value_valid(atoi(value_passed));
     if(rc == TRUE)
         return VALIDATION_SUCCESS;
@@ -141,6 +142,16 @@ validate_global_sid_value(char *value_passed){
     return VALIDATION_FAILED;
 }
 
+static int
+validate_index_range_value(char *value_passed){
+
+   unsigned int range = atoi(value_passed);
+   if(range >= 1 && range <= 8192)
+       return VALIDATION_SUCCESS;
+   printf("Error : Incorrect index range specified. Valid range : [%u,%u]\n",
+        1 , 8192);
+   return VALIDATION_FAILED;
+}
 static int
 validate_metric_value(char *value_passed){
 
@@ -1351,6 +1362,30 @@ spf_init_dcm(){
                     init_param(&prefix_sid_val, LEAF, 0, instance_node_spring_config_handler, validate_global_sid_value, INT, "node-segment" , "Node SID value");  
                     libcli_register_param(&node_segment, &prefix_sid_val);
                     set_param_cmd_code(&prefix_sid_val, CMDCODE_CONFIG_NODE_SR_PREFIX_SID);
+                }
+            }
+            {
+                /*config node <node-name> source-packet-routing index-range <index-range>*/
+                static param_t index_range;
+                init_param(&index_range, CMD, "index-range", 0, 0, INVALID, 0, "Configure SRGB Index Range");
+                libcli_register_param(&spring, &index_range);
+                {
+                    static param_t index_range_val;
+                    init_param(&index_range_val, LEAF, 0, instance_node_spring_config_handler, validate_index_range_value, INT, "index-range" , "Configure SRGB Index Range");  
+                    libcli_register_param(&index_range, &index_range_val);
+                    set_param_cmd_code(&index_range_val, CMDCODE_CONFIG_NODE_SR_SRGB_RANGE);
+                }
+            }
+            {
+                /*config node <node-name> source-packet-routing srgb start-label <label value>*/
+                static param_t srgb;
+                init_param(&srgb, CMD, "srgb", 0, 0, INVALID, 0, "Configure SRGB");
+                libcli_register_param(&spring, &srgb);
+                {
+                    static param_t start_label;
+                    init_param(&start_label, LEAF, 0, instance_node_spring_config_handler, 0, INT, "start-label" , "SR SRGB start label value");  
+                    libcli_register_param(&srgb, &start_label);
+                    set_param_cmd_code(&start_label, CMDCODE_CONFIG_NODE_SR_SRGB_START_LABEL);
                 }
             }
         }

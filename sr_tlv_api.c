@@ -75,7 +75,7 @@ set_node_sid(node_t *node, unsigned int node_sid_value){
         return FALSE;
     }
 
-    if(is_mpls_label_in_use(node->srgb, node_sid_value)){
+    if(is_srgb_index_in_use(node->srgb, node_sid_value)){
         printf("Warning : Conflict Detected\n");
     }
 
@@ -95,7 +95,7 @@ unset_node_sid(node_t *node){
     LEVEL level_it;
     boolean trigger_conflict_res = FALSE;
     prefix_t *router_id = NULL;
-    mpls_label_t label = 0 ;
+    unsigned int index = 0 ;
 
     if(!node->spring_enabled){
         printf("Error : SPRING not enabled\n");
@@ -107,8 +107,8 @@ unset_node_sid(node_t *node){
         if(!router_id->psid_thread_ptr){
             continue;
         }
-        label = PREFIX_SID_VALUE(router_id);
-        mark_srgb_mpls_label_not_in_use(node->srgb, label);
+        index = PREFIX_SID_INDEX(router_id);
+        mark_srgb_index_not_in_use(node->srgb, index);
         free_prefix_sid(router_id);
         trigger_conflict_res = TRUE;
         MARK_PREFIX_SR_INACTIVE(router_id);
@@ -138,7 +138,7 @@ set_interface_address_prefix_sid(node_t *node, char *intf_name,
         return FALSE;
     }
 
-    if(is_mpls_label_in_use(node->srgb, prefix_sid_value)){
+    if(is_srgb_index_in_use(node->srgb, prefix_sid_value)){
         printf("Warning : Conflict Detected\n");
     }
 
@@ -182,8 +182,8 @@ unset_interface_address_prefix_sid(node_t *node, char *intf_name){
         assert(prefix);
         if(!prefix->psid_thread_ptr)
             continue;
-        label = PREFIX_SID_VALUE(prefix);
-        mark_srgb_mpls_label_not_in_use(node->srgb, label);
+        label = PREFIX_SID_INDEX(prefix);
+        mark_srgb_index_not_in_use(node->srgb, label);
         free_prefix_sid(prefix);
         MARK_PREFIX_SR_INACTIVE(prefix);
         trigger_conflict_res = TRUE;
@@ -222,15 +222,15 @@ update_prefix_sid(node_t *node, prefix_t *prefix,
         prefix_sid->prefix = prefix;
         MARK_PREFIX_SR_ACTIVE(prefix);
         trigger_conflict_res = TRUE;
-        mark_srgb_mpls_label_in_use(node->srgb, prefix_sid_value);
+        mark_srgb_index_in_use(node->srgb, prefix_sid_value);
         glthread_add_next(&node->prefix_sids_thread_lst[level], &prefix_sid->glthread);
         return trigger_conflict_res;
     }
 
-    if(prefix_sid_value != PREFIX_SID_VALUE(prefix)){
+    if(prefix_sid_value != PREFIX_SID_INDEX(prefix)){
         trigger_conflict_res = TRUE;
-        mark_srgb_mpls_label_in_use(node->srgb, prefix_sid_value);
-        mark_srgb_mpls_label_not_in_use(node->srgb, PREFIX_SID_VALUE(prefix));
+        mark_srgb_index_in_use(node->srgb, prefix_sid_value);
+        mark_srgb_index_not_in_use(node->srgb, PREFIX_SID_INDEX(prefix));
     }
 
     prefix_sid->sid.sid = prefix_sid_value;
@@ -242,7 +242,7 @@ update_prefix_sid(node_t *node, prefix_t *prefix,
 }
 
 unsigned int
-PREFIX_SID_VALUE(prefix_t *prefix){
+PREFIX_SID_INDEX(prefix_t *prefix){
     assert(prefix->psid_thread_ptr);
     return (glthread_to_prefix_sid(prefix->psid_thread_ptr))->sid.sid;
 }

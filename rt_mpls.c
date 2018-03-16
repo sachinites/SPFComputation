@@ -166,7 +166,7 @@ show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
         printf("No Prefix SID assigned on Destination node %s\n", hosting_node->node_name);
         return;
     }
-    mpls_label = PREFIX_SID_VALUE(prefix);
+    mpls_label = PREFIX_SID_LABEL(node->srgb, prefix);
 
     mpls_label_stack_t *mpls_stack = get_new_mpls_label_stack();
     PUSH_MPLS_LABEL(mpls_stack, mpls_label);

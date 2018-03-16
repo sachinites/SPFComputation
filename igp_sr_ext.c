@@ -42,6 +42,7 @@
 #include "bitsop.h"
 #include "spftrace.h"
 #include "sr_tlv_api.h"
+#include "bitarr.h"
 
 extern instance_t *instance;
 
@@ -496,77 +497,57 @@ init_srgb_defaults(srgb_t *srgb){
     srgb->type = SR_CAPABILITY_SRGB_SUBTLV_TYPE;
     srgb->length = 0;
     srgb->flags = 0;
-    srgb->range = SRGB_DEF_UPPER_BOUND - SRGB_DEF_LOWER_BOUND + 1;
+    srgb->range = SRGB_DEFAULT_RANGE;
     srgb->first_sid.type = SID_SUBTLV_TYPE;
     srgb->first_sid.length = 0;
-    srgb->first_sid.type = SID_SUBTLV_TYPE;
-    srgb->first_sid.sid = SRGB_DEF_LOWER_BOUND;
-    if(!srgb->index_array)
-        srgb->index_array = calloc(1, srgb->range);
-    else
-        memset(srgb->index_array, 0, srgb->range);
+    srgb->first_sid.sid = SRGB_FIRST_DEFAULT_SID;
+    init_bit_array(&srgb->index_array, srgb->range);
 }
 
 mpls_label_t
 get_available_srgb_label(srgb_t *srgb){
 
-   unsigned int i = 0;
-   for(; i < srgb->range; i++){
-    if(*(srgb->index_array + i))
-        continue;
-    break;    
-   }
-   if(i == srgb->range)
-       return 0;
-   return srgb->first_sid.sid + i;
+   unsigned int index = 0;
+   index = get_next_available_bit(SRGB_INDEX_ARRAY(srgb));
+   if(index == 0xFFFFFFFF)
+       return index;
+   return srgb->first_sid.sid + index;
 }
 
 void
-mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label_t label){
+mark_srgb_index_in_use(srgb_t *srgb, unsigned int index){
 
-    if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
-        printf("Error : Invalid label specified\n");
-        return;
-    }
-
-    unsigned int index = label - srgb->first_sid.sid;
-    assert(*(srgb->index_array + index) < srgb->range);
-    (*(srgb->index_array + index))++;
-    if(*(srgb->index_array + index) > 1)
-        printf("Warning : Multiple assignment of SRGB label %u\n", label);
+    assert(index >= 0 && index < srgb->range);
+    set_bit(SRGB_INDEX_ARRAY(srgb), index);
 }
 
 
 void
-mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label_t label){
+mark_srgb_index_not_in_use(srgb_t *srgb, unsigned int index){
 
-    if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
-        printf("Error : Invalid label specified\n");
-        return;
-    }
-
-    unsigned int index = label - srgb->first_sid.sid;
-    if(*(srgb->index_array + index) > 0)
-        (*(srgb->index_array + index))--;
+    assert(index >= 0 && index < srgb->range);
+    unset_bit(SRGB_INDEX_ARRAY(srgb) , index);
 }
 
 boolean
-is_mpls_label_in_use(srgb_t *srgb, mpls_label_t label){
+is_srgb_index_in_use(srgb_t *srgb, unsigned int index){
 
-    if(!(label >= SRGB_DEF_LOWER_BOUND && label <= SRGB_DEF_UPPER_BOUND)){
-        printf("Error : Invalid label specified\n");
-        return TRUE;
-    }
-
-    unsigned int index = label - srgb->first_sid.sid;
-    return *(srgb->index_array + index) >= 1;
+    assert(index >= 0 && index < srgb->range);
+    return is_bit_set(SRGB_INDEX_ARRAY(srgb), index) == 0 ?
+        FALSE:TRUE;
 }
 
+mpls_label_t 
+get_label_from_srgb_index(srgb_t *srgb, unsigned int index){
+
+    assert(index >= 0 && index < srgb->range);
+    return srgb->first_sid.sid + index;
+}
 /*This fn blinkdly copies all IPV4 route members to mpls route.
  * You need to override the fields in the called appropriately*/
 
 mpls_rt_entry_t *
-prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
+prepare_mpls_entry_template_from_ipv4_route(node_t *node, routes_t *route){
 
    singly_ll_node_t *list_node = NULL;
    internal_nh_t *ipv4_prim_nh = NULL;
@@ -589,7 +570,7 @@ prepare_mpls_entry_template_from_ipv4_route(routes_t *route){
 
    prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);
    prefix_sid_subtlv_t *prefix_sid = NULL;
-   mpls_rt_entry->incoming_label = PREFIX_SID_VALUE(prefix);
+   mpls_rt_entry->incoming_label = PREFIX_SID_LABEL(node->srgb, prefix);
    mpls_rt_entry->version = route->version;
    mpls_rt_entry->level = route->level;
    mpls_rt_entry->prim_nh_count = prim_nh_count;
@@ -677,7 +658,7 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
 #endif
     /*If current router do not want nbrs to perform PHP, then current router
      * should implment POP and OIF - NULL in mpls table*/
-    mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(route);
+    mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(node, route);
     
     /*Current router would recieve this prefix with label, install the
      * entry to pop the label*/
@@ -717,7 +698,7 @@ sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
         trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
         return -1;
     }
-    mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(route);
+    mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(node, route);
 
     sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u Installed",
                 node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
@@ -777,7 +758,7 @@ igp_uninstall_mpls_spring_route(node_t *node, char *str_prefix, char mask){
     }
     
     prefix2 = ROUTE_GET_BEST_PREFIX(route);
-    mpls_label_t label = PREFIX_SID_VALUE(prefix2);
+    mpls_label_t label = PREFIX_SID_LABEL(node->srgb, prefix2);
     return delete_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), label);
 }
 
@@ -815,18 +796,21 @@ is_node_spring_enabled(node_t *node, LEVEL level){
 void
 spring_disable_cleanup(node_t *node){
     
-    free(node->srgb->index_array);
+    free((SRGB_INDEX_ARRAY(node->srgb))->array);
     free(node->srgb);
     node->use_spring_backups = FALSE;
-    
+    LEVEL level_it;
+
     /*Break the association between prefixes and prefix SIDs*/
     glthread_t *curr = NULL;
     prefix_sid_subtlv_t *prefix_sid = NULL;
-
-    ITERATE_GLTHREAD_BEGIN(&node->prefix_sids_thread_lst[LEVEL1], curr){
-        prefix_sid = glthread_to_prefix_sid(curr);
-        free_prefix_sid(prefix_sid->prefix);
-    } ITERATE_GLTHREAD_END(&node->prefix_sids_thread_lst[LEVEL1], curr);
+    
+    for(level_it = LEVEL1 ; level_it <= LEVEL2 ; level_it++){
+        ITERATE_GLTHREAD_BEGIN(&node->prefix_sids_thread_lst[level_it], curr){
+            prefix_sid = glthread_to_prefix_sid(curr);
+            free_prefix_sid(prefix_sid->prefix);
+        } ITERATE_GLTHREAD_END(&node->prefix_sids_thread_lst[level_it], curr);
+    }
 }
 
 #if 0

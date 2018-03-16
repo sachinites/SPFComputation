@@ -148,13 +148,13 @@ show_node_spring_details(node_t *node, LEVEL level){
     srgb_t *srgb = node->srgb;
 
     printf("Node : %s SRGB Details:\n",  node->node_name);
-    printf("\tRange : [%u,%u]\n", node->srgb->first_sid.sid, 
-        node->srgb->first_sid.sid + srgb->range -1);
+    printf("\tRange : %u, starting mpls label = %u\n", 
+        node->srgb->range, node->srgb->first_sid.sid);
 
     unsigned int i = 0, in_use_count = 0, 
                         avail_count = 0;
     for(; i < srgb->range; i++){
-        if(*(srgb->index_array + i))
+        if(is_bit_set(SRGB_INDEX_ARRAY(srgb), i))
             in_use_count++;
         else
             avail_count++;
@@ -741,7 +741,9 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
     tlv_struct_t *tlv = NULL;
     int cmd_code = -1;
     char *intf_name = NULL;
-    unsigned int prefix_sid = 0;
+    unsigned int prefix_sid = 0,
+                 index_range = 0,
+                 first_sid = 0;
     char *prefix = NULL;
     char mask = 0;
 
@@ -758,6 +760,10 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
             prefix = tlv->value;
         else if(strncmp(tlv->leaf_id, "mask",  strlen("mask")) ==0)
             mask = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "index-range",  strlen("index-range")) ==0)
+            index_range = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "start-label",  strlen("start-label")) ==0)
+            first_sid = atoi(tlv->value);
         else
             assert(0);
     } TLV_LOOP_END;
@@ -838,6 +844,20 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
                 ;
         }
         break;
+        case CMDCODE_CONFIG_NODE_SR_SRGB_RANGE:
+        if(node->spring_enabled == FALSE){
+            printf("Source Packet Routing Not Enabled\n");
+            return 0;
+        }
+        node->srgb->range = index_range;
+        break;
+        case CMDCODE_CONFIG_NODE_SR_SRGB_START_LABEL:
+        if(node->spring_enabled == FALSE){
+            printf("Source Packet Routing Not Enabled\n");
+            return 0;
+        }
+        node->srgb->first_sid.sid = first_sid;
+        break; 
         case CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE:
         switch(enable_or_disable){
             case CONFIG_ENABLE:
@@ -895,7 +915,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                     apply_mask2(prefix->prefix, prefix->mask, str_prefix_with_mask);
                     printf("\t%-20s %-20s %u\n", 
                         str_prefix_with_mask, 
-                        prefix->hosting_node->node_name, PREFIX_SID_VALUE(prefix));
+                        prefix->hosting_node->node_name, PREFIX_SID_INDEX(prefix));
                 } ITERATE_LIST_END;
                 delete_singly_ll(res);
                 free(res);
@@ -919,7 +939,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                     apply_mask2(prefix->prefix, prefix->mask, str_prefix_with_mask);
                     printf("\t%-20s %-20s %u\n", 
                         str_prefix_with_mask, 
-                        prefix->hosting_node->node_name, PREFIX_SID_VALUE(prefix));
+                        prefix->hosting_node->node_name, PREFIX_SID_INDEX(prefix));
                 } ITERATE_LIST_END;
                 delete_singly_ll(res);
                 free(res);

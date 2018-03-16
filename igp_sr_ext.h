@@ -35,6 +35,7 @@
 
 #include "instanceconst.h"
 #include "glthread.h"
+#include "bitarr.h"
 
 typedef struct _node_t node_t;
 typedef struct edge_end_ edge_end_t;
@@ -48,7 +49,8 @@ typedef struct prefix_ prefix_t;
 #define SRGB_DEF_LOWER_BOUND    16000
 #define SRGB_DEF_UPPER_BOUND    23999
 #define SRGB_MAX_SIZE           65536
-    
+#define SRGB_FIRST_DEFAULT_SID  SRGB_DEF_LOWER_BOUND
+#define SRGB_DEFAULT_RANGE      (SRGB_DEF_UPPER_BOUND - SRGB_DEF_LOWER_BOUND + 1)    
 
 /*TLV types*/
 #define PREFIX_SID_SUBTLV_TYPE          3
@@ -91,26 +93,34 @@ typedef struct _sr_capability_subtlv{
    segment_id_subtlv_t first_sid; /*SID/Label sub-TLV contains the first value of the SRGB while the
    range contains the number of SRGB elements*/
    /*Out of RFC  :Bits to track the index allocation*/
-   char *index_array;
+   bit_array_t index_array;
 } sr_capability_subtlv_t;
 
 typedef sr_capability_subtlv_t srgb_t;
 typedef sr_capability_subtlv_t srlb_t;
 
+#define SRGB_INDEX_ARRAY(srgbptr) (&(srgbptr->index_array))
+
 mpls_label_t
-get_available_srgb_mpls_label(srgb_t *srgb);
+get_available_srgb_label(srgb_t *srgb);
 
 void
 init_srgb_defaults(srgb_t *srgb);
 
 void
-mark_srgb_mpls_label_in_use(srgb_t *srgb, mpls_label_t label);
+mark_srgb_index_in_use(srgb_t *srgb, unsigned int index);
 
 void
-mark_srgb_mpls_label_not_in_use(srgb_t *srgb, mpls_label_t label);
+mark_srgb_index_not_in_use(srgb_t *srgb, unsigned int index);
 
 boolean
-is_mpls_label_in_use(srgb_t *srgb, mpls_label_t label);
+is_srgb_index_in_use(srgb_t *srgb, unsigned int index);
+
+mpls_label_t
+get_label_from_srgb_index(srgb_t *srgb, unsigned int index);
+
+#define PREFIX_SID_LABEL(srgbptr, prefixptr) \
+    (get_label_from_srgb_index(srgbptr, PREFIX_SID_INDEX(prefixptr)))
 
 /*SR algorithm TLV
  * allows the router to advertise the algorithms
@@ -495,7 +505,7 @@ is_node_spring_enabled(node_t *node, LEVEL level);
 typedef struct _mpls_rt_entry mpls_rt_entry_t ;
 
 mpls_rt_entry_t *
-prepare_mpls_entry_template_from_ipv4_route(routes_t *route);
+prepare_mpls_entry_template_from_ipv4_route(node_t *node, routes_t *route);
 
 #if 0
 void

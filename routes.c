@@ -1175,19 +1175,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
 /*Routine to build the routing table*/
 
-static mpls_label_t
-get_prefix_sid_from_route(routes_t *route){
-    
-    node_t *node = route->hosting_node;/*This is not correct*/
-    LEVEL level = route->level;
-    prefix_t *prefix = node_local_prefix_search(node, level, 
-        route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
-    assert(prefix);
-    if(!IS_PREFIX_SR_ACTIVE(prefix))
-        return 0;
-    return PREFIX_SID_VALUE(prefix);
-}
-
 void
 start_route_installation(spf_info_t *spf_info,
                          LEVEL level){
@@ -1708,7 +1695,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
         }
 #endif
         if(IS_ROUTE_SPRING_CAPABLE(route)){
-            mpls_label = PREFIX_SID_VALUE(best_prefix);
+            mpls_label = PREFIX_SID_LABEL(GET_SPF_INFO_NODE(spf_info, level)->srgb, best_prefix);
             route->prev_mpls_label = mpls_label;
         }
         
@@ -1747,7 +1734,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
                 rt_added++;
                 break;
             case RTE_CHANGED:
-                rt_entry_template = prepare_mpls_entry_template_from_ipv4_route(route);
+                rt_entry_template = prepare_mpls_entry_template_from_ipv4_route(GET_SPF_INFO_NODE(spf_info, level), route);
                 update_mpls_forwarding_entry(spf_info->mpls_rt_table, mpls_label, rt_entry_template);
                 rt_updated++;
                 break;
@@ -1765,7 +1752,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
                 if(!existing_rt_route){
                     if(!IS_ROUTE_SPRING_CAPABLE(route))
                         break;
-                    rt_entry_template = prepare_mpls_entry_template_from_ipv4_route(route);
+                    rt_entry_template = prepare_mpls_entry_template_from_ipv4_route(GET_SPF_INFO_NODE(spf_info, level), route);
                     if(route->hosting_node == GET_SPF_INFO_NODE(spf_info, level))
                         rc = sr_install_local_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
                     else
