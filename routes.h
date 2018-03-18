@@ -74,7 +74,7 @@ routes_t *route_malloc();
 
 routes_t *
 search_route_in_spf_route_list(spf_info_t *spf_info,
-                                prefix_t *prefix, LEVEL level);
+                                prefix_t *prefix, rtttype_t);
 
 void
 route_set_key(routes_t *route, char *ipv4_addr, char mask);
@@ -114,13 +114,13 @@ ROUTE_FLUSH_BACKUP_NH_LIST(routes_t *route, nh_type_t nh){
 #define ROUTE_ADD_BACKUP_NH(routeptr, nodeptr)      \
     singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr)
 
-#define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr)    \
-    singly_ll_add_node_by_val(spfinfo_ptr->routes_list, routeptr);   \
-    singly_ll_add_node_by_val(spfinfo_ptr->priority_routes_list, routeptr)
+#define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr, topo)               \
+    singly_ll_add_node_by_val(spfinfo_ptr->routes_list[topo], routeptr);   \
+    singly_ll_add_node_by_val(spfinfo_ptr->priority_routes_list[topo], routeptr)
 
-#define ROUTE_DEL_FROM_ROUTE_LIST(spfinfo_ptr, routeptr)    \
-    singly_ll_delete_node_by_data_ptr(spfinfo_ptr->routes_list, routeptr);  \
-    singly_ll_delete_node_by_data_ptr(spfinfo_ptr->priority_routes_list, routeptr)
+#define ROUTE_DEL_FROM_ROUTE_LIST(spfinfo_ptr, routeptr, topo)    \
+    singly_ll_delete_node_by_data_ptr(spfinfo_ptr->routes_list[topo], routeptr);  \
+    singly_ll_delete_node_by_data_ptr(spfinfo_ptr->priority_routes_list[topo], routeptr)
 
 #define ROUTE_GET_PR_NH_CNT(routeptr, _nh)   \
     GET_NODE_COUNT_SINGLY_LL(routeptr->primary_nh_list[_nh])
@@ -169,7 +169,7 @@ char *
 route_intall_status_str(route_intall_status install_status);
 
 void
-mark_all_routes_stale(spf_info_t *spf_info, LEVEL level);
+mark_all_routes_stale(spf_info_t *spf_info, LEVEL level, rtttype_t topology);
 
 internal_nh_t *
 backup_selection_policy(routes_t *route);
@@ -193,6 +193,6 @@ boolean
 is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVEL level);
 
 void
-show_internal_routing_tree(node_t *node, char *prefix, char mask);
+show_internal_routing_tree(node_t *node, char *prefix, char mask, rtttype_t rt_type);
 
 #endif /* __ROUTES__ */

@@ -541,6 +541,8 @@ mpls_label_t
 get_label_from_srgb_index(srgb_t *srgb, unsigned int index){
 
     assert(index >= 0 && index < srgb->range);
+    //assert(!is_srgb_index_in_use(srgb, index));
+    mark_srgb_index_in_use(srgb, index);
     return srgb->first_sid.sid + index;
 }
 /*This fn blinkdly copies all IPV4 route members to mpls route.
@@ -712,7 +714,7 @@ igp_install_mpls_spring_route(node_t *node, char *str_prefix, char mask){
     prefix_t prefix, *prefix2 = NULL;
 
     init_prefix_key(&prefix, str_prefix, mask);
-    routes_t *route = search_route_in_spf_route_list(&(node->spf_info), &prefix, LEVEL1/*unused*/);
+    routes_t *route = search_route_in_spf_route_list(&(node->spf_info), &prefix, UNICAST_T);
     if(!route){
         printf("Info : No Unicast Route exist\n");
         return -1;
@@ -751,7 +753,7 @@ igp_uninstall_mpls_spring_route(node_t *node, char *str_prefix, char mask){
     prefix_t prefix, *prefix2 = NULL;
 
     init_prefix_key(&prefix, str_prefix, mask);
-    routes_t *route = search_route_in_spf_route_list(&node->spf_info, &prefix, LEVEL1/*unused*/);
+    routes_t *route = search_route_in_spf_route_list(&node->spf_info, &prefix, UNICAST_T);
     if(!route){
         printf("Info : No Unicast Route exist\n");
         return -1;
@@ -813,12 +815,221 @@ spring_disable_cleanup(node_t *node){
     }
 }
 
-#if 0
 prefix_sid_subtlv_t *
-PREFIX_SID_SEARCH(node_t *node, LEVEL level, unsigned int prefix_sid_val){
+prefix_sid_search(node_t *node, LEVEL level, unsigned int prefix_sid_val){
 
-    return (prefix_sid_subtlv_t *)gl_thread_search(&(node->prefix_sids_thread_lst[level]),
-            glthread_to_prefix_sid,
-            (void *)prefix_sid_val, prefix_sid_comparison_fn);
+    assert(node->spring_enabled);
+    glthread_t *curr = NULL;
+    prefix_sid_subtlv_t *prefix_sid = NULL;
+
+    ITERATE_GLTHREAD_BEGIN(&node->prefix_sids_thread_lst[level], curr){
+        prefix_sid = glthread_to_prefix_sid(curr);
+        if(prefix_sid && prefix_sid->sid.sid == prefix_sid_val)
+            return prefix_sid;
+    }ITERATE_GLTHREAD_END(&node->prefix_sids_thread_lst[level], curr);
+    return NULL;
 }
-#endif
+
+/*This fn returns the best prefix which is also
+ * SR Active prefix. In case of ECMP, all best prefixes will
+ * have same usable SIDs due to conflict resolution test*/
+static prefix_t *
+get_best_sr_active_route_prefix(routes_t *route){
+
+    singly_ll_node_t *list_node = NULL;
+    prefix_t *prefix = NULL;
+    
+    prefix_pref_data_t route_pref = route_preference(route->flags, route->level);
+    prefix_pref_data_t prefix_pref;
+
+    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
+        prefix = list_node->data;   
+        assert(IS_PREFIX_SR_ACTIVE(prefix)); 
+        prefix_pref = route_preference(prefix->prefix_flags, route->level);
+        if(route_pref.pref != prefix_pref.pref)
+            break;
+        return prefix;
+    }ITERATE_LIST_END;
+    return NULL;
+}
+
+/*Return true */
+static boolean
+is_node_best_prefix_originator(node_t *node, routes_t *route){
+
+    singly_ll_node_t *list_node = NULL;
+    prefix_t *prefix = NULL;
+    
+    prefix_pref_data_t route_pref = route_preference(route->flags, route->level);
+    prefix_pref_data_t prefix_pref;
+
+    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
+        prefix = list_node->data;   
+        assert(IS_PREFIX_SR_ACTIVE(prefix)); 
+        prefix_pref = route_preference(prefix->prefix_flags, route->level);
+        if(route_pref.pref != prefix_pref.pref)
+            break;
+        if(prefix->hosting_node == node)
+            return TRUE;
+    }ITERATE_LIST_END;
+    return FALSE;
+}
+
+static void
+springify_rsvp_nexthop(node_t *spf_root, 
+        internal_nh_t *nxthop, 
+        routes_t *route, 
+        unsigned int prefix_sid_index){
+}
+
+static void
+springify_ldp_nexthop(node_t *spf_root, 
+        internal_nh_t *nxthop, 
+        routes_t *route, 
+        unsigned int prefix_sid_index){
+}
+
+static void
+springify_ipv4_nexthop(node_t *spf_root, 
+        internal_nh_t *nxthop, 
+        routes_t *route, 
+        unsigned int prefix_sid_index){
+
+    MPLS_STACK_OP stack_op = STACK_OPS_UNKNOWN;
+    prefix_sid_subtlv_t *prefix_sid = NULL;
+    unsigned int outgoing_label = 0;
+    
+    sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, springifying IPV4 nexthop %s(%s)",
+            spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
+            get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name);
+    trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+
+    /*caluclate the SPRING Nexthop related information first*/
+    if(is_node_best_prefix_originator(nxthop->node, route)){
+        /*Check if node advertised PHP service*/
+        prefix_sid = prefix_sid_search(nxthop->node, route->level, prefix_sid_index);
+        assert(prefix_sid);
+        if(IS_BIT_SET(prefix_sid->flags, NO_PHP_P_FLAG)){
+            stack_op = SWAP;   
+            outgoing_label = get_label_from_srgb_index(nxthop->node->srgb, prefix_sid_index);
+            assert(outgoing_label);
+        }
+        else{
+            stack_op = POP;
+            outgoing_label = 0;
+        }
+    }
+    else{
+        stack_op = SWAP;
+        outgoing_label = get_label_from_srgb_index(nxthop->node->srgb, prefix_sid_index);
+        assert(outgoing_label);
+    }
+    /*Now compare the SPring related information*/
+    /*populate the SPRING related information only*/
+    nxthop->mpls_label_out[0] = outgoing_label;
+    nxthop->stack_op[0] = stack_op;
+    
+
+    sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u, OutLabel : %u," 
+            " Stack Op : %s, oif : %s, gw : %s, nexthop : %s", spf_root->node_name, route->rt_key.u.prefix.prefix, 
+            route->rt_key.u.prefix.mask, get_str_level(route->level), route->rt_key.u.label, 
+            nxthop->mpls_label_out[0], get_str_stackops(nxthop->stack_op[0]), next_hop_oif_name(*nxthop),
+            next_hop_gateway_pfx(nxthop), nxthop->node->node_name);
+    trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+}
+
+
+void
+springify_unicast_route(node_t *spf_root, routes_t *route){
+
+    mpls_label_t incoming_label = 0,
+                 old_incoming_label = 0;
+
+    singly_ll_node_t *list_node = NULL;
+    internal_nh_t *nxthop = NULL;
+    unsigned int  dst_prefix_sid = 0;
+
+    sprintf(instance->traceopts->b, "Node : %s : Springifying route %s/%u at %s", 
+        spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
+        get_str_level(route->level));
+    trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+
+    prefix_t *prefix = get_best_sr_active_route_prefix(route);/*This prefix is one of the best prefix in case of ECMP*/
+    dst_prefix_sid = PREFIX_SID_INDEX(prefix);
+
+    incoming_label = get_label_from_srgb_index(spf_root->srgb, dst_prefix_sid);
+    old_incoming_label = route->rt_key.u.label;
+
+    if(route->rt_key.u.label != incoming_label){
+        route->rt_key.u.label = incoming_label;
+        if(route->install_state != RTE_ADDED)
+            route->install_state = RTE_CHANGED;
+        sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s Incoming label updated %u -> %u, route status = %s",
+                spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                get_str_level(route->level), old_incoming_label, incoming_label, 
+                route_intall_status_str(route->install_state));
+        trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+    }
+
+    /*Now Do primary next hops*/
+    ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node){
+        nxthop = list_node->data;
+        springify_ipv4_nexthop(spf_root, nxthop, route, dst_prefix_sid);        
+    } ITERATE_LIST_END;
+    
+    ITERATE_LIST_BEGIN(route->primary_nh_list[LSPNH], list_node){
+        nxthop = list_node->data;
+        if(is_internal_backup_nexthop_rsvp(nxthop))
+            springify_rsvp_nexthop(spf_root, nxthop, route, dst_prefix_sid);
+        else
+            springify_ldp_nexthop(spf_root, nxthop, route, dst_prefix_sid);
+    } ITERATE_LIST_END;
+
+    /*Now do backups*/
+    ITERATE_LIST_BEGIN(route->backup_nh_list[IPNH], list_node){
+        nxthop = list_node->data;
+        springify_ipv4_nexthop(spf_root, nxthop, route, dst_prefix_sid);        
+    } ITERATE_LIST_END;
+    
+    ITERATE_LIST_BEGIN(route->backup_nh_list[LSPNH], list_node){
+        nxthop = list_node->data;
+        if(is_internal_backup_nexthop_rsvp(nxthop))
+            springify_rsvp_nexthop(spf_root, nxthop, route, dst_prefix_sid);
+        else
+            springify_ldp_nexthop(spf_root, nxthop, route, dst_prefix_sid);
+    } ITERATE_LIST_END;
+}
+
+void
+PRINT_ONE_LINER_SPRING_NXT_HOP(internal_nh_t *nh){
+
+    if(nh->protected_link == NULL){
+        printf("\t%s----%s---->%-s(%s(%s))\n", nh->oif->intf_name,
+                "SPRING",
+                next_hop_gateway_pfx(nh),
+                nh->node->node_name,
+                nh->node->router_id);
+    }
+    else{
+        printf("\t%s----%s---->%-s(%s(%s)) protecting : %s -- %s\n", nh->oif->intf_name,                                     "SPRING",
+                next_hop_gateway_pfx(nh),
+                nh->node->node_name,
+                nh->node->router_id,
+                nh->protected_link->intf_name,
+                get_str_lfa_type(nh->lfa_type));
+    }
+    /*Print spring stack here*/
+    int i = MPLS_STACK_OP_LIMIT_MAX -1;
+    for(; i >= 0; i--){
+        if(nh->mpls_label_out[i] == 0 &&
+                nh->stack_op[i] == STACK_OPS_UNKNOWN)
+            continue;
+
+        if(nh->stack_op[i] == POP)
+            printf("\t\t %s\t", get_str_stackops(nh->stack_op[i]));
+        else
+            printf("\t\t %s:%u\t", get_str_stackops(nh->stack_op[i]), nh->mpls_label_out[i]);
+    }
+    printf("\n");
+}
+

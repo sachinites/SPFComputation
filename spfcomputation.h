@@ -66,7 +66,6 @@ typedef struct internal_nh_t_{
     mpls_label_t mpls_label_in; /*Used for LDP/RSVP and SR routes*/
 
     /*Spring out information*/
-    char dst_node[MPLS_STACK_OP_LIMIT_MAX][PREFIX_LEN + 1];
     mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];/*For SR routes only*/
     MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
 
@@ -92,7 +91,7 @@ typedef struct internal_nh_t_{
     ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t.oif))->to.prefix[_internal_nh_t.level]->mask
 
 #define next_hop_gateway_pfx(_internal_nh_t_ptr)         \
-    ((GET_EGDE_PTR_FROM_FROM_EDGE_END(_internal_nh_t_ptr->oif))->to.prefix[_internal_nh_t_ptr->level]->prefix)
+    (_internal_nh_t_ptr->gw_prefix)
 
 #define next_hop_oif_name(_internal_nh_t)            \
     ((_internal_nh_t).oif->intf_name)
@@ -151,23 +150,26 @@ typedef struct internal_nh_t_{
 
 #define PRINT_ONE_LINER_NXT_HOP(_internal_nh_t_ptr)                                                                 \
     if(_internal_nh_t_ptr->protected_link == NULL)                                                                  \
-            printf("\t%s----%s---->%-s(%s(%s)) -- %s\n", nxthop->oif->intf_name,                                    \
+            printf("\t%s----%s---->%-s(%s(%s)) Root Metric : %u, Dst Metric : %u\n",                                \
+            _internal_nh_t_ptr->oif->intf_name,                                                                     \
             next_hop_type(*_internal_nh_t_ptr) == IPNH ? "IPNH" : "LSPNH",                                          \
             next_hop_type(*_internal_nh_t_ptr) == IPNH ? next_hop_gateway_pfx(_internal_nh_t_ptr) : "",             \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->node_name : _internal_nh_t_ptr->rlfa->node_name,   \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->router_id : _internal_nh_t_ptr->rlfa->router_id,   \
-            get_str_lfa_type(_internal_nh_t_ptr->lfa_type));                                                        \
+            _internal_nh_t_ptr->root_metric, _internal_nh_t_ptr->dest_metric);                                      \
     else                                                                                                            \
-            printf("\t%s----%s---->%-s(%s(%s)) protecting : %s -- %s\n", nxthop->oif->intf_name,                    \
+            printf("\t%s----%s---->%-s(%s(%s)) protecting : %s -- %s Root Metric : %u, Dst Metric : %u\n",          \
+            nxthop->oif->intf_name,                                                                                 \
             next_hop_type(*_internal_nh_t_ptr) == IPNH ? "IPNH" : "LSPNH",                                          \
             next_hop_type(*_internal_nh_t_ptr) == IPNH ? next_hop_gateway_pfx(_internal_nh_t_ptr) : "",             \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->node_name : _internal_nh_t_ptr->rlfa->node_name,   \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->router_id : _internal_nh_t_ptr->rlfa->router_id,   \
-            _internal_nh_t_ptr->protected_link->intf_name, get_str_lfa_type(_internal_nh_t_ptr->lfa_type)) 
+            _internal_nh_t_ptr->protected_link->intf_name, get_str_lfa_type(_internal_nh_t_ptr->lfa_type),          \
+            _internal_nh_t_ptr->root_metric, _internal_nh_t_ptr->dest_metric)
 
 /*A backup LSPNH nexthop could be LDPNH or RSVPNH, this fn is used to check which
- *  *  * one is the backup nexthop type. This fn should be called to test backup nexthops only.
- *   *   * Primary nexthops are never LDP nexthops in IGPs*/
+ *  one is the backup nexthop type. This fn should be called to test backup nexthops only.
+ *  Primary nexthops are never LDP nexthops in IGPs*/
 
 static inline boolean
 is_internal_backup_nexthop_rsvp(internal_nh_t *nh){
@@ -175,8 +177,8 @@ is_internal_backup_nexthop_rsvp(internal_nh_t *nh){
     if(nh->nh_type != LSPNH)
         return FALSE;
     /*It is either LDP Or RSVP nexthop. We know that RSVP nexthop are filled
-     *      *     *exactly in IPNH manner in the internal_nh_t structure since they are treared as
-     *           *          IP adjacency (called forward Adjacencies) in the topology during SPF run*/
+     *exactly in IPNH manner in the internal_nh_t structure since they are treared as
+     *IP adjacency (called forward Adjacencies) in the topology during SPF run*/
     if(nh->rlfa == NULL)
         return TRUE;
     return FALSE;
@@ -242,15 +244,28 @@ typedef enum{
     TOPO_MAX
 } rtttype_t;
 
+static inline char *
+get_topology_name(rtttype_t topo){
+
+    switch(topo){
+        case UNICAST_T:
+            return "Unicast";
+        case SPRING_T:
+            return "SPRING";
+        default:
+            assert(0);
+    }
+}
+
 typedef struct spf_info_{
 
     spf_level_info_t spf_level_info[MAX_LEVEL];
     char spff_multi_area; /* use not known : set to 1 if this node is Attached to other L2 node present in specifically other area*/
 
     /*spf info containers for routes*/
-    ll_t *routes_list;/*Routes computed as a result of SPF run, routes computed are not level specific*/
-    ll_t *priority_routes_list;/*Always add route in this list*/
-    ll_t *deferred_routes_list;
+    ll_t *routes_list[TOPO_MAX];/*Routes computed as a result of SPF run, routes computed are not level specific*/
+    ll_t *priority_routes_list[TOPO_MAX];/*Always add route in this list*/
+    ll_t *deferred_routes_list[TOPO_MAX];
 
     /*Routing table*/
     rttable *rttable;

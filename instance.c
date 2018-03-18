@@ -93,14 +93,17 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
         init_glthread(&node->prefix_sids_thread_lst[level]);
     }
 
-    node->spf_info.routes_list = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
-    singly_ll_set_comparison_fn(node->spf_info.routes_list, route_search_comparison_fn);
+    rtttype_t rt_type;
+    for(rt_type = UNICAST_T; rt_type < TOPO_MAX; rt_type++){
+        node->spf_info.routes_list[rt_type] = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
+        singly_ll_set_comparison_fn(node->spf_info.routes_list[rt_type], route_search_comparison_fn);
 
-    node->spf_info.priority_routes_list = init_singly_ll();
-    singly_ll_set_comparison_fn(node->spf_info.priority_routes_list, route_search_comparison_fn);
+        node->spf_info.priority_routes_list[rt_type] = init_singly_ll();
+        singly_ll_set_comparison_fn(node->spf_info.priority_routes_list[rt_type], route_search_comparison_fn);
 
-    node->spf_info.deferred_routes_list = init_singly_ll();
-    singly_ll_set_comparison_fn(node->spf_info.deferred_routes_list, route_search_comparison_fn);
+        node->spf_info.deferred_routes_list[rt_type] = init_singly_ll();
+        singly_ll_set_comparison_fn(node->spf_info.deferred_routes_list[rt_type], route_search_comparison_fn);
+    }
 
     node->spf_info.rttable = init_rttable("inet.0");
     node->spf_info.mpls_rt_table = init_mpls_rt_table("mpls.0");

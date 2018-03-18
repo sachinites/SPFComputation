@@ -145,7 +145,7 @@ show_mpls_traceroute(char *ingress_lsr_name, char *dst_prefix){
              *prefix = NULL;
     init_prefix_key(&temp_prefix, rt_entry->dest.prefix, rt_entry->dest.mask);
     routes_t *unicast_route = search_route_in_spf_route_list(&node->spf_info, 
-                            &temp_prefix, rt_entry->level);
+                            &temp_prefix, UNICAST_T);
     if(!unicast_route){
         printf("Error : Route not present in inet.0\n");
         return;

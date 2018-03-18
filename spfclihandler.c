@@ -324,6 +324,62 @@ dump_route_info(routes_t *route){
     } ITERATE_NH_TYPE_END;
 }
 
+static void
+dump_spring_route_info(routes_t *route){
+
+    singly_ll_node_t *list_node = NULL;
+    prefix_t *prefix = NULL;
+    nh_type_t nh;
+    internal_nh_t *nxthop = NULL;
+
+    prefix_pref_data_t prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, 
+                                      "ROUTE_UNKNOWN_PREFERENCE"};
+
+    printf("Route : %s/%u, Inlabel : %u, %s\n", route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+        route->rt_key.u.label, get_str_level(route->level));
+    printf("Version : %d, spf_metric = %u, lsp_metric = %u, ext_metric = %u\n", 
+                    route->version, route->spf_metric, route->lsp_metric, route->ext_metric);
+
+    printf("flags : up/down : %s , Route : %s, Metric type : %s\n", 
+            IS_BIT_SET(route->flags, PREFIX_DOWNBIT_FLAG)    ? "SET" : "NOT SET",
+            IS_BIT_SET(route->flags, PREFIX_EXTERNABIT_FLAG) ? "EXTERNAL" : "INTERNAL",
+            IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) ? "EXTERNAL" : "INTERNAL");
+
+    printf("hosting_node = %s\n", route->hosting_node->node_name);
+    printf("Like prefix list count : %u\n", GET_NODE_COUNT_SINGLY_LL(route->like_prefix_list));
+
+    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
+
+        prefix = list_node->data;
+        prefix_pref = route_preference(prefix->prefix_flags, prefix->level);
+
+        printf("prefix SID : %u, %s/%u, hosting_node : %s, prefix->metric : %u, prefix->level = %s, pfx preference = %s(%u)\n", 
+        PREFIX_SID_INDEX(prefix), prefix->prefix, prefix->mask, prefix->hosting_node->node_name, prefix->metric,
+        get_str_level(prefix->level), prefix_pref.pref_str, prefix_pref.pref);
+
+    }ITERATE_LIST_END;
+    
+    printf("Install state : %s\n", route_intall_status_str(route->install_state));
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+        printf("%s Primary Nxt Hops count : %u\n",
+                nh == IPNH ? "IPNH" : "LSPNH", GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]));
+        ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
+            nxthop = (internal_nh_t *)list_node->data;
+            PRINT_ONE_LINER_SPRING_NXT_HOP(nxthop);
+        }ITERATE_LIST_END;
+    } ITERATE_NH_TYPE_END;
+    
+    ITERATE_NH_TYPE_BEGIN(nh){
+        printf("%s Backup Nxt Hops count : %u\n",
+                nh == IPNH ? "IPNH" : "LSPNH", GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[nh]));
+        ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+            nxthop = (internal_nh_t *)list_node->data;
+            PRINT_ONE_LINER_SPRING_NXT_HOP(nxthop);
+        }ITERATE_LIST_END;
+    } ITERATE_NH_TYPE_END;
+}
+
 int
 show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
@@ -352,29 +408,45 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     } TLV_LOOP_END;
 
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-    
+     
     switch(cmd_code){
         case CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES:
-            ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
-
+            ITERATE_LIST_BEGIN(node->spf_info.routes_list[UNICAST_T], list_node){
                 route = (routes_t *)list_node->data;
                 dump_route_info(route);
                 printf("\n");
             }ITERATE_LIST_END;
-        break;
+            break;
         case CMDCODE_DEBUG_INSTANCE_NODE_ROUTE:
             apply_mask(prefix, mask, masked_prefix);
             masked_prefix[PREFIX_LEN] = '\0';
-            ITERATE_LIST_BEGIN(node->spf_info.routes_list, list_node){
-                
+            ITERATE_LIST_BEGIN(node->spf_info.routes_list[UNICAST_T], list_node){
                 route = (routes_t *)list_node->data;
                 if(strncmp(route->rt_key.u.prefix.prefix, masked_prefix, PREFIX_LEN) != 0)
                     continue;
                 dump_route_info(route);
                 break;
             }ITERATE_LIST_END;
+            break;
 
-        break;
+        case CMDCODE_DEBUG_INSTANCE_NODE_SPRING_ROUTE:
+            ITERATE_LIST_BEGIN(node->spf_info.routes_list[SPRING_T], list_node){
+                route = (routes_t *)list_node->data;
+                apply_mask(prefix, mask, masked_prefix);
+                if(strncmp(route->rt_key.u.prefix.prefix, masked_prefix, PREFIX_LEN) != 0)
+                    continue;
+                dump_spring_route_info(route);
+                break;
+            }ITERATE_LIST_END;
+            break;
+
+        case CMDCODE_DEBUG_INSTANCE_NODE_ALL_SPRING_ROUTES:
+            ITERATE_LIST_BEGIN(node->spf_info.routes_list[SPRING_T], list_node){
+                route = (routes_t *)list_node->data;
+                dump_spring_route_info(route);
+                printf("\n");
+            }ITERATE_LIST_END;
+            break;
         default:
             assert(0);
     }

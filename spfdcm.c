@@ -228,7 +228,8 @@ show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
 
     switch(cmd_code){
         case CMDCODE_SHOW_NODE_INTERNAL_ROUTES:
-            show_internal_routing_tree(node, prefix, mask);
+            show_internal_routing_tree(node, prefix, mask, UNICAST_T);
+            show_internal_routing_tree(node, prefix, mask, SPRING_T);
             break;
         case CMDCODE_SHOW_NODE_FORWARDING_TABLE:
            show_routing_table_inet(node->spf_info.rttable, prefix, mask);
@@ -1783,7 +1784,12 @@ spf_init_dcm(){
         init_param(&route, CMD, "route", show_route_tree_handler, 0, INVALID, 0,  "route on a node");
         libcli_register_param(&instance_node_name, &route);
         set_param_cmd_code(&route, CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES);
-
+        {
+            static param_t mpls;
+            init_param(&mpls, CMD, "mpls", show_route_tree_handler, 0, INVALID, 0, "MPLS SPRING routes");
+            libcli_register_param(&route, &mpls);
+            set_param_cmd_code(&mpls, CMDCODE_DEBUG_INSTANCE_NODE_ALL_SPRING_ROUTES);
+        }
         static param_t prefix;
         init_param(&prefix, LEAF, 0, 0, 0, IPV4, "prefix", "ipv4 prefix");
         libcli_register_param(&route, &prefix);
@@ -1792,6 +1798,12 @@ spf_init_dcm(){
         init_param(&mask, LEAF, 0, show_route_tree_handler, validate_ipv4_mask, INT, "mask", "mask (0-32)");
         libcli_register_param(&prefix, &mask);
         set_param_cmd_code(&mask, CMDCODE_DEBUG_INSTANCE_NODE_ROUTE);
+        {
+            static param_t mpls;
+            init_param(&mpls, CMD, "mpls", show_route_tree_handler, 0, INVALID, 0, "MPLS SPRING routes");
+            libcli_register_param(&mask, &mpls);
+            set_param_cmd_code(&mpls, CMDCODE_DEBUG_INSTANCE_NODE_SPRING_ROUTE);
+        }
     }
 
     /*debug show commands*/

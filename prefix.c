@@ -325,7 +325,7 @@ leak_prefix(char *node_name, char *_prefix, char mask,
         /*if prefix do not exist, means, we are leaking remote prefix on a node*/
 
         init_prefix_key(&prefix_key, _prefix, mask);
-        route_to_be_leaked = search_route_in_spf_route_list(&node->spf_info, &prefix_key, from_level);
+        route_to_be_leaked = search_route_in_spf_route_list(&node->spf_info, &prefix_key, UNICAST_T);
         
         /*Route must exist on remote node*/
         if(!route_to_be_leaked){

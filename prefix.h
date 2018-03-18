@@ -83,11 +83,11 @@ typedef struct common_pfx_{
         char prefix[PREFIX_LEN + 1];
         unsigned char mask;
     };
-    union _u{
+    struct _u{
         struct pfx prefix;
-        mpls_label_t label;
+        mpls_label_t label; /*Incoming label*/
     };
-    union _u u;
+    struct _u u;
 } common_pfx_key_t;
 
 typedef struct _node_t node_t;

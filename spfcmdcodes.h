@@ -48,6 +48,8 @@
 #define CMDCODE_CONFIG_NODE_OVERLOAD                        15  /*config node <node-name> overload level <level-no>*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES              16  /*debug instance node <node-name> route*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ROUTE                   17  /*debug instance node <node-name> route <prefix> <mask>*/
+#define CMDCODE_DEBUG_INSTANCE_NODE_ALL_SPRING_ROUTES       74  /*debug instance node <node-name> route*/
+#define CMDCODE_DEBUG_INSTANCE_NODE_SPRING_ROUTE            75  /*debug instance node <node-name> route <prefix> <mask>*//*MAX*/
 #define CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW                 18  /*config node <node-name> overload level <level-no> interface <slot-no> */
 #define CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE              19  /*config node <node-name> interface <intf-name> level <level-no> metric <metric value>*/
 #define CMDCODE_SHOW_SPF_RUN_PRC                            20  /*show spf run level <level-no>* [root <node-name>] prc*/
@@ -109,7 +111,7 @@
 #define CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS                64 /*show instance node <node-name> traceroute <prefix> sr-mpls*/
 #define CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK               65 /*debug trace mpls stack labels <label1> <label2> <label3> <label4>*/
 #define CMDCODE_CONFIG_NODE_SR_EXPLICIT_NULL                71 /*config node <node-name> source-packet-routing explicit-null*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_SPRING_ROUTE_CAL         73 /*config debug set trace spring-route-calculation*//*MAX*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_SPRING_ROUTE_CAL         73 /*config debug set trace spring-route-calculation*/
 
 /* Global CLIs*/
 #define CMDCODE_NODE_PING                                   66 /*ping <prefix>*/

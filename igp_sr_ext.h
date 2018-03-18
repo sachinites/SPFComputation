@@ -499,6 +499,11 @@ igp_install_mpls_spring_route(node_t *node, char *prefix, char mask);
 int
 igp_uninstall_mpls_spring_route(node_t *node, char *prefix, char mask);
 
+typedef struct internal_nh_t_ internal_nh_t;
+
+void
+PRINT_ONE_LINER_SPRING_NXT_HOP(internal_nh_t *nh);
+
 boolean
 is_node_spring_enabled(node_t *node, LEVEL level);
 
@@ -522,4 +527,11 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level);
 
 void
 spring_disable_cleanup(node_t *node);
+
+prefix_sid_subtlv_t *
+prefix_sid_search(node_t *node, LEVEL level, unsigned int prefix_sid_val);
+
+void
+springify_unicast_route(node_t *spf_root, routes_t *route);
+
 #endif /* __SR__ */ 
