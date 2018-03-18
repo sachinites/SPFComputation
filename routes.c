@@ -1379,19 +1379,19 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
 
     sprintf(instance->traceopts->b, "Node : %s : Testing for Independant primary nexthops at %s for Dest %s",
                     S->node_name, get_str_level(level), dst_node->node_name);
-    trace(instance->traceopts, LFA_COMPUTATION_BIT);
+    trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
     
     ITERATE_NH_TYPE_BEGIN(nh){
         for(i = 0; i < MAX_NXT_HOPS; i++){
-            prim_next_hop1 = &dst_node->next_hop[level][nh][i];
-            if(is_nh_list_empty2(&(dst_node->next_hop[level][nh][i])))
+            prim_next_hop1 = &D_res->next_hop[nh][i];
+            if(is_nh_list_empty2(prim_next_hop1))
                 break;
             dist_prim_nh1_to_D = DIST_X_Y(prim_next_hop1->node, dst_node, level);
 
             ITERATE_NH_TYPE_BEGIN(nh1){
                 for(j = 0; j < MAX_NXT_HOPS; j++){
-                    prim_next_hop2 = &dst_node->next_hop[level][nh1][j];
-                    if(is_nh_list_empty2(&(dst_node->next_hop[level][nh1][j])))
+                    prim_next_hop2 = &D_res->next_hop[nh1][j];
+                    if(is_nh_list_empty2(prim_next_hop2))
                         break;
                     if(prim_next_hop1 == prim_next_hop2) continue;
                     dist_prim_nh2_to_D = DIST_X_Y(prim_next_hop2->node, dst_node, level);
@@ -1401,7 +1401,7 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
                         D_res->backup_requirement[level] = NO_BACKUP_REQUIRED;
                         sprintf(instance->traceopts->b, "Node : %s : Dest %s has independent Primary nexthops at %s",
                             S->node_name, dst_node->node_name, get_str_level(level));
-                        trace(instance->traceopts, LFA_COMPUTATION_BIT);
+                        trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
                         return TRUE;
                     }
                 }
@@ -1410,7 +1410,7 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
     }
     sprintf(instance->traceopts->b, "Node : %s : Dest %s do not have independent Primary nexthops at %s",
             S->node_name, dst_node->node_name, get_str_level(level));
-    trace(instance->traceopts, LFA_COMPUTATION_BIT);
+    trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
     return FALSE;
 }
 
@@ -1688,7 +1688,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
                                  LEVEL level){
 
     sprintf(instance->traceopts->b, "Entered ... Level : %u", level);
-    trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     singly_ll_node_t *list_node = NULL, 
                      *list_node2 = NULL;
 
@@ -1722,7 +1722,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
                     "Reason : Prefix SID not assigned Or conflict prefix",
                     GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, 
                     route->rt_key.u.prefix.mask, get_str_level(route->level));
-            trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+            trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
             continue; 
         }
 #endif
@@ -1734,7 +1734,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
         sprintf(instance->traceopts->b, "mpls.0 RIB modification : route : %u:%s/%u, Level%u, metric = %u, Action : %s", 
                 mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 route->level, route->spf_metric, route_intall_status_str(route->install_state)); 
-        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
         
 
         switch(route->install_state){
@@ -1827,7 +1827,7 @@ start_spring_routes_installation(spf_info_t *spf_info,
     
     sprintf(instance->traceopts->b, "SPRING Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
             level, GET_SPF_INFO_NODE(spf_info, level)->node_name, rt_added, rt_removed, rt_updated, rt_no_change); 
-    trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     printf("SPRING Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
             level, GET_SPF_INFO_NODE(spf_info, level)->node_name, rt_added, rt_removed, rt_updated, rt_no_change);
 }

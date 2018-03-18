@@ -45,10 +45,8 @@ char
             return "ROUTE_INSTALLATION_BIT";
         case ROUTE_CALCULATION_BIT:
             return "ROUTE_CALCULATION_BIT";
-        case LFA_COMPUTATION_BIT:
-            return "LFA_COMPUTATION_BIT";
-        case RLFA_COMPUTATION_BIT:
-            return "RLFA_COMPUTATION_BIT";
+        case BACKUP_COMPUTATION_BIT:
+            return "BACKUP_COMPUTATION_BIT";
         case SPF_EVENTS_BIT:
             return "SPF_EVENTS_BIT";
         case SPF_PREFIX_BIT:
@@ -59,8 +57,6 @@ char
             return "CONFLICT_RESOLUTION_BIT";
         case SPRING_ROUTE_CAL_BIT:
             return "SPRING_ROUTE_CAL_BIT";
-        case MPLS_ROUTE_INSTALLATION_BIT:
-            return "MPLS_ROUTE_INSTALLATION_BIT";
         case TRACE_MAX_BIT:
             return "TRACE_MAX_BIT";
         default:

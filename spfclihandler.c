@@ -653,6 +653,9 @@ debug_show_node_impacted_destinations(param_t *param, ser_buff_t *tlv_buf, op_mo
 
     if(!IS_LEVEL_SET(edge->level, level_it)) continue;
 
+    Compute_and_Store_Forward_SPF(node, level_it);
+    Compute_PHYSICAL_Neighbor_SPFs(node, level_it);
+
     printf("Destinations Impact result for %s, PLR = %s, protected link = %s\n", 
         get_str_level(level_it), node->node_name, edge_end->intf_name);
 

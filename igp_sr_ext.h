@@ -507,6 +507,9 @@ PRINT_ONE_LINER_SPRING_NXT_HOP(internal_nh_t *nh);
 boolean
 is_node_spring_enabled(node_t *node, LEVEL level);
 
+prefix_sid_subtlv_t *
+get_node_segment_prefix_sid(node_t *node, LEVEL level);
+
 typedef struct _mpls_rt_entry mpls_rt_entry_t ;
 
 mpls_rt_entry_t *

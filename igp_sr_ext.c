@@ -541,8 +541,6 @@ mpls_label_t
 get_label_from_srgb_index(srgb_t *srgb, unsigned int index){
 
     assert(index >= 0 && index < srgb->range);
-    //assert(!is_srgb_index_in_use(srgb, index));
-    mark_srgb_index_in_use(srgb, index);
     return srgb->first_sid.sid + index;
 }
 /*This fn blinkdly copies all IPV4 route members to mpls route.
@@ -638,7 +636,7 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     if(!IS_PREFIX_SR_ACTIVE(prefix)){
         sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u was not installed. Reason : Conflicted prefix", 
                 node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
-        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
         return -1;
     }
     
@@ -654,7 +652,7 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     if(!IS_BIT_SET(prefix->prefix_sid->flags, NO_PHP_P_FLAG)){
         sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u was not installed. Reason : PHP enabled", 
                 node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
-        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
         return;
     }
 #endif
@@ -668,7 +666,7 @@ sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route){
     mpls_rt_entry->mpls_nh[0].outgoing_label = 0;
     sprintf(instance->traceopts->b, "Node : %s : Local route %s/%u Installed, Opn : POP",
                 node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
-    trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     return install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
 }
 
@@ -690,21 +688,21 @@ sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
                 node->node_name, prefix->prefix, prefix->mask);
         sprintf(instance->traceopts->b, "Node : %s : Error : Best prefix %s/%u is not assigned prefix-SID", 
                 node->node_name, prefix->prefix, prefix->mask);
-        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
         return -1;
     }
 
     if(!IS_PREFIX_SR_ACTIVE(prefix)){
         sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u was not installed. Reason : Conflicted prefix", 
                 node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
-        trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
         return -1;
     }
     mpls_rt_entry_t *mpls_rt_entry = prepare_mpls_entry_template_from_ipv4_route(node, route);
 
     sprintf(instance->traceopts->b, "Node : %s : Remote route %s/%u Installed",
                 node->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
-    trace(instance->traceopts, MPLS_ROUTE_INSTALLATION_BIT);
+    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     return install_mpls_forwarding_entry(GET_MPLS_TABLE_HANDLE(node), mpls_rt_entry);
 }
 
@@ -875,6 +873,27 @@ is_node_best_prefix_originator(node_t *node, routes_t *route){
     return FALSE;
 }
 
+prefix_sid_subtlv_t *
+get_node_segment_prefix_sid(node_t *node, LEVEL level){
+
+    if(node->spring_enabled == FALSE)
+        return NULL;
+
+    prefix_sid_subtlv_t *prefix_sid = NULL;
+    glthread_t *curr = NULL;
+
+    ITERATE_GLTHREAD_BEGIN(&node->prefix_sids_thread_lst[level], curr){
+       
+        prefix_sid = glthread_to_prefix_sid(curr);
+        if(strncmp(prefix_sid->prefix->prefix, node->router_id, PREFIX_LEN)) 
+            continue;
+        return prefix_sid;
+    } ITERATE_GLTHREAD_END(&node->prefix_sids_thread_lst[level], curr);
+
+    return NULL;
+}
+
+
 static void
 springify_rsvp_nexthop(node_t *spf_root, 
         internal_nh_t *nxthop, 
@@ -887,6 +906,44 @@ springify_ldp_nexthop(node_t *spf_root,
         internal_nh_t *nxthop, 
         routes_t *route, 
         unsigned int prefix_sid_index){
+
+    prefix_sid_subtlv_t *rlfa_node_prefix_sid = NULL;
+    mpls_label_t mpls_label = 0;
+    
+    sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, springifying LDP backup nexthops %s(%s), RLFA : %s",
+            spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
+            get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name,
+            nxthop->rlfa->node_name);
+    trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+
+    /* PLR should send the traffic to Destination via RLFA. There are two options to
+     * perform this :
+     * a. Either SR-tunnel the traffic from PLR -- RLFA --- Destination
+     * b. Or SR-tunnel the traffic from PLR -- RLFA, and then traffic is sent via IGP path to Dest as IPV4 traffic. 
+     * We will chooe option a by default. We may provide knob to switch between these two behaviors.
+     * Operation to perform :
+     1. lookup prefix_sid_index in nxthop->rlfa->srgb and PUSH
+     2. lookup RLFA router id node segment index in nxthop->node->srgb, and perform SWAP 
+     */
+
+     /*Op 1*/
+     mpls_label = get_label_from_srgb_index(nxthop->rlfa->srgb, prefix_sid_index); 
+     nxthop->mpls_label_out[0] = mpls_label;
+     nxthop->stack_op[0] = PUSH;
+
+    /*Op 2*/
+    rlfa_node_prefix_sid = get_node_segment_prefix_sid(nxthop->rlfa, route->level);
+    mpls_label = get_label_from_srgb_index(nxthop->proxy_nbr->srgb, rlfa_node_prefix_sid->sid.sid);
+    nxthop->mpls_label_out[1] = mpls_label;
+    nxthop->stack_op[1] = SWAP;
+
+    sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u\n\tStack : %s:%u\t%s:%u, oif : %s, gw : %s, nexthop : %s", 
+        spf_root->node_name, route->rt_key.u.prefix.prefix,
+        route->rt_key.u.prefix.mask, get_str_level(route->level), route->rt_key.u.label,
+        get_str_stackops(nxthop->stack_op[1]) , nxthop->mpls_label_out[1],
+        get_str_stackops(nxthop->stack_op[0]) , nxthop->mpls_label_out[0], next_hop_oif_name(*nxthop),
+        next_hop_gateway_pfx(nxthop), nxthop->proxy_nbr->node_name);
+    trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
 }
 
 static void
@@ -1011,24 +1068,26 @@ PRINT_ONE_LINER_SPRING_NXT_HOP(internal_nh_t *nh){
                 nh->node->router_id);
     }
     else{
-        printf("\t%s----%s---->%-s(%s(%s)) protecting : %s -- %s\n", nh->oif->intf_name,                                     "SPRING",
+        printf("\t%s----%s---->%-s(%s(%s)) protecting : %s -- %s\n", nh->oif->intf_name,
+                "SPRING",
                 next_hop_gateway_pfx(nh),
-                nh->node->node_name,
-                nh->node->router_id,
+                nh->node ? nh->node->node_name : nh->proxy_nbr->node_name,
+                nh->node ? nh->node->router_id : nh->proxy_nbr->router_id,
                 nh->protected_link->intf_name,
                 get_str_lfa_type(nh->lfa_type));
     }
     /*Print spring stack here*/
     int i = MPLS_STACK_OP_LIMIT_MAX -1;
+    printf("\t\t");
+
     for(; i >= 0; i--){
         if(nh->mpls_label_out[i] == 0 &&
                 nh->stack_op[i] == STACK_OPS_UNKNOWN)
             continue;
-
         if(nh->stack_op[i] == POP)
-            printf("\t\t %s\t", get_str_stackops(nh->stack_op[i]));
+            printf("%s  ", get_str_stackops(nh->stack_op[i]));
         else
-            printf("\t\t %s:%u\t", get_str_stackops(nh->stack_op[i]), nh->mpls_label_out[i]);
+            printf("%s:%u  ", get_str_stackops(nh->stack_op[i]), nh->mpls_label_out[i]);
     }
     printf("\n");
 }

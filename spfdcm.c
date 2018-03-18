@@ -769,13 +769,9 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, ROUTE_CALCULATION_BIT):
                 disable_spf_trace(instance, ROUTE_CALCULATION_BIT);
             break;
-        case CMDCODE_DEBUG_TRACEOPTIONS_LFA:
-            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, LFA_COMPUTATION_BIT):
-                disable_spf_trace(instance, LFA_COMPUTATION_BIT);
-            break;
-        case CMDCODE_DEBUG_TRACEOPTIONS_RLFA:
-            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, RLFA_COMPUTATION_BIT):
-                disable_spf_trace(instance, RLFA_COMPUTATION_BIT);
+        case CMDCODE_DEBUG_TRACEOPTIONS_BACKUPS:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, BACKUP_COMPUTATION_BIT):
+                disable_spf_trace(instance, BACKUP_COMPUTATION_BIT);
             break;
         case CMDCODE_DEBUG_TRACEOPTIONS_PREFIXES:
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, SPF_PREFIX_BIT):
@@ -793,34 +789,26 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, SPRING_ROUTE_CAL_BIT):
                 disable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
             break;
-        case CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION:
-            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT):
-                disable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
-            break;
         case CMDCODE_DEBUG_TRACEOPTIONS_ALL:
             switch(enable_or_disable){
                 case CONFIG_ENABLE:
                     enable_spf_trace(instance, DIJKSTRA_BIT);
                     enable_spf_trace(instance, ROUTE_CALCULATION_BIT);
                     enable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
-                    enable_spf_trace(instance, LFA_COMPUTATION_BIT);
-                    enable_spf_trace(instance, RLFA_COMPUTATION_BIT);
+                    enable_spf_trace(instance, BACKUP_COMPUTATION_BIT);
                     enable_spf_trace(instance, SPF_PREFIX_BIT);
                     enable_spf_trace(instance, ROUTING_TABLE_BIT);
                     enable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
-                    enable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
                     enable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
                     break;
                 case CONFIG_DISABLE:
                     disable_spf_trace(instance, DIJKSTRA_BIT);
                     disable_spf_trace(instance, ROUTE_INSTALLATION_BIT);
                     disable_spf_trace(instance, ROUTE_CALCULATION_BIT);
-                    disable_spf_trace(instance, LFA_COMPUTATION_BIT);
-                    disable_spf_trace(instance, RLFA_COMPUTATION_BIT);
+                    disable_spf_trace(instance, BACKUP_COMPUTATION_BIT);
                     disable_spf_trace(instance, SPF_PREFIX_BIT);
                     disable_spf_trace(instance, ROUTING_TABLE_BIT);
                     disable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
-                    disable_spf_trace(instance, MPLS_ROUTE_INSTALLATION_BIT);
                     disable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
                     break;
                 default:
@@ -1278,16 +1266,10 @@ spf_init_dcm(){
                         set_param_cmd_code(&route_calculation, CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_CALCULATION);
                     }
                     {
-                        static param_t lfa;
-                        init_param(&lfa, CMD, "lfa", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for LFA");
-                        libcli_register_param(&trace, &lfa);
-                        set_param_cmd_code(&lfa, CMDCODE_DEBUG_TRACEOPTIONS_LFA);
-                    }
-                    {
-                        static param_t rlfa;
-                        init_param(&rlfa, CMD, "rlfa", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for RLFA");
-                        libcli_register_param(&trace, &rlfa);
-                        set_param_cmd_code(&rlfa, CMDCODE_DEBUG_TRACEOPTIONS_RLFA);
+                        static param_t backup;
+                        init_param(&backup, CMD, "backup", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for backup");
+                        libcli_register_param(&trace, &backup);
+                        set_param_cmd_code(&backup, CMDCODE_DEBUG_TRACEOPTIONS_BACKUPS);
                     }
                     {
                         static param_t prefixes;
@@ -1306,12 +1288,6 @@ spf_init_dcm(){
                         init_param(&conflict_res, CMD, "conflict-resolution", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for Conflict-Resolution");
                         libcli_register_param(&trace, &conflict_res);
                         set_param_cmd_code(&conflict_res, CMDCODE_DEBUG_TRACEOPTIONS_CONFLICT_RESOLUTION);
-                    }
-                    {
-                        static param_t mpls_installation;
-                        init_param(&mpls_installation, CMD, "mpls-route-installation", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for MPLS route installation");
-                        libcli_register_param(&trace, &mpls_installation);
-                        set_param_cmd_code(&mpls_installation, CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION);
                     }
                     {
                         static param_t spring_route_cal;
