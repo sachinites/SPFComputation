@@ -6,7 +6,7 @@ USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o igp_sr_ext.o sr_tlv_api.o rt_mpls.o unified_nh.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o igp_sr_ext.o sr_tlv_api.o rt_mpls.o unified_nh.o srms.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -21,6 +21,9 @@ rt_mpls.o:rt_mpls.c
 unified_nh.o:unified_nh.c
 	@echo "Building unified_nh.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} unified_nh.c  -o unified_nh.o
+srms.o:srms.c
+	@echo "Building srms.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} srms.c -o srms.o
 sr_tlv_api.o:sr_tlv_api.c
 	@echo "Building sr_tlv_api.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} sr_tlv_api.c -o sr_tlv_api.o

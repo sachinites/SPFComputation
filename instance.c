@@ -114,7 +114,13 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     node->spring_enabled = FALSE;
     node->use_spring_backups = FALSE;
     node->srgb = NULL;
-    node->is_srms = FALSE;
+
+    /*LDP related initialization*/
+    node->ldp_config.is_enabled = FALSE;
+    node->am_i_mapping_client = TRUE; /*By default it should be TRUE, pg 335*/
+    node->am_i_mapping_server = FALSE;
+    node->is_ldp_preferred_over_sr = TRUE;
+
     add_node_to_owning_instance(instance, node);
     return node;    
 }
@@ -377,6 +383,7 @@ get_new_instance(){
     init_trace(instance->traceopts);
     register_display_trace_options(instance->traceopts, _spf_display_trace_options);
     enable_spf_trace(instance, SPF_EVENTS_BIT);
+    instance->mapping_server = NULL;
     return instance;
 }
 

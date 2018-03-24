@@ -67,7 +67,7 @@ void
 construct_prefix_mapping_entry(prefix_t *prefix, 
             sr_mapping_entry_t *mapping_entry_out){
     
-    if(prefix->hosting_node->is_srms)
+    if(prefix->hosting_node->am_i_mapping_server)
         mapping_entry_out->prf = IGP_DEFAULT_SID_SRMS_PFX_PREFERENCE_VALUE;
     else
         mapping_entry_out->prf = IGP_DEFAULT_SID_PFX_PREFERENCE_VALUE;
@@ -83,6 +83,7 @@ construct_prefix_mapping_entry(prefix_t *prefix,
     mapping_entry_out->pi          = binary_prefix;
     mapping_entry_out->pe          = binary_prefix;
     mapping_entry_out->pfx_len     = prefix->mask;
+    mapping_entry_out->max_pfx_len = 32;
     mapping_entry_out->si          = prefix_sid->sid.sid;
     mapping_entry_out->se          = prefix_sid->sid.sid;
     mapping_entry_out->range_value = 1;

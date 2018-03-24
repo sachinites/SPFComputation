@@ -126,38 +126,6 @@ merge_route_backup_nexthops(routes_t *route,
     singly_ll_node_t *list_node = NULL,
                      *temp = NULL;
 
-#if 0
-    /*Ruling out this logic - this logic is not correct*/
-
-    /*clean link protecting LFAs/RLFAs. If route has ECMP, we dont need any
-     * link protecting LFAs/RLFAs*/
-    if(route->ecmp_dest_count == 2){
-            ITERATE_LIST_BEGIN2(route->backup_nh_list[nh], list_node, temp){
-                backup = list_node->data;
-                if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
-                        backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
-                        backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
-                        backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
-                        backup->lfa_type == LINK_PROTECTION_RLFA                     ||
-                        backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
-                        backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
-                        backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
-                    sprintf(instance->traceopts->b, "\t ECMP : LFA backup deleted : %s----%s---->%-s(%s(%s)) protecting link: %s", 
-                            backup->oif->intf_name,
-                            next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
-                            next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
-                            backup->node ? backup->node->node_name : backup->rlfa->node_name,
-                            backup->node ? backup->node->router_id : backup->rlfa->router_id, 
-                            backup->protected_link->intf_name); 
-                    trace(instance->traceopts, ROUTE_CALCULATION_BIT);
-                    free(backup);
-                    ITERATIVE_LIST_NODE_DELETE2(route->backup_nh_list[nh], list_node, temp);
-                }
-            } ITERATE_LIST_END2(route->backup_nh_list[nh], list_node, temp);
-    }
-
-#endif
-
     boolean dont_collect_onlylink_protecting_backups =
         is_destination_has_multiple_primary_nxthops(result);
 
@@ -188,29 +156,7 @@ merge_route_backup_nexthops(routes_t *route,
                 continue;
             }
         }
-        /*If route has ECMP, then no need to collect Link protecting LFAs from
-         * multiple destinations*/
-#if 0
-        if(route->ecmp_dest_count >= 2                                    &&
-            (backup->lfa_type == LINK_PROTECTION_LFA                      ||
-             backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
-             backup->lfa_type == LINK_PROTECTION_RLFA                     ||
-             backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
-             backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
-             backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
-             backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
-             backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM)){
-            sprintf(instance->traceopts->b, "\t ECMP : LFA backup dropped : %s----%s---->%-s(%s(%s)) protecting link: %s", 
-                    backup->oif->intf_name,
-                    next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
-                    next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
-                    backup->node ? backup->node->node_name : backup->rlfa->node_name,
-                    backup->node ? backup->node->router_id : backup->rlfa->router_id,
-                    backup->protected_link->intf_name); 
-            trace(instance->traceopts, ROUTE_CALCULATION_BIT);
-            continue;
-        }
-#endif
+
         int_nxt_hop = calloc(1, sizeof(internal_nh_t));
         copy_internal_nh_t(result->node->backup_next_hop[route->level][nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->backup_nh_list[nh], int_nxt_hop);

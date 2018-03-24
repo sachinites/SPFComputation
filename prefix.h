@@ -104,6 +104,8 @@ typedef struct prefix_{
     glthread_t *psid_thread_ptr;
     conflict_result_t conflct_res; /*default is SID_ACTIVE*/
     /*Extras*/
+    /*LDP local label binding*/
+    mpls_label_t ldp_lcl_label; /*Local label assigned to this prefix by LDP*/
     unsigned char ref_count; /*For internal use*/
 } prefix_t;
 

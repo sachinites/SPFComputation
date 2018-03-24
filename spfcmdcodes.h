@@ -49,7 +49,7 @@
 #define CMDCODE_DEBUG_INSTANCE_NODE_ALL_ROUTES              16  /*debug instance node <node-name> route*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ROUTE                   17  /*debug instance node <node-name> route <prefix> <mask>*/
 #define CMDCODE_DEBUG_INSTANCE_NODE_ALL_SPRING_ROUTES       74  /*debug instance node <node-name> route*/
-#define CMDCODE_DEBUG_INSTANCE_NODE_SPRING_ROUTE            75  /*debug instance node <node-name> route <prefix> <mask>*//*MAX*/
+#define CMDCODE_DEBUG_INSTANCE_NODE_SPRING_ROUTE            75  /*debug instance node <node-name> route <prefix> <mask>*/
 #define CMDCODE_CONFIG_NODE_OVERLOAD_STUBNW                 18  /*config node <node-name> overload level <level-no> interface <slot-no> */
 #define CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE              19  /*config node <node-name> interface <intf-name> level <level-no> metric <metric value>*/
 #define CMDCODE_SHOW_SPF_RUN_PRC                            20  /*show spf run level <level-no>* [root <node-name>] prc*/
@@ -63,7 +63,7 @@
 #define CMDCODE_CONFIG_INTF_LINK_PROTECTION                 25 /*config node <node-name> interface <ifname> link-protection*/ 
 #define CMDCODE_CONFIG_INTF_NODE_LINK_PROTECTION            26 /*config node <node-name> interface <ifname> node-link-protection*/
 #define CMDCODE_CONFIG_NODE_REMOTE_BACKUP_CALCULATION       27 /*config node <node-name> backup-spf-options remote-backup-calculation*/
-
+#define CMDCODE_CONFIG_NODE_BACKUP_PER_PREFIX_CALCULATION   76 /*config node <node-name> backup-spf-options per-prefix-calculation*/ 
 #define CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP              28 /*config node <node-name> interface <ifname> no-eligible-backup */ 
 #define CMDCODE_CONFIG_RSVPLSP_AS_BACKUP                    29 /*config node <node-name> lsp <lsp-name> backup to <tail-end ip address>*/
 #define CMDCODE_CONFIG_ALL_INTERFACE_LINK_PROTECTION        30 /*config node <node-name> interface all link-protection*/
@@ -122,4 +122,19 @@
 /*Routing table commands*/
 #define CMDCODE_SHOW_NODE_INTERNAL_ROUTES                   68 /*show instance node <node-name> routes*/
 #define CMDCODE_SHOW_NODE_FORWARDING_TABLE                  69 /*show instance node <node-name> inet|mpls forwarding-table*/
+
+
+/*LDP*/
+#define CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS                 77 /*show instance node <node-name> mpls ldp bindings <prefix> <mask>*//*MAX*/
+#define CMDCODE_CONFIG_NODE_LDP_SR_PREFERENCE               78 /*config node <node-name> ldp sr preference set*/
+#define CMDCODE_CONFIG_NODE_ENABLE_LDP                      79 /*config node <node-name> ldp*/
+
+/*Mapping Server*/
+#define CMDCODE_CONFIG_NODE_SRMS_LCL_POLICY                 80 /*config node <node-name> source-packet-routing mapping-server <prefix> <mask> <first-sid-index> range <range>*/
+#define CMDCODE_SHOW_NODE_SRMS_LCL_POLICY                   81 /*show instance node <node-name> source-packet-routing mapping-server prefix-sid-map [<prefix> <mask>]*/
+#define CMDCODE_SHOW_NODE_SRMS_CLIENT_ACTIVE_POLICY         82 /*show instance node <node-name> source-packet-routing prefix-sid-map active-policy*/
+#define CMDCODE_SHOW_NODE_SRMS_CLIENT_BACKUP_POLICY         83 /*show instance node <node-name> source-packet-routing prefix-sid-map backup-policy*/
+#define CMDCODE_CONFIG_NODE_SRMS                            84 /*config node <node-name> source-packet-routing prefix-sid-map advertise-local*/ /*Configure the node as SRMS*/ 
+#define CMDCODE_CONFIG_NODE_SRMS_CLIENT_DISABLE             85 /*config node <node-name> source-packet-routing prefix-sid-map recieve disable*//*Disable the node as Mapping client*/
+
 #endif /* __SPFCMDCODES__H */

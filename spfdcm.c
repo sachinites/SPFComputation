@@ -1112,6 +1112,17 @@ spf_init_dcm(){
             init_param(&mpls_table, CMD, "forwarding-table", instance_node_spring_show_handler, 0, INVALID, 0, "MPLS LFIB");
             libcli_register_param(&mpls, &mpls_table);
             set_param_cmd_code(&mpls_table, CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE);
+            {
+                static param_t ldp;
+                init_param(&ldp, CMD, "ldp", 0, 0, INVALID, 0, "Enable Disable LDP");
+                libcli_register_param(&mpls, &ldp);
+                {
+                    static param_t bindings;
+                    init_param(&bindings, CMD, "bindings", instance_node_spring_show_handler, 0, INVALID, 0, "Show local LDP label Bindings");
+                    libcli_register_param(&ldp, &bindings);
+                    set_param_cmd_code(&bindings, CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS);
+                }
+            }
         }
     }
 
@@ -1303,6 +1314,13 @@ spf_init_dcm(){
         init_param(&config_node_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
         libcli_register_param(&config_node, &config_node_node_name);
 
+        /*config node <node-name> ldp*/
+        {
+            static param_t ldp;
+            init_param(&ldp, CMD, "ldp", instance_node_ldp_config_handler, 0, INVALID, 0, "Enable Disable LDP");
+            libcli_register_param(&config_node_node_name, &ldp);
+            set_param_cmd_code(&ldp, CMDCODE_CONFIG_NODE_ENABLE_LDP);
+        }
         /*config node <node-name> backup-spf-options*/
         
         {

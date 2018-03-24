@@ -43,6 +43,7 @@
 #include "rlfa.h"
 #include "Libtrace/libtrace.h"
 #include "glthread.h"
+#include "ldp.h"
 
 typedef struct edge_end_ edge_end_t;
 
@@ -84,15 +85,28 @@ typedef struct _node_t{
     /*segment routing related members*/
     boolean spring_enabled;
     srgb_t *srgb;
-    boolean is_srms;
     glthread_t prefix_sids_thread_lst[MAX_LEVEL];
     boolean use_spring_backups;
     
-    /*conflict resolution*/
-    ll_t *sr_mapping_entry[MAX_LEVEL];
-
     /*Our implementation specific*/
     char flags[MAX_LEVEL];
+
+    /*LDP related config*/
+    ldp_config_t ldp_config;
+    /* While storing the routes with outgoing label in inet.3 table, if both
+     * SR and LDP nexthop is available, then which one is to be installed. By
+     * default LDP is preferred*/
+    unsigned int is_ldp_preferred_over_sr:1,
+                 am_i_mapping_client:1,/*TRUE is node is a mapping client*/
+                 am_i_mapping_server:1;
+
+    /*Mapping Server local policy database*/
+    glthread_t srms_lcl_policy_db; /*Advertised in al levels - pg349*/
+
+    /*Mapping client prefix-sid Mapping db*/
+    ll_t *active_mapping_policy[MAX_LEVEL];
+    ll_t *backup_mapping_policy[MAX_LEVEL];
+
 } node_t;
 
 
@@ -130,6 +144,9 @@ typedef struct instance_{
     ll_t *instance_node_list;
     candidate_tree_t ctree;/*Candidate tree is shared by all nodes for SPF run*/
     traceoptions *traceopts;
+    /*SR mapping server. We support only one mapping
+     * server per topology*/
+    node_t *mapping_server;
 } instance_t;
 
 node_t *

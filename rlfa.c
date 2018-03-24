@@ -182,11 +182,11 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
             }ITERATE_NH_TYPE_END;
             /* ToDo : We must not compute Link protection LFA/RLFA for such destination, only node
              * protection back up is needed*/
+#endif
             sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u,"
                     "but all primary nxt hop nodes traverses protected_link next hop"
                     "node (%s) AND LINK_NODE_PROTECTION Enabled. No only-link protecting backup needed",
                     D->node_name, nh_count, E->node_name);
-#endif
             *MANDATORY_NODE_PROTECTION = TRUE;
             return TRUE;
         }
@@ -1380,7 +1380,8 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
             }
 
             if(IS_OVERLOADED(N, level)){
-                sprintf(instance->traceopts->b, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", S->node_name, N->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+                sprintf(instance->traceopts->b, "Node : %s : Nbr %s failed for LFA candidature, reason - Overloaded", 
+                S->node_name, N->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
                 goto NBR_PROCESSING_DONE;
             }
 

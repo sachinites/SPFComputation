@@ -420,6 +420,8 @@ is_srgb_ranges_overlap(srgb_t *remote_node_srgb);
  * The mapping entry is defined uniquely by the following tuple : 
  *  (Prf, Pi/L, Si, R, T, A)
  * */
+/*This structure can also be populated from srms_sid_label_binding_tlv_t i.e. Mapping range advertised by
+ * the SRMS*/
 struct _sr_mapping_entry_t{
 
     unsigned char prf;  /*if 0, SID should be ignored. [0-255] preference value, 

@@ -33,9 +33,35 @@
 #ifndef __LDP__
 #define __LDP__
 
-typedef struct _node_t node_t ;
+#include "instanceconst.h"
+
+typedef struct _node_t node_t;
+
+typedef struct _ldp_config_{
+    
+    boolean is_enabled; /*Is LDP enabled on the node*/
+} ldp_config_t;
 
 void
-create_ldp_tunnel(node_t *computing_node, char *dest_router_id);
+enable_ldp(node_t *node);
+
+void
+disable_ldp(node_t *node);
+
+/*Return ever increasing LDP label
+ *  * starting from 5000 to 6000 (for example)*/
+mpls_label_t
+get_new_ldp_label(void);
+
+typedef struct remote_label_binding_{
+
+    mpls_label_t outgoing_label;  /*IGP downstream node lcl LDP label*/  
+    char oif_name[IF_NAME_SIZE];
+    char peer_gw[PREFIX_LEN];
+    node_t *peer_node;
+} remote_label_binding_t;
+
+remote_label_binding_t *
+get_remote_label_binding(node_t *self_node, char *prefix, char mask, unsigned int *count);
 
 #endif /* __LDP__*/

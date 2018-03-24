@@ -417,6 +417,7 @@ show_route_tree_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
                 printf("\n");
             }ITERATE_LIST_END;
             break;
+
         case CMDCODE_DEBUG_INSTANCE_NODE_ROUTE:
             apply_mask(prefix, mask, masked_prefix);
             masked_prefix[PREFIX_LEN] = '\0';
@@ -974,6 +975,9 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
 
     switch(cmd_code){
+        case CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS:
+            show_mpls_ldp_label_local_bindings(node);
+        break;
         case CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT:
             {
                 ll_t *res = prefix_conflict_resolution(node, level);
@@ -1062,3 +1066,39 @@ debug_trace_mpls_stack_label(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     free_mpls_label_stack(mpls_label_stack); 
     return 0;
 }
+
+int
+instance_node_ldp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    int cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+    tlv_struct_t *tlv = NULL;
+    node_t *node = NULL;
+    char *node_name = NULL;
+       
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+        else
+            assert(0);
+    } TLV_LOOP_END;
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+     
+    switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_ENABLE_LDP:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE:
+                enable_ldp(node);            
+            break;
+            case CONFIG_DISABLE:
+                disable_ldp(node);
+            break;
+            default:
+                assert(0);
+        }
+    }
+    return 0;
+}
+
+
