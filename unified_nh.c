@@ -32,6 +32,9 @@
 
 #include "unified_nh.h"
 #include "instance.h"
+#include "spftrace.h"
+
+extern instance_t *instance;
 
 unsigned int
 get_direct_un_next_hop_metric(internal_un_nh_t *nh){
@@ -93,4 +96,317 @@ free_un_nexthop(internal_un_nh_t *nh){
 internal_un_nh_t *
 malloc_un_nexthop(){
     return calloc(1, sizeof(internal_un_nh_t));
+}
+
+void
+free_rt_un_entry(rt_un_entry_t *rt_un_entry){
+
+    singly_ll_node_t *list_node = NULL;
+    internal_un_nh_t *nxt_hop = NULL;
+
+    ITERATE_LIST_BEGIN(rt_un_entry->primary_nh_list, list_node){
+        nxt_hop = list_node->data;
+        free_un_nexthop(nxt_hop);    
+    } ITERATE_LIST_END;
+    delete_singly_ll(rt_un_entry->primary_nh_list);
+    free(rt_un_entry->primary_nh_list);
+    
+    ITERATE_LIST_BEGIN(rt_un_entry->backup_nh_list, list_node){
+        nxt_hop = list_node->data;
+        free_un_nexthop(nxt_hop);    
+    } ITERATE_LIST_END;
+
+    delete_singly_ll(rt_un_entry->backup_nh_list);
+    free(rt_un_entry->backup_nh_list);
+    remove_glthread(&rt_un_entry->glthread);
+    free(rt_un_entry);
+}
+
+/*Rib functions*/
+
+static boolean
+inet_0_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
+    
+    sprintf(instance->traceopts->b, "RIB : %s : Added route %s/%d to Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+    /*Refresh time before adding an enntry*/
+    time(&rt_un_entry->last_refresh_time);
+    glthread_add_next(&rib->head, &rt_un_entry->glthread);
+    rib->count++;
+    return TRUE;
+}
+
+static rt_un_entry_t *
+inet_0_rt_un_route_lookup(rt_un_table_t *rib, rt_key_t *rt_key){
+     
+    glthread_t *curr = NULL;
+    rt_un_entry_t *rt_un_entry = NULL;
+    
+    ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
+        
+       rt_un_entry = glthread_to_rt_un_entry(curr);
+       if(UN_RTENTRY_PFX_MATCH(rt_un_entry, rt_key))
+           return rt_un_entry;    
+    } ITERATE_GLTHREAD_END(&rib->head, curr);
+
+    return NULL;
+}
+
+static boolean
+inet_0_rt_un_route_update(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
+
+    rt_un_entry_t *rt_un_entry1 =
+        rib->rt_un_route_lookup(rib, &rt_un_entry->rt_key);
+
+    if(!rt_un_entry1){
+        printf("%s() : RIB : %s : Warning route for %s/%d not found in routing table\n",
+                __FUNCTION__, rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+                RT_ENTRY_MASK(&rt_un_entry->rt_key));
+        return FALSE;
+    }
+
+    sprintf(instance->traceopts->b, "RIB : %s : Updated route %s/%d to Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+            RT_ENTRY_MASK(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+
+    rib->rt_un_route_delete(rib, &rt_un_entry1->rt_key);
+    rib->rt_un_route_install(rib, rt_un_entry);
+
+    rt_un_entry->last_refresh_time = time(NULL);
+    return TRUE;
+
+}
+
+static boolean
+inet_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
+
+    glthread_t *curr = NULL;
+
+    rt_un_entry_t *temp = NULL,
+                  *rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
+
+    if(!rt_un_entry){
+        printf("%s() : Warning route for %s/%d not found in routing table\n", 
+            __FUNCTION__, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+        return FALSE;
+    }
+
+    sprintf(instance->traceopts->b, "RIB : %s : Deleted route %s/%d from Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+
+    ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
+        temp = glthread_to_rt_un_entry(curr);
+        if(UN_RTENTRY_PFX_MATCH(temp, rt_key)){
+            free_rt_un_entry(temp);
+            rib->count--;
+            return TRUE;
+        }
+    }ITERATE_GLTHREAD_END(&rib->head, curr);
+    return FALSE;
+}
+
+static boolean
+inet_3_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
+    
+    sprintf(instance->traceopts->b, "RIB : %s : Added route %s/%d to Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+    /*Refresh time before adding an enntry*/
+    time(&rt_un_entry->last_refresh_time);
+    glthread_add_next(&rib->head, &rt_un_entry->glthread);
+    rib->count++;
+    return TRUE;
+}
+
+static rt_un_entry_t *
+inet_3_rt_un_route_lookup(rt_un_table_t *rib, rt_key_t *rt_key){
+     
+    glthread_t *curr = NULL;
+    rt_un_entry_t *rt_un_entry = NULL;
+    
+    ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
+        
+       rt_un_entry = glthread_to_rt_un_entry(curr);
+       if(UN_RTENTRY_PFX_MATCH(rt_un_entry, rt_key))
+           return rt_un_entry;    
+    } ITERATE_GLTHREAD_END(&rib->head, curr);
+
+    return NULL;
+}
+
+static boolean
+inet_3_rt_un_route_update(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
+
+    rt_un_entry_t *rt_un_entry1 =
+        rib->rt_un_route_lookup(rib, &rt_un_entry->rt_key);
+
+    if(!rt_un_entry1){
+        printf("%s() : RIB : %s : Warning route for %s/%d not found in routing table\n",
+                __FUNCTION__, rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+                RT_ENTRY_MASK(&rt_un_entry->rt_key));
+        return FALSE;
+    }
+
+    sprintf(instance->traceopts->b, "RIB : %s : Updated route %s/%d to Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+            RT_ENTRY_MASK(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+
+    rib->rt_un_route_delete(rib, &rt_un_entry1->rt_key);
+    rib->rt_un_route_install(rib, rt_un_entry);
+
+    rt_un_entry->last_refresh_time = time(NULL);
+    return TRUE;
+
+}
+
+static boolean
+inet_3_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
+
+    glthread_t *curr = NULL;
+
+    rt_un_entry_t *temp = NULL,
+                  *rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
+
+    if(!rt_un_entry){
+        printf("%s() : Warning route for %s/%d not found in routing table\n", 
+            __FUNCTION__, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+        return FALSE;
+    }
+
+    sprintf(instance->traceopts->b, "RIB : %s : Deleted route %s/%d from Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+
+    ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
+        temp = glthread_to_rt_un_entry(curr);
+        if(UN_RTENTRY_PFX_MATCH(temp, rt_key)){
+            free_rt_un_entry(temp);
+            rib->count--;
+            return TRUE;
+        }
+    }ITERATE_GLTHREAD_END(&rib->head, curr);
+    return FALSE;
+}
+
+
+static boolean
+mpls_0_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
+    
+    sprintf(instance->traceopts->b, "RIB : %s : Added route %s/%d(%u) to Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key),
+            RT_ENTRY_LABEL(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+    /*Refresh time before adding an enntry*/
+    time(&rt_un_entry->last_refresh_time);
+    glthread_add_next(&rib->head, &rt_un_entry->glthread);
+    rib->count++;
+    return TRUE;
+}
+
+static rt_un_entry_t *
+mpls_0_rt_un_route_lookup(rt_un_table_t *rib, rt_key_t *rt_key){
+     
+    glthread_t *curr = NULL;
+    rt_un_entry_t *rt_un_entry = NULL;
+    
+    ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
+        
+       rt_un_entry = glthread_to_rt_un_entry(curr);
+       if(UN_RTENTRY_LABEL_MATCH(rt_un_entry, rt_key))
+           return rt_un_entry;    
+    } ITERATE_GLTHREAD_END(&rib->head, curr);
+
+    return NULL;
+}
+
+static boolean
+mpls_0_rt_un_route_update(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
+
+    rt_un_entry_t *rt_un_entry1 =
+        rib->rt_un_route_lookup(rib, &rt_un_entry->rt_key);
+
+    if(!rt_un_entry1){
+        printf("%s() : RIB : %s : Warning route for %s/%d(%u) not found in routing table\n",
+                __FUNCTION__, rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+                RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key));
+        return FALSE;
+    }
+
+    sprintf(instance->traceopts->b, "RIB : %s : Updated route %s/%d(%u) to Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+            RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+
+    rib->rt_un_route_delete(rib, &rt_un_entry1->rt_key);
+    rib->rt_un_route_install(rib, rt_un_entry);
+
+    rt_un_entry->last_refresh_time = time(NULL);
+    return TRUE;
+
+}
+
+static boolean
+mpls_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
+
+    glthread_t *curr = NULL;
+
+    rt_un_entry_t *temp = NULL,
+                  *rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
+
+    if(!rt_un_entry){
+        printf("%s() : Warning route for %s/%d(%u) not found in routing table\n", 
+            __FUNCTION__, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key),
+            RT_ENTRY_LABEL(&rt_un_entry->rt_key));
+        return FALSE;
+    }
+
+    sprintf(instance->traceopts->b, "RIB : %s : Deleted route %s/%d(%u) from Routing table",
+            rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+            RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key));
+    trace(instance->traceopts, ROUTING_TABLE_BIT);
+
+    ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
+        temp = glthread_to_rt_un_entry(curr);
+        if(UN_RTENTRY_LABEL_MATCH(temp, rt_key)){
+            free_rt_un_entry(temp);
+            rib->count--;
+            return TRUE;
+        }
+    }ITERATE_GLTHREAD_END(&rib->head, curr);
+    return FALSE;
+}
+
+rt_un_table_t *
+init_rib(rib_type_t rib_type){
+
+    rt_un_table_t * rib = calloc(1, sizeof(rt_un_table_t));
+    rib->count = 0;
+    init_glthread(&rib->head);
+
+    switch (rib_type){
+        case INET_0:
+            rib->rib_name = "INET.0";
+            rib->rt_un_route_install = inet_0_rt_un_route_install;
+            rib->rt_un_route_lookup  = inet_0_rt_un_route_lookup;
+            rib->rt_un_route_update  = inet_0_rt_un_route_update;
+            rib->rt_un_route_delete  = inet_0_rt_un_route_delete;
+        case INET_3:
+            rib->rib_name = "INET.3";
+            rib->rt_un_route_install = inet_3_rt_un_route_install;
+            rib->rt_un_route_lookup  = inet_3_rt_un_route_lookup;
+            rib->rt_un_route_update  = inet_3_rt_un_route_update;
+            rib->rt_un_route_delete  = inet_3_rt_un_route_delete;
+        case MPLS_0:
+            rib->rib_name = "MPLS.0";
+            rib->rt_un_route_install = mpls_0_rt_un_route_install;
+            rib->rt_un_route_lookup  = mpls_0_rt_un_route_lookup;
+            rib->rt_un_route_update  = mpls_0_rt_un_route_update;
+            rib->rt_un_route_delete  = mpls_0_rt_un_route_delete;
+        default:
+            assert(0);
+    }
 }

@@ -36,6 +36,7 @@
 /*Unified Nexthop Data structure*/
 #include "rt_mpls.h"
 #include "instanceconst.h"
+#include "glthread.h"
 
 typedef struct edge_end_ edge_end_t;
 typedef struct _node_t node_t;
@@ -43,7 +44,7 @@ typedef struct _node_t node_t;
 typedef enum{
     IGP_PROTO,   /*nexthop installed by IGP*/
     LDP_PROTO,   /*nexthop installed by LDP*/
-    SPRING_PROTO,/*nexthop installed by SPRING*/
+    L_IGP_PROTO, /*nexthop installed by SPRING*/
     RSVP_PROTO,  /*nexthop installed by RSVP*/
     UNKNOWN_PROTO
 } PROTOCOL;
@@ -56,6 +57,29 @@ typedef enum{
     RIB_COUNT
 } rib_type_t;
 
+
+typedef struct rt_key_{
+
+    struct rt_pfx{
+        char prefix[PREFIX_LEN + 1];
+        unsigned char mask;
+    };
+    struct rt_u{
+        struct rt_pfx prefix;
+        mpls_label_t label; /*Incoming label*/
+    };
+    struct rt_u u;
+} rt_key_t;
+
+#define RT_ENTRY_PFX(rt_key_t_ptr)    \
+    ((rt_key_t_ptr)->u.prefix.prefix)
+
+#define RT_ENTRY_MASK(rt_key_t_ptr)   \
+    ((rt_key_t_ptr)->u.prefix.mask)
+
+#define RT_ENTRY_LABEL(rt_key_t_ptr)  \
+    ((rt_key_t_ptr)->u.label)
+
 typedef struct internal_un_nh_t_{
 
     /*Common properties (All 4 fields are applicable for Unicast Nexthops)*/
@@ -63,7 +87,7 @@ typedef struct internal_un_nh_t_{
     char oif[IF_NAME_SIZE];        /*use it only for intf name*/
     node_t *nh_node;
     char gw_prefix[PREFIX_LEN + 1];
-    
+
     /*inet.0 next hop*/
     /*No extra field required for inet.0 nexthop*/
 
@@ -86,33 +110,90 @@ typedef struct internal_un_nh_t_{
     }; 
 
     union u_t nh;
-    #define PRIMARY_NH  0
-    #define BACKUP_NH   1
+
+    /*Bits 0 and 1 is used to identify whether the nexthop is primary
+     * or backup nexthop. Same can also be identified using NULL check
+     * on protected_link member*/
+    #define PRIMARY_NH      0
+    #define BACKUP_NH       1
+    /* Bits 2,3 and 4 should be mutually exclusive. We need to distinguish
+     * between following nexthop types since, all of then are installed in
+     * same table inet.3 and have same semantics*/
+    #define IPV4_RSVP_NH    2 /*When RSVP TE Tunnels are advertised as FA*/
+    #define IPV4_LDP_NH     3 /*When next hop is LDP nexthop*/
+    #define IPV4_SPRING_NH  4 /*When spring Tunnels are advertised as FA*/
+    /*Bits 5,6, and 7 */
+    #define RSVP_TRANSIT_NH     5 /*Not supported*/
+    #define LDP_TRANSIT_NH      6 /*Not supported*/
+    #define SPRING_TRANSIT_NH   7 /*Supported*/
+
     FLAG flags;
     unsigned int ref_count; /*How many routes using this as Nexthop*/
 
     /*A primary nexthop can have backups. Below fields represent
      * backup nexthop for this primary nexthop.*/ 
-    
+
     /*These fielda are valid only if this
       nexthop is a backup nexthop. For primary nexthop in inet.0 
       table, this backup could be inet backup or LDP backup Or RSVP backup i.e.
       in table inet.0 or inet.3 only*/
+
     lfa_type_t lfa_type;
     edge_end_t *protected_link;
     //struct internal_un_nh_t_ *backup_nh;
     unsigned int root_metric;
     unsigned int dest_metric;
+    time_t last_refresh_time;
+
+    glthread_t glthread;
 } internal_un_nh_t;
 
+GLTHREAD_TO_STRUCT(glthread_to_unified_nh, internal_un_nh_t, glthread, glthreadptr);
+
+typedef struct rt_un_entry_{
+
+    rt_key_t rt_key;
+    ll_t *primary_nh_list;
+    ll_t *backup_nh_list;
+    glthread_t primary_nh_list_head;
+    glthread_t backup_nh_list_head;
+    FLAG flags; /*Flags for this routing entry*/
+    time_t last_refresh_time;
+    glthread_t glthread;
+} rt_un_entry_t;
+
+GLTHREAD_TO_STRUCT(glthread_to_rt_un_entry, rt_un_entry_t, glthread, glthreadptr);
+
+typedef struct rt_un_table_{
+
+    unsigned int count;
+    glthread_t head;
+    char *rib_name;
+    /*CRUD*/
+    boolean (*rt_un_route_install)(struct rt_un_table_ *, rt_un_entry_t *);
+    rt_un_entry_t * (*rt_un_route_lookup)(struct rt_un_table_ *, rt_key_t *);
+    boolean (*rt_un_route_update)(struct rt_un_table_ *, rt_un_entry_t *);
+    boolean (*rt_un_route_delete)(struct rt_un_table_ *, rt_key_t *);
+} rt_un_table_t;
+
+rt_un_table_t *
+init_rib(rib_type_t rib);
+
+void
+free_rt_un_entry(rt_un_entry_t *rt_un_entry);
+
+#define UN_RTENTRY_PFX_MATCH(rt_un_entry_t_ptr, rt_key_ptr) \
+    (strncmp(RT_ENTRY_PFX(rt_key_ptr), RT_ENTRY_PFX(&rt_un_entry->rt_key), PREFIX_LEN) == 0 &&    \
+            RT_ENTRY_MASK(rt_key) == RT_ENTRY_MASK(&rt_un_entry->rt_key))
+
+#define UN_RTENTRY_LABEL_MATCH(rt_un_entry_t_ptr, rt_key_ptr) \
+    (RT_ENTRY_LABEL(&rt_un_entry_t_ptr->rt_key) == RT_ENTRY_LABEL(rt_key_ptr))
 
 void
 free_un_nexthop(internal_un_nh_t *nh);
 
 internal_un_nh_t *
 malloc_un_nexthop();
-
-#define NEXTHOP_FLAG_IS_ELIGIBLE    0 /*If for some reason this nexthop is not eligible*/
 
 unsigned int 
 get_direct_un_next_hop_metric(internal_un_nh_t *nh);
@@ -146,5 +227,9 @@ is_un_next_hop_empty(internal_un_nh_t *nh);
 
 void
 free_un_nexthop(internal_un_nh_t *nh);
+
+boolean
+rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key);
+
 
 #endif /* __UNIFIED_NH__ */

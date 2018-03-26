@@ -35,6 +35,7 @@
 
 #include "instanceconst.h"
 #include "rt_mpls.h"
+#include "unified_nh.h"
 
 /*-----------------------------------------------------------------------------
  *  Do not #include graph.h in this file, as it will create circular dependency.
@@ -269,6 +270,7 @@ typedef struct spf_info_{
 
     /*Routing table*/
     rttable *rttable;
+    rt_un_table_t *rib[RIB_COUNT];
     mpls_rt_table_t *mpls_rt_table;
 } spf_info_t;
 
