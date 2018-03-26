@@ -71,9 +71,8 @@ is_un_next_hop_empty(internal_un_nh_t *nh){
 
 /*Fill the nh_type before calling this fn*/
 void
-init_un_next_hop(internal_un_nh_t *nh, NH_TYPE2 nh_type){
+init_un_next_hop(internal_un_nh_t *nh){
     memset(nh, 0 , sizeof(internal_un_nh_t));
-    nh->nh_type = nh_type;
 }
 
 void

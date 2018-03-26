@@ -71,6 +71,22 @@ typedef struct rttable_entry_{
     time_t last_refresh_time;
 } rttable_entry_t;
 
+typedef struct rttable_entry_2_{
+
+    struct dest_{
+        char prefix[16];
+        char mask;
+    };
+   
+    struct dest_ dest2;
+    ll_t *primary_nh_list;
+    ll_t *backup_nh_list;
+    FLAG flags;
+    time_t last_refresh_time; 
+
+} rttable_entry_2_t;
+
+
 typedef struct rttable_{
     
     char table_name[16];

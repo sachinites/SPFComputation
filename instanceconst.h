@@ -45,7 +45,7 @@
 #define LINK_DEFAULT_METRIC     10
 #define DEFAULT_LINK_BW         LINK_DEFAULT_METRIC
 #define STRING_REASON_LEN       256
-#define MPLS_STACK_OP_LIMIT_MAX 5
+#define MPLS_STACK_OP_LIMIT_MAX 3
 /* instance global flags */
 
 #define IGNOREATTACHED  1   /*If this bit is set, then L1-only router will not install default gateway to L1L2 router of the local Area*/
@@ -182,6 +182,5 @@ get_str_node_backup_req(node_backup_req_t node_bckup_requirement){
     }
     return 0;
 }
-
 
 #endif /* __GRAPHCONST__ */

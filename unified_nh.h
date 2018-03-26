@@ -37,68 +37,74 @@
 #include "rt_mpls.h"
 #include "instanceconst.h"
 
-typedef enum{
-
-    INVALID_NH_TYPE,
-    IP_NH,
-    RSVPNH,
-    LDPNH,
-    SPRNH,
-    NEXT_HOP_TYPE_MAX
-} NH_TYPE2;
-
 typedef struct edge_end_ edge_end_t;
 typedef struct _node_t node_t;
 
+typedef enum{
+    IGP_PROTO,   /*nexthop installed by IGP*/
+    LDP_PROTO,   /*nexthop installed by LDP*/
+    SPRING_PROTO,/*nexthop installed by SPRING*/
+    RSVP_PROTO,  /*nexthop installed by RSVP*/
+    UNKNOWN_PROTO
+} PROTOCOL;
+
+typedef enum{
+
+    INET_0,
+    INET_3,
+    MPLS_0,
+    RIB_COUNT
+} rib_type_t;
+
 typedef struct internal_un_nh_t_{
 
-    /*Next hop Identifier*/
-    NH_TYPE2 nh_type;
-
     /*Common properties (All 4 fields are applicable for Unicast Nexthops)*/
-    char oif[IF_NAME_SIZE];
+    PROTOCOL protocol;  /*protocol which installed this nexthop*/
+    char oif[IF_NAME_SIZE];        /*use it only for intf name*/
     node_t *nh_node;
     char gw_prefix[PREFIX_LEN + 1];
-    /*These fielda are valid only if this
-      nexthop is a backup nexthop*/
-    lfa_type_t lfa_type;
-    edge_end_t *protected_link;
-
-    /*RSVP NH - Primary and backup*/
-    struct rsvp_nh_t{
-        mpls_label_t mpls_label;/*We will take the OIF and gateway as per the IGP path to egress lsr*/
-        node_t *egress_lsr;
-    };
     
-    /*LDP backups (RLFAs)*/
-    struct ldp_nh_t{
-        node_t *rlfa;
-        mpls_label_t mpls_label;
+    /*inet.0 next hop*/
+    /*No extra field required for inet.0 nexthop*/
+
+    /*inet.3 nexthop*/
+    struct inet_3_nh_t{
+        mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
+        MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];    
     };
 
-    /*Spring Primary nexthop and LFAs and RLFAs*/
-    struct spr_nh_t{
+    /*mpls.0 nexthop*/
+    struct mpls_0_nh_t{
         mpls_label_t mpls_label_in;
-        struct spr_out_info_{
-            mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
-            MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
-            char node_prefixes[MPLS_STACK_OP_LIMIT_MAX][PREFIX_LEN + 1];
-        };
-        struct spr_out_info_ spr_out_info_t; 
-    };
+        mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
+        MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
+    } ;
 
     union u_t{
-        struct rsvp_nh_t rsvpnh;
-        struct ldp_nh_t ldpnh;
-        struct spr_nh_t sprnh;
+        struct inet_3_nh_t inet3_nh;
+        struct mpls_0_nh_t mpls0_nh;
     }; 
 
     union u_t nh;
-    unsigned int root_metric;
-    unsigned int dest_metric;
+    #define PRIMARY_NH  0
+    #define BACKUP_NH   1
     FLAG flags;
     unsigned int ref_count; /*How many routes using this as Nexthop*/
+
+    /*A primary nexthop can have backups. Below fields represent
+     * backup nexthop for this primary nexthop.*/ 
+    
+    /*These fielda are valid only if this
+      nexthop is a backup nexthop. For primary nexthop in inet.0 
+      table, this backup could be inet backup or LDP backup Or RSVP backup i.e.
+      in table inet.0 or inet.3 only*/
+    lfa_type_t lfa_type;
+    edge_end_t *protected_link;
+    //struct internal_un_nh_t_ *backup_nh;
+    unsigned int root_metric;
+    unsigned int dest_metric;
 } internal_un_nh_t;
+
 
 void
 free_un_nexthop(internal_un_nh_t *nh);
@@ -106,24 +112,13 @@ free_un_nexthop(internal_un_nh_t *nh);
 internal_un_nh_t *
 malloc_un_nexthop();
 
-/*Should be used if the nexthop being used is SPRING type*/
-void
-init_spring_nexthop(internal_un_nh_t *nh);
-
-
 #define NEXTHOP_FLAG_IS_ELIGIBLE    0 /*If for some reason this nexthop is not eligible*/
-
-#define un_next_hop_type(un_internal_nh_t_ptr)  \
-    (un_internal_nh_t_ptr->nh_type)
 
 unsigned int 
 get_direct_un_next_hop_metric(internal_un_nh_t *nh);
 
 node_t *
 get_un_next_hop_node(internal_un_nh_t *nh);
-
-char
-get_un_next_hop_gateway_pfx_mask(internal_un_nh_t *nh);
 
 char *
 get_un_next_hop_gateway_pfx(internal_un_nh_t *nh);
@@ -138,7 +133,7 @@ void
 set_un_next_hop_gw_pfx(internal_un_nh_t *nh, char *prefix);
 
 void
-init_un_next_hop(internal_un_nh_t *nh, NH_TYPE2 nh_type);
+init_un_next_hop(internal_un_nh_t *nh);
 
 void
 copy_un_next_hop_t(internal_un_nh_t *src, internal_un_nh_t *dst);

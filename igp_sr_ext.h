@@ -218,6 +218,7 @@ typedef enum{
 typedef struct _prefix_sid_subtlv_t{
 
     BYTE type;  /*constant = 3*/
+    glthread_t glthread; /*Attachement glue*//*Do not change the position of this member !!*/
     BYTE length;
     BYTE flags; /*0th bit = not used, 1st bit = unused, 2 bit = L, 3rd bit = V, 4th bit = E, 5th bit = P, 6th bit = N; 7th bit = R*/
     BYTE algorithm; /*0 value - Shortest Path First, 1 value - strict Shortest Path First*/
@@ -237,10 +238,13 @@ typedef struct _prefix_sid_subtlv_t{
      * sr_mapping_entry_t data structure for all prefixes advertised 
      * with SID. It is not a part of subtlv.*/
     prefix_t *prefix; /*back pointer to owning prefix*/
-    glthread_t glthread; /*Attachement glue*/
 } prefix_sid_subtlv_t;
 
 GLTHREAD_TO_STRUCT(glthread_to_prefix_sid, prefix_sid_subtlv_t, glthread, glthreadptr);
+
+/*Macro applicable for prefix_sid_subtlv_t and srms_sid_label_binding_tlv_t*/
+#define GET_SID_TLV_TYPE(glthreadptr)   \
+    (BYTE *)((char *)glthreadptr - sizeof(BYTE))
 
 #define IS_PREFIX_SR_ACTIVE(prefixptr)     (prefixptr->conflct_res == SID_ACTIVE)
 #define MARK_PREFIX_SR_INACTIVE(prefixptr) (prefixptr->conflct_res = SID_INACTIVE)

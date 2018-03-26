@@ -49,6 +49,7 @@ init_mapping_server(node_t *node, LEVEL level);
 typedef struct srms_sid_label_binding_tlv_{
 
     BYTE type; /*constant = 149*/
+    glthread_t glthread; /*Attachement glue*//*Do not change the position of this member !!*/
     BYTE length;
     FLAG flags;
     BYTE weight;
@@ -58,6 +59,9 @@ typedef struct srms_sid_label_binding_tlv_{
     unsigned int fec_prefix2;
     prefix_sid_subtlv_t prefix_sid; 
 } srms_sid_label_binding_tlv_t;
+
+GLTHREAD_TO_STRUCT(glthread_to_srms_sid_lbl_binding_tlv, \
+        srms_sid_label_binding_tlv_t, glthread, glthreadptr);
 
 /*Flags used for srms_sid_label_binding_tlv_t*/
 #define SRMS_ATTACHED_FLAG  3
@@ -69,6 +73,9 @@ typedef struct srms_sid_label_binding_tlv_{
 /*Flags used for prefix_sid_subtlv_t*/
 #define SRMS_SUBTLV_NODE_SID_FLAG  6
 
+void
+construct_srms_sid_mapping_entry(srms_sid_label_binding_tlv_t *srms_sid_label_binding_tlv,
+    sr_mapping_entry_t *mapping_entry_out);
 
 boolean
 srms_local_policy_configuration_verifier(node_t *node, 
