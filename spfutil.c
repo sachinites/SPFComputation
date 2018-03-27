@@ -403,4 +403,9 @@ is_internal_nh_exist(ll_t *lst, internal_nh_t *nh){
     return 0;
 }
 
+unsigned int
+get_new_if_index(){
 
+    static unsigned int index = 100000;
+    return index++;
+}

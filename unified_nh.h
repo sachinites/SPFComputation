@@ -37,6 +37,7 @@
 #include "rt_mpls.h"
 #include "instanceconst.h"
 #include "glthread.h"
+#include "bitsop.h"
 
 typedef struct edge_end_ edge_end_t;
 typedef struct _node_t node_t;
@@ -48,6 +49,22 @@ typedef enum{
     RSVP_PROTO,  /*nexthop installed by RSVP*/
     UNKNOWN_PROTO
 } PROTOCOL;
+
+static inline char *
+protocol_name(PROTOCOL proto){
+    switch(proto){
+        case IGP_PROTO:
+            return "IGP_PROTO";
+        case LDP_PROTO:
+            return "LDP_PROTO";
+        case L_IGP_PROTO:
+            return "L_IGP_PROTO";
+        case RSVP_PROTO:
+            return "RSVP_PROTO";
+        default:
+            assert(0);
+    }
+}
 
 typedef enum{
 
@@ -84,8 +101,8 @@ typedef struct internal_un_nh_t_{
 
     /*Common properties (All 4 fields are applicable for Unicast Nexthops)*/
     PROTOCOL protocol;  /*protocol which installed this nexthop*/
-    char oif[IF_NAME_SIZE];        /*use it only for intf name*/
-    node_t *nh_node;
+    edge_end_t *oif;        /*use it only for intf name*/
+    node_t *nh_node;        /*This member should be removed*/
     char gw_prefix[PREFIX_LEN + 1];
 
     /*inet.0 next hop*/
@@ -115,7 +132,7 @@ typedef struct internal_un_nh_t_{
      * or backup nexthop. Same can also be identified using NULL check
      * on protected_link member*/
     #define PRIMARY_NH      0
-    #define BACKUP_NH       1
+    #define IPV4_NH         1
     /* Bits 2,3 and 4 should be mutually exclusive. We need to distinguish
      * between following nexthop types since, all of then are installed in
      * same table inet.3 and have same semantics*/
@@ -150,13 +167,34 @@ typedef struct internal_un_nh_t_{
 
 GLTHREAD_TO_STRUCT(glthread_to_unified_nh, internal_un_nh_t, glthread, glthreadptr);
 
+static inline char *
+get_str_nexthop_type(char flags){
+
+    if(IS_BIT_SET(flags, IPV4_RSVP_NH))
+        return "IPV4_RSVP_NH";
+        
+    if(IS_BIT_SET(flags, IPV4_LDP_NH))
+        return "IPV4_LDP_NH";
+     
+    if(IS_BIT_SET(flags, IPV4_SPRING_NH))
+        return "IPV4_RSVP_NH";
+
+    if(IS_BIT_SET(flags, RSVP_TRANSIT_NH))
+        return "RSVP_TRANSIT_NH";
+
+    if(IS_BIT_SET(flags, LDP_TRANSIT_NH ))
+        return "LDP_TRANSIT_NH";
+
+    if(IS_BIT_SET(flags, SPRING_TRANSIT_NH))
+        return "SPRING_TRANSIT_NH";
+
+    return "UNKNOWN";
+}
+
 typedef struct rt_un_entry_{
 
     rt_key_t rt_key;
-    ll_t *primary_nh_list;
-    ll_t *backup_nh_list;
-    glthread_t primary_nh_list_head;
-    glthread_t backup_nh_list_head;
+    glthread_t nh_list_head;
     FLAG flags; /*Flags for this routing entry*/
     time_t last_refresh_time;
     glthread_t glthread;
@@ -164,16 +202,20 @@ typedef struct rt_un_entry_{
 
 GLTHREAD_TO_STRUCT(glthread_to_rt_un_entry, rt_un_entry_t, glthread, glthreadptr);
 
+typedef struct internal_nh_t_ internal_nh_t;
+
 typedef struct rt_un_table_{
 
     unsigned int count;
-    glthread_t head;
+    glthread_t head; /*List of nexthops - primary and backups both*/
     char *rib_name;
     /*CRUD*/
+    boolean (*rt_un_route_install_nexthop)(struct rt_un_table_ *, rt_key_t *, internal_un_nh_t *);
     boolean (*rt_un_route_install)(struct rt_un_table_ *, rt_un_entry_t *);
     rt_un_entry_t * (*rt_un_route_lookup)(struct rt_un_table_ *, rt_key_t *);
     boolean (*rt_un_route_update)(struct rt_un_table_ *, rt_un_entry_t *);
     boolean (*rt_un_route_delete)(struct rt_un_table_ *, rt_key_t *);
+    boolean (*rt_un_nh_t_equal)(internal_un_nh_t *, internal_un_nh_t *);
 } rt_un_table_t;
 
 rt_un_table_t *
@@ -181,6 +223,9 @@ init_rib(rib_type_t rib);
 
 void
 free_rt_un_entry(rt_un_entry_t *rt_un_entry);
+
+internal_un_nh_t *
+lookup_clone_next_hop(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry, internal_un_nh_t *nexthop);
 
 #define UN_RTENTRY_PFX_MATCH(rt_un_entry_t_ptr, rt_key_ptr) \
     (strncmp(RT_ENTRY_PFX(rt_key_ptr), RT_ENTRY_PFX(&rt_un_entry->rt_key), PREFIX_LEN) == 0 &&    \
@@ -231,5 +276,16 @@ free_un_nexthop(internal_un_nh_t *nh);
 boolean
 rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key);
 
+void
+flush_rib(rt_un_table_t *rib);
+
+internal_un_nh_t *
+inet_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto);
+
+internal_un_nh_t *
+inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto);
+
+internal_un_nh_t *
+mpls_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto);
 
 #endif /* __UNIFIED_NH__ */

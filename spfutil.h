@@ -116,5 +116,8 @@ hrs_min_sec_format(unsigned int seconds);
 int
 is_internal_nh_exist(ll_t *lst, internal_nh_t *nh);
 
+unsigned int
+get_new_if_index();
+
 #endif /* __SPFUTIL__ */ 
 

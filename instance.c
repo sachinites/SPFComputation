@@ -152,6 +152,8 @@ create_new_edge(char *from_ifname,
         edge->to.intf_name[IF_NAME_SIZE - 1] = '\0';
     }
 
+    edge->from.ifindex = get_new_if_index();
+
     if(IS_LEVEL_SET(level, LEVEL1)) 
         edge->metric[LEVEL1] = metric;
 

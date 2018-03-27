@@ -415,6 +415,28 @@ route_rib_same_next_hops(rttable_entry_t *rt_entry, /*We need to compare the nex
 }
 
 static boolean
+route_rib_same_next_hops2(internal_nh_t *nh1, internal_un_nh_t *nh2, rib_type_t rib_type){
+
+    return TRUE;
+}
+
+static boolean
+is_changed_route2(rt_un_entry_t *rt_un_entry, routes_t *route, rib_type_t rib_type){
+
+    switch(rib_type){
+        case INET_0:
+            break;
+        case INET_3:
+            break;
+        case MPLS_0:
+            break;
+        default:
+            ;
+    }
+    return TRUE;
+}
+
+static boolean
 is_changed_route(spf_info_t *spf_info, 
                  void *rib_entry, /*route from RIB - inet.0 or mpls.0*/
                  routes_t *route,           /*route from our SPF*/
