@@ -113,15 +113,8 @@ show_mpls_ldp_label_local_bindings(node_t *node){
     }
 }
 
-/*This fn simulates the LDP label distribution*/
 remote_label_binding_t *
-get_remote_label_binding(node_t *self_node, 
-                         char *prefix, 
-                         char mask, 
-                         unsigned int *count){
+get_downstream_router_ldp_label_binding(node_t *down_stream_node, char *prefix, char mask){
 
-   /*Get the IGP primary next hop(s) for route prefix/mask
-    * and return nexthop(s) local labels for the prefix*/ 
+    return NULL;
 }
-
-

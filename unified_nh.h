@@ -39,6 +39,7 @@
 #include "glthread.h"
 #include "bitsop.h"
 
+typedef struct routes_ routes_t;
 typedef struct edge_end_ edge_end_t;
 typedef struct _node_t node_t;
 
@@ -116,7 +117,7 @@ typedef struct internal_un_nh_t_{
 
     /*mpls.0 nexthop*/
     struct mpls_0_nh_t{
-        mpls_label_t mpls_label_in;
+        //mpls_label_t mpls_label_in;
         mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
         MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
     } ;
@@ -132,16 +133,15 @@ typedef struct internal_un_nh_t_{
      * or backup nexthop. Same can also be identified using NULL check
      * on protected_link member*/
     #define PRIMARY_NH      0
+    /* Bits 1 - 7 should be mutually exclusive. We need to distinguish
+     * between following nexthop types since one or more of them are installed in
+     * same table inet.3/mpls.0 and have same semantics*/
     #define IPV4_NH         1
-    /* Bits 2,3 and 4 should be mutually exclusive. We need to distinguish
-     * between following nexthop types since, all of then are installed in
-     * same table inet.3 and have same semantics*/
     #define IPV4_RSVP_NH    2 /*When RSVP TE Tunnels are advertised as FA*/
     #define IPV4_LDP_NH     3 /*When next hop is LDP nexthop*/
     #define IPV4_SPRING_NH  4 /*When spring Tunnels are advertised as FA*/
-    /*Bits 5,6, and 7 */
     #define RSVP_TRANSIT_NH     5 /*Not supported*/
-    #define LDP_TRANSIT_NH      6 /*Not supported*/
+    #define LDP_TRANSIT_NH      6 /*supported*/
     #define SPRING_TRANSIT_NH   7 /*Supported*/
 
     FLAG flags;
@@ -170,6 +170,9 @@ GLTHREAD_TO_STRUCT(glthread_to_unified_nh, internal_un_nh_t, glthread, glthreadp
 static inline char *
 get_str_nexthop_type(char flags){
 
+    if(IS_BIT_SET(flags, IPV4_NH))
+        return "IPV4_NH";
+
     if(IS_BIT_SET(flags, IPV4_RSVP_NH))
         return "IPV4_RSVP_NH";
         
@@ -177,7 +180,7 @@ get_str_nexthop_type(char flags){
         return "IPV4_LDP_NH";
      
     if(IS_BIT_SET(flags, IPV4_SPRING_NH))
-        return "IPV4_RSVP_NH";
+        return "IPV4_SPRING_NH";
 
     if(IS_BIT_SET(flags, RSVP_TRANSIT_NH))
         return "RSVP_TRANSIT_NH";
@@ -283,9 +286,25 @@ internal_un_nh_t *
 inet_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto);
 
 internal_un_nh_t *
-inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto);
+inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
+                    unsigned int nxthop_type, routes_t *route);
 
 internal_un_nh_t *
 mpls_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto);
+
+boolean
+mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
+        internal_un_nh_t *nexthop);
+
+boolean
+inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
+        internal_un_nh_t *nexthop);
+
+boolean
+inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
+        internal_un_nh_t *nexthop);
+
+int 
+get_stack_top_index(internal_un_nh_t *nh);
 
 #endif /* __UNIFIED_NH__ */

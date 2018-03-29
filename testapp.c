@@ -64,7 +64,7 @@ main(int argc, char **argv){
     spf_init_dcm();
 
     /* Topology Initialization*/
-    //instance = build_linear_topo();
+    instance = build_linear_topo();
     //instance = pseudonode_ecmp_topo();
     //instance = lsp_ecmp_topo();
     //instance = build_multi_area_topo();
@@ -73,7 +73,7 @@ main(int argc, char **argv){
     //instance = build_ecmp_topo2();
     //instance = build_cisco_example_topo();
     //instance = broadcast_link_protecting_lfa();
-    instance = build_multi_link_topo();
+    //instance = build_multi_link_topo();
     //instance = build_rlfa_topo();
     //instance = build_lfa_topo();
     //instance = overload_router_topo();

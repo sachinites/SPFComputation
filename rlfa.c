@@ -417,7 +417,7 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
                     rlfa->nh_type = LSPNH;
                     rlfa->proxy_nbr = nbr_node;
                     rlfa->rlfa = P_node;
-                    rlfa->mpls_label_in = 1;
+                    //rlfa->mpls_label_in = 1;
                     rlfa->root_metric = d_S_to_p_node;
                     rlfa->dest_metric = 0; /*Not known yet*/ 
                     rlfa->is_eligible = TRUE; /*Not known yet*/
@@ -454,7 +454,7 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
                         rlfa->lfa_type = BROADCAST_LINK_PROTECTION_RLFA;
                         rlfa->proxy_nbr = nbr_node;
                         rlfa->rlfa = P_node;
-                        rlfa->mpls_label_in = 1;
+                        //rlfa->mpls_label_in = 1;
                         rlfa->root_metric = d_S_to_p_node;
                         rlfa->dest_metric = 0; /*Not known yet*/ 
                         rlfa->is_eligible = TRUE; /*Not known yet*/
@@ -479,7 +479,7 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
                     rlfa->lfa_type = BROADCAST_LINK_PROTECTION_RLFA;
                     rlfa->proxy_nbr = nbr_node;
                     rlfa->rlfa = P_node;
-                    rlfa->mpls_label_in = 1;
+                    //rlfa->mpls_label_in = 1;
                     rlfa->root_metric = d_S_to_p_node;
                     rlfa->dest_metric = 0; /*Not known yet*/ 
                     rlfa->is_eligible = TRUE; /*Not known yet*/
@@ -642,7 +642,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                         rlfa->lfa_type = LINK_AND_NODE_PROTECTION_RLFA;
                         rlfa->proxy_nbr = nbr_node;
                         rlfa->rlfa = P_node;
-                        rlfa->mpls_label_in = 1;
+                        //rlfa->mpls_label_in = 1;
                         rlfa->root_metric = d_S_to_p_node;
                         rlfa->dest_metric = 0; /*Not known yet*/ 
                         rlfa->is_eligible = TRUE; /*Not known yet*/
@@ -674,7 +674,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                             rlfa->lfa_type = LINK_PROTECTION_RLFA;
                             rlfa->proxy_nbr = nbr_node;
                             rlfa->rlfa = P_node;
-                            rlfa->mpls_label_in = 1;
+                            //rlfa->mpls_label_in = 1;
                             rlfa->root_metric = d_S_to_p_node;
                             rlfa->dest_metric = 0; /*Not known yet*/ 
                             rlfa->is_eligible = TRUE; /*Not known yet*/
@@ -1203,7 +1203,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                 backup_nh->lfa_type = lfa_type;
                 backup_nh->proxy_nbr = NULL;
                 backup_nh->rlfa = NULL;
-                backup_nh->mpls_label_in = 0;
+                //backup_nh->mpls_label_in = 0;
                 backup_nh->root_metric = DIST_X_Y(S, N, level);
                 backup_nh->dest_metric = dist_N_D;
                 backup_nh->is_eligible = TRUE;
@@ -1291,7 +1291,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
             backup_nh->lfa_type = lfa_type;
             backup_nh->proxy_nbr = NULL;
             backup_nh->rlfa = NULL;
-            backup_nh->mpls_label_in = 0;
+            //backup_nh->mpls_label_in = 0;
             backup_nh->root_metric = DIST_X_Y(S, N, level);
             backup_nh->dest_metric = dist_N_D;
             backup_nh->is_eligible = TRUE;
@@ -1454,7 +1454,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                     backup_nh->lfa_type = lfa_type;
                     backup_nh->proxy_nbr = NULL;
                     backup_nh->rlfa = NULL;
-                    backup_nh->mpls_label_in = 0;
+                    //backup_nh->mpls_label_in = 0;
                     backup_nh->root_metric = DIST_X_Y(S, N, level);
                     backup_nh->dest_metric = dist_N_D;
                     backup_nh->is_eligible = TRUE;
@@ -1517,7 +1517,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                 backup_nh->lfa_type = lfa_type;
                 backup_nh->proxy_nbr = NULL;
                 backup_nh->rlfa = NULL;
-                backup_nh->mpls_label_in = 0;
+                //backup_nh->mpls_label_in = 0;
                 backup_nh->root_metric = DIST_X_Y(S, N, level);
                 backup_nh->dest_metric = dist_N_D;
                 backup_nh->is_eligible = TRUE;

@@ -179,5 +179,8 @@ void
 add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix,
                 unsigned int prefix_hosting_node_metric);
 
+boolean
+is_node_best_prefix_originator(node_t *node, routes_t *route);
+
 #endif /* __ROUTES__ */
 

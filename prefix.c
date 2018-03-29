@@ -484,3 +484,24 @@ free_prefix(prefix_t *prefix){
     free(prefix);
 }
 
+/*Return true if node is one of the best prefix originator for a route*/
+boolean
+is_node_best_prefix_originator(node_t *node, routes_t *route){
+
+    singly_ll_node_t *list_node = NULL;
+    prefix_t *prefix = NULL;
+
+    prefix_pref_data_t route_pref = route_preference(route->flags, route->level);
+    prefix_pref_data_t prefix_pref;
+
+    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
+        prefix = list_node->data;
+        prefix_pref = route_preference(prefix->prefix_flags, route->level);
+        if(route_pref.pref != prefix_pref.pref)
+            break;
+        if(prefix->hosting_node == node)
+            return TRUE;
+    }ITERATE_LIST_END;
+    return FALSE;
+}
+

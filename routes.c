@@ -293,7 +293,7 @@ prepare_new_nxt_hop_template(node_t *computing_node,
         nh_template->rlfa_name[NODE_NAME_SIZE - 1] = '\0';
     }
 #endif
-    nh_template->mpls_label_in = nxt_hop_node->mpls_label_in;
+    //nh_template->mpls_label_in = nxt_hop_node->mpls_label_in;
 }
 
 routes_t *
@@ -1572,7 +1572,7 @@ build_routing_table(spf_info_t *spf_info,
 
         if(route->install_state != RTE_UPDATED)
             continue;
-
+#if 0
         rt_entry = rt_route_lookup(spf_info->rttable, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
         assert(rt_entry); /*This entry MUST exist in RIB*/
 
@@ -1585,6 +1585,7 @@ build_routing_table(spf_info_t *spf_info,
                 route_intall_status_str(route->install_state),
                 get_str_level(level)); 
         trace(instance->traceopts, ROUTE_CALCULATION_BIT); 
+#endif
     }ITERATE_LIST_END;
 }
 
@@ -1617,15 +1618,18 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
     }
 
     build_routing_table(spf_info, spf_root, level);
-    start_route_installation(spf_info, level);
-    delete_stale_routes(spf_info, level, UNICAST_T);
-#if 1
+    //start_route_installation(spf_info, level);
+    //delete_stale_routes(spf_info, level, UNICAST_T);
     if(is_node_spring_enabled(spf_root, level)){
         //start_spring_routes_installation(spf_info, level);
         update_node_segment_routes_for_remote(spf_info, level);
-        delete_stale_routes(spf_info, level, SPRING_T);
+        //delete_stale_routes(spf_info, level, SPRING_T);
     }
-#endif
+   
+    enhanced_start_route_installation(spf_info, level, UNICAST_T);
+    if(is_node_spring_enabled(spf_root, level)){
+        enhanced_start_route_installation(spf_info, level, SPRING_T);   
+    }
 }
 
 internal_nh_t *
@@ -1969,7 +1973,7 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
 
         if(route->install_state != RTE_UPDATED)
             continue;
-
+#if 0
         /*We have computed the spring route here. Need to check whether the spring route has
          * changed or not in terms of unicast topology. Compare the unicast version of the route
          * installed in inet.0 already with the spring version of the route we have computed here*/
@@ -1987,7 +1991,7 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
                 route_intall_status_str(route->install_state),
                 get_str_level(level)); 
         trace(instance->traceopts, SPRING_ROUTE_CAL_BIT); 
-
+#endif
     } ITERATE_LIST_END;
 
     ITERATE_LIST_BEGIN(spf_info->routes_list[SPRING_T], list_node){
@@ -1998,4 +2002,228 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
     } ITERATE_LIST_END;
 }
 
+static void
+enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
 
+    /*Unicast (IGPs) protocols installs the routes in inet.0 and inet.3 tables
+     * only. Flush both the tables first*/
+
+    singly_ll_node_t *list_node = NULL,
+                     *list_node2 = NULL;
+
+    routes_t *route = NULL;
+    nh_type_t nh;
+    internal_nh_t *nxthop = NULL;
+    internal_un_nh_t *un_nxthop = NULL;
+    boolean rc = FALSE;
+    rt_key_t rt_key;
+
+    node_t *spf_root = GET_SPF_INFO_NODE(spf_info, level);
+    
+    flush_rib(spf_info->rib[INET_0]);
+    flush_rib(spf_info->rib[INET_3]);
+
+    ITERATE_LIST_BEGIN(spf_info->routes_list[UNICAST_T], list_node){
+        
+        route = list_node->data;
+        if(route->level != level) continue;
+        if(route->install_state == RTE_STALE)
+            continue;
+
+        memset(&rt_key, 0, sizeof(rt_key_t));
+        strncpy(RT_ENTRY_PFX(&rt_key), route->rt_key.u.prefix.prefix, PREFIX_LEN);
+        RT_ENTRY_MASK(&rt_key) = route->rt_key.u.prefix.mask;
+
+        /*Install primary nexthop first. Primary nexthops are inet.0 routes Or RSVP routes (inet.3)*/
+        ITERATE_NH_TYPE_BEGIN(nh){
+            ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node2){
+                nxthop = list_node2->data;
+                rc = FALSE;
+                if(nh == IPNH){
+                    un_nxthop = inet_0_unifiy_nexthop(nxthop, IGP_PROTO);                
+                    rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                    if(rc == FALSE){
+                        free_un_nexthop(un_nxthop);
+                    }
+                }
+                else{ /*It is RSVP LSP nexthop, which needs to be installed in inet.3 table*/
+                    if(is_node_best_prefix_originator(nxthop->node, route)){
+                        /* RSVP nexthop should not be installed in inet.3 table. Instead it should
+                         * be installed in inet.0 table. We will
+                         * revisit this when we shall support RSVP nexthops properly*/
+                    }
+                    else{
+                        un_nxthop = inet_3_unifiy_nexthop(nxthop, IGP_PROTO, IPV4_LDP_NH, route);
+                        rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+                        if(rc == FALSE){
+                            free_un_nexthop(un_nxthop);
+                        }
+                    }
+                }
+            } ITERATE_LIST_END;
+        } ITERATE_NH_TYPE_END;
+
+
+        /*Install backup nexthop now. Backup nexthops are inet.0 routes Or RSVP/LDP routes (inet.3)*/
+        ITERATE_NH_TYPE_BEGIN(nh){
+            ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node2){
+                nxthop = list_node2->data;
+                rc = FALSE;
+                if(nh == IPNH){
+                    un_nxthop = inet_0_unifiy_nexthop(nxthop, IGP_PROTO);                
+                    rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                    if(rc == FALSE){
+                        free_un_nexthop(un_nxthop);
+                    }
+                }
+                else{ /*backup is either RSVP or LDP nexthop*/
+                    if(is_internal_backup_nexthop_rsvp(nxthop)) {
+                      /*ToDo*/
+
+                    }else{
+                        /*LDP backup nexthop(RLFAs)*/
+                        un_nxthop = inet_3_unifiy_nexthop(nxthop, IGP_PROTO, IPV4_LDP_NH, route);
+                        if(IS_BIT_SET(un_nxthop->flags, IPV4_LDP_NH))
+                            rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+                        else if(IS_BIT_SET(un_nxthop->flags, IPV4_NH))
+                            rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                        if(rc == FALSE){
+                            free_un_nexthop(un_nxthop);
+                        }
+                    }
+                }
+            } ITERATE_LIST_END;
+        } ITERATE_NH_TYPE_END;
+
+    } ITERATE_LIST_END;
+}
+
+static void
+enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
+
+    /* (L-IGP) protocol installs the routes in inet.3 and mpls.0 tables
+     * only. Flush both the tables first*/
+
+    singly_ll_node_t *list_node = NULL,
+                     *list_node2 = NULL;
+
+    routes_t *route = NULL;
+    nh_type_t nh;
+    internal_nh_t *nxthop = NULL;
+    internal_un_nh_t *un_nxthop = NULL;
+    boolean rc = FALSE;
+    rt_key_t rt_key;
+
+    node_t *spf_root = GET_SPF_INFO_NODE(spf_info, level);
+    
+    flush_rib(spf_info->rib[INET_3]);
+    flush_rib(spf_info->rib[MPLS_0]);
+
+    ITERATE_LIST_BEGIN(spf_info->routes_list[SPRING_T], list_node){
+        
+        route = list_node->data;
+        if(route->level != level) continue;
+        if(route->install_state == RTE_STALE)
+            continue;
+
+        /*First install primary routes in inet.3 table*/
+        memset(&rt_key, 0, sizeof(rt_key_t));
+        strncpy(RT_ENTRY_PFX(&rt_key), route->rt_key.u.prefix.prefix, PREFIX_LEN);
+        RT_ENTRY_MASK(&rt_key) = route->rt_key.u.prefix.mask;
+       
+        /*Install springified IPV4 routes in inet.3 table. RSVP LSP Nexthops 
+         * should not be springified in the first place*/ 
+        ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node2){
+            nxthop = list_node2->data;
+            rc = FALSE;
+            un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
+            if(IS_BIT_SET(un_nxthop->flags, IPV4_SPRING_NH))
+                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+            else if(IS_BIT_SET(un_nxthop->flags, IPV4_NH))
+                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+            if(rc == FALSE){
+                free_un_nexthop(un_nxthop);
+            }
+        } ITERATE_LIST_END;
+
+        /* RSVP nexthop Should have been installed in inet.3 table in 
+         * enhanced_start_route_installation_unicast(). So no need to
+         * do it again during spring route installation*/
+
+        /*Spring Backups. Install ipv4 springified backups in inet.3 table*/
+        ITERATE_LIST_BEGIN(route->backup_nh_list[IPNH], list_node2){
+            nxthop = list_node2->data;
+            rc = FALSE;
+            un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
+            if(IS_BIT_SET(un_nxthop->flags, IPV4_SPRING_NH))
+                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+            else if(IS_BIT_SET(un_nxthop->flags, IPV4_NH))
+                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+            if(rc == FALSE){
+                free_un_nexthop(un_nxthop);
+            }
+        } ITERATE_LIST_END;
+        
+        /*Nw do LSP backups - which could be RSVP backups Or LDP(RLFA) backups*/
+        ITERATE_LIST_BEGIN(route->backup_nh_list[LSPNH], list_node2){
+            nxthop = list_node2->data;
+            if(is_internal_backup_nexthop_rsvp(nxthop))
+                continue; /*No need to install RSVP backup nexthops in inet.3 table as they were installed already during enhanced_start_route_installation_unicast()*/
+            rc = FALSE;
+            /*springified LDP nexthops*/
+            un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
+            if(IS_BIT_SET(un_nxthop->flags, IPV4_SPRING_NH))
+                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+            else if(IS_BIT_SET(un_nxthop->flags, IPV4_NH))
+                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+            if(rc == FALSE){
+                free_un_nexthop(un_nxthop);
+            }
+        } ITERATE_LIST_END;
+
+
+        /*Now install all primary/backups routes in mpls_0 table*/
+        RT_ENTRY_LABEL(&rt_key) = route->rt_key.u.label; 
+
+        ITERATE_NH_TYPE_BEGIN(nh){
+            ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node2){
+                nxthop = list_node2->data;
+                rc = FALSE;
+                un_nxthop = mpls_0_unifiy_nexthop(nxthop, L_IGP_PROTO);
+                rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, un_nxthop);
+                if(rc == FALSE){
+                    free_un_nexthop(un_nxthop);
+                }
+            } ITERATE_LIST_END;
+        } ITERATE_NH_TYPE_END;
+
+        ITERATE_NH_TYPE_BEGIN(nh){
+            ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node2){
+                nxthop = list_node2->data;
+                rc = FALSE;
+                un_nxthop = mpls_0_unifiy_nexthop(nxthop, L_IGP_PROTO);
+                rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, un_nxthop);
+                if(rc == FALSE){
+                    free_un_nexthop(un_nxthop);
+                }
+            } ITERATE_LIST_END;
+        } ITERATE_NH_TYPE_END;
+    } ITERATE_LIST_END;
+}
+
+void
+enhanced_start_route_installation(spf_info_t *spf_info,
+                         LEVEL level, rtttype_t rtttype){
+
+    switch(rtttype){
+        case UNICAST_T:
+            enhanced_start_route_installation_unicast(spf_info, level);
+            break;
+        case SPRING_T:
+            enhanced_start_route_installation_spring(spf_info, level);
+            break;
+         default:
+            assert(0);
+    }
+    delete_stale_routes(spf_info, level, rtttype);
+}

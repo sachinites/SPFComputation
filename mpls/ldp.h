@@ -62,6 +62,6 @@ typedef struct remote_label_binding_{
 } remote_label_binding_t;
 
 remote_label_binding_t *
-get_remote_label_binding(node_t *self_node, char *prefix, char mask, unsigned int *count);
+get_downstream_router_ldp_label_binding(node_t *down_stream_node, char *prefix, char mask);
 
 #endif /* __LDP__*/

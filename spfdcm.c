@@ -232,8 +232,12 @@ show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
             show_internal_routing_tree(node, prefix, mask, SPRING_T);
             break;
         case CMDCODE_SHOW_NODE_FORWARDING_TABLE:
-           show_routing_table_inet(node->spf_info.rttable, prefix, mask);
+           //show_routing_table_inet(node->spf_info.rttable, prefix, mask);
+           inet_0_display(node->spf_info.rib[INET_0], prefix, mask);
            break;
+        case CMDCODE_SHOW_NODE_INET3_FORWARDING_TABLE:
+            inet_3_display(node->spf_info.rib[INET_3], prefix, mask);
+            break;
         default:
             assert(0); 
     }
@@ -1136,6 +1140,19 @@ spf_init_dcm(){
             init_param(&inet_table, CMD, "forwarding-table", show_route_handler, 0, INVALID, 0, "IP forwarding table");
             libcli_register_param(&inet, &inet_table);
             set_param_cmd_code(&inet_table, CMDCODE_SHOW_NODE_FORWARDING_TABLE);
+        }
+    }
+    
+    /*show instance node <node-name> inet.3 forwarding-table*/
+    {
+        static param_t inet3;
+        init_param(&inet3, CMD, "inet.3", 0, 0, INVALID, 0, "IP protocol");
+        libcli_register_param(&instance_node_name, &inet3);
+        {
+            static param_t inet3_table;
+            init_param(&inet3_table, CMD, "forwarding-table", show_route_handler, 0, INVALID, 0, "IP forwarding table");
+            libcli_register_param(&inet3, &inet3_table);
+            set_param_cmd_code(&inet3_table, CMDCODE_SHOW_NODE_INET3_FORWARDING_TABLE);
         }
     }
 

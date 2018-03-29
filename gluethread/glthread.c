@@ -116,8 +116,11 @@ glthread_add_last(glthread_t *base_glthread, glthread_t *new_glthread){
     ITERATE_GLTHREAD_BEGIN(base_glthread, glthreadptr){
         prevglthreadptr = glthreadptr;
     } ITERATE_GLTHREAD_END(base_glthread, glthreadptr);
-   
-    glthread_add_next(prevglthreadptr, new_glthread); 
+  
+    if(prevglthreadptr) 
+        glthread_add_next(prevglthreadptr, new_glthread); 
+    else
+        glthread_add_next(base_glthread, new_glthread);
 }
 
 unsigned int

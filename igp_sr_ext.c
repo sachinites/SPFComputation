@@ -797,15 +797,15 @@ is_node_spring_enabled(node_t *node, LEVEL level){
 void
 spring_disable_cleanup(node_t *node){
     
+    glthread_t *curr = NULL;
+    LEVEL level_it;
+    prefix_sid_subtlv_t *prefix_sid = NULL;
+    
     free((SRGB_INDEX_ARRAY(node->srgb))->array);
     free(node->srgb);
     node->use_spring_backups = FALSE;
-    LEVEL level_it;
 
     /*Break the association between prefixes and prefix SIDs*/
-    glthread_t *curr = NULL;
-    prefix_sid_subtlv_t *prefix_sid = NULL;
-    
     for(level_it = LEVEL1 ; level_it <= LEVEL2 ; level_it++){
         ITERATE_GLTHREAD_BEGIN(&node->prefix_sids_thread_lst[level_it], curr){
             prefix_sid = glthread_to_prefix_sid(curr);
@@ -850,28 +850,6 @@ get_best_sr_active_route_prefix(routes_t *route){
         return prefix;
     }ITERATE_LIST_END;
     return NULL;
-}
-
-/*Return true */
-static boolean
-is_node_best_prefix_originator(node_t *node, routes_t *route){
-
-    singly_ll_node_t *list_node = NULL;
-    prefix_t *prefix = NULL;
-    
-    prefix_pref_data_t route_pref = route_preference(route->flags, route->level);
-    prefix_pref_data_t prefix_pref;
-
-    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
-        prefix = list_node->data;   
-        assert(IS_PREFIX_SR_ACTIVE(prefix)); 
-        prefix_pref = route_preference(prefix->prefix_flags, route->level);
-        if(route_pref.pref != prefix_pref.pref)
-            break;
-        if(prefix->hosting_node == node)
-            return TRUE;
-    }ITERATE_LIST_END;
-    return FALSE;
 }
 
 prefix_sid_subtlv_t *

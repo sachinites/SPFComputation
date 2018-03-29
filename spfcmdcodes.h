@@ -121,11 +121,11 @@
 
 /*Routing table commands*/
 #define CMDCODE_SHOW_NODE_INTERNAL_ROUTES                   68 /*show instance node <node-name> routes*/
-#define CMDCODE_SHOW_NODE_FORWARDING_TABLE                  69 /*show instance node <node-name> inet|mpls forwarding-table*/
+#define CMDCODE_SHOW_NODE_FORWARDING_TABLE                  69 /*show instance node <node-name> inet forwarding-table*/
 
 
 /*LDP*/
-#define CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS                 77 /*show instance node <node-name> mpls ldp bindings <prefix> <mask>*//*MAX*/
+#define CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS                 77 /*show instance node <node-name> mpls ldp bindings <prefix> <mask>*/
 #define CMDCODE_CONFIG_NODE_LDP_SR_PREFERENCE               78 /*config node <node-name> ldp sr preference set*/
 #define CMDCODE_CONFIG_NODE_ENABLE_LDP                      79 /*config node <node-name> ldp*/
 
@@ -136,5 +136,5 @@
 #define CMDCODE_SHOW_NODE_SRMS_CLIENT_BACKUP_POLICY         83 /*show instance node <node-name> source-packet-routing prefix-sid-map backup-policy*/
 #define CMDCODE_CONFIG_NODE_SRMS                            84 /*config node <node-name> source-packet-routing prefix-sid-map advertise-local*/ /*Configure the node as SRMS*/ 
 #define CMDCODE_CONFIG_NODE_SRMS_CLIENT_DISABLE             85 /*config node <node-name> source-packet-routing prefix-sid-map recieve disable*//*Disable the node as Mapping client*/
-
+#define CMDCODE_SHOW_NODE_INET3_FORWARDING_TABLE            86 /*show instance node <node-name> inet.3 forwarding-table*/
 #endif /* __SPFCMDCODES__H */

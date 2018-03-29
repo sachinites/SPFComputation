@@ -35,6 +35,8 @@
 #include "spftrace.h"
 #include "rt_mpls.h"
 #include "spfcomputation.h"
+#include "routes.h"
+#include "ldp.h"
 
 extern instance_t *instance;
 
@@ -215,7 +217,7 @@ lookup_clone_next_hop(rt_un_table_t *rib,
 
 /*Rib functions*/
 #if 1
-static boolean
+boolean
 inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, 
                             internal_un_nh_t *nexthop){
     
@@ -247,7 +249,10 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
     }
 
     init_glthread(&nexthop->glthread);
-    glthread_add_next(&rt_un_entry->nh_list_head, &nexthop->glthread);
+    if(IS_BIT_SET(nexthop->flags, PRIMARY_NH))
+        glthread_add_next(&rt_un_entry->nh_list_head, &nexthop->glthread);
+    else
+        glthread_add_last(&rt_un_entry->nh_list_head, &nexthop->glthread);
     
     return TRUE;
 }
@@ -338,7 +343,7 @@ inet_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
 }
 
 
-static boolean
+boolean
 inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, 
                             internal_un_nh_t *nexthop){
     
@@ -369,7 +374,10 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
     }
 
     init_glthread(&nexthop->glthread);
-    glthread_add_next(&rt_un_entry->nh_list_head, &nexthop->glthread);
+    if(IS_BIT_SET(nexthop->flags, PRIMARY_NH))
+        glthread_add_next(&rt_un_entry->nh_list_head, &nexthop->glthread);
+    else
+        glthread_add_last(&rt_un_entry->nh_list_head, &nexthop->glthread);
     
     return TRUE;
 }
@@ -474,7 +482,7 @@ mpls_0_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
 }
 
 
-static boolean
+boolean
 mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, 
                             internal_un_nh_t *nexthop){
     
@@ -505,8 +513,11 @@ mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
     }
 
     init_glthread(&nexthop->glthread);
-    glthread_add_next(&rt_un_entry->nh_list_head, &nexthop->glthread);
     
+    if(IS_BIT_SET(nexthop->flags, PRIMARY_NH))
+        glthread_add_next(&rt_un_entry->nh_list_head, &nexthop->glthread);
+    else
+        glthread_add_last(&rt_un_entry->nh_list_head, &nexthop->glthread);
     return TRUE;
 }
 
@@ -605,8 +616,12 @@ inet_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto){
     return un_nh;
 }
 
+/*This fn converts the RSVP|LDP|SPRING nexthop on ingress router
+ * into inet.3 route format*/
 internal_un_nh_t *
-inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto){
+inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto, 
+                      unsigned int nxthop_type,
+                      routes_t *route){
 
     internal_un_nh_t *un_nh = inet_0_unifiy_nexthop(nexthop, proto);
     UNSET_BIT(un_nh->flags, IPV4_NH);
@@ -625,17 +640,76 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto){
             break;
         case RSVP_PROTO: 
             SET_BIT(un_nh->flags, IPV4_RSVP_NH);
+            break;
          default:
             assert(0);
     }
 
-    /*Fill the MPLS label stack*/
-    unsigned int i = 0;
-    for(; i < MPLS_STACK_OP_LIMIT_MAX; i++){
-        un_nh->nh.inet3_nh.mpls_label_out[i] = nexthop->mpls_label_out[i];
-        un_nh->nh.inet3_nh.stack_op[i] = nexthop->stack_op[i];
-    }
+    remote_label_binding_t *remote_label_binding =NULL;
+    mpls_label_t outgoing_label = 0;
 
+    switch(nxthop_type){
+        case IPV4_RSVP_NH:
+            break; /*Later*/
+        case IPV4_LDP_NH:
+        {
+            if(is_node_best_prefix_originator(nexthop->node, route)){
+                /* No need to label the packet when src and dest are 
+                 * direct nbrs - that is there is not transient nxthop*/
+                SET_BIT(un_nh->flags, IPV4_NH);
+                UNSET_BIT(un_nh->flags, IPV4_LDP_NH);
+                return un_nh;
+            }
+            SET_BIT(un_nh->flags, IPV4_LDP_NH);
+            remote_label_binding = get_downstream_router_ldp_label_binding( \
+                    nexthop->node ?  nexthop->node :                        \
+                    nexthop->proxy_nbr, route->rt_key.u.prefix.prefix,      \
+                    route->rt_key.u.prefix.mask);
+
+
+            if(!remote_label_binding){
+                /*Means downstream nbr has not advertised the LDP label. Try for Spring label
+                 * This feature is LDPoSR*/
+                break;
+            }
+            outgoing_label = remote_label_binding->outgoing_label;
+            un_nh->nh.inet3_nh.mpls_label_out[0] = outgoing_label;
+            un_nh->nh.inet3_nh.stack_op[0] = PUSH;
+            return un_nh;
+        }
+        break;
+        case IPV4_SPRING_NH:
+        {
+            if(is_node_best_prefix_originator(nexthop->node, route)){
+                /* No need to label the packet when src and dest are 
+                 * direct nbrs - that is there is not transient nxthop*/
+                SET_BIT(un_nh->flags, IPV4_NH);
+                UNSET_BIT(un_nh->flags, IPV4_SPRING_NH);
+                return un_nh;
+            }
+            SET_BIT(un_nh->flags, IPV4_SPRING_NH);
+            if(!is_node_spring_enabled(nexthop->node, route->level)){
+                /*If nexthop node is not spring enabled, we cannot obtain 
+                 * outgoing SR label for it. Try for LDP label instead.
+                 * This feature is called SRoLDP*/
+                break;
+            }
+            
+            /*copy stack*/
+            int i = MPLS_STACK_OP_LIMIT_MAX -1;
+            for(; i >= 0; i--){
+                un_nh->nh.mpls0_nh.mpls_label_out[i] = nexthop->mpls_label_out[i];
+                un_nh->nh.mpls0_nh.stack_op[i] = nexthop->stack_op[i];
+            }
+            /*Change top Label stack operation to PUSH*/
+            char top_index = get_stack_top_index(un_nh);
+            un_nh->nh.mpls0_nh.stack_op[top_index] = PUSH;
+            return un_nh;
+        }
+        break;
+        default:
+            ;
+    }
     return un_nh;
 }
 
@@ -662,7 +736,7 @@ mpls_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto){
 
     /*Fill the MPLS label stack*/
 
-    un_nh->nh.mpls0_nh.mpls_label_in = nexthop->mpls_label_in;
+    //un_nh->nh.mpls0_nh.mpls_label_in = nexthop->mpls_label_in;
     unsigned int i = 0;
     
     for(; i < MPLS_STACK_OP_LIMIT_MAX; i++){
@@ -732,7 +806,7 @@ flush_rib(rt_un_table_t *rib){
 }
 
 void
-inet_0_display(rt_un_table_t *rib, rt_key_t *rt_key){
+inet_0_display(rt_un_table_t *rib, char *prefix, char mask){
 
     glthread_t *curr = NULL, *curr1 = NULL;
     rt_un_entry_t *rt_un_entry = NULL;
@@ -740,8 +814,13 @@ inet_0_display(rt_un_table_t *rib, rt_key_t *rt_key){
 
     printf("%s  count : %u\n\n", rib->rib_name, rib->count);
 
-    if(rt_key){
-        rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
+    if(prefix){
+        rt_key_t rt_key;
+        memset(&rt_key, 0, sizeof(rt_key_t));
+        strncpy(RT_ENTRY_PFX(&rt_key), prefix, PREFIX_LEN);
+        RT_ENTRY_MASK(&rt_key) = mask;
+
+        rt_un_entry = rib->rt_un_route_lookup(rib, &rt_key);
         if(!rt_un_entry){
             printf("Do not exist\n");
             return;
@@ -774,7 +853,7 @@ inet_0_display(rt_un_table_t *rib, rt_key_t *rt_key){
 
 
 void
-inet_3_display(rt_un_table_t *rib, rt_key_t *rt_key){
+inet_3_display(rt_un_table_t *rib, char *prefix, char mask){
 
     glthread_t *curr = NULL, *curr1 = NULL;
     rt_un_entry_t *rt_un_entry = NULL;
@@ -782,8 +861,12 @@ inet_3_display(rt_un_table_t *rib, rt_key_t *rt_key){
     int i = 0;
     printf("%s  count : %u\n\n", rib->rib_name, rib->count);
 
-    if(rt_key){
-        rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
+    if(prefix){
+        rt_key_t rt_key;
+        memset(&rt_key, 0, sizeof(rt_key_t));
+        strncpy(RT_ENTRY_PFX(&rt_key), prefix, PREFIX_LEN);
+        RT_ENTRY_MASK(&rt_key) = mask;
+        rt_un_entry = rib->rt_un_route_lookup(rib, &rt_key);
         if(!rt_un_entry){
             printf("Do not exist\n");
             return;
@@ -809,6 +892,7 @@ inet_3_display(rt_un_table_t *rib, rt_key_t *rt_key){
                     printf("%s:%u  ", get_str_stackops(nexthop->nh.inet3_nh.stack_op[i]),   \
                             nexthop->nh.inet3_nh.mpls_label_out[i]);
             }
+            printf("\n");
         } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr1);
         return;
     }
@@ -840,12 +924,13 @@ inet_3_display(rt_un_table_t *rib, rt_key_t *rt_key){
                     printf("%s:%u  ", get_str_stackops(nexthop->nh.inet3_nh.stack_op[i]),   \
                             nexthop->nh.inet3_nh.mpls_label_out[i]);
             }
+            printf("\n");
         } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr1);
     } ITERATE_GLTHREAD_END(&rib->head, curr);
 }
 
 void
-mpls_0_display(rt_un_table_t *rib, rt_key_t *rt_key){
+mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
 
     glthread_t *curr = NULL, *curr1 = NULL;
     rt_un_entry_t *rt_un_entry = NULL;
@@ -853,15 +938,18 @@ mpls_0_display(rt_un_table_t *rib, rt_key_t *rt_key){
     int i = 0;
     printf("%s  count : %u\n\n", rib->rib_name, rib->count);
 
-    if(rt_key){
-        rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
+    if(in_label){
+        rt_key_t rt_key;
+        memset(&rt_key, 0, sizeof(rt_key_t));
+        RT_ENTRY_LABEL(&rt_key) = in_label;
+        rt_un_entry = rib->rt_un_route_lookup(rib, &rt_key);
         if(!rt_un_entry){
             printf("Do not exist\n");
             return;
         }
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
-            printf("\tInLabel : %u, %s %-16s %s   %s %s\n", nexthop->nh.mpls0_nh.mpls_label_in, 
+            printf("\tInLabel : %u, %s %-16s %s   %s %s\n", in_label, 
                     protocol_name(nexthop->protocol), 
                     nexthop->oif->intf_name, nexthop->gw_prefix,
                     IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
@@ -881,6 +969,7 @@ mpls_0_display(rt_un_table_t *rib, rt_key_t *rt_key){
                     printf("%s:%u  ", get_str_stackops(nexthop->nh.inet3_nh.stack_op[i]),   \
                             nexthop->nh.inet3_nh.mpls_label_out[i]);
             }
+            printf("\n");
         } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr1);
         return;
     }
@@ -889,11 +978,12 @@ mpls_0_display(rt_un_table_t *rib, rt_key_t *rt_key){
 
         rt_un_entry = glthread_to_rt_un_entry(curr);
 
-        printf("%s/%u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+        printf("%s/%u, Inlabel : %u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+            RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key));
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
-            printf("\tInLabel : %u, %s %-16s %s   %s %s\n", nexthop->nh.mpls0_nh.mpls_label_in,
+            printf("\t%s %-16s %s   %s %s\n", 
                     protocol_name(nexthop->protocol), 
                     nexthop->oif->intf_name, nexthop->gw_prefix,
                     IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
@@ -913,6 +1003,20 @@ mpls_0_display(rt_un_table_t *rib, rt_key_t *rt_key){
                     printf("%s:%u  ", get_str_stackops(nexthop->nh.inet3_nh.stack_op[i]),   \
                             nexthop->nh.inet3_nh.mpls_label_out[i]);
             }
+            printf("\n");
         } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr1);
     } ITERATE_GLTHREAD_END(&rib->head, curr);
+}
+
+int
+get_stack_top_index(internal_un_nh_t *nexthop){
+
+    int i = MPLS_STACK_OP_LIMIT_MAX -1;
+    for(; i >= 0; i--){
+        if(nexthop->nh.inet3_nh.mpls_label_out[i] == 0 &&
+            nexthop->nh.inet3_nh.stack_op[i] == STACK_OPS_UNKNOWN)
+            continue;
+        return i;   
+    }
+    return -1;
 }

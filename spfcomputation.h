@@ -64,7 +64,7 @@ typedef struct internal_nh_t_{
     lfa_type_t lfa_type;
     node_t *proxy_nbr;
     node_t *rlfa;
-    mpls_label_t mpls_label_in; /*Used for LDP/RSVP and SR routes*/
+    //mpls_label_t mpls_label_in; /*Used for LDP/RSVP and SR routes*/
 
     /*Spring out information*/
     mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];/*For SR routes only*/
@@ -116,7 +116,6 @@ typedef struct internal_nh_t_{
     (_internal_nh_t).lfa_type = UNKNOWN_LFA_TYPE;                            \
     (_internal_nh_t).proxy_nbr = NULL;                                       \
     (_internal_nh_t).rlfa = NULL;                                            \
-    (_internal_nh_t).mpls_label_in = 0;                                           \
     (_internal_nh_t).root_metric = 0;                                        \
     (_internal_nh_t).dest_metric = 0;                                        \
     (_internal_nh_t).is_eligible = FALSE
@@ -131,18 +130,18 @@ typedef struct internal_nh_t_{
     (_dst).lfa_type = (_src).lfa_type;                  \
     (_dst).proxy_nbr = (_src).proxy_nbr;                \
     (_dst).rlfa = (_src).rlfa;                          \
-    (_dst).mpls_label_in = (_src).mpls_label_in;                  \
     (_dst).root_metric = (_src).root_metric;            \
     (_dst).dest_metric = (_src).dest_metric;            \
     (_dst).is_eligible = (_src).is_eligible
 
+/*ToDo : MPLS Label stack has been skipped for comparison*/
 #define is_internal_nh_t_equal(_nh1, _nh2)                   \
     (_nh1.level == _nh2.level && _nh1.node == _nh2.node &&   \
     _nh1.oif == _nh2.oif && _nh1.nh_type == _nh2.nh_type &&  \
     _nh1.protected_link == _nh2.protected_link &&            \
     _nh1.lfa_type == _nh2.lfa_type &&                        \
-    _nh1.rlfa == _nh2.rlfa && _nh1.mpls_label_in == _nh2.mpls_label_in && \
-    _nh1.root_metric == _nh2.root_metric &&                     \
+    _nh1.rlfa == _nh2.rlfa &&                                \
+    _nh1.root_metric == _nh2.root_metric &&                  \
     _nh1.dest_metric == _nh2.dest_metric)
 
 #define is_internal_nh_t_empty(_nh) \
@@ -307,6 +306,5 @@ DIST_X_Y(node_t *X, node_t *Y, LEVEL _level);
 
 void
 spf_only_intitialization(node_t *spf_root, LEVEL level);
-
 
 #endif /* __SPFCOMPUTATION__ */

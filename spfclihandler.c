@@ -43,8 +43,11 @@
 #include "sr_tlv_api.h"
 #include "igp_sr_ext.h"
 #include "rt_mpls.h"
+#include "unified_nh.h"
 
 extern instance_t * instance;
+extern void
+show_mpls_ldp_label_local_bindings(node_t *node);
 
 static void
 _run_spf_run_all_nodes(){
@@ -701,7 +704,7 @@ dump_next_hop(internal_nh_t *nh){
     else
         printf("rlfa = %-16s\n", "NULL");
 
-    printf("\tmpls_label_in = %-17u", nh->mpls_label_in);
+    //printf("\tmpls_label_in = %-17u", nh->mpls_label_in);
     printf("root_metric = %-8u", nh->root_metric);
     printf("dest_metric = %-8u", nh->dest_metric);
     printf("is_eligible = %-6s\n", nh->is_eligible ? "TRUE" : "FALSE");
@@ -977,7 +980,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
     switch(cmd_code){
         case CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS:
             show_mpls_ldp_label_local_bindings(node);
-        break;
+            break;
         case CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT:
             {
                 ll_t *res = prefix_conflict_resolution(node, level);
@@ -1028,7 +1031,8 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
             show_node_spring_details(node, level);
         break;
         case CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE:
-            show_mpls_rt_table(node);
+            mpls_0_display(node->spf_info.rib[MPLS_0], 0);
+            //show_mpls_rt_table(node);
             break;
         default:
             ;
