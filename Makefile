@@ -6,7 +6,10 @@ USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o spfclihandler.o spfcomputation.o spfutil.o spftrace.o ./Libtrace/libtrace.o mpls/ldp.o igp_sr_ext.o sr_tlv_api.o rt_mpls.o unified_nh.o srms.o ${DSOBJ}
+OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
+	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 				   \
+	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o igp_sr_ext.o 			\
+	sr_tlv_api.o rt_mpls.o unified_nh.o srms.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -36,6 +39,9 @@ instance.o:instance.c
 mpls/ldp.o:mpls/ldp.c
 	@echo "Building mpls/ldp.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} mpls/ldp.c -o mpls/ldp.o
+mpls/rsvp.o:mpls/rsvp.c
+	@echo "Building mpls/rsvp.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} mpls/rsvp.c -o mpls/rsvp.o
 advert.o:advert.c
 	@echo "Building advert.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} advert.c -o advert.o

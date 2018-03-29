@@ -45,11 +45,17 @@
 #include "rt_mpls.h"
 #include "routes.h"
 #include "advert.h"
+#include "unified_nh.h"
 
 extern
 instance_t *instance;
 
 /*All Command Handler Functions goes here */
+
+extern void
+inet_0_display(rt_un_table_t *rib, char *prefix, char mask);
+extern void
+inet_3_display(rt_un_table_t *rib, char *prefix, char mask);
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
@@ -232,7 +238,6 @@ show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
             show_internal_routing_tree(node, prefix, mask, SPRING_T);
             break;
         case CMDCODE_SHOW_NODE_FORWARDING_TABLE:
-           //show_routing_table_inet(node->spf_info.rttable, prefix, mask);
            inet_0_display(node->spf_info.rib[INET_0], prefix, mask);
            break;
         case CMDCODE_SHOW_NODE_INET3_FORWARDING_TABLE:
@@ -1127,6 +1132,17 @@ spf_init_dcm(){
                     set_param_cmd_code(&bindings, CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS);
                 }
             }
+            {
+                static param_t rsvp;
+                init_param(&rsvp, CMD, "rsvp", 0, 0, INVALID, 0, "Enable Disable RSVP");
+                libcli_register_param(&mpls, &rsvp);
+                {
+                    static param_t bindings;
+                    init_param(&bindings, CMD, "bindings", instance_node_spring_show_handler, 0, INVALID, 0, "Show local LDP label Bindings");
+                    libcli_register_param(&rsvp, &bindings);
+                    set_param_cmd_code(&bindings, CMDCODE_SHOW_NODE_MPLS_RSVP_BINDINGS);
+                }
+            }
         }
     }
 
@@ -1337,6 +1353,14 @@ spf_init_dcm(){
             init_param(&ldp, CMD, "ldp", instance_node_ldp_config_handler, 0, INVALID, 0, "Enable Disable LDP");
             libcli_register_param(&config_node_node_name, &ldp);
             set_param_cmd_code(&ldp, CMDCODE_CONFIG_NODE_ENABLE_LDP);
+        }
+        
+        /*config node <node-name> rsvp*/
+        {
+            static param_t rsvp;
+            init_param(&rsvp, CMD, "rsvp", instance_node_rsvp_config_handler, 0, INVALID, 0, "Enable Disable RSVP");
+            libcli_register_param(&config_node_node_name, &rsvp);
+            set_param_cmd_code(&rsvp, CMDCODE_CONFIG_NODE_ENABLE_RSVP);
         }
         /*config node <node-name> backup-spf-options*/
         
@@ -1964,6 +1988,10 @@ dump_node_info(node_t *node){
             (node->node_type[LEVEL1] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE", 
             (node->node_type[LEVEL2] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE",
             get_str_node_area(node->area));
+
+    printf("LDP : %s    RSVP : %s\n", node->ldp_config.is_enabled ? "Enabled" : "Disabled",
+                                      node->rsvp_config.is_enabled ? "Enabled" : "Disabled");
+
     printf("backup-spf-options : %s\n", IS_BIT_SET(node->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED) ? \
         "ENABLED" : "DISABLED");
     if(IS_BIT_SET(node->backup_spf_options, SPF_BACKUP_OPTIONS_ENABLED)){

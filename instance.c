@@ -119,8 +119,8 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     node->use_spring_backups = FALSE;
     node->srgb = NULL;
 
-    /*LDP related initialization*/
     node->ldp_config.is_enabled = FALSE;
+    node->rsvp_config.is_enabled = FALSE;
     node->am_i_mapping_client = TRUE; /*By default it should be TRUE, pg 335*/
     node->am_i_mapping_server = FALSE;
     node->is_ldp_preferred_over_sr = TRUE;

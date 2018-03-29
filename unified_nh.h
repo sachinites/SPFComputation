@@ -76,6 +76,33 @@ typedef enum{
 } rib_type_t;
 
 
+/*To reach a certain destination, it is possible
+ * that more than one type of routes are available.
+ * For example, to reach a destination A.B.C.D, IP nexthop,
+ * spring nexthop, ldp nexthop or rsvp nexthop may be 
+ * available on the router. This enums defines the preference
+ * order to select one out of many alternatives. Change this
+ * prefrence order in enum to change nexthop selection order.
+ * */
+
+typedef enum{
+
+    IP_ROUTE,
+    SPRING_ROUTE,
+    LDP_ROUTE,
+    RSVP_ROUTE,
+    ROUTE_TYPE_MAX
+} trace_route_pref_order_t;
+
+static trace_route_pref_order_t FIRST_ROUTE_PREF = 0;
+
+static inline trace_route_pref_order_t
+get_next_preferred_route_type(trace_route_pref_order_t curr_pref){
+    if(curr_pref + 1 == ROUTE_TYPE_MAX)
+        return curr_pref;
+    return curr_pref + 1;
+}
+
 typedef struct rt_key_{
 
     struct rt_pfx{

@@ -44,6 +44,7 @@
 #include "Libtrace/libtrace.h"
 #include "glthread.h"
 #include "ldp.h"
+#include "rsvp.h"
 
 typedef struct edge_end_ edge_end_t;
 
@@ -93,6 +94,9 @@ typedef struct _node_t{
 
     /*LDP related config*/
     ldp_config_t ldp_config;
+
+    /*RSVP related config*/
+    rsvp_config_t rsvp_config;
     /* While storing the routes with outgoing label in inet.3 table, if both
      * SR and LDP nexthop is available, then which one is to be installed. By
      * default LDP is preferred*/

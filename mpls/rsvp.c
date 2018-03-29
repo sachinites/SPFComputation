@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  ldp.c
+ *       Filename:  rsvp.c
  *
  *    Description:  
  *
@@ -30,37 +30,37 @@
  * =====================================================================================
  */
 
-#include "ldp.h"
+#include "rsvp.h"
 #include "instance.h"
 #include "spfutil.h"
 
 void
-enable_ldp(node_t *node){
+enable_rsvp(node_t *node){
 
-    if(node->ldp_config.is_enabled == TRUE)
+    if(node->rsvp_config.is_enabled == TRUE)
         return;
 
-    node->ldp_config.is_enabled = TRUE;
+    node->rsvp_config.is_enabled = TRUE;
 }
 
 void
-disable_ldp(node_t *node){
+disable_rsvp(node_t *node){
 
-    if(node->ldp_config.is_enabled == FALSE)
+    if(node->rsvp_config.is_enabled == FALSE)
         return;
 
-    node->ldp_config.is_enabled = FALSE;
+    node->rsvp_config.is_enabled = FALSE;
 }
 
 void
-show_mpls_ldp_label_local_bindings(node_t *node){
+show_mpls_rsvp_label_local_bindings(node_t *node){
 
-    if(node->ldp_config.is_enabled == FALSE){
-        printf("LDP not enabled\n");
+    if(node->rsvp_config.is_enabled == FALSE){
+        printf("RSVP not enabled\n");
         return;
     }
 
-    printf("Node : %s LDP local Bindings:\n", node->node_name);
+    printf("Node : %s RSVP local Bindings:\n", node->node_name);
     printf("\tPrefix/msk          Lcl Label\n");
     printf("\t================================\n");
 
@@ -75,7 +75,7 @@ show_mpls_ldp_label_local_bindings(node_t *node){
             memset(str_prefix_with_mask, 0, PREFIX_LEN_WITH_MASK + 1);
             apply_mask2(prefix->prefix, prefix->mask, str_prefix_with_mask);
             printf("\t%-22s %u\n", str_prefix_with_mask, 
-                get_ldp_label_binding(node, prefix->prefix, prefix->mask));
+                get_rsvp_label_binding(node, prefix->prefix, prefix->mask));
         } ITERATE_LIST_END;
     }
 }
@@ -83,16 +83,16 @@ show_mpls_ldp_label_local_bindings(node_t *node){
 static char buff[NODE_NAME_SIZE + PREFIX_LEN_WITH_MASK];
 
 mpls_label_t
-get_ldp_label_binding(node_t *down_stream_node, 
+get_rsvp_label_binding(node_t *down_stream_node, 
                                         char *prefix, char mask){
-    /*To simulate the LDP label distrubution in the network, we will 
+    /*To simulate the RSVP label distrubution in the network, we will 
      * use heuristics. Each router uses this heuristics to generate
-     * LDP labels for all prefixes in the network*/
+     * RSVP labels for all prefixes in the network*/
 
     /*The label generated should be locally unique. This heuristics do not
      * guarantees this but the probablity of collision is almost zero*/
 
-    if(down_stream_node->ldp_config.is_enabled == FALSE){
+    if(down_stream_node->rsvp_config.is_enabled == FALSE){
         return 0;
     }
 
@@ -103,8 +103,8 @@ get_ldp_label_binding(node_t *down_stream_node,
     buff[NODE_NAME_SIZE + PREFIX_LEN_WITH_MASK - 1] = '\0';
     
     mpls_label_t label = hash_code(buff, sizeof(buff));
-    label = label % (LDP_LABEL_RANGE_MAX - LDP_LABEL_RANGE_MIN);
-    label += LDP_LABEL_RANGE_MIN;
+    label = label % (RSVP_LABEL_RANGE_MAX - LDP_LABEL_RANGE_MIN);
+    label += RSVP_LABEL_RANGE_MIN;
 
     return label;
 }

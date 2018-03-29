@@ -119,5 +119,8 @@ is_internal_nh_exist(ll_t *lst, internal_nh_t *nh);
 unsigned int
 get_new_if_index();
 
+unsigned int
+hash_code(void *ptr, unsigned int size);
+    
 #endif /* __SPFUTIL__ */ 
 

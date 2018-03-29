@@ -675,11 +675,6 @@ int
 sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route){
 
 
-    unsigned int i = 0;
-    singly_ll_node_t *list_node = NULL;
-    internal_nh_t *ipv4_prim_nh = NULL;
-    mpls_rt_nh_t *mpls_nh = NULL;
-   
    /*route should be for remote destination*/
     assert(route->hosting_node != node); 
     prefix_t *prefix  = ROUTE_GET_BEST_PREFIX(route);

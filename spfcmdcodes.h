@@ -137,4 +137,8 @@
 #define CMDCODE_CONFIG_NODE_SRMS                            84 /*config node <node-name> source-packet-routing prefix-sid-map advertise-local*/ /*Configure the node as SRMS*/ 
 #define CMDCODE_CONFIG_NODE_SRMS_CLIENT_DISABLE             85 /*config node <node-name> source-packet-routing prefix-sid-map recieve disable*//*Disable the node as Mapping client*/
 #define CMDCODE_SHOW_NODE_INET3_FORWARDING_TABLE            86 /*show instance node <node-name> inet.3 forwarding-table*/
+
+/*RSVP*/
+#define CMDCODE_CONFIG_NODE_ENABLE_RSVP                     87 /*config node <node-name> rsvp*/
+#define CMDCODE_SHOW_NODE_MPLS_RSVP_BINDINGS                88 /*show instance node <node-name> mpls rsvp bindings <prefix> <mask>*/
 #endif /* __SPFCMDCODES__H */

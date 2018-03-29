@@ -96,11 +96,6 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
     spf_result_t *D_res = NULL;
     node_t *E = protected_link->to.node;
     
-    unsigned int d_prim_nh_to_D = 0,
-                 d_prim_nh_to_E = 0,
-                 d_E_to_D       = 0,
-                 i = 0;
-
     assert(IS_LEVEL_SET(protected_link->level, level));
 
     /* If it is false, it dont mean anything, but if it is true then

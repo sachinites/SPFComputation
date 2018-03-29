@@ -1,9 +1,9 @@
 /*
  * =====================================================================================
  *
- *       Filename:  ldp.h
+ *       Filename:  rsvp.h
  *
- *    Description:  
+ *    Description:  This file implements RSVP related minimal functionalities
  *
  *        Version:  1.0
  *        Created:  Saturday 17 February 2018 12:45:15  IST
@@ -30,29 +30,29 @@
  * =====================================================================================
  */
 
-#ifndef __LDP__
-#define __LDP__
+#ifndef __RSVP__
+#define __RSVP__
 
 #include "instanceconst.h"
 
-#define LDP_LABEL_RANGE_MIN     100000
-#define LDP_LABEL_RANGE_MAX     300000
+#define RSVP_LABEL_RANGE_MIN     300000
+#define RSVP_LABEL_RANGE_MAX     500000
 
 typedef struct _node_t node_t;
 
-typedef struct _ldp_config_{
+typedef struct _rsvp_config_{
     
-    boolean is_enabled; /*Is LDP enabled on the node*/
-} ldp_config_t;
+    boolean is_enabled; /*Is RSVP enabled on the node*/
+} rsvp_config_t;
 
 void
-enable_ldp(node_t *node);
+enable_rsvp(node_t *node);
 
 void
-disable_ldp(node_t *node);
+disable_rsvp(node_t *node);
 
 mpls_label_t
-get_ldp_label_binding(node_t *down_stream_node,
+get_rsvp_label_binding(node_t *down_stream_node,
         char *prefix, char mask);
 
-#endif /* __LDP__*/
+#endif /* __RSVP__*/

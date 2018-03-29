@@ -49,6 +49,9 @@ spf_computation(node_t *spf_root,
 extern int
 instance_node_comparison_fn(void *_node, void *input_node_name);
 
+static void
+enhanced_start_route_installation(spf_info_t *spf_info,
+                         LEVEL level, rtttype_t rtttype);
 
 #if 0
 THREAD_NODE_TO_STRUCT(prefix_t,
@@ -123,8 +126,6 @@ merge_route_backup_nexthops(routes_t *route,
     unsigned int i = 0;
     internal_nh_t *int_nxt_hop = NULL,
                   *backup = NULL;
-    singly_ll_node_t *list_node = NULL,
-                     *temp = NULL;
 
     boolean dont_collect_onlylink_protecting_backups =
         is_destination_has_multiple_primary_nxthops(result);
@@ -445,27 +446,30 @@ is_changed_route(spf_info_t *spf_info,
 
    assert(route->install_state == RTE_UPDATED);
    rttable_entry_t *rt_entry = NULL;
-   mpls_rt_entry_t *mpls_rt_entry = NULL;
 
    switch(spf_type){
        case FULL_RUN:
        case PRC_RUN:
            switch(rt_type){
                case UNICAST_T:
-               rt_entry = rib_entry;
-               if((strncmp(rt_entry->dest.prefix, route->rt_key.u.prefix.prefix, PREFIX_LEN + 1) == 0)   &&
-                       (rt_entry->dest.mask == route->rt_key.u.prefix.mask)                              &&
-                       (rt_entry->primary_nh_count[IPNH] == ROUTE_GET_PR_NH_CNT(route, IPNH))   && 
-                       (rt_entry->primary_nh_count[LSPNH] == ROUTE_GET_PR_NH_CNT(route, LSPNH)) &&
-                       (rt_entry->backup_nh_count == GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[IPNH])
-                        + GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[LSPNH]))       && 
-                       (route_rib_same_next_hops(rt_entry, route) == TRUE))
-                   return FALSE;
-               return TRUE; 
-               break;
+                   rt_entry = rib_entry;
+                   if((strncmp(rt_entry->dest.prefix, route->rt_key.u.prefix.prefix, PREFIX_LEN + 1) == 0)   &&
+                           (rt_entry->dest.mask == route->rt_key.u.prefix.mask)                              &&
+                           (rt_entry->primary_nh_count[IPNH] == ROUTE_GET_PR_NH_CNT(route, IPNH))   && 
+                           (rt_entry->primary_nh_count[LSPNH] == ROUTE_GET_PR_NH_CNT(route, LSPNH)) &&
+                           (rt_entry->backup_nh_count == GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[IPNH])
+                            + GET_NODE_COUNT_SINGLY_LL(route->backup_nh_list[LSPNH]))       && 
+                           (route_rib_same_next_hops(rt_entry, route) == TRUE))
+                       return FALSE;
+                   return TRUE; 
+                   break;
                case SPRING_T:
-                return TRUE; /*TODO*/
-               break; 
+                   return TRUE; /*TODO*/
+                   break; 
+               case TOPO_MAX:
+                   break;
+               default:
+                   ;
            }
            break;
        case FORWARD_RUN:
@@ -541,8 +545,7 @@ mark_all_routes_stale_except_direct_routes(spf_info_t *spf_info, LEVEL level){
 void
 mark_all_routes_stale(spf_info_t *spf_info, LEVEL level, rtttype_t topology){
 
-    singly_ll_node_t* list_node = NULL,
-        *list_node1 = NULL;
+    singly_ll_node_t* list_node = NULL;
     routes_t *route = NULL;
 
     ITERATE_LIST_BEGIN(spf_info->routes_list[topology], list_node){
@@ -774,7 +777,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
     routes_t *route = NULL;
     unsigned int i = 0;
-    prefix_t *route_prefix = NULL;
     nh_type_t nh = NH_MAX;
     internal_nh_t *int_nxt_hop = NULL;
 
@@ -1438,8 +1440,7 @@ static void
 refine_route_backups(routes_t *route){
 
     nh_type_t nh;
-    singly_ll_node_t *list_node1 = NULL,
-                     *prev_list_node = NULL;
+    singly_ll_node_t *list_node1 = NULL;
 
     LEVEL level = route->level;
     if(is_independant_primary_next_hop_list(route)){
@@ -1495,18 +1496,13 @@ build_routing_table(spf_info_t *spf_info,
                     node_t *spf_root, LEVEL level){
 
     singly_ll_node_t *list_node = NULL,
-                     *prefix_list_node = NULL,
-                     *list_node1 = NULL,
-                     *temp = NULL;
+                     *prefix_list_node = NULL;
 
     routes_t *route = NULL;
     prefix_t *prefix = NULL;
     spf_result_t *result = NULL,
                  *L1L2_result = NULL;
 
-    unsigned int i = 0;
-    rttable_entry_t *rt_entry = NULL;
-    
     sprintf(instance->traceopts->b, "Entered ... spf_root : %s, Level : %s", spf_root->node_name, get_str_level(level));
     trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
     
@@ -1560,7 +1556,6 @@ build_routing_table(spf_info_t *spf_info,
 
     /*Iterate over all UPDATED routes and figured out which one needs to be updated
      * in RIB*/
-    nh_type_t nh;
     ITERATE_LIST_BEGIN(spf_info->routes_list[UNICAST_T], list_node){
 
         route = list_node->data;
@@ -1625,7 +1620,12 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
         update_node_segment_routes_for_remote(spf_info, level);
         //delete_stale_routes(spf_info, level, SPRING_T);
     }
-   
+  
+    /*Flush all Ribs before route installation*/ 
+    flush_rib(spf_info->rib[INET_0]);
+    flush_rib(spf_info->rib[INET_3]);
+    flush_rib(spf_info->rib[MPLS_0]);
+
     enhanced_start_route_installation(spf_info, level, UNICAST_T);
     if(is_node_spring_enabled(spf_root, level)){
         enhanced_start_route_installation(spf_info, level, SPRING_T);   
@@ -1661,16 +1661,14 @@ start_spring_routes_installation(spf_info_t *spf_info,
 
     sprintf(instance->traceopts->b, "Entered ... Level : %u", level);
     trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
-    singly_ll_node_t *list_node = NULL, 
-                     *list_node2 = NULL;
+    singly_ll_node_t *list_node = NULL;
 
     routes_t *route = NULL;
     mpls_rt_entry_t *rt_entry_template = NULL;
     mpls_rt_entry_t *existing_rt_route = NULL;
     prefix_t *best_prefix = NULL;
 
-    unsigned int i = 0,
-                 rt_added = 0,
+    unsigned int rt_added = 0,
                  rt_removed = 0, 
                  rt_updated = 0, 
                  rt_no_change = 0;
@@ -1814,8 +1812,6 @@ show_internal_routing_tree(node_t *node, char *prefix, char mask, rtttype_t rt_t
         unsigned int j = 0,
                      total_nx_hops = 0;
 
-        time_t curr_time = time(NULL);
-
         printf("Internal Routes : %s\n", rt_type == UNICAST_T ? "Unicast" : "Spring");
         printf("Destination           Version        Metric       Level   Gateway            Nxt-Hop                     OIF           protection    Backup Score\n");
         printf("--------------------------------------------------------------------------------------------------------------------------------------------------\n");
@@ -1924,7 +1920,6 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
     glthread_t *curr = NULL;
     prefix_sid_subtlv_t *prefix_sid = NULL;
     routes_t *route = NULL;
-    rttable_entry_t *rt_entry = NULL;
     node_t *spf_root = GET_SPF_INFO_NODE(spf_info, level),
            *D_res = NULL;
 
@@ -2018,11 +2013,6 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
     boolean rc = FALSE;
     rt_key_t rt_key;
 
-    node_t *spf_root = GET_SPF_INFO_NODE(spf_info, level);
-    
-    flush_rib(spf_info->rib[INET_0]);
-    flush_rib(spf_info->rib[INET_3]);
-
     ITERATE_LIST_BEGIN(spf_info->routes_list[UNICAST_T], list_node){
         
         route = list_node->data;
@@ -2113,11 +2103,6 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
     internal_un_nh_t *un_nxthop = NULL;
     boolean rc = FALSE;
     rt_key_t rt_key;
-
-    node_t *spf_root = GET_SPF_INFO_NODE(spf_info, level);
-    
-    flush_rib(spf_info->rib[INET_3]);
-    flush_rib(spf_info->rib[MPLS_0]);
 
     ITERATE_LIST_BEGIN(spf_info->routes_list[SPRING_T], list_node){
         
@@ -2211,10 +2196,11 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
     } ITERATE_LIST_END;
 }
 
-void
+static void
 enhanced_start_route_installation(spf_info_t *spf_info,
                          LEVEL level, rtttype_t rtttype){
 
+    
     switch(rtttype){
         case UNICAST_T:
             enhanced_start_route_installation_unicast(spf_info, level);

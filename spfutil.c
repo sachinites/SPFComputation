@@ -409,3 +409,18 @@ get_new_if_index(){
     static unsigned int index = 100000;
     return index++;
 }
+
+unsigned int
+hash_code(void *ptr, unsigned int size){
+    unsigned int value=0, i =0;
+    char *str = (char*)ptr;
+    while(i < size)
+    {
+        value += *str;
+        value*=97;
+        str++;
+        i++;
+    }
+    return value;
+}
+

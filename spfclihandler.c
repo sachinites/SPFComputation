@@ -43,11 +43,15 @@
 #include "sr_tlv_api.h"
 #include "igp_sr_ext.h"
 #include "rt_mpls.h"
-#include "unified_nh.h"
 
 extern instance_t * instance;
+
+extern void
+mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label);
 extern void
 show_mpls_ldp_label_local_bindings(node_t *node);
+extern void
+show_mpls_rsvp_label_local_bindings(node_t *node);
 
 static void
 _run_spf_run_all_nodes(){
@@ -981,6 +985,9 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
         case CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS:
             show_mpls_ldp_label_local_bindings(node);
             break;
+        case CMDCODE_SHOW_NODE_MPLS_RSVP_BINDINGS:
+            show_mpls_rsvp_label_local_bindings(node);
+            break;
         case CMDCODE_DEBUG_SHOW_PREFIX_CONFLICT_RESULT:
             {
                 ll_t *res = prefix_conflict_resolution(node, level);
@@ -1032,7 +1039,6 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
         break;
         case CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE:
             mpls_0_display(node->spf_info.rib[MPLS_0], 0);
-            //show_mpls_rt_table(node);
             break;
         default:
             ;
@@ -1105,4 +1111,37 @@ instance_node_ldp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
     return 0;
 }
 
+int
+instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    int cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+    tlv_struct_t *tlv = NULL;
+    node_t *node = NULL;
+    char *node_name = NULL;
+       
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+        else
+            assert(0);
+    } TLV_LOOP_END;
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+     
+    switch(cmd_code){
+        case CMDCODE_CONFIG_NODE_ENABLE_RSVP:
+        switch(enable_or_disable){
+            case CONFIG_ENABLE:
+                enable_rsvp(node);            
+            break;
+            case CONFIG_DISABLE:
+                disable_rsvp(node);
+            break;
+            default:
+                assert(0);
+        }
+    }
+    return 0;
+}
 

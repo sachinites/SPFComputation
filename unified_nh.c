@@ -623,6 +623,9 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
                       unsigned int nxthop_type,
                       routes_t *route){
 
+    /*In case of IPV4 and RSVP nxthops, next hop is nexthop->node, whereas in case
+     * of LDP (RLFA) backups, nexthop is nexthop->proxy_nbr*/
+    node_t *nexthop_node = nexthop->node ?  nexthop->node : nexthop->proxy_nbr;
     internal_un_nh_t *un_nh = inet_0_unifiy_nexthop(nexthop, proto);
     UNSET_BIT(un_nh->flags, IPV4_NH);
     switch(proto){
@@ -645,15 +648,15 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
             assert(0);
     }
 
-    remote_label_binding_t *remote_label_binding =NULL;
-    mpls_label_t outgoing_label = 0;
+    mpls_label_t ldp_label = 0,
+                 outgoing_label = 0;
 
     switch(nxthop_type){
         case IPV4_RSVP_NH:
             break; /*Later*/
         case IPV4_LDP_NH:
         {
-            if(is_node_best_prefix_originator(nexthop->node, route)){
+            if(is_node_best_prefix_originator(nexthop_node, route)){
                 /* No need to label the packet when src and dest are 
                  * direct nbrs - that is there is not transient nxthop*/
                 SET_BIT(un_nh->flags, IPV4_NH);
@@ -661,18 +664,15 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
                 return un_nh;
             }
             SET_BIT(un_nh->flags, IPV4_LDP_NH);
-            remote_label_binding = get_downstream_router_ldp_label_binding( \
-                    nexthop->node ?  nexthop->node :                        \
-                    nexthop->proxy_nbr, route->rt_key.u.prefix.prefix,      \
-                    route->rt_key.u.prefix.mask);
+            ldp_label = get_ldp_label_binding(nexthop_node, 
+                        route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
 
-
-            if(!remote_label_binding){
+            if(!ldp_label){
                 /*Means downstream nbr has not advertised the LDP label. Try for Spring label
                  * This feature is LDPoSR*/
                 break;
             }
-            outgoing_label = remote_label_binding->outgoing_label;
+            outgoing_label = ldp_label;;
             un_nh->nh.inet3_nh.mpls_label_out[0] = outgoing_label;
             un_nh->nh.inet3_nh.stack_op[0] = PUSH;
             return un_nh;
@@ -680,7 +680,7 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
         break;
         case IPV4_SPRING_NH:
         {
-            if(is_node_best_prefix_originator(nexthop->node, route)){
+            if(is_node_best_prefix_originator(nexthop_node, route)){
                 /* No need to label the packet when src and dest are 
                  * direct nbrs - that is there is not transient nxthop*/
                 SET_BIT(un_nh->flags, IPV4_NH);
@@ -688,7 +688,7 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
                 return un_nh;
             }
             SET_BIT(un_nh->flags, IPV4_SPRING_NH);
-            if(!is_node_spring_enabled(nexthop->node, route->level)){
+            if(!is_node_spring_enabled(nexthop_node, route->level)){
                 /*If nexthop node is not spring enabled, we cannot obtain 
                  * outgoing SR label for it. Try for LDP label instead.
                  * This feature is called SRoLDP*/
@@ -702,7 +702,7 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
                 un_nh->nh.mpls0_nh.stack_op[i] = nexthop->stack_op[i];
             }
             /*Change top Label stack operation to PUSH*/
-            char top_index = get_stack_top_index(un_nh);
+            unsigned int top_index = get_stack_top_index(un_nh);
             un_nh->nh.mpls0_nh.stack_op[top_index] = PUSH;
             return un_nh;
         }
