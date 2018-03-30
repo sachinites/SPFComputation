@@ -37,8 +37,12 @@
 #include "spfcomputation.h"
 #include "routes.h"
 #include "ldp.h"
+#include "spfutil.h"
+#include "stack.h"
 
 extern instance_t *instance;
+void
+init_pfe();
 
 unsigned int
 get_direct_un_next_hop_metric(internal_un_nh_t *nh){
@@ -216,7 +220,6 @@ lookup_clone_next_hop(rt_un_table_t *rib,
 
 
 /*Rib functions*/
-#if 1
 boolean
 inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, 
                             internal_un_nh_t *nexthop){
@@ -224,9 +227,7 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
-    /*Refresh time before adding an enntry*/
-    time(&nexthop->last_refresh_time);
-
+    
     rt_un_entry_t *rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
     internal_un_nh_t *existing_nh = NULL;
 
@@ -237,6 +238,15 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
         glthread_add_next(&rib->head, &rt_un_entry->glthread);
         rib->count++;
     }
+
+    if(!nexthop){
+        sprintf(instance->traceopts->b, "RIB : %s : local route %s/%d added to Routing table",
+            rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
+        return TRUE;
+    }
+    
+    /*Refresh time before adding an enntry*/
+    time(&nexthop->last_refresh_time);
 
     existing_nh = lookup_clone_next_hop(rib, rt_un_entry, nexthop);
     
@@ -256,7 +266,6 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
     
     return TRUE;
 }
-#endif
 
 static boolean
 inet_0_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
@@ -350,8 +359,6 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
-    /*Refresh time before adding an enntry*/
-    time(&nexthop->last_refresh_time);
 
     rt_un_entry_t *rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
     internal_un_nh_t *existing_nh = NULL;
@@ -363,8 +370,17 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
         glthread_add_next(&rib->head, &rt_un_entry->glthread);
         rib->count++;
     }
+    
+    if(!nexthop){
+        sprintf(instance->traceopts->b, "RIB : %s : local route %s/%d added to Routing table",
+            rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
+        return TRUE;
+    }
 
+    /*Refresh time before adding an enntry*/
+    time(&nexthop->last_refresh_time);
     existing_nh = lookup_clone_next_hop(rib, rt_un_entry, nexthop);
+
     if(existing_nh){
         sprintf(instance->traceopts->b, "Warning : RIB : %s : Nexthop (%s) --> (%s)%s already exists in %s/%d route",
             rib->rib_name, existing_nh->oif->intf_name, existing_nh->gw_prefix, existing_nh->nh_node->node_name,
@@ -786,6 +802,8 @@ init_rib(rib_type_t rib_type){
         default:
             assert(0);
     }
+    
+    init_pfe();
     return rib;
 }
 
@@ -1020,3 +1038,367 @@ get_stack_top_index(internal_un_nh_t *nexthop){
     }
     return -1;
 }
+
+
+
+/*Applicable for inet.0 and inet.3 tables*/
+
+rt_un_entry_t *
+get_longest_prefix_match2(rt_un_table_t *rib, char *prefix){
+
+    rt_un_entry_t *rt_un_entry = NULL,
+                  *lpm_rt_un_entry = NULL,
+                  *rt_default_un_entry = NULL;
+
+    glthread_t *curr = NULL;
+    char subnet[PREFIX_LEN + 1];
+    char longest_mask = 0;
+
+    ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
+        
+        rt_un_entry = glthread_to_rt_un_entry(curr);
+        memset(subnet, 0, PREFIX_LEN + 1);
+        apply_mask(prefix, RT_ENTRY_MASK(&rt_un_entry->rt_key), subnet);
+        if(strncmp("0.0.0.0", RT_ENTRY_PFX(&rt_un_entry->rt_key), strlen("0.0.0.0")) == 0 &&
+                RT_ENTRY_MASK(&rt_un_entry->rt_key) == 0){
+            rt_default_un_entry = rt_un_entry;
+        }
+        else if(strncmp(subnet, RT_ENTRY_PFX(&rt_un_entry->rt_key), strlen(subnet)) == 0){
+            if( RT_ENTRY_MASK(&rt_un_entry->rt_key) > longest_mask){
+                longest_mask = RT_ENTRY_MASK(&rt_un_entry->rt_key);
+                lpm_rt_un_entry = rt_un_entry;
+            }
+        }
+    }ITERATE_GLTHREAD_END(&rib->head, curr);
+    return lpm_rt_un_entry ? lpm_rt_un_entry : rt_default_un_entry;
+}
+
+static void
+copy_nexthop_mpls_stack_to_packet_mpls_stack(internal_un_nh_t *nxthop , 
+                                mpls_label_stack_t *mpls_label_stack){
+
+    unsigned int i = 0;
+    for(; i < MPLS_STACK_OP_LIMIT_MAX; i++){
+        PUSH_MPLS_LABEL(mpls_label_stack, nxthop->nh.inet3_nh.mpls_label_out[i]);
+    }
+}
+
+#define ITERATE_PREF_ROUTE_ORDER_BEGIN(_pref_order)   \
+    for(_pref_order = ROUTE_TYPE_MIN + 1; _pref_order < ROUTE_TYPE_MAX; _pref_order++)
+
+#define ITERATE_PREF_ROUTE_ORDER_END(_pref_order)
+
+#define FIRST_PREF_ORDER     (ROUTE_TYPE_MIN + 1)
+
+static inline trace_route_pref_order_t
+get_next_preferred_route_type(trace_route_pref_order_t curr_pref){
+    if(curr_pref == ROUTE_TYPE_MAX)
+        assert(0);
+    return curr_pref + 1;
+}
+
+typedef enum{
+    TRACE_COMPLETE,
+    TRACE_INCOMPLETE
+} trace_rc_t;
+
+typedef mpls_label_stack_t * (*pfe_engine)(node_t *node, char *dst_prefix, 
+                        trace_rc_t *trace_rc, node_t **next_node);
+
+mpls_label_stack_t *
+ipv4_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **next_node){
+
+    unsigned int i = 1;
+
+    do{
+        rt_un_entry_t * rt_un_entry = 
+            get_longest_prefix_match2(node->spf_info.rib[INET_0], dst_prefix);
+
+        if(!rt_un_entry){
+            *trace_rc = TRACE_INCOMPLETE;
+            *next_node = node;
+            return NULL;   
+        }
+
+        internal_un_nh_t *prim_nexthop = NULL; 
+
+        prim_nexthop =  GET_FIRST_NH(rt_un_entry, IPV4_NH, PRIMARY_NH);
+
+        if(!prim_nexthop){
+            *trace_rc = TRACE_COMPLETE;
+            *next_node = node;
+            return NULL;
+        }
+
+        printf("%u. %s(%s)--IPNH-->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nexthop),
+                get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
+
+        node = get_un_next_hop_node(prim_nexthop);
+    }while(1);
+
+    return NULL;
+}
+
+mpls_label_stack_t *
+ldp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **next_node){
+
+    unsigned int i = 1;
+
+    rt_un_entry_t * rt_un_entry = 
+        get_longest_prefix_match2(node->spf_info.rib[INET_3], dst_prefix);
+
+    if(!rt_un_entry){
+        *trace_rc = TRACE_INCOMPLETE;
+        *next_node = node;
+        return NULL;   
+    }
+
+    internal_un_nh_t *prim_nexthop = NULL; 
+
+    prim_nexthop =  GET_FIRST_NH(rt_un_entry, IPV4_LDP_NH, PRIMARY_NH);
+
+    if(!prim_nexthop){
+        *trace_rc = TRACE_INCOMPLETE;
+        *next_node = node;
+        return NULL;
+    }
+
+    printf("%u. %s(%s)--LDP_TUNN-IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nexthop),
+            get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
+
+    mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
+    copy_nexthop_mpls_stack_to_packet_mpls_stack(prim_nexthop, mpls_label_stack);
+
+    *next_node = get_un_next_hop_node(prim_nexthop);
+    *trace_rc = TRACE_INCOMPLETE;
+    return mpls_label_stack;
+}
+
+mpls_label_stack_t *
+sr_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **next_node){
+    
+    unsigned int i = 1;
+
+    rt_un_entry_t * rt_un_entry = 
+        get_longest_prefix_match2(node->spf_info.rib[INET_3], dst_prefix);
+
+    if(!rt_un_entry){
+        *trace_rc = TRACE_INCOMPLETE;
+        *next_node = node;
+        return NULL;   
+    }
+
+    internal_un_nh_t *prim_nexthop = NULL; 
+
+    prim_nexthop =  GET_FIRST_NH(rt_un_entry, IPV4_SPRING_NH, PRIMARY_NH);
+
+    if(!prim_nexthop){
+        *trace_rc = TRACE_INCOMPLETE;
+        *next_node = node;
+        return NULL;
+    }
+
+    printf("%u. %s(%s)--SPR_TUNN_IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nexthop),
+            get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
+
+    mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
+    copy_nexthop_mpls_stack_to_packet_mpls_stack(prim_nexthop, mpls_label_stack);
+
+    *next_node = get_un_next_hop_node(prim_nexthop);
+    *trace_rc = TRACE_INCOMPLETE;
+    return mpls_label_stack;
+}
+
+mpls_label_stack_t *
+rsvp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **next_node){
+    
+    unsigned int i = 1;
+
+    rt_un_entry_t * rt_un_entry = 
+        get_longest_prefix_match2(node->spf_info.rib[INET_3], dst_prefix);
+
+    if(!rt_un_entry){
+        *trace_rc = TRACE_INCOMPLETE;
+        *next_node = node;
+        return NULL;   
+    }
+
+    internal_un_nh_t *prim_nexthop = NULL; 
+
+    prim_nexthop =  GET_FIRST_NH(rt_un_entry, IPV4_RSVP_NH, PRIMARY_NH);
+
+    if(!prim_nexthop){
+        *trace_rc = TRACE_INCOMPLETE;
+        *next_node = node;
+        return NULL;
+    }
+
+    printf("%u. %s(%s)--RSVP_TUNN-IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nexthop),
+            get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
+
+    mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
+    copy_nexthop_mpls_stack_to_packet_mpls_stack(prim_nexthop, mpls_label_stack);
+
+    *next_node = get_un_next_hop_node(prim_nexthop);
+    *trace_rc = TRACE_INCOMPLETE;
+    return mpls_label_stack;
+}
+
+/*ToDo : Currently the nexthop applies only top most label stack operation
+ * on incoming packet label stack. Ideally, Entire mpls label stack of nexthop
+ * should be applied on incoming mpls label. We will improve*/
+
+void
+transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack, node_t **next_node){
+
+    unsigned int i = 1;
+    rt_un_entry_t *rt_un_entry = NULL;
+    rt_key_t rt_key;
+
+    assert(!IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack));
+    *next_node = node;
+
+    do{
+        rt_key.u.label = GET_MPLS_LABEL_STACK_TOP(mpls_label_stack);
+        rt_un_entry = mpls_0_rt_un_route_lookup(node->spf_info.rib[MPLS_0], &rt_key);
+
+        if(!rt_un_entry){
+            printf("Node %s : MPLS Route not found\n", node->node_name);
+            return;
+        }
+
+        /* In mpls table, Flag to identify nexthop type really do not matter becase
+         * for a given incoming label - there will be unique nexthop types*/
+        internal_un_nh_t *prim_nh = GET_FIRST_NH(rt_un_entry, 0xFF, PRIMARY_NH);
+        assert(prim_nh); /*MPLS table has to have a primary nexthop, even for local labels*/
+
+        MPLS_STACK_OP stack_op = get_internal_un_nh_stack_top_operation(prim_nh);
+        mpls_label_t outgoing_mpls_label = get_internal_un_nh_stack_top_label(prim_nh);
+
+        assert(stack_op != STACK_OPS_UNKNOWN);
+
+        switch(stack_op){
+            case SWAP:
+                SWAP_MPLS_LABEL(mpls_label_stack, outgoing_mpls_label);
+                printf("%u. %s(%s)---swap[%u,%u]--->(%s)%s", i++, node->node_name, 
+                    get_un_next_hop_oif_name(prim_nh), rt_key.u.label, outgoing_mpls_label, 
+                    get_un_next_hop_gateway_pfx(prim_nh),
+                    get_un_next_hop_node(prim_nh)->node_name);
+                break;
+            case NEXT:
+                PUSH_MPLS_LABEL(mpls_label_stack, outgoing_mpls_label);
+                printf("%u. %s(%s)---push[%u,%u]--->(%s)%s", i++, node->node_name, 
+                    get_un_next_hop_oif_name(prim_nh), rt_key.u.label, outgoing_mpls_label, 
+                    get_un_next_hop_gateway_pfx(prim_nh),
+                    get_un_next_hop_node(prim_nh)->node_name);
+                break;
+            case POP:
+                POP_MPLS_LABEL(mpls_label_stack);
+                if(prim_nh->oif){
+                    printf("%u. %s(%s)---PHP[%u,%u]--->(%s)%s", i++, node->node_name, 
+                            get_un_next_hop_oif_name(prim_nh), rt_key.u.label, 
+                            IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack) ?  0  : \
+                            GET_MPLS_LABEL_STACK_TOP(mpls_label_stack),
+                            get_un_next_hop_gateway_pfx(prim_nh),
+                            get_un_next_hop_node(prim_nh)->node_name);
+                }
+                else{
+                    printf("%u. %s---pop[%u,%u]--->consume", i++, node->node_name, 
+                            rt_key.u.label, 
+                            IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack) ?  0  : \
+                            GET_MPLS_LABEL_STACK_TOP(mpls_label_stack));
+                }
+                break;
+            default:
+                ;
+        }
+        
+        printf("\n");
+        if(IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack)){
+            /*Two cases here : 
+             * Either PHP is performed by PHP router
+             *                  Or
+             * Tunnel Terminate here at egress LSR*/
+            if(prim_nh->oif)
+                *next_node = get_un_next_hop_node(prim_nh);  /*Case 1 : it is PHP*/
+            else if(!prim_nh->oif)
+                *next_node = node;                           /* case 2 : It is ultimate destination*/
+            return;
+        }
+
+        /*We are here because MPLs label stack is not empty*/
+        node = get_un_next_hop_node(prim_nh);
+        *next_node = node;
+    } while(1);
+    return;
+}
+
+static pfe_engine pfe[ROUTE_TYPE_MAX];
+
+void
+init_pfe(){
+
+    pfe[IP_ROUTE] = ipv4_pfe_engine;
+    pfe[SPRING_ROUTE] = sr_pfe_engine;
+    pfe[LDP_ROUTE] = ldp_pfe_engine;
+    pfe[RSVP_ROUTE] = rsvp_pfe_engine;
+}
+
+
+/*To be implemented as state machine*/
+int
+ping(char *node_name, char *dst_prefix){
+
+    trace_rc_t trace_rc = TRACE_INCOMPLETE;
+    mpls_label_stack_t *mpls_label_stack = NULL;
+    trace_route_pref_order_t pref_order = FIRST_PREF_ORDER;
+
+    node_t *node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name); 
+    node_t *next_node = node;
+
+    printf("Source Node : %s, Prefix traced : %s\n", node_name, dst_prefix);
+
+    do{
+        mpls_label_stack = pfe[pref_order](node, dst_prefix, &trace_rc, &next_node);
+        
+        if(mpls_label_stack){
+            transient_mpls_pfe_engine(next_node, mpls_label_stack, &next_node);
+
+            /*Two possibilities :
+             * 1. PHP router ended tunnel Or labelled Dest reached - mpls_label_stack will be empty
+             * 2. Tunnel abrubtly ended - mpls_label_stack will not be empty*/
+
+            if(IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack)){
+                /* Auto Done : :D :
+                 * Get the prefix from mpls_label_stack and feed it to Ist pref order to next_node*/
+                free_mpls_label_stack(mpls_label_stack);
+            }
+            else{
+                free_mpls_label_stack(mpls_label_stack);
+                return -1;    
+            }
+        }
+        
+        if(trace_rc == TRACE_COMPLETE){
+            printf("Trace Complete\n");
+            return 0;
+        }
+
+        /*trace is incomplete*/
+        if(node == next_node){
+            pref_order = get_next_preferred_route_type(pref_order);
+            if(pref_order == ROUTE_TYPE_MAX){
+                printf("Node %s : No route to %s\n", node->node_name, dst_prefix);
+                return -1;
+            }
+            continue;
+        }
+        else{
+            node = next_node;
+            pref_order = FIRST_PREF_ORDER;
+        }
+
+    } while(1);
+    return 0;
+}
+

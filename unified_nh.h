@@ -76,33 +76,6 @@ typedef enum{
 } rib_type_t;
 
 
-/*To reach a certain destination, it is possible
- * that more than one type of routes are available.
- * For example, to reach a destination A.B.C.D, IP nexthop,
- * spring nexthop, ldp nexthop or rsvp nexthop may be 
- * available on the router. This enums defines the preference
- * order to select one out of many alternatives. Change this
- * prefrence order in enum to change nexthop selection order.
- * */
-
-typedef enum{
-
-    IP_ROUTE,
-    SPRING_ROUTE,
-    LDP_ROUTE,
-    RSVP_ROUTE,
-    ROUTE_TYPE_MAX
-} trace_route_pref_order_t;
-
-static trace_route_pref_order_t FIRST_ROUTE_PREF = 0;
-
-static inline trace_route_pref_order_t
-get_next_preferred_route_type(trace_route_pref_order_t curr_pref){
-    if(curr_pref + 1 == ROUTE_TYPE_MAX)
-        return curr_pref;
-    return curr_pref + 1;
-}
-
 typedef struct rt_key_{
 
     struct rt_pfx{
@@ -232,6 +205,23 @@ typedef struct rt_un_entry_{
 
 GLTHREAD_TO_STRUCT(glthread_to_rt_un_entry, rt_un_entry_t, glthread, glthreadptr);
 
+static inline internal_un_nh_t *
+GET_FIRST_NH(rt_un_entry_t *rt_un_entry, FLAG nh_type, 
+             FLAG is_primary){
+
+    glthread_t *curr = NULL;
+    internal_un_nh_t *nexthop = NULL;
+
+    ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
+        
+        nexthop = glthread_to_unified_nh(curr);
+        if(IS_BIT_SET(nexthop->flags, is_primary) &&
+            IS_BIT_SET(nexthop->flags, nh_type))
+            return nexthop;
+    } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);
+    return NULL;
+}
+
 typedef struct internal_nh_t_ internal_nh_t;
 
 typedef struct rt_un_table_{
@@ -334,4 +324,36 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
 int 
 get_stack_top_index(internal_un_nh_t *nh);
 
+int 
+ping(char *node_name, char *dst_prefix);
+
+rt_un_entry_t *
+get_longest_prefix_match2(rt_un_table_t *rib, char *prefix);
+
+static inline MPLS_STACK_OP
+get_internal_un_nh_stack_top_operation(internal_un_nh_t *nxthop){
+
+    int i = MPLS_STACK_OP_LIMIT_MAX -1;
+    for(;i >= 0; i--){
+        if(nxthop->nh.inet3_nh.mpls_label_out[i] == 0 &&
+            nxthop->nh.inet3_nh.stack_op[i] == STACK_OPS_UNKNOWN)
+            continue;
+        return nxthop->nh.inet3_nh.stack_op[i];
+    }
+    return STACK_OPS_UNKNOWN;
+}
+
+static inline mpls_label_t
+get_internal_un_nh_stack_top_label(internal_un_nh_t *nxthop){
+
+    
+    int i = MPLS_STACK_OP_LIMIT_MAX -1;
+    for(;i >= 0; i--){
+        if(nxthop->nh.inet3_nh.mpls_label_out[i] == 0 &&
+            nxthop->nh.inet3_nh.stack_op[i] == STACK_OPS_UNKNOWN)
+            continue;
+        return nxthop->nh.inet3_nh.mpls_label_out[i];
+    }
+    return 0;
+}
 #endif /* __UNIFIED_NH__ */

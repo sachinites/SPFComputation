@@ -268,7 +268,7 @@ show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     } TLV_LOOP_END;
     switch(cmdcode){
         case CMDCODE_SHOW_NODE_TRACEROUTE_PRIMARY:
-            show_traceroute(node_name, prefix);
+            ping(node_name, prefix);
             break;
         case CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP:
             show_backup_traceroute(node_name, prefix);

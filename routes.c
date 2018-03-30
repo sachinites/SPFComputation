@@ -2012,6 +2012,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
     internal_un_nh_t *un_nxthop = NULL;
     boolean rc = FALSE;
     rt_key_t rt_key;
+    boolean is_local_route = FALSE;
 
     ITERATE_LIST_BEGIN(spf_info->routes_list[UNICAST_T], list_node){
         
@@ -2023,7 +2024,16 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
         memset(&rt_key, 0, sizeof(rt_key_t));
         strncpy(RT_ENTRY_PFX(&rt_key), route->rt_key.u.prefix.prefix, PREFIX_LEN);
         RT_ENTRY_MASK(&rt_key) = route->rt_key.u.prefix.mask;
+        
+        /*Handle local routes*/
+        is_local_route = is_route_local(route);
 
+        if(is_local_route){
+            inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, NULL);
+            inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, NULL);
+            continue;
+        }
+        
         /*Install primary nexthop first. Primary nexthops are inet.0 routes Or RSVP routes (inet.3)*/
         ITERATE_NH_TYPE_BEGIN(nh){
             ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node2){

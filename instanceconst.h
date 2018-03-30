@@ -164,23 +164,23 @@ typedef enum{
     NO_LINK_PROTECTING_BACKUPS_REQUIRED
 } node_backup_req_t;
 
+/*To reach a certain destination, it is possible
+ * that more than one type of routes are available.
+ * For example, to reach a destination A.B.C.D, IP nexthop,
+ * spring nexthop, ldp nexthop or rsvp nexthop may be
+ * available on the router. This enums defines the preference
+ * order to select one out of many alternatives. Change this
+ * prefrence order in enum to change nexthop selection order.
+ * */
 
-static char *
-get_str_node_backup_req(node_backup_req_t node_bckup_requirement){
+typedef enum{
 
-    switch(node_bckup_requirement){
-        case NO_BACKUP_REQUIRED:
-            return "NO_BACKUP_REQUIRED";
-        case BACKUPS_REQUIRED:
-            return "BACKUPS_REQUIRED";
-        case NO_LINK_PROTECTING_BACKUPS_REQUIRED:
-            return "NO_LINK_PROTECTING_BACKUPS_REQUIRED";
-        case BACKUP_REQ_UNKNOWN:
-            return "BACKUP_REQ_UNKNOWN";
-        default:
-            assert(0);
-    }
-    return 0;
-}
+    ROUTE_TYPE_MIN,
+    IP_ROUTE,
+    SPRING_ROUTE,
+    LDP_ROUTE,
+    RSVP_ROUTE,
+    ROUTE_TYPE_MAX
+} trace_route_pref_order_t;
 
 #endif /* __GRAPHCONST__ */
