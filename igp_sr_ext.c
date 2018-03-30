@@ -884,6 +884,14 @@ springify_ldp_nexthop(node_t *spf_root,
     prefix_sid_subtlv_t *rlfa_node_prefix_sid = NULL;
     mpls_label_t mpls_label = 0;
     
+    if(!is_node_spring_enabled(nxthop->proxy_nbr, route->level)) {
+        sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, LDP proxy nexthop %s(%s) cannot be springified. SPRING not enabled",
+                spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
+                get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name);
+        trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+        return;
+    }
+
     sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, springifying LDP backup nexthops %s(%s), RLFA : %s",
             spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
             get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name,
@@ -929,7 +937,15 @@ springify_ipv4_nexthop(node_t *spf_root,
     MPLS_STACK_OP stack_op = STACK_OPS_UNKNOWN;
     prefix_sid_subtlv_t *prefix_sid = NULL;
     unsigned int outgoing_label = 0;
-    
+   
+    if(!is_node_spring_enabled(nxthop->node, route->level)) {
+        sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, IPV4 nexthop %s(%s) cannot be springified. SPRING not enabled",
+                spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
+                get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name);
+        trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+        return;
+    }
+
     sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, springifying IPV4 nexthop %s(%s)",
             spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
             get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name);

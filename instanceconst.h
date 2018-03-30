@@ -176,8 +176,8 @@ typedef enum{
 typedef enum{
 
     ROUTE_TYPE_MIN,
-    IP_ROUTE,
     SPRING_ROUTE,
+    IP_ROUTE,
     LDP_ROUTE,
     RSVP_ROUTE,
     ROUTE_TYPE_MAX

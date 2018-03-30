@@ -543,4 +543,7 @@ prefix_sid_search(node_t *node, LEVEL level, unsigned int prefix_sid_val);
 void
 springify_unicast_route(node_t *spf_root, routes_t *route);
 
+#define IS_INTERNAL_NH_SPRINGIFIED(internal_nh_t_ptr)   \
+    (internal_nh_t_ptr->stack_op[0] != STACK_OPS_UNKNOWN)
+
 #endif /* __SR__ */ 

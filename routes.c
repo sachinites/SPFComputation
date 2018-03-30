@@ -2130,6 +2130,14 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
          * should not be springified in the first place*/ 
         ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node2){
             nxthop = list_node2->data;
+            if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop)){
+                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s nexthop (%s)%s not installed," 
+                    "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
+                nxthop->proxy_nbr->node_name);
+                trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+                continue;
+            }
             rc = FALSE;
             un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
             if(IS_BIT_SET(un_nxthop->flags, IPV4_SPRING_NH))
@@ -2148,6 +2156,14 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
         /*Spring Backups. Install ipv4 springified backups in inet.3 table*/
         ITERATE_LIST_BEGIN(route->backup_nh_list[IPNH], list_node2){
             nxthop = list_node2->data;
+            if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop)){
+                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed," 
+                    "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
+                nxthop->proxy_nbr->node_name);
+                trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+                continue;
+            }
             rc = FALSE;
             un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
             if(IS_BIT_SET(un_nxthop->flags, IPV4_SPRING_NH))
@@ -2163,7 +2179,15 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
         ITERATE_LIST_BEGIN(route->backup_nh_list[LSPNH], list_node2){
             nxthop = list_node2->data;
             if(is_internal_backup_nexthop_rsvp(nxthop))
-                continue; /*No need to install RSVP backup nexthops in inet.3 table as they were installed already during enhanced_start_route_installation_unicast()*/
+                continue; /*ToDo : Support RSVP later . . . */
+            if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop) || !is_node_spring_enabled(nxthop->rlfa, level)){
+                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed," 
+                    "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
+                nxthop->proxy_nbr->node_name);
+                trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+                continue;
+            }
             rc = FALSE;
             /*springified LDP nexthops*/
             un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
@@ -2183,6 +2207,14 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
         ITERATE_NH_TYPE_BEGIN(nh){
             ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node2){
                 nxthop = list_node2->data;
+                if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop)){
+                    sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s primarynexthop (%s)%s not installed," 
+                            "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                            get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
+                            nxthop->proxy_nbr->node_name);
+                    trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+                    continue;
+                }
                 rc = FALSE;
                 un_nxthop = mpls_0_unifiy_nexthop(nxthop, L_IGP_PROTO);
                 rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, un_nxthop);
@@ -2195,6 +2227,16 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
         ITERATE_NH_TYPE_BEGIN(nh){
             ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node2){
                 nxthop = list_node2->data;
+                if(is_internal_backup_nexthop_rsvp(nxthop))
+                    continue;
+                if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop) || !is_node_spring_enabled(nxthop->rlfa, level)){
+                    sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed," 
+                            "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                            get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
+                            nxthop->proxy_nbr->node_name);
+                    trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+                    continue;
+                }
                 rc = FALSE;
                 un_nxthop = mpls_0_unifiy_nexthop(nxthop, L_IGP_PROTO);
                 rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, un_nxthop);
