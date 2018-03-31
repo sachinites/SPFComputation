@@ -36,7 +36,6 @@
 #include "rttable.h"
 #include "advert.h"
 #include "spftrace.h"
-#include "rt_mpls.h"
 #include "igp_sr_ext.h"
 #include "sr_tlv_api.h"
 
@@ -52,12 +51,6 @@ instance_node_comparison_fn(void *_node, void *input_node_name);
 static void
 enhanced_start_route_installation(spf_info_t *spf_info,
                          LEVEL level, rtttype_t rtttype);
-
-#if 0
-THREAD_NODE_TO_STRUCT(prefix_t,
-        like_prefix_thread,
-        get_prefix_from_like_prefix_thread);
-#endif
 
 static boolean
 is_destination_has_multiple_primary_nxthops(spf_result_t *D_res){
@@ -294,7 +287,6 @@ prepare_new_nxt_hop_template(node_t *computing_node,
         nh_template->rlfa_name[NODE_NAME_SIZE - 1] = '\0';
     }
 #endif
-    //nh_template->mpls_label_in = nxt_hop_node->mpls_label_in;
 }
 
 routes_t *
@@ -1651,157 +1643,6 @@ backup_selection_policy(routes_t *route){
 }
 
 
-/* Route has changed with respect to Unicast topology. Since, SPRING
- * routes are MPLS labelled version of unicast routes, we need to update
- * in mpls.0 table the changed routes*/
-        
-void
-start_spring_routes_installation(spf_info_t *spf_info,
-                                 LEVEL level){
-
-    sprintf(instance->traceopts->b, "Entered ... Level : %u", level);
-    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
-    singly_ll_node_t *list_node = NULL;
-
-    routes_t *route = NULL;
-    mpls_rt_entry_t *rt_entry_template = NULL;
-    mpls_rt_entry_t *existing_rt_route = NULL;
-    prefix_t *best_prefix = NULL;
-
-    unsigned int rt_added = 0,
-                 rt_removed = 0, 
-                 rt_updated = 0, 
-                 rt_no_change = 0;
-    
-    mpls_label_t mpls_label = 0;
-
-    int rc = 0;
-
-    ITERATE_LIST_BEGIN(spf_info->routes_list[SPRING_T], list_node){
-        
-        route = list_node->data;
-
-        if(route->level != level)
-            continue;
-
-        best_prefix = ROUTE_GET_BEST_PREFIX(route);
-#if 0
-        if(!best_prefix->prefix_sid || 
-            !IS_PREFIX_SR_ACTIVE(best_prefix)){
-            sprintf(instance->traceopts->b, "Node : %s : Spring route for 0:%s/%u %s not installed in mpls.0."
-                    "Reason : Prefix SID not assigned Or conflict prefix",
-                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, 
-                    route->rt_key.u.prefix.mask, get_str_level(route->level));
-            trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
-            continue; 
-        }
-#endif
-        if(IS_ROUTE_SPRING_CAPABLE(route)){
-            mpls_label = PREFIX_SID_LABEL(GET_SPF_INFO_NODE(spf_info, level)->srgb, best_prefix);
-            route->prev_mpls_label = mpls_label;
-        }
-        
-        sprintf(instance->traceopts->b, "mpls.0 RIB modification : route : %u:%s/%u, Level%u, metric = %u, Action : %s", 
-                mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
-                route->level, route->spf_metric, route_intall_status_str(route->install_state)); 
-        trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
-        
-
-        switch(route->install_state){
-            
-            case RTE_STALE:
-                if(delete_mpls_forwarding_entry(spf_info->mpls_rt_table, mpls_label) < 0){
-                    printf("%s() : Error : Could not delete MPLS route  : %u:%s/%u, Level%u\n", __FUNCTION__, 
-                                    mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
-                    break;
-                }
-                rt_removed++;
-                break;
-            case RTE_UPDATED:
-                assert(0);
-            case RTE_ADDED:
-                if(!IS_ROUTE_SPRING_CAPABLE(route)) 
-                    break;
-                /*if route is local, its primary nexthop should be zero*/
-                if(route->hosting_node == GET_SPF_INFO_NODE(spf_info, level))
-                    rc = sr_install_local_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
-                else
-                    rc = sr_install_remote_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
-
-                if(rc < 0){
-                    printf("%s() : Error : Could not Add route : %u:%s/%u, Level%u\n", __FUNCTION__,
-                            mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
-                    break;
-                }
-                rt_added++;
-                break;
-            case RTE_CHANGED:
-                rt_entry_template = prepare_mpls_entry_template_from_ipv4_route(GET_SPF_INFO_NODE(spf_info, level), route);
-                update_mpls_forwarding_entry(spf_info->mpls_rt_table, mpls_label, rt_entry_template);
-                rt_updated++;
-                break;
-            case RTE_NO_CHANGE:
-                    
-                /* It means, the route has not been changed wrt to UNICAST topology, But wrt to SPRING
-                 * , it could be Ist installation of SPRING route in mpls.0 table. We need to take folloing action : 
-                 * 1. If the route do not exist already in mpls.0, install it and set install state to RTE_ADDED
-                 * 2. If the route exist in mpls.0 table AND route is spring enabled, then fetch the entry from mpls.0 and do the following :*
-                 *  a. if mpls_label mismatch, update the mpls label and version number and set install state to RTE_CHANGED
-                 *  b. if mpls label is same, update the version no and set install state to RTE_NO_CHANGE
-                 * 3. If the route exist in mpls.0 table AND new route is not spring capable, delete it from mpls.0
-                 */
-                existing_rt_route = look_up_mpls_rt_entry(spf_info->mpls_rt_table, route->prev_mpls_label);
-                if(!existing_rt_route){
-                    if(!IS_ROUTE_SPRING_CAPABLE(route))
-                        break;
-                    rt_entry_template = prepare_mpls_entry_template_from_ipv4_route(GET_SPF_INFO_NODE(spf_info, level), route);
-                    if(route->hosting_node == GET_SPF_INFO_NODE(spf_info, level))
-                        rc = sr_install_local_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
-                    else
-                        rc = sr_install_remote_prefix_mpls_fib_entry(GET_SPF_INFO_NODE(spf_info, level), route);
-
-                    if(rc < 0){
-                        printf("%s() : Error : Could not Add route in mpls.0 : %u:%s/%u, Level%u\n", __FUNCTION__,
-                                mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
-                        break;
-                    }
-                    rt_added++;
-                }
-                else if(IS_ROUTE_SPRING_CAPABLE(route)){
-                    if(mpls_label != existing_rt_route->incoming_label){
-                        existing_rt_route->incoming_label = mpls_label;
-                        existing_rt_route->version = route->version;
-                        route->install_state = RTE_CHANGED;
-                        rt_updated++;
-                    }
-                    else{
-                        existing_rt_route->version = route->version;
-                        route->install_state = RTE_NO_CHANGE;
-                        rt_no_change++;
-                    }
-                }
-                else {
-                    if(delete_mpls_forwarding_entry(spf_info->mpls_rt_table, route->prev_mpls_label) < 0){
-                        printf("%s(%u) : Error : Could not delete MPLS route  : %u:%s/%u, Level%u\n", __FUNCTION__, __LINE__,
-                                route->prev_mpls_label, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, route->level);
-                        break;
-                    }
-                    route->prev_mpls_label = 0;
-                    rt_removed++;
-                }
-                break;
-            default:
-                assert(0);
-        }
-    }ITERATE_LIST_END;
-    
-    sprintf(instance->traceopts->b, "SPRING Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u",
-            level, GET_SPF_INFO_NODE(spf_info, level)->node_name, rt_added, rt_removed, rt_updated, rt_no_change); 
-    trace(instance->traceopts, ROUTE_INSTALLATION_BIT);
-    printf("SPRING Stats : L%d, Node : %s : #Added:%u, #Deleted:%u, #Updated:%u, #Unchanged:%u\n",
-            level, GET_SPF_INFO_NODE(spf_info, level)->node_name, rt_added, rt_removed, rt_updated, rt_no_change);
-}
-
 void
 show_internal_routing_tree(node_t *node, char *prefix, char mask, rtttype_t rt_type){
 
@@ -2131,8 +1972,8 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
         ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node2){
             nxthop = list_node2->data;
             if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop)){
-                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s nexthop (%s)%s not installed," 
-                    "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s nexthop (%s)%s not installed, not spring capable", 
+                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
                 nxthop->proxy_nbr->node_name);
                 trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
@@ -2157,8 +1998,8 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
         ITERATE_LIST_BEGIN(route->backup_nh_list[IPNH], list_node2){
             nxthop = list_node2->data;
             if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop)){
-                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed," 
-                    "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed not spring capable", 
+                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
                 nxthop->proxy_nbr->node_name);
                 trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
@@ -2181,8 +2022,8 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
             if(is_internal_backup_nexthop_rsvp(nxthop))
                 continue; /*ToDo : Support RSVP later . . . */
             if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop) || !is_node_spring_enabled(nxthop->rlfa, level)){
-                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed," 
-                    "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed not spring capable", 
+                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
                 nxthop->proxy_nbr->node_name);
                 trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
@@ -2208,8 +2049,8 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
             ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node2){
                 nxthop = list_node2->data;
                 if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop)){
-                    sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s primarynexthop (%s)%s not installed," 
-                            "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                    sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s primarynexthop (%s)%s not installed, not spring capable", 
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                             get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
                             nxthop->proxy_nbr->node_name);
                     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
@@ -2230,8 +2071,8 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                 if(is_internal_backup_nexthop_rsvp(nxthop))
                     continue;
                 if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop) || !is_node_spring_enabled(nxthop->rlfa, level)){
-                    sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed," 
-                            "not spring capable", GET_SPF_INFO_NODE(spf_info, level), route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
+                    sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed, not spring capable", 
+                    GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                             get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
                             nxthop->proxy_nbr->node_name);
                     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);

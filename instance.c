@@ -37,7 +37,6 @@
 #include "instance.h"
 #include "spfutil.h"
 #include "rttable.h"
-#include "rt_mpls.h"
 #include "spftrace.h"
 
 extern instance_t *instance;
@@ -103,9 +102,6 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
         node->spf_info.deferred_routes_list[rt_type] = init_singly_ll();
         singly_ll_set_comparison_fn(node->spf_info.deferred_routes_list[rt_type], route_search_comparison_fn);
     }
-
-    node->spf_info.rttable = init_rttable("inet.0");
-    node->spf_info.mpls_rt_table = init_mpls_rt_table("mpls.0");
 
     node->spf_info.rib[INET_0] = init_rib(INET_0);
     node->spf_info.rib[INET_3] = init_rib(INET_3);
@@ -378,6 +374,8 @@ instance_node_comparison_fn(void *_node, void *input_node_name){
 extern void
 _spf_display_trace_options(unsigned long long bit_mask);
 
+extern void init_pfe();
+
 instance_t *
 get_new_instance(){
 
@@ -390,6 +388,7 @@ get_new_instance(){
     register_display_trace_options(instance->traceopts, _spf_display_trace_options);
     enable_spf_trace(instance, SPF_EVENTS_BIT);
     instance->mapping_server = NULL;
+    init_pfe();
     return instance;
 }
 
@@ -510,6 +509,7 @@ node_local_prefix_search(node_t *node, LEVEL level,
     return (prefix_t *)singly_ll_search_by_key(prefix_list, &key);
 }
 
+#if 0
 /* Below routine return the OIF from node to node_nbr. In
  * addition, it also returns the remote end prefix if gw_prefix
  * buffer is provided*/
@@ -619,6 +619,7 @@ get_min_oif(node_t *node, node_t *node_nbr,
 
     return min_edge_oif;
 }
+#endif
 
 edge_end_t *
 get_interface_from_intf_name(node_t *node, char *intf_name){

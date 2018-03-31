@@ -42,10 +42,9 @@
 #include "spfcmdcodes.h"
 #include "spfclihandler.h"
 #include "rttable.h"
-#include "rt_mpls.h"
 #include "routes.h"
 #include "advert.h"
-#include "unified_nh.h"
+#include "data_plane.h"
 
 extern
 instance_t *instance;
@@ -274,7 +273,7 @@ show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             show_backup_traceroute(node_name, prefix);
             break;
         case CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS:
-            show_mpls_traceroute(node_name, prefix); 
+            //show_mpls_traceroute(node_name, prefix); 
             break;
         default:
             assert(0);

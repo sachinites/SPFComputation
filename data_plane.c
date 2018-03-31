@@ -30,10 +30,9 @@
  * =====================================================================================
  */
 
-#include "unified_nh.h"
+#include "data_plane.h"
 #include "instance.h"
 #include "spftrace.h"
-#include "rt_mpls.h"
 #include "spfcomputation.h"
 #include "routes.h"
 #include "ldp.h"
@@ -803,7 +802,6 @@ init_rib(rib_type_t rib_type){
             assert(0);
     }
     
-    init_pfe();
     return rib;
 }
 
@@ -1249,7 +1247,8 @@ rsvp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **n
  * should be applied on incoming mpls label. We will improve*/
 
 void
-transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack, node_t **next_node){
+transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack, 
+                          node_t **next_node){
 
     unsigned int i = 1;
     rt_un_entry_t *rt_un_entry = NULL;
@@ -1400,5 +1399,55 @@ ping(char *node_name, char *dst_prefix){
 
     } while(1);
     return 0;
+}
+
+mpls_label_stack_t *
+get_new_mpls_label_stack(){
+
+        mpls_label_stack_t *mpls_stack = calloc(1, sizeof(mpls_label_stack_t));
+            mpls_stack->stack = get_new_stack();
+                return mpls_stack;
+}
+
+void
+free_mpls_label_stack(mpls_label_stack_t *mpls_label_stack){
+
+        free_stack(mpls_label_stack->stack);
+            free(mpls_label_stack);
+}
+
+void
+PUSH_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label){
+
+       push(mpls_label_stack->stack, (void *)label);
+}
+
+mpls_label_t
+POP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack){
+
+        return (mpls_label_t)pop(mpls_label_stack->stack);
+}
+
+void
+SWAP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label){
+
+        POP_MPLS_LABEL(mpls_label_stack);
+            PUSH_MPLS_LABEL(mpls_label_stack, label);
+}
+
+char *
+get_str_stackops(MPLS_STACK_OP stackop){
+
+    switch(stackop){
+
+        case PUSH:
+            return "PUSH";
+        case POP:
+            return "POP";
+        case SWAP:
+            return "SWAP";
+        default:
+            return "STACK_OPS_UNKNOWN";
+    }
 }
 

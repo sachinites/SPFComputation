@@ -42,7 +42,6 @@
 #include "spftrace.h"
 #include "sr_tlv_api.h"
 #include "igp_sr_ext.h"
-#include "rt_mpls.h"
 
 extern instance_t * instance;
 
@@ -52,6 +51,9 @@ extern void
 show_mpls_ldp_label_local_bindings(node_t *node);
 extern void
 show_mpls_rsvp_label_local_bindings(node_t *node);
+extern void
+transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
+                          node_t **next_node);
 
 static void
 _run_spf_run_all_nodes(){
@@ -827,9 +829,6 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
     unsigned int prefix_sid = 0,
                  index_range = 0,
                  first_sid = 0;
-    char *prefix = NULL;
-    char mask = 0;
-
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
@@ -839,10 +838,6 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
             prefix_sid = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "prefix-sid", strlen("prefix-sid")) ==0)
              prefix_sid = atoi(tlv->value);
-        else if(strncmp(tlv->leaf_id, "prefix",  strlen("prefix")) ==0)
-            prefix = tlv->value;
-        else if(strncmp(tlv->leaf_id, "mask",  strlen("mask")) ==0)
-            mask = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "index-range",  strlen("index-range")) ==0)
             index_range = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "start-label",  strlen("start-label")) ==0)
@@ -944,10 +939,10 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
         case CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE:
         switch(enable_or_disable){
             case CONFIG_ENABLE:
-                igp_install_mpls_spring_route(node, prefix, mask);
+                //igp_install_mpls_spring_route(node, prefix, mask);
                 break;
             case CONFIG_DISABLE:
-                igp_uninstall_mpls_spring_route(node, prefix, mask);
+                //igp_uninstall_mpls_spring_route(node, prefix, mask);
                 break;
              default:
                 ;
@@ -1050,7 +1045,8 @@ int
 debug_trace_mpls_stack_label(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
    
     char *node_name = NULL;
-    node_t *node = NULL;
+    node_t *node = NULL, 
+           *next_node = NULL;
     tlv_struct_t *tlv = NULL;
     mpls_label_t label[4] = {0,0,0,0};
     int i = 0;
@@ -1072,7 +1068,7 @@ debug_trace_mpls_stack_label(param_t *param, ser_buff_t *tlv_buf, op_mode enable
         PUSH_MPLS_LABEL(mpls_label_stack, label[i]);
     
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-    mpls_forwarding_engine(node, mpls_label_stack);
+    transient_mpls_pfe_engine(node, mpls_label_stack, &next_node);
     free_mpls_label_stack(mpls_label_stack); 
     return 0;
 }

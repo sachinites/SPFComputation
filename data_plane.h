@@ -30,14 +30,15 @@
  * =====================================================================================
  */
 
-#ifndef __UNIFIED_NH__
-#define __UNIFIED_NH__
+#ifndef __DP__
+#define __DP__
 
 /*Unified Nexthop Data structure*/
-#include "rt_mpls.h"
 #include "instanceconst.h"
 #include "glthread.h"
 #include "bitsop.h"
+#include <time.h>
+#include <stddef.h> /*For NULL*/
 
 typedef struct routes_ routes_t;
 typedef struct edge_end_ edge_end_t;
@@ -97,6 +98,50 @@ typedef struct rt_key_{
 
 #define RT_ENTRY_LABEL(rt_key_t_ptr)  \
     ((rt_key_t_ptr)->u.label)
+
+
+/*MPLS Data plane*/
+
+typedef enum {
+
+    STACK_OPS_UNKNOWN,
+    SWAP,
+    CONTINUE = SWAP,
+    NEXT,
+    PUSH = NEXT,
+    POP
+} MPLS_STACK_OP;
+
+/*MPLS stack*/
+typedef struct stack stack_t;
+
+typedef struct _mpls_label_stack{
+        stack_t *stack;
+} mpls_label_stack_t;
+
+mpls_label_stack_t *
+get_new_mpls_label_stack();
+
+void
+free_mpls_label_stack(mpls_label_stack_t *mpls_label_stack);
+
+void
+PUSH_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label);
+
+mpls_label_t
+POP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack);
+
+void
+SWAP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label);
+
+
+#define GET_MPLS_LABEL_STACK_TOP(mpls_label_stack_t_ptr)        \
+    ((mpls_label_t)getTopElem(mpls_label_stack_t_ptr->stack))
+
+#define IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack_t_ptr)       \
+    isStackEmpty(mpls_label_stack_t_ptr->stack)
+
+/*MPLS data plane*/
 
 typedef struct internal_un_nh_t_{
 
@@ -356,4 +401,8 @@ get_internal_un_nh_stack_top_label(internal_un_nh_t *nxthop){
     }
     return 0;
 }
-#endif /* __UNIFIED_NH__ */
+
+char *
+get_str_stackops(MPLS_STACK_OP stackop);
+
+#endif /* __DP__ */

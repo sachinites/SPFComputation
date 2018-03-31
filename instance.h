@@ -122,9 +122,9 @@ struct edge_end_{
     prefix_t * prefix[MAX_LEVEL];
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
     FLAG edge_config_flags;
-    /*SR support*/
-    unsigned int adj_sid_count; /*A node MAY allocate multiple Adj-SIDs for the same adjacency. draft-ietf-spring-segment-routing-13 pg 15*/
-    char *adj_sid_array;        /*Also, in case of LAN segment, Section 3.4.3 draft-ietf-spring-segment-routing-13 pg 16 is enhanced project scenario*/
+    /*SR support, per level Adj SIDs*/
+    unsigned int adj_sid_count[MAX_LEVEL]; /*A node MAY allocate multiple Adj-SIDs for the same adjacency. draft-ietf-spring-segment-routing-13 pg 15*/
+    char *adj_sid_array[MAX_LEVEL];        /*Also, in case of LAN segment, Section 3.4.3 draft-ietf-spring-segment-routing-13 pg 16 is enhanced project scenario*/
 };
 
 typedef enum {
@@ -273,10 +273,11 @@ get_edge_direction(node_t *node, edge_t *edge){
     return EDGE_END_DIRN_UNKNOWN;
 }
 
+#if 0
 edge_end_t *
 get_min_oif(node_t *node, node_t *node_nbr, 
             LEVEL level, char *input_gw_ip_buffer, nh_type_t nh);
-
+#endif
 
 /*This Macro iterates over all logical nbrs of a node. Logical nbrs includes
  * pseudonodes as well. Nbrs of directly connected PN do not count*/

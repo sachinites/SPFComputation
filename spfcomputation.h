@@ -34,8 +34,7 @@
 #define __SPFCOMPUTATION__
 
 #include "instanceconst.h"
-#include "rt_mpls.h"
-#include "unified_nh.h"
+#include "data_plane.h"
 
 /*-----------------------------------------------------------------------------
  *  Do not #include graph.h in this file, as it will create circular dependency.
@@ -64,7 +63,6 @@ typedef struct internal_nh_t_{
     lfa_type_t lfa_type;
     node_t *proxy_nbr;
     node_t *rlfa;
-    //mpls_label_t mpls_label_in; /*Used for LDP/RSVP and SR routes*/
 
     /*Spring out information*/
     mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];/*For SR routes only*/
@@ -235,7 +233,6 @@ typedef struct spf_level_info_{
 
 typedef struct rttable_ rttable;
 typedef struct _node_t node_t;
-typedef struct _mpls_rt_table mpls_rt_table_t;
 
 typedef enum{
 
@@ -270,7 +267,6 @@ typedef struct spf_info_{
     /*Routing table*/
     rttable *rttable;
     rt_un_table_t *rib[RIB_COUNT];
-    mpls_rt_table_t *mpls_rt_table;
 } spf_info_t;
 
 #define GET_SPF_INFO_NODE(spf_info_ptr, _level)  \

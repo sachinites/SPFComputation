@@ -197,13 +197,13 @@ build_linear_topo(){
     edge_t *R0_R1_edge = create_new_edge("eth0/0", "eth0/1", 10,
             prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL12);
 
-    edge_t *R1_R2_edge = create_new_edge("eth0/2", "eth0/3", 1,
+    edge_t *R1_R2_edge = create_new_edge("eth0/2", "eth0/3", 10,
             prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL12);
     
     edge_t *R2_R3_edge = create_new_edge("eth0/4", "eth0/5", 10,
             prefix_30_1_1_1_24, prefix_30_1_1_2_24, LEVEL12);
 
-    edge_t *R3_R4_edge = create_new_edge("eth0/6", "eth0/7", 1,
+    edge_t *R3_R4_edge = create_new_edge("eth0/6", "eth0/7", 10,
             prefix_40_1_1_1_24, prefix_40_1_1_2_24, LEVEL12);
 
     insert_edge_between_2_nodes(R0_R1_edge, R0, R1, BIDIRECTIONAL);

@@ -307,13 +307,13 @@ typedef struct _p2p_adj_sid_subtlv_t{
     BYTE flags;
     BYTE weight;    /*Used for parallel Adjacencies, section 3.4.1,
                       draft-ietf-spring-segment-routing-13 pg 15*/
-    /*If local label value is specified (L and V flag sets), then
+    /* If local label value is specified (L and V flag sets), then
      * this field contains label value encoded as last 20 bits.
      * if index into srgb is specified, then this field contains
      * is a 4octet value indicating the offset in the SID/Label space
      * advertised bu this router. In this case L and V flag are unset.
      * */
-    segment_id_subtlv_t sid;
+    segment_id_subtlv_t sid[2];/*Two SIDs are associated with each adjacency*/
    /*draft-ietf-spring-segment-routing-13 pg 15*/
 } p2p_ajd_sid_subtlv_t;
 
@@ -327,9 +327,21 @@ typedef struct _lan_adj_sid_subtlv_t{
     BYTE weight;
     BYTE system_id[6];  /*RFC compliant*/
     //node_t *nbr_node; /*Our implementation compliant*/
-    segment_id_subtlv_t sid;
+    segment_id_subtlv_t sid[2];/*Two SIDs are associated with each adjacency*/
 } lan_adg_sid_subtlv_t;
 
+
+/*pg 155, book*/
+typedef enum{
+
+    L1_PROTECTED_ADJ_SID    = 0,
+    L2_PROTECTED_ADJ_SID    = 1,
+    L1_UNPROTECTED_ADJ_SID  = 2,
+    L2_UNPROTECTED_ADJ_SID  = 3
+} ADJ_SID_TYPE;
+
+
+void sr_mpls_fib_local_adj_sid();
 
 /*
 If a node N advertises Prefix-SID SID-R for a prefix R that is

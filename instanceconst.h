@@ -176,10 +176,10 @@ typedef enum{
 typedef enum{
 
     ROUTE_TYPE_MIN,
-    SPRING_ROUTE,
-    IP_ROUTE,
     LDP_ROUTE,
+    SPRING_ROUTE,
     RSVP_ROUTE,
+    IP_ROUTE,
     ROUTE_TYPE_MAX
 } trace_route_pref_order_t;
 
