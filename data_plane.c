@@ -222,7 +222,10 @@ lookup_clone_next_hop(rt_un_table_t *rib,
 boolean
 inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level, 
                             internal_un_nh_t *nexthop){
-    
+   
+    glthread_t *curr = NULL;
+    internal_un_nh_t *nxt_hop = NULL;
+     
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
@@ -237,6 +240,21 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
         rt_un_entry->level = level;
         glthread_add_next(&rib->head, &rt_un_entry->glthread);
         rib->count++;
+    }
+
+    if(rt_un_entry->level != level){
+        /*replace the route with incoming version*/
+        rt_un_entry->flags = 0;
+        rt_un_entry->level = level;
+        time(&rt_un_entry->last_refresh_time);
+        
+        ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
+            nxt_hop = glthread_to_unified_nh(curr);
+            remove_glthread(curr);
+            free_un_nexthop(nxt_hop);
+        } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);
+        
+        init_glthread(&rt_un_entry->nh_list_head);
     }
 
     if(!nexthop){
@@ -355,7 +373,10 @@ inet_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
 boolean
 inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level,
                             internal_un_nh_t *nexthop){
-    
+   
+    glthread_t *curr = NULL;
+    internal_un_nh_t *nxt_hop = NULL;
+     
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
@@ -372,6 +393,21 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
         rib->count++;
     }
     
+    if(rt_un_entry->level != level){
+        /*replace the route with incoming version*/
+        rt_un_entry->flags = 0;
+        rt_un_entry->level = level;
+        time(&rt_un_entry->last_refresh_time);
+        
+        ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
+            nxt_hop = glthread_to_unified_nh(curr);
+            remove_glthread(curr);
+            free_un_nexthop(nxt_hop);
+        } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);
+        
+        init_glthread(&rt_un_entry->nh_list_head);
+    }
+
     if(!nexthop){
         sprintf(instance->traceopts->b, "RIB : %s : local route %s/%d added to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
@@ -503,6 +539,9 @@ boolean
 mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level,
                             internal_un_nh_t *nexthop){
     
+    glthread_t *curr = NULL;
+    internal_un_nh_t *nxt_hop = NULL;
+
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
@@ -519,6 +558,21 @@ mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
         rt_un_entry->level = level;
         glthread_add_next(&rib->head, &rt_un_entry->glthread);
         rib->count++;
+    }
+
+    if(rt_un_entry->level != level){
+        /*replace the route with incoming version*/
+        rt_un_entry->flags = 0;
+        rt_un_entry->level = level;
+        time(&rt_un_entry->last_refresh_time);
+        
+        ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
+            nxt_hop = glthread_to_unified_nh(curr);
+            remove_glthread(curr);
+            free_un_nexthop(nxt_hop);
+        } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);
+        
+        init_glthread(&rt_un_entry->nh_list_head);
     }
 
     existing_nh = lookup_clone_next_hop(rib, rt_un_entry, nexthop);
@@ -964,8 +1018,8 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
         }
     
         printf("%s/%u(L%u), Inlabel : %u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), 
-            RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key),
-            rt_un_entry->level);
+            RT_ENTRY_MASK(&rt_un_entry->rt_key), rt_un_entry->level, 
+            RT_ENTRY_LABEL(&rt_un_entry->rt_key));
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
@@ -999,8 +1053,8 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
         rt_un_entry = glthread_to_rt_un_entry(curr);
 
         printf("%s/%u(L%u), Inlabel : %u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), 
-            RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key),
-            rt_un_entry->level);
+            RT_ENTRY_MASK(&rt_un_entry->rt_key), rt_un_entry->level,
+            RT_ENTRY_LABEL(&rt_un_entry->rt_key));
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);

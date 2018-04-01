@@ -171,7 +171,7 @@ build_linear_topo(){
      *                                                                                                          
      * +------+               +------+                +-------+               +-------+               +--------+
      * |      |0/0    10.1.1.2|      |0/2     20.1.1.2|       |0/4    30.1.1.2|       | 0/6   40.1.1.2|        |
-     * |  R0  +------L12------+  R1  +-----L12--------+  R2   +-------L1L2----+  R3   +-----L1L2 -----+  R4    |
+     * |  R0  +-------L2------+  R1  +------L2--------+  R2   +-------L1------+  R3   +-----L1-- -----+  R4    |
      * |      |10.1.1.1    0/1|      |20.1.1.1    0/3 |       |30.1.1.1    0/5|       |40.1.1.1    0/7|        |
      * +------+               +------+                +-------+               +-------+               +--------+
      *                                                    
@@ -185,26 +185,26 @@ build_linear_topo(){
     node_t *R3 = create_new_node(instance, "R3", AREA1, "192.168.0.4");
     node_t *R4 = create_new_node(instance, "R4", AREA1, "192.168.0.5");
 
-    prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24, LEVEL12);
-    prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24, LEVEL12);
-    prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24, LEVEL12);
-    prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24, LEVEL12);
-    prefix_t *prefix_30_1_1_1_24 = create_new_prefix("30.1.1.1", 24, LEVEL12);
-    prefix_t *prefix_30_1_1_2_24 = create_new_prefix("30.1.1.2", 24, LEVEL12);
-    prefix_t *prefix_40_1_1_1_24 = create_new_prefix("40.1.1.1", 24, LEVEL12);
-    prefix_t *prefix_40_1_1_2_24 = create_new_prefix("40.1.1.2", 24, LEVEL12);
+    prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24, LEVEL2);
+    prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24, LEVEL2);
+    prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24, LEVEL2);
+    prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24, LEVEL2);
+    prefix_t *prefix_30_1_1_1_24 = create_new_prefix("30.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_30_1_1_2_24 = create_new_prefix("30.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_40_1_1_1_24 = create_new_prefix("40.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_40_1_1_2_24 = create_new_prefix("40.1.1.2", 24, LEVEL1);
 
     edge_t *R0_R1_edge = create_new_edge("eth0/0", "eth0/1", 10,
-            prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL12);
+            prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL2);
 
     edge_t *R1_R2_edge = create_new_edge("eth0/2", "eth0/3", 10,
-            prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL12);
+            prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL2);
     
     edge_t *R2_R3_edge = create_new_edge("eth0/4", "eth0/5", 10,
-            prefix_30_1_1_1_24, prefix_30_1_1_2_24, LEVEL12);
+            prefix_30_1_1_1_24, prefix_30_1_1_2_24, LEVEL1);
 
     edge_t *R3_R4_edge = create_new_edge("eth0/6", "eth0/7", 10,
-            prefix_40_1_1_1_24, prefix_40_1_1_2_24, LEVEL12);
+            prefix_40_1_1_1_24, prefix_40_1_1_2_24, LEVEL1);
 
     insert_edge_between_2_nodes(R0_R1_edge, R0, R1, BIDIRECTIONAL);
     insert_edge_between_2_nodes(R1_R2_edge, R1, R2, BIDIRECTIONAL);
@@ -220,20 +220,6 @@ build_multi_area_topo(){
 
 #if 0
  
- show spf r l 1 root R0
- show spf r l 1 root R1
- show spf r l 1 root R2
- show spf r l 1 root R3
- show spf r l 1 root R4
- show spf r l 1 root R5
- show spf r l 1 root R6
- show spf r l 2 root R0
- show spf r l 2 root R1
- show spf r l 2 root R2
- show spf r l 2 root R3
- show spf r l 2 root R4
- show spf r l 2 root R5
- show spf r l 2 root R6
                                                                                                       +-------------------+
                                                                                                       |                   |
  +----------------------------------------------+                                                     |     +-------+     |

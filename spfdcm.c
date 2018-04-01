@@ -1148,11 +1148,11 @@ spf_init_dcm(){
     /*show instance node <node-name> inet forwarding-table*/
     {
         static param_t inet;
-        init_param(&inet, CMD, "inet", 0, 0, INVALID, 0, "IP protocol");
+        init_param(&inet, CMD, "inet.0", 0, 0, INVALID, 0, "IP protocol");
         libcli_register_param(&instance_node_name, &inet);
         {
             static param_t inet_table;
-            init_param(&inet_table, CMD, "forwarding-table", show_route_handler, 0, INVALID, 0, "IP forwarding table");
+            init_param(&inet_table, CMD, "forwarding-table", show_route_handler, 0, INVALID, 0, "inet.0 forwarding table");
             libcli_register_param(&inet, &inet_table);
             set_param_cmd_code(&inet_table, CMDCODE_SHOW_NODE_FORWARDING_TABLE);
         }
@@ -1165,7 +1165,7 @@ spf_init_dcm(){
         libcli_register_param(&instance_node_name, &inet3);
         {
             static param_t inet3_table;
-            init_param(&inet3_table, CMD, "forwarding-table", show_route_handler, 0, INVALID, 0, "IP forwarding table");
+            init_param(&inet3_table, CMD, "forwarding-table", show_route_handler, 0, INVALID, 0, "inet.3 forwarding table");
             libcli_register_param(&inet3, &inet3_table);
             set_param_cmd_code(&inet3_table, CMDCODE_SHOW_NODE_INET3_FORWARDING_TABLE);
         }
