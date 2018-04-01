@@ -244,6 +244,7 @@ typedef struct rt_un_entry_{
     rt_key_t rt_key;
     glthread_t nh_list_head;
     FLAG flags; /*Flags for this routing entry*/
+    LEVEL level;
     time_t last_refresh_time;
     glthread_t glthread;
 } rt_un_entry_t;
@@ -275,7 +276,7 @@ typedef struct rt_un_table_{
     glthread_t head; /*List of nexthops - primary and backups both*/
     char *rib_name;
     /*CRUD*/
-    boolean (*rt_un_route_install_nexthop)(struct rt_un_table_ *, rt_key_t *, internal_un_nh_t *);
+    boolean (*rt_un_route_install_nexthop)(struct rt_un_table_ *, rt_key_t *, LEVEL , internal_un_nh_t *);
     boolean (*rt_un_route_install)(struct rt_un_table_ *, rt_un_entry_t *);
     rt_un_entry_t * (*rt_un_route_lookup)(struct rt_un_table_ *, rt_key_t *);
     boolean (*rt_un_route_update)(struct rt_un_table_ *, rt_un_entry_t *);
@@ -342,7 +343,7 @@ boolean
 rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key);
 
 void
-flush_rib(rt_un_table_t *rib);
+flush_rib(rt_un_table_t *rib, LEVEL level);
 
 internal_un_nh_t *
 inet_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto);
@@ -355,15 +356,15 @@ internal_un_nh_t *
 mpls_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto);
 
 boolean
-mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
+mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level,
         internal_un_nh_t *nexthop);
 
 boolean
-inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
+inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level,
         internal_un_nh_t *nexthop);
 
 boolean
-inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
+inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level,
         internal_un_nh_t *nexthop);
 
 int 

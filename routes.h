@@ -128,6 +128,10 @@ ROUTE_FLUSH_BACKUP_NH_LIST(routes_t *route, nh_type_t nh){
 #define ROUTE_GET_BEST_PREFIX(routeptr)   \
     ((GET_HEAD_SINGLY_LL(routeptr->like_prefix_list))->data)
 
+#define IS_DEFAULT_ROUTE(routeptr)  \
+    (strncmp(routeptr->rt_key.u.prefix.prefix, "0.0.0.0", PREFIX_LEN) == 0 && \
+        routeptr->rt_key.u.prefix.mask == 0)
+
 void
 spf_postprocessing(spf_info_t *spf_info,      /* routes are stored globally*/
                    node_t *spf_root,          /* computing node which stores the result of spf run*/

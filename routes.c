@@ -1434,6 +1434,9 @@ refine_route_backups(routes_t *route){
     nh_type_t nh;
     singly_ll_node_t *list_node1 = NULL;
 
+    if(IS_DEFAULT_ROUTE(route))
+        return;
+
     LEVEL level = route->level;
     if(is_independant_primary_next_hop_list(route)){
         sprintf(instance->traceopts->b, "route %s/%u at %s has independant "
@@ -1614,9 +1617,9 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
     }
   
     /*Flush all Ribs before route installation*/ 
-    flush_rib(spf_info->rib[INET_0]);
-    flush_rib(spf_info->rib[INET_3]);
-    flush_rib(spf_info->rib[MPLS_0]);
+    flush_rib(spf_info->rib[INET_0], level);
+    flush_rib(spf_info->rib[INET_3], level);
+    flush_rib(spf_info->rib[MPLS_0], level);
 
     enhanced_start_route_installation(spf_info, level, UNICAST_T);
     if(is_node_spring_enabled(spf_root, level)){
@@ -1839,6 +1842,25 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
 }
 
 static void
+ldpify_rlfa_nexthop(internal_nh_t *nxthop,
+        char *prefix, char mask){
+
+    mpls_label_t mpls_ldp_label = 0;
+    if(!nxthop->proxy_nbr->ldp_config.is_enabled)
+        return;
+
+    mpls_ldp_label = get_ldp_label_binding(nxthop->proxy_nbr, prefix, mask);
+    if(!mpls_ldp_label){
+        printf("Error : Could not get ldp label for prefix %s/%u from node %s",
+                prefix, mask, nxthop->proxy_nbr->node_name);
+        return 0;
+    }
+    nxthop->mpls_label_out[0] = mpls_ldp_label;
+    nxthop->stack_op[0] = PUSH;
+}
+
+
+static void
 enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
 
     /*Unicast (IGPs) protocols installs the routes in inet.0 and inet.3 tables
@@ -1870,8 +1892,8 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
         is_local_route = is_route_local(route);
 
         if(is_local_route){
-            inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, NULL);
-            inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, NULL);
+            inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, level, NULL);
+            inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, level, NULL);
             continue;
         }
         
@@ -1882,7 +1904,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
                 rc = FALSE;
                 if(nh == IPNH){
                     un_nxthop = inet_0_unifiy_nexthop(nxthop, IGP_PROTO);                
-                    rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                    rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, level, un_nxthop);
                     if(rc == FALSE){
                         free_un_nexthop(un_nxthop);
                     }
@@ -1895,7 +1917,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
                     }
                     else{
                         un_nxthop = inet_3_unifiy_nexthop(nxthop, IGP_PROTO, IPV4_LDP_NH, route);
-                        rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+                        rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, level, un_nxthop);
                         if(rc == FALSE){
                             free_un_nexthop(un_nxthop);
                         }
@@ -1912,7 +1934,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
                 rc = FALSE;
                 if(nh == IPNH){
                     un_nxthop = inet_0_unifiy_nexthop(nxthop, IGP_PROTO);                
-                    rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                    rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, level, un_nxthop);
                     if(rc == FALSE){
                         free_un_nexthop(un_nxthop);
                     }
@@ -1923,11 +1945,13 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
 
                     }else{
                         /*LDP backup nexthop(RLFAs)*/
+                        prefix_t *prefix = ROUTE_GET_BEST_PREFIX(route);
+                        ldpify_rlfa_nexthop(nxthop, prefix->prefix, prefix->mask);
                         un_nxthop = inet_3_unifiy_nexthop(nxthop, IGP_PROTO, IPV4_LDP_NH, route);
                         if(IS_BIT_SET(un_nxthop->flags, IPV4_LDP_NH))
-                            rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+                            rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, level, un_nxthop);
                         else if(IS_BIT_SET(un_nxthop->flags, IPV4_NH))
-                            rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                            rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, level, un_nxthop);
                         if(rc == FALSE){
                             free_un_nexthop(un_nxthop);
                         }
@@ -1982,9 +2006,9 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
             rc = FALSE;
             un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
             if(IS_BIT_SET(un_nxthop->flags, IPV4_SPRING_NH))
-                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, level, un_nxthop);
             else if(IS_BIT_SET(un_nxthop->flags, IPV4_NH))
-                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, level, un_nxthop);
             if(rc == FALSE){
                 free_un_nexthop(un_nxthop);
             }
@@ -2008,9 +2032,9 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
             rc = FALSE;
             un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
             if(IS_BIT_SET(un_nxthop->flags, IPV4_SPRING_NH))
-                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, level, un_nxthop);
             else if(IS_BIT_SET(un_nxthop->flags, IPV4_NH))
-                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, level, un_nxthop);
             if(rc == FALSE){
                 free_un_nexthop(un_nxthop);
             }
@@ -2030,12 +2054,12 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                 continue;
             }
             rc = FALSE;
-            /*springified LDP nexthops*/
+            /*springified RLFA nexthops*/
             un_nxthop = inet_3_unifiy_nexthop(nxthop, L_IGP_PROTO, IPV4_SPRING_NH, route);
             if(IS_BIT_SET(un_nxthop->flags, IPV4_SPRING_NH))
-                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, un_nxthop);
+                rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, level, un_nxthop);
             else if(IS_BIT_SET(un_nxthop->flags, IPV4_NH))
-                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, un_nxthop);
+                rc = inet_0_rt_un_route_install_nexthop(spf_info->rib[INET_0], &rt_key, level, un_nxthop);
             if(rc == FALSE){
                 free_un_nexthop(un_nxthop);
             }
@@ -2058,7 +2082,7 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                 }
                 rc = FALSE;
                 un_nxthop = mpls_0_unifiy_nexthop(nxthop, L_IGP_PROTO);
-                rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, un_nxthop);
+                rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, level, un_nxthop);
                 if(rc == FALSE){
                     free_un_nexthop(un_nxthop);
                 }
@@ -2080,7 +2104,7 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                 }
                 rc = FALSE;
                 un_nxthop = mpls_0_unifiy_nexthop(nxthop, L_IGP_PROTO);
-                rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, un_nxthop);
+                rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, level, un_nxthop);
                 if(rc == FALSE){
                     free_un_nexthop(un_nxthop);
                 }

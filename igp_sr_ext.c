@@ -654,7 +654,8 @@ get_node_segment_prefix_sid(node_t *node, LEVEL level){
     return NULL;
 }
 
-
+/*There should not be such thing : Convert RSVP tunnel to
+ * SR tunnels*/
 static void
 springify_rsvp_nexthop(node_t *spf_root, 
         internal_nh_t *nxthop, 
@@ -663,7 +664,7 @@ springify_rsvp_nexthop(node_t *spf_root,
 }
 
 static void
-springify_ldp_nexthop(node_t *spf_root, 
+springify_rlfa_nexthop(node_t *spf_root, 
         internal_nh_t *nxthop, 
         routes_t *route, 
         unsigned int prefix_sid_index){
@@ -686,25 +687,27 @@ springify_ldp_nexthop(node_t *spf_root,
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
 
     /* PLR should send the traffic to Destination via RLFA. There are two options to
-     * perform this :
+     * perform this via SR-tunnels:
      * a. Either SR-tunnel the traffic from PLR -- RLFA --- Destination
      * b. Or SR-tunnel the traffic from PLR -- RLFA, and then traffic is sent via IGP path to Dest as IPV4 traffic. 
-     * We will chooe option a by default. We may provide knob to switch between these two behaviors.
+     * We will chooe option 'a' by default. We may provide knob to switch between these two behaviors.
      * Operation to perform :
      1. lookup prefix_sid_index in nxthop->rlfa->srgb and PUSH
      2. lookup RLFA router id node segment index in nxthop->node->srgb, and perform SWAP 
      */
 
-     /*Op 1*/
-     mpls_label = get_label_from_srgb_index(nxthop->rlfa->srgb, prefix_sid_index); 
-     nxthop->mpls_label_out[0] = mpls_label;
-     nxthop->stack_op[0] = PUSH;
-
-    /*Op 2*/
+    /*Op 2*/ /*Remember this operation is being done on PLR and RLFA needs to be installed in inet.3 table
+     only as LDP tunnel or SR tunnel. For Transient SR tunnel protection we have TI-LFAs*/
     rlfa_node_prefix_sid = get_node_segment_prefix_sid(nxthop->rlfa, route->level);
     mpls_label = get_label_from_srgb_index(nxthop->proxy_nbr->srgb, rlfa_node_prefix_sid->sid.sid);
+    nxthop->mpls_label_out[0] = mpls_label;
+    nxthop->stack_op[0] = PUSH;
+
+    /*Op 1*/
+    mpls_label = get_label_from_srgb_index(nxthop->rlfa->srgb, prefix_sid_index); 
     nxthop->mpls_label_out[1] = mpls_label;
-    nxthop->stack_op[1] = SWAP;
+    nxthop->stack_op[1] = PUSH;
+
 
     sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u\n\tStack : %s:%u\t%s:%u, oif : %s, gw : %s, nexthop : %s", 
         spf_root->node_name, route->rt_key.u.prefix.prefix,
@@ -816,7 +819,7 @@ springify_unicast_route(node_t *spf_root, routes_t *route){
         if(is_internal_backup_nexthop_rsvp(nxthop))
             springify_rsvp_nexthop(spf_root, nxthop, route, dst_prefix_sid);
         else
-            springify_ldp_nexthop(spf_root, nxthop, route, dst_prefix_sid);
+            springify_rlfa_nexthop(spf_root, nxthop, route, dst_prefix_sid);
     } ITERATE_LIST_END;
 
     /*Now do backups*/
@@ -830,7 +833,7 @@ springify_unicast_route(node_t *spf_root, routes_t *route){
         if(is_internal_backup_nexthop_rsvp(nxthop))
             springify_rsvp_nexthop(spf_root, nxthop, route, dst_prefix_sid);
         else
-            springify_ldp_nexthop(spf_root, nxthop, route, dst_prefix_sid);
+            springify_rlfa_nexthop(spf_root, nxthop, route, dst_prefix_sid);
     } ITERATE_LIST_END;
 }
 

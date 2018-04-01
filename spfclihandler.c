@@ -63,7 +63,7 @@ _run_spf_run_all_nodes(){
     node_t *node = NULL;;
 
     /*Ist run LEVEL2 spf run on all nodes, so that L1L2 routers would set multi_area bit appropriately*/
-    for(level_it = LEVEL1; level_it <= LEVEL2; level_it++){
+    for(level_it = LEVEL2; level_it >= LEVEL1; level_it--){
 
         ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
             node = list_node->data;

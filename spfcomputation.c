@@ -751,12 +751,13 @@ spf_computation(node_t *spf_root,
         return;
     }
 
+#if 0
     if(level == LEVEL2 && spf_root->spf_info.spf_level_info[LEVEL1].version == 0){
         sprintf(instance->traceopts->b, "Root : %s, Running first LEVEL1 full SPF run before LEVEL2 full SPF run", 
                         spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
         spf_computation(spf_root, &spf_root->spf_info, LEVEL1, FULL_RUN);      
     }
-
+#endif
     sprintf(instance->traceopts->b, "Node : %s, Triggered SPF run : %s, %s", 
                 spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "FORWARD_RUN",
                 get_str_level(level)); trace(instance->traceopts, DIJKSTRA_BIT);

@@ -220,7 +220,7 @@ lookup_clone_next_hop(rt_un_table_t *rib,
 
 /*Rib functions*/
 boolean
-inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, 
+inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level, 
                             internal_un_nh_t *nexthop){
     
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
@@ -234,6 +234,7 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
         rt_un_entry = calloc(1, sizeof(rt_un_entry_t));
         memcpy(&rt_un_entry->rt_key, rt_key, sizeof(rt_key_t));
         time(&rt_un_entry->last_refresh_time);
+        rt_un_entry->level = level;
         glthread_add_next(&rib->head, &rt_un_entry->glthread);
         rib->count++;
     }
@@ -352,7 +353,7 @@ inet_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
 
 
 boolean
-inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, 
+inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level,
                             internal_un_nh_t *nexthop){
     
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
@@ -366,6 +367,7 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
         rt_un_entry = calloc(1, sizeof(rt_un_entry_t));
         memcpy(&rt_un_entry->rt_key, rt_key, sizeof(rt_key_t));
         time(&rt_un_entry->last_refresh_time);
+        rt_un_entry->level = level;
         glthread_add_next(&rib->head, &rt_un_entry->glthread);
         rib->count++;
     }
@@ -498,7 +500,7 @@ mpls_0_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
 
 
 boolean
-mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, 
+mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL level,
                             internal_un_nh_t *nexthop){
     
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
@@ -514,6 +516,7 @@ mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key,
         rt_un_entry = calloc(1, sizeof(rt_un_entry_t));
         memcpy(&rt_un_entry->rt_key, rt_key, sizeof(rt_key_t));
         time(&rt_un_entry->last_refresh_time);
+        rt_un_entry->level = level;
         glthread_add_next(&rib->head, &rt_un_entry->glthread);
         rib->count++;
     }
@@ -663,13 +666,10 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
             assert(0);
     }
 
-    mpls_label_t ldp_label = 0,
-                 outgoing_label = 0;
-
     switch(nxthop_type){
         case IPV4_RSVP_NH:
             break; /*Later*/
-        case IPV4_LDP_NH:
+        case IPV4_LDP_NH: /*This functionality should go in ldpify_rlfa_nexthop()*/
         {
             if(is_node_best_prefix_originator(nexthop_node, route)){
                 /* No need to label the packet when src and dest are 
@@ -679,17 +679,8 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
                 return un_nh;
             }
             SET_BIT(un_nh->flags, IPV4_LDP_NH);
-            ldp_label = get_ldp_label_binding(nexthop_node, 
-                        route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
-
-            if(!ldp_label){
-                /*Means downstream nbr has not advertised the LDP label. Try for Spring label
-                 * This feature is LDPoSR*/
-                break;
-            }
-            outgoing_label = ldp_label;;
-            un_nh->nh.inet3_nh.mpls_label_out[0] = outgoing_label;
-            un_nh->nh.inet3_nh.stack_op[0] = PUSH;
+            un_nh->nh.inet3_nh.mpls_label_out[0] = nexthop->mpls_label_out[0];
+            un_nh->nh.inet3_nh.stack_op[0] = nexthop->stack_op[0];
             return un_nh;
         }
         break;
@@ -806,19 +797,21 @@ init_rib(rib_type_t rib_type){
 }
 
 void
-flush_rib(rt_un_table_t *rib){
-    
-    rib->count = 0;
+flush_rib(rt_un_table_t *rib, LEVEL level){
+   
+    unsigned int count = 0; 
     glthread_t *curr = NULL;
     rt_un_entry_t *rt_un_entry = NULL;
 
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
 
         rt_un_entry = glthread_to_rt_un_entry(curr);
+        if(rt_un_entry->level != level)
+            continue;
         free_rt_un_entry(rt_un_entry);
+        count++;
     } ITERATE_GLTHREAD_END(&rib->head, curr);
-
-    init_glthread(&rib->head);
+    rib->count -= count;
 }
 
 void
@@ -829,7 +822,6 @@ inet_0_display(rt_un_table_t *rib, char *prefix, char mask){
     internal_un_nh_t *nexthop = NULL;
 
     printf("%s  count : %u\n\n", rib->rib_name, rib->count);
-
     if(prefix){
         rt_key_t rt_key;
         memset(&rt_key, 0, sizeof(rt_key_t));
@@ -841,6 +833,9 @@ inet_0_display(rt_un_table_t *rib, char *prefix, char mask){
             printf("Do not exist\n");
             return;
         }
+        printf("%s/%u(L%u)\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+            RT_ENTRY_MASK(&rt_un_entry->rt_key), rt_un_entry->level);
+
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
             printf("\t%s %-16s %s   %s %s\n", protocol_name(nexthop->protocol), 
@@ -852,18 +847,18 @@ inet_0_display(rt_un_table_t *rib, char *prefix, char mask){
     }
 
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
-        
-        rt_un_entry = glthread_to_rt_un_entry(curr);
-        
-            printf("%s/%u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
 
-            ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
-                nexthop = glthread_to_unified_nh(curr1);
-                printf("\t%s %-16s %s   %s %s\n", protocol_name(nexthop->protocol), 
-                            nexthop->oif->intf_name, nexthop->gw_prefix,
-                            IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
-                            get_str_nexthop_type(nexthop->flags));
-            } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr1);
+        rt_un_entry = glthread_to_rt_un_entry(curr);
+        printf("%s/%u(L%u)\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key),
+            rt_un_entry->level);
+
+        ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
+            nexthop = glthread_to_unified_nh(curr1);
+            printf("\t%s %-16s %s   %s %s\n", protocol_name(nexthop->protocol), 
+                    nexthop->oif->intf_name, nexthop->gw_prefix,
+                    IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
+                    get_str_nexthop_type(nexthop->flags));
+        } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr1);
     } ITERATE_GLTHREAD_END(&rib->head, curr);
 }
 
@@ -875,8 +870,8 @@ inet_3_display(rt_un_table_t *rib, char *prefix, char mask){
     rt_un_entry_t *rt_un_entry = NULL;
     internal_un_nh_t *nexthop = NULL;
     int i = 0;
-    printf("%s  count : %u\n\n", rib->rib_name, rib->count);
 
+    printf("%s  count : %u\n\n", rib->rib_name, rib->count);
     if(prefix){
         rt_key_t rt_key;
         memset(&rt_key, 0, sizeof(rt_key_t));
@@ -887,6 +882,9 @@ inet_3_display(rt_un_table_t *rib, char *prefix, char mask){
             printf("Do not exist\n");
             return;
         }
+        printf("%s/%u(L%u)\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key),
+                rt_un_entry->level);
+
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
             printf("\t%s %-16s %s   %s %s\n", protocol_name(nexthop->protocol), 
@@ -916,8 +914,9 @@ inet_3_display(rt_un_table_t *rib, char *prefix, char mask){
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
 
         rt_un_entry = glthread_to_rt_un_entry(curr);
-
-        printf("%s/%u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+        
+        printf("%s/%u(L%u)\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key),
+                rt_un_entry->level);
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
@@ -952,8 +951,8 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
     rt_un_entry_t *rt_un_entry = NULL;
     internal_un_nh_t *nexthop = NULL;
     int i = 0;
-    printf("%s  count : %u\n\n", rib->rib_name, rib->count);
 
+    printf("%s  count : %u\n\n", rib->rib_name, rib->count);
     if(in_label){
         rt_key_t rt_key;
         memset(&rt_key, 0, sizeof(rt_key_t));
@@ -963,6 +962,11 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
             printf("Do not exist\n");
             return;
         }
+    
+        printf("%s/%u(L%u), Inlabel : %u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+            RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key),
+            rt_un_entry->level);
+
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
             printf("\tInLabel : %u, %s %-16s %s   %s %s\n", in_label, 
@@ -994,8 +998,9 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
 
         rt_un_entry = glthread_to_rt_un_entry(curr);
 
-        printf("%s/%u, Inlabel : %u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), 
-            RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key));
+        printf("%s/%u(L%u), Inlabel : %u\n", RT_ENTRY_PFX(&rt_un_entry->rt_key), 
+            RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key),
+            rt_un_entry->level);
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
