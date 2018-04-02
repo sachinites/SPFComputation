@@ -108,3 +108,14 @@ get_ldp_label_binding(node_t *down_stream_node,
 
     return label;
 }
+
+/*Function to create targeted LDP tunnel for RLFA functionality*/
+void
+create_targeted_ldp_tunnel(node_t *ingress_lsr, /*Ingress LSR*/
+        char *edgress_lsr_rtr_id,               /*Egress LSR router id*/
+        edge_end_t *oif, node_t *proxy_nbr){        /*oif from ingress LSR to immediate strict nexthop*/
+
+    
+
+}
+

@@ -153,31 +153,6 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
             return FALSE;/*ECMP case with only link protection*/
         }
         if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-#if 0
-            ITERATE_NH_TYPE_BEGIN(nh){
-                for(i = 0; i < MAX_NXT_HOPS; i++){
-                    primary_nh = &D_res->next_hop[nh][i];
-                    if(is_nh_list_empty2(&(D_res->next_hop[nh][i])))
-                        break;
-                    d_prim_nh_to_D = DIST_X_Y(primary_nh->node, D, level);
-                    d_prim_nh_to_E = DIST_X_Y(primary_nh->node, E, level);
-                    d_E_to_D = DIST_X_Y(E, D, level);
-                    /*Atleast one primary nxt hop do not traverse E, ECMP case*/
-                    if(d_prim_nh_to_D < d_prim_nh_to_E + d_E_to_D){
-                        sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u," 
-                            "but primary nxt hop node(%s) do not traverse protected_link next hop"
-                            "node (%s) AND LINK_NODE_PROTECTION Enabled",
-                            D->node_name, nh_count, primary_nh->node->node_name, E->node_name);
-                            /*This should be DEAD code now because of is_independant_primary_next_hop_list_for_nodes() functionality. 
-                             * Placing assert() for a while to Monitor*/
-                            assert(0);  
-                        return FALSE;
-                    }
-                }
-            }ITERATE_NH_TYPE_END;
-            /* ToDo : We must not compute Link protection LFA/RLFA for such destination, only node
-             * protection back up is needed*/
-#endif
             sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u,"
                     "but all primary nxt hop nodes traverses protected_link next hop"
                     "node (%s) AND LINK_NODE_PROTECTION Enabled. No only-link protecting backup needed",

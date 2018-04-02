@@ -39,6 +39,7 @@
 #define LDP_LABEL_RANGE_MAX     300000
 
 typedef struct _node_t node_t;
+typedef struct edge_end_ edge_end_t;
 
 typedef struct _ldp_config_{
     
@@ -55,4 +56,8 @@ mpls_label_t
 get_ldp_label_binding(node_t *down_stream_node,
         char *prefix, char mask);
 
+void
+create_targeted_ldp_tunnel(node_t *ingress_lsr, 
+                           char *edgress_lsr_rtr_id,
+                           edge_end_t *oif, node_t *proxy_nbr);
 #endif /* __LDP__*/

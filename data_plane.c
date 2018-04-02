@@ -796,7 +796,6 @@ mpls_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto){
 
     /*Fill the MPLS label stack*/
 
-    //un_nh->nh.mpls0_nh.mpls_label_in = nexthop->mpls_label_in;
     unsigned int i = 0;
     
     for(; i < MPLS_STACK_OP_LIMIT_MAX; i++){
