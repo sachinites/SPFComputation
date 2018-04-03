@@ -1812,25 +1812,6 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
 
         if(route->install_state != RTE_UPDATED)
             continue;
-#if 0
-        /*We have computed the spring route here. Need to check whether the spring route has
-         * changed or not in terms of unicast topology. Compare the unicast version of the route
-         * installed in inet.0 already with the spring version of the route we have computed here*/
-        rt_entry = rt_route_lookup(spf_info->rttable, route->rt_key.u.prefix.prefix, 
-                route->rt_key.u.prefix.mask); 
-
-        assert(rt_entry);
-
-        if(is_changed_route(spf_info, rt_entry, route, FULL_RUN, level, UNICAST_T) == TRUE)
-            route->install_state = RTE_CHANGED;
-        else
-            route->install_state = RTE_NO_CHANGE;
-        sprintf(instance->traceopts->b, "Spring Route : %s/%u is Marked as %s at %s", 
-                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
-                route_intall_status_str(route->install_state),
-                get_str_level(level)); 
-        trace(instance->traceopts, SPRING_ROUTE_CAL_BIT); 
-#endif
     } ITERATE_LIST_END;
 
     ITERATE_LIST_BEGIN(spf_info->routes_list[SPRING_T], list_node){
@@ -1853,7 +1834,7 @@ ldpify_rlfa_nexthop(internal_nh_t *nxthop,
     if(!mpls_ldp_label){
         printf("Error : Could not get ldp label for prefix %s/%u from node %s",
                 prefix, mask, nxthop->proxy_nbr->node_name);
-        return 0;
+        return;
     }
     nxthop->mpls_label_out[0] = mpls_ldp_label;
     nxthop->stack_op[0] = PUSH;
@@ -1867,7 +1848,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
      * only. Flush both the tables first*/
 
     singly_ll_node_t *list_node = NULL,
-                     *list_node2 = NULL;
+    *list_node2 = NULL;
 
     routes_t *route = NULL;
     nh_type_t nh;
@@ -1878,7 +1859,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
     boolean is_local_route = FALSE;
 
     ITERATE_LIST_BEGIN(spf_info->routes_list[UNICAST_T], list_node){
-        
+
         route = list_node->data;
         if(route->level != level) continue;
         if(route->install_state == RTE_STALE)
@@ -1887,7 +1868,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
         memset(&rt_key, 0, sizeof(rt_key_t));
         strncpy(RT_ENTRY_PFX(&rt_key), route->rt_key.u.prefix.prefix, PREFIX_LEN);
         RT_ENTRY_MASK(&rt_key) = route->rt_key.u.prefix.mask;
-        
+
         /*Handle local routes*/
         is_local_route = is_route_local(route);
 
@@ -1896,7 +1877,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
             inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, level, NULL);
             continue;
         }
-        
+
         /*Install primary nexthop first. Primary nexthops are inet.0 routes Or RSVP routes (inet.3)*/
         ITERATE_NH_TYPE_BEGIN(nh){
             ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node2){
@@ -1941,12 +1922,15 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
                 }
                 else{ /*backup is either RSVP or LDP nexthop*/
                     if(is_internal_backup_nexthop_rsvp(nxthop)) {
-                      /*ToDo*/
+                        /*ToDo*/
 
                     }else{
                         /*LDP backup nexthop(RLFAs)*/
                         prefix_t *prefix = ROUTE_GET_BEST_PREFIX(route);
                         ldpify_rlfa_nexthop(nxthop, prefix->prefix, prefix->mask);
+                        /*Could not get LDP label, skip installation of this LDP nexthop*/
+                        if(IS_INTERNAL_NH_MPLS_STACK_EMPTY(nxthop))
+                            continue;
                         un_nxthop = inet_3_unifiy_nexthop(nxthop, IGP_PROTO, IPV4_LDP_NH, route);
                         if(IS_BIT_SET(un_nxthop->flags, IPV4_LDP_NH))
                             rc = inet_3_rt_un_route_install_nexthop(spf_info->rib[INET_3], &rt_key, level, un_nxthop);
@@ -1959,7 +1943,6 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
                 }
             } ITERATE_LIST_END;
         } ITERATE_NH_TYPE_END;
-
     } ITERATE_LIST_END;
 }
 

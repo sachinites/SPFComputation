@@ -692,6 +692,8 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
     for( i = 0; i < MAX_NXT_HOPS; i++){
         p_node = &S->pq_nodes[level][i];
 
+        if(is_empty_internal_nh(p_node))
+            break;
         //assert(IS_BIT_SET(p_node->p_space_protection_type, LINK_NODE_PROTECTION));
         /*For node protection, Run the Forward SPF run on PQ nodes*/
         Compute_and_Store_Forward_SPF(p_node->rlfa, level);

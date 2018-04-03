@@ -1130,14 +1130,40 @@ get_longest_prefix_match2(rt_un_table_t *rib, char *prefix){
 }
 
 static void
-copy_nexthop_mpls_stack_to_packet_mpls_stack(internal_un_nh_t *nxthop , 
-                                mpls_label_stack_t *mpls_label_stack){
+execute_nexthop_mpls_label_stack_on_packet(internal_un_nh_t *nxthop, 
+        mpls_label_stack_t *mpls_label_stack){
 
-    unsigned int i = 0;
-    for(; i < MPLS_STACK_OP_LIMIT_MAX; i++){
-        PUSH_MPLS_LABEL(mpls_label_stack, nxthop->nh.inet3_nh.mpls_label_out[i]);
+    /*Execute the Nexthop mpls label stack on incoming packet which could be
+     * labelled or unlabelled*/
+    int i = MPLS_STACK_OP_LIMIT_MAX -1;
+
+    for(; i >= 0; i--){
+        MPLS_STACK_OP stack_op = nxthop->nh.mpls0_nh.stack_op[i];
+        mpls_label_t imposing_label =  nxthop->nh.mpls0_nh.mpls_label_out[i];
+        
+        if(stack_op == STACK_OPS_UNKNOWN &&
+                imposing_label == 0){
+            continue;
+        }
+
+        switch(stack_op){
+            case PUSH:
+                PUSH_MPLS_LABEL(mpls_label_stack, imposing_label);
+                break;
+            case POP:
+                assert(!IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack));
+                POP_MPLS_LABEL(mpls_label_stack);
+                break;
+            case SWAP:
+                assert(!IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack));
+                SWAP_MPLS_LABEL(mpls_label_stack, imposing_label);
+                break;
+            default:
+                assert(0);
+        }
     }
 }
+
 
 #define ITERATE_PREF_ROUTE_ORDER_BEGIN(_pref_order)   \
     for(_pref_order = ROUTE_TYPE_MIN + 1; _pref_order < ROUTE_TYPE_MAX; _pref_order++)
@@ -1223,7 +1249,7 @@ ldp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **ne
             get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
 
     mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
-    copy_nexthop_mpls_stack_to_packet_mpls_stack(prim_nexthop, mpls_label_stack);
+    execute_nexthop_mpls_label_stack_on_packet(prim_nexthop, mpls_label_stack);
 
     *next_node = get_un_next_hop_node(prim_nexthop);
     *trace_rc = TRACE_INCOMPLETE;
@@ -1258,7 +1284,7 @@ sr_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **nex
             get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
 
     mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
-    copy_nexthop_mpls_stack_to_packet_mpls_stack(prim_nexthop, mpls_label_stack);
+    execute_nexthop_mpls_label_stack_on_packet(prim_nexthop, mpls_label_stack);
 
     *next_node = get_un_next_hop_node(prim_nexthop);
     *trace_rc = TRACE_INCOMPLETE;
@@ -1293,7 +1319,7 @@ rsvp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **n
             get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
 
     mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
-    copy_nexthop_mpls_stack_to_packet_mpls_stack(prim_nexthop, mpls_label_stack);
+    execute_nexthop_mpls_label_stack_on_packet(prim_nexthop, mpls_label_stack);
 
     *next_node = get_un_next_hop_node(prim_nexthop);
     *trace_rc = TRACE_INCOMPLETE;
@@ -1333,24 +1359,23 @@ transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
         mpls_label_t outgoing_mpls_label = get_internal_un_nh_stack_top_label(prim_nh);
 
         assert(stack_op != STACK_OPS_UNKNOWN);
+        
+        execute_nexthop_mpls_label_stack_on_packet(prim_nh, mpls_label_stack);
 
         switch(stack_op){
             case SWAP:
-                SWAP_MPLS_LABEL(mpls_label_stack, outgoing_mpls_label);
                 printf("%u. %s(%s)---swap[%u,%u]--->(%s)%s", i++, node->node_name, 
                     get_un_next_hop_oif_name(prim_nh), rt_key.u.label, outgoing_mpls_label, 
                     get_un_next_hop_gateway_pfx(prim_nh),
                     get_un_next_hop_node(prim_nh)->node_name);
                 break;
             case NEXT:
-                PUSH_MPLS_LABEL(mpls_label_stack, outgoing_mpls_label);
                 printf("%u. %s(%s)---push[%u,%u]--->(%s)%s", i++, node->node_name, 
                     get_un_next_hop_oif_name(prim_nh), rt_key.u.label, outgoing_mpls_label, 
                     get_un_next_hop_gateway_pfx(prim_nh),
                     get_un_next_hop_node(prim_nh)->node_name);
                 break;
             case POP:
-                POP_MPLS_LABEL(mpls_label_stack);
                 if(prim_nh->oif){
                     printf("%u. %s(%s)---PHP[%u,%u]--->(%s)%s", i++, node->node_name, 
                             get_un_next_hop_oif_name(prim_nh), rt_key.u.label, 

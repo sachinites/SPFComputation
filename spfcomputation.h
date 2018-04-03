@@ -165,7 +165,13 @@ typedef struct internal_nh_t_{
             _internal_nh_t_ptr->protected_link->intf_name, get_str_lfa_type(_internal_nh_t_ptr->lfa_type),          \
             _internal_nh_t_ptr->root_metric, _internal_nh_t_ptr->dest_metric)
 
-/*A backup LSPNH nexthop could be LDPNH or RSVPNH, this fn is used to check which
+
+#define IS_INTERNAL_NH_MPLS_STACK_EMPTY(_internal_nh_t_ptr)     \
+    (_internal_nh_t_ptr->mpls_label_out[0] == 0 &&              \
+        _internal_nh_t_ptr->stack_op[0] == STACK_OPS_UNKNOWN)
+
+
+/*  A backup LSPNH nexthop could be LDPNH or RSVPNH, this fn is used to check which
  *  one is the backup nexthop type. This fn should be called to test backup nexthops only.
  *  Primary nexthops are never LDP nexthops in IGPs*/
 
