@@ -6,7 +6,7 @@ USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o
-OBJ=advert.o rttable.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
+OBJ=advert.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
 	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 				   \
 	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o igp_sr_ext.o 			\
 	sr_tlv_api.o data_plane.o srms.o ${DSOBJ}
@@ -69,9 +69,6 @@ spfutil.o:spfutil.c
 spfclihandler.o:spfclihandler.c
 	@echo "Building spfclihandler.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} spfclihandler.c -o spfclihandler.o
-rttable.o:rttable.c
-	@echo "Building rttable.o" 
-	@ ${CC} ${CFLAGS} -c ${INCLUDES} rttable.c -o rttable.o
 libtrace.o:./Libtrace/libtrace.c
 	@echo "Building libtrace.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./Libtrace/libtrace.c -o ./Libtrace/libtrace.o

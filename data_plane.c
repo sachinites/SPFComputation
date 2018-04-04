@@ -1426,6 +1426,10 @@ init_pfe(){
     pfe[RSVP_ROUTE] = rsvp_pfe_engine;
 }
 
+int
+ping_backup(char *node_name, char *dst_prefix){
+    return 0;
+}
 
 /*To be implemented as state machine*/
 int

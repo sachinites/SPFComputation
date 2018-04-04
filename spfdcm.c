@@ -41,7 +41,6 @@
 #include "bitsop.h"
 #include "spfcmdcodes.h"
 #include "spfclihandler.h"
-#include "rttable.h"
 #include "routes.h"
 #include "advert.h"
 #include "data_plane.h"
@@ -270,7 +269,7 @@ show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             ping(node_name, prefix);
             break;
         case CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP:
-            show_backup_traceroute(node_name, prefix);
+            ping_backup(node_name, prefix);
             break;
         case CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS:
             //show_mpls_traceroute(node_name, prefix); 
@@ -703,7 +702,7 @@ config_static_route_handler(param_t *param,
          *intf_name = NULL;
 
     int mask = 0;
-    rttable_entry_t *rt_entry = NULL;
+    rt_un_entry_t *rt_entry = NULL;
 
     TLV_LOOP_BEGIN(tlv_buf, tlv){
 
@@ -725,10 +724,11 @@ config_static_route_handler(param_t *param,
 
     host_node = singly_ll_search_by_key(instance->instance_node_list, host_node_name);
 
+#if 0
     switch(enable_or_disable){
         case CONFIG_ENABLE:
-            
-            rt_entry = calloc(1, sizeof(rttable_entry_t));
+                    
+            rt_entry = calloc(1, sizeof(rt_un_entry_t));
 
             strncpy(rt_entry->dest.prefix, dest_ip, 15);
             rt_entry->dest.prefix[15] = '\0';
@@ -756,6 +756,7 @@ config_static_route_handler(param_t *param,
         default:
             ;
     }
+#endif
     return 0;
 }
 

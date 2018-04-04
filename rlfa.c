@@ -96,7 +96,11 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
     spf_result_t *D_res = NULL;
     node_t *E = protected_link->to.node;
     
-    assert(IS_LEVEL_SET(protected_link->level, level));
+    if(!IS_LEVEL_SET(protected_link->level, level)){
+        sprintf(impact_reason, "Dest %s Not in same level as protected link(%s)", 
+            D->node_name, get_str_level(protected_link->level));
+        return FALSE;        
+    }
 
     /* If it is false, it dont mean anything, but if it is true then
      * Destination MUST need to have node protection backup. In the rest of

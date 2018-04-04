@@ -36,7 +36,6 @@
 #include <string.h>
 #include "instance.h"
 #include "spfutil.h"
-#include "rttable.h"
 #include "spftrace.h"
 
 extern instance_t *instance;
