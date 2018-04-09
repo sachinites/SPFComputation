@@ -115,7 +115,7 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
 
     if(!IS_LINK_PROTECTION_ENABLED(protected_link) &&
             !IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-        printf("No protection enabled on the link\n");
+        sprintf(impact_reason, "No protection enabled on the link");
         return FALSE;
     }
 

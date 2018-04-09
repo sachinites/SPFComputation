@@ -1326,9 +1326,6 @@ rsvp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **n
     return mpls_label_stack;
 }
 
-/*ToDo : Currently the nexthop applies only top most label stack operation
- * on incoming packet label stack. Ideally, Entire mpls label stack of nexthop
- * should be applied on incoming mpls label. We will improve*/
 
 void
 transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack, 

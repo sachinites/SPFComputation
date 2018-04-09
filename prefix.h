@@ -132,7 +132,7 @@ void free_prefix(prefix_t *prefix);
     if(target_ptr){                                 \
         target_ptr->ref_count--;                    \
         if(!target_ptr->ref_count){                 \
-            free_prefix(target_ptr);                       \
+            free_prefix(target_ptr);                \
         }                                           \
         target_ptr = NULL;                          \
     }

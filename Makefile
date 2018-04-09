@@ -5,7 +5,7 @@ INCLUDES=-I . -I ./gluethread -I ./Stack -I ./CommandParser -I ./LinkedList -I .
 USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
-DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o
+DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o #Tree/BinarySearchTree.o
 OBJ=advert.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
 	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 				   \
 	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o igp_sr_ext.o 			\
@@ -84,6 +84,8 @@ ${DSOBJ}:
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} gluethread/glthread.c -o gluethread/glthread.o
 	@echo "Building BitOp/bitarr.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} BitOp/bitarr.c -o BitOp/bitarr.o
+	#@echo "BinarySearchTree.o"
+	#@ ${CC} ${CFLAGS} -c -I ./Tree Tree/BinarySearchTree.c -o Tree/BinarySearchTree.o
 clean:
 	rm -f *.o
 	rm -f rpd

@@ -325,7 +325,6 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
                       *backup = NULL;
 
         delete_singly_ll(route->like_prefix_list);
-        route->ecmp_dest_count = 1;
         route_set_key(route, prefix->prefix, prefix->mask); 
 
         sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.u.prefix.prefix, 
@@ -554,7 +553,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
         route = route_malloc();
         route_set_key(route, prefix->prefix, prefix->mask); 
-        route->ecmp_dest_count = 1;
         route->version = spf_info->spf_level_info[level].version;
 
         /*Copy the prefix flags to route flags. flags include :
@@ -703,7 +701,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/
-                        route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
                             merge_route_backup_nexthops(route, result, nh);
@@ -733,7 +730,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                                 route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); 
                         trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
-                        route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
                             merge_route_backup_nexthops(route, result, nh);
@@ -833,7 +829,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/
-                        route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
                             merge_route_backup_nexthops(route, result, nh);
@@ -861,7 +856,6 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
                         sprintf(instance->traceopts->b, "Node : %s : route : %s/%u hits ecmp case", GET_SPF_INFO_NODE(spf_info, level)->node_name,
                                 route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
                         /* Union LFA,s RLFA,s Primary nexthops*/ 
-                        route->ecmp_dest_count++;
                         ITERATE_NH_TYPE_BEGIN(nh){
                             merge_route_primary_nexthops(route, result, nh);
                             merge_route_backup_nexthops(route, result, nh);

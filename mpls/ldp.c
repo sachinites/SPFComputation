@@ -110,12 +110,145 @@ get_ldp_label_binding(node_t *down_stream_node,
 }
 
 /*Function to create targeted LDP tunnel for RLFA functionality*/
-void
-create_targeted_ldp_tunnel(node_t *ingress_lsr, /*Ingress LSR*/
-        char *edgress_lsr_rtr_id,               /*Egress LSR router id*/
-        edge_end_t *oif, node_t *proxy_nbr){        /*oif from ingress LSR to immediate strict nexthop*/
+int
+create_targeted_ldp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
+        char *edgress_lsr_rtr_id,                             /*Egress LSR router id*/
+        edge_end_t *oif, char *gw_ip,
+        node_t *proxy_nbr){                   /*oif from ingress LSR to immediate strict nexthop*/
+#if 0
+    rt_un_table_t * inet_3_rib = NULL;
 
+    if(!proxy_nbr->ldp_config.is_enabled){
+        printf("LDP Tunnel not created. LDP not enabled on node : %s\n", proxy_nbr->node_name);
+        return -1
+    }
+
+    /*egress LSr should be searched from withthe same level. However,
+     * for simplicity, we are searching it network wide.*/
+
+    node_t *egress_node = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id, level);
+    if(!egres_node){
+        printf("Error : Egress Lsr node with router id : %s not found\n", edgress_lsr_rtr_id);
+        return -1 
+    }
+
+    if(proxy_nbr == egres_node){
+        printf("Error : One hop Tunnel is not created\n");
+        return -1;
+    }
+
+    mpls_label_t ldp_label = get_ldp_label_binding(proxy_nbr, edgress_lsr_rtr_id, 32);
     
+    if(!ldp_label){
+        printf("Error : Could not get LDP label for prefix %s/%u from downstream node %s\n", 
+            edgress_lsr_rtr_id, 32, proxy_nbr->node_name);
+        return -1;
+    }
+    
+    rt_key_t inet_key;
+    memset(&inet_key, 0, sizeof(rt_key_t));
+    strncpy(inet_key.u.prefix.prefix, edgress_lsr_rtr_id, PREFIX_LEN);
+    inet_key.u.prefix.mask = 32;
 
+    inet_3_rib = ingress_lsr->spf_info.rib[INET_3];
+
+    rt_un_entry_t *rt_un_entry = inet_3_rib->rt_un_route_lookup(inet_3_rib, *inet_key);
+    if(rt_un_entry){
+
+
+    }
+
+    internal_un_nh_t *nxthop = malloc_un_nexthop();
+    nxthop->protocol = LDP_PROTO;
+    nxthop->oif = oif;
+    nxthop->nh_node = proxy_nbr;
+    strncpy(nxthop->gw_prefix, gw_ip, PREFIX_LEN);
+
+    nxthop->nh.inet3_nh.mpls_label_out[0] = ldp_label;
+    nxthop->nh.inet3_nh.stack_op[0] = PUSH;
+
+    /*By default it is primary, caller needs to unset 
+     * it if this nexthop is meant for backup*/
+    SET_BIT(nxthop->flags, PRIMARY_NH); 
+    SET_BIT(nxthop->flags, IPV4_LDP_NH);
+    
+    nxthop->ref_count = 0;
+
+    /*Backup properties need to be filled by caller
+     * depending on whether this tunnel if primary 
+     * tunnel or backup tunnel*/
+    nxthop->lfa_type = NO_LFA;
+    nxthop->protected_link = NULL;
+    nxthop->root_metric = 0;
+    nxthop->dest_metric = 0;
+
+    time(&nxthop->last_refresh_time);
+    init_glthread(&nxthop->glthread);
+
+    glthread_t tunnel_hop_list;
+    init_glthread(&tunnel_hop_list);
+
+    glthread_add_last(&tunnel_hop_list, &nxthop->glthread);
+
+    node_t *next_node = NULL;
+    edge_end_t *next_oif = NULL;
+    char *next_gw_ip = NULL;
+    internal_un_nh_t *next_nexthop = NULL,
+                     *ldp_nexthop = NULL;
+
+    mpls_label_t ldp_label_in = 0,
+                 ldp_label_out = 0;
+    
+    rt_un_table_t *inet_0_rib = NULL; 
+    rt_un_entry_t *rt_un_entry = NULL;
+    next_node = proxy_nbr;
+
+    do{
+        inet_0_rib = next_node->spf_info.rib[INET_0];
+        rt_un_entry = inet_0_rib->rt_un_route_lookup(inet_0_rib, &inet_key);
+        if(!rt_un_entry){
+            printf("Error : No inet.0 route to Dest %s on node %s\n", 
+                    edgress_lsr_rtr_id, 32, next_node->node_name);
+            goto cleanup;
+        }
+
+        next_nxthop = GET_FIRST_NH(rt_un_entry, IPV4_NH, PRIMARY_NH);
+        if(!next_nxthop){
+            printf("Error : No inet.0 nexthop found to Dest %s on node %s\n",
+                    edgress_lsr_rtr_id, 32, next_node->node_name);
+            goto cleanup;
+        }
+
+        ldp_label_in = get_ldp_label_binding(next_node, edgress_lsr_rtr_id, 32); 
+        next_oif = next_nxthop->oif;
+        next_gw_ip = next_nxthop->gw_prefix;
+        ldp_label_out = get_ldp_label_binding(next_nxthop->nh_node, edgress_lsr_rtr_id, 32);
+
+        ldp_nexthop =  malloc_un_nexthop();
+        ldp_nexthop->protocol = LDP_PROTO;
+        ldp_nexthop->oif = next_oif;
+        ldp_nexthop->nh_node = next_nxthop->nh_node;
+        strncpy(ldp_nexthop->gw_prefix, next_gw_ip, PREFIX_LEN);
+
+        ldp_nxthop->nh.inet3_nh.mpls_label_out[0] = ldp_label_out;
+        ldp_nxthop->nh.inet3_nh.stack_op[0] = PUSH;
+
+        SET_BIT(ldp_nxthop->flags, PRIMARY_NH);
+        SET_BIT(ldp_nxthop->flags, TRANSIT_LDP_NH);
+        ldp_nxthop->ref_count = 0;
+
+        ldp_nxthop->lfa_type = NO_LFA;
+        ldp_nxthop->protected_link = NULL;
+        ldp_nxthop->root_metric = 0;
+        ldp_nxthop->dest_metric = 0;
+        time(&ldp_nxthop->last_refresh_time); 
+        init_glthread(&ldp_nxthop->glthread);
+        glthread_add_last(&tunnel_hop_list, &ldp_nxthop->glthread);
+
+
+        next_node = next_nxthop->nh_node;
+    } while(next_node != egres_node);
+#endif
+    return 0;
 }
 
