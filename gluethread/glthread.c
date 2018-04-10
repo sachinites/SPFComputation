@@ -146,6 +146,8 @@ glthread_priority_insert(glthread_t *base_glthread,
     glthread_t *curr = NULL,
                *prev = NULL;
 
+    init_glthread(glthread);
+
     if(IS_GLTHREAD_LIST_EMPTY(base_glthread)){
         glthread_add_next(base_glthread, glthread);
         return;
