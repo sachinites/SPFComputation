@@ -77,11 +77,21 @@ glthread_add_last(glthread_t *base_glthread, glthread_t *new_glthread);
 #define ITERATE_GLTHREAD_END(glthreadptrstart, glthreadptr)                                        \
         }}
 
+#define GLTHREAD_GET_USER_DATA_FROM_OFFSET(glthreadptr, offset)  \
+    (void *)((char *)(glthreadptr) - offset)
+
 void
 delete_glthread_list(glthread_t *base_glthread);
 
 unsigned int 
 get_glthread_list_count(glthread_t *base_glthread);
+
+void
+glthread_priority_insert(glthread_t *base_glthread,     
+                         glthread_t *glthread,
+                         int (*comp_fn)(void *, void *),
+                         int offset);
+
 
 #if 0
 void *

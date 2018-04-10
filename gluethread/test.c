@@ -42,7 +42,18 @@ typedef struct _person{
     glthread_t glthread;
 } person_t ;
 
-THREAD_TO_STRUCT(thread_to_person, person_t, glthread, glthreadptr);
+int 
+senior_citizen(person_t *p1, person_t *p2){
+
+    if(p1->age == p2->age) return 0;
+    if(p1->age < p2->age) return 1;
+    return -1;
+}
+
+#define offset(struct_name, fld_name) \
+    (unsigned int)&(((struct_name *)0)->fld_name)
+
+GLTHREAD_TO_STRUCT(thread_to_person, person_t, glthread, glthreadptr);
 
 int main(int argc, char **argv){
 
@@ -59,33 +70,21 @@ int main(int argc, char **argv){
     person[4].age = 9;
     person[4].weight = 10;
 
-    glthread_add_next(&person[0].glthread, &person[1].glthread);
-    glthread_add_last(&person[0].glthread, &person[2].glthread);
-    glthread_add_last(&person[0].glthread, &person[3].glthread);
-    glthread_add_last(&person[0].glthread, &person[4].glthread);
+    glthread_t base_glthread;
+    init_glthread(&base_glthread);
 
-    glthread_t *curr = NULL, *prev = NULL;
-    person_t *per = NULL;
+    glthread_priority_insert(&base_glthread, &person[4].glthread, senior_citizen, offset(person_t, glthread));
+    glthread_priority_insert(&base_glthread, &person[3].glthread, senior_citizen, offset(person_t, glthread));
+    glthread_priority_insert(&base_glthread, &person[2].glthread, senior_citizen, offset(person_t, glthread));
+    glthread_priority_insert(&base_glthread, &person[1].glthread, senior_citizen, offset(person_t, glthread));
+    glthread_priority_insert(&base_glthread, &person[0].glthread, senior_citizen, offset(person_t, glthread));
 
-#if 0
-    ITERATE_THREAD_BEGIN(&person[0].glthread, curr){
-        per = thread_to_person(curr);
-        if(per->age == 3)
-            remove_glthread(curr);
-    } ITERATE_THREAD_END(&person[0].glthread, curr);
-#endif
+    glthread_t *curr = NULL;
+    ITERATE_GLTHREAD_BEGIN(&base_glthread, curr){
 
-    ITERATE_THREAD_BEGIN(&person[0].glthread, curr){
-        per = thread_to_person(curr);
-        printf("Age = %d\n", per->age);
-        printf("Weight = %d\n", per->weight);
-    } ITERATE_THREAD_END(&person[0].glthread, curr);
-
-    delete_thread_list(&person[0].glthread);
-
-    int i = 0;
-    for(; i < 5 ; i++){
-        printf("%x %x\n", person[i].glthread.left, person[i].glthread.right);
-    }
+        person_t *p = thread_to_person(curr);
+        printf("Age = %d\n", p->age);
+    } ITERATE_GLTHREAD_END(&base_glthread, curr);
+    
     return 0;
 }
