@@ -150,6 +150,7 @@ typedef struct rbnode_ rbnode;
  * @sa _redblack_add(), redblack_get(), redblack_get_leq(), redblack_getnext()
  */ 
 typedef int (*_redblack_compare_func)(const void *key1, const void *key2);
+typedef int (*_redblack_key_match_func)(const void *key1, const void *user_data);
 typedef int (*_redblack_walk_fun)(rbnode *, void *);
 typedef void (*_redblack_free_fun)(rbnode *);
 
@@ -416,7 +417,7 @@ void _redblack_node_init(rbroot *root, rbnode *node);
 void _redblack_walk(const rbroot *, _redblack_walk_fun, void *);
 void _redblack_walk_backwards(const rbroot *, _redblack_walk_fun, void *);
 void _redblack_free(rbroot *, _redblack_free_fun);
-
+void _redblack_flush(rbroot *);
 /*
  * Inlines, for performance
  * 
@@ -450,6 +451,8 @@ struct rbroot_ {
     char	key_offset;		/* offset to key material */
     char	key_via_ptr;		/* key via pointer (really boolean) */
     char	key_dupes;		/* dupes allowed (really boolean) */
+    _redblack_compare_func compare_fn;
+    _redblack_key_match_func key_match_fn;
 };
 
 /*
@@ -519,6 +522,8 @@ _redblack_tree_root (const rbroot *root)
     return(root->root);
 }
 
+#define rboffset(struct_name, fld_name) (unsigned int)&(((struct_name *)0)->fld_name)
+
 /*
  * Macro to define an inline to map from a rbnode entry back to the
  * containing data structure.
@@ -531,8 +536,8 @@ _redblack_tree_root (const rbroot *root)
     static inline structname * procname (rbnode *ptr)			\
     {									\
 	if (ptr)							\
-	    return((structname *) (((u_char *) ptr) -			\
-				    offsetof(structname, fieldname)));	\
+	    return((structname *) (((unsigned char *) ptr) -			\
+				    rboffset(structname, fieldname)));	\
 	return(NULL);							\
     }
 
@@ -540,5 +545,23 @@ _redblack_tree_root (const rbroot *root)
 void
 _redblack_dump (void *fp, rbroot *root, void (*func)(void *, rbnode *, int),
 	       int level);
+
+
+#define ITERATE_RB_TREE_BEGIN(rbrootptr, rbnodeptr)   \
+{                                                     \
+    rbnode *_next_node = 0;                           \
+        for(rbnodeptr = _redblack_find_next(rbrootptr, NULL); rbnodeptr; rbnodeptr = _next_node){   \
+                _next_node = _redblack_find_next(rbrootptr, rbnodeptr);
+
+#define ITERATE_RB_TREE_END }}
+
+rbnode * 
+_redblack_lookup(rbroot *rbroot, void *key, int *(key_match)(void *, rbnode *));
+
+void
+register_rbtree_compare_fn(rbroot *root, _redblack_compare_func compare_fn);
+
+void
+register_rbtree_key_match_fn(rbroot *root, _redblack_key_match_func key_match_fn);
 
 #endif	/* !__REDBLACK_H__ */

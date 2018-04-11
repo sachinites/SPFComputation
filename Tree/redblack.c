@@ -308,7 +308,8 @@ _redblack_add (rbroot *root, rbnode *node, _redblack_compare_func compare)
     t = root->root;
     while (t != &root->nil) {
 	parent = t;
-	cmp = (*compare)(_redblack_key(root, node), _redblack_key(root, t));
+	cmp = compare ? (*compare)(_redblack_key(root, node), _redblack_key(root, t)):
+            (root->compare_fn)(_redblack_key(root, node), _redblack_key(root, t));
 	if (cmp < 0) {
 	    t = t->rb_left;
 	} else if (cmp > 0) {
@@ -1015,3 +1016,43 @@ _redblack_dump (void *fp, rbroot *root, void (*func)(void *, rbnode *, int),
 
     redblack_dump_helper(fp, root, root->root, func, level);
 }
+
+void
+_redblack_flush(rbroot *root){
+
+    rbnode *node = NULL;
+    ITERATE_RB_TREE_BEGIN(root, node){
+        _redblack_delete(root, node);
+    } ITERATE_RB_TREE_END;
+}
+
+rbnode *
+_redblack_lookup(rbroot *rbroot, void *key, 
+        int *(key_match)(void *, rbnode *)){
+
+    rbnode *curr = NULL;
+    void *user_data = NULL;
+    int rc = 0;
+    ITERATE_RB_TREE_BEGIN(rbroot, curr){
+        user_data = (unsigned char *)curr - rbroot->key_offset;
+        rc = 0;
+        rc = key_match ? key_match(key, user_data):\
+            rbroot->key_match_fn(key, user_data);
+        if(rc == 0)
+            return curr;
+    } ITERATE_RB_TREE_END;
+    return NULL;
+}
+
+void
+register_rbtree_compare_fn(rbroot *root, _redblack_compare_func compare_fn){
+
+    root->compare_fn = compare_fn;
+}
+
+void
+register_rbtree_key_match_fn(rbroot *root, _redblack_key_match_func key_match_fn){
+
+    root->key_match_fn = key_match_fn;
+}
+
