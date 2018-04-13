@@ -556,7 +556,7 @@ _redblack_dump (void *fp, rbroot *root, void (*func)(void *, rbnode *, int),
 #define ITERATE_RB_TREE_END }}
 
 rbnode * 
-_redblack_lookup(rbroot *rbroot, void *key, int *(key_match)(void *, rbnode *));
+_redblack_lookup(rbroot *rbroot, void *key, int (*key_match)(void *, rbnode *));
 
 void
 register_rbtree_compare_fn(rbroot *root, _redblack_compare_func compare_fn);

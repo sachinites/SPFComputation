@@ -194,12 +194,12 @@ unset_interface_address_prefix_sid(node_t *node, char *intf_name){
 
 boolean
 set_interface_adj_sid(node_t *node, char *interface, unsigned int adj_sid_value){
-
+    return TRUE;
 }
 
 boolean
 unset_interface_adj_sid(node_t *node, char *interface){
-
+    return TRUE;
 }
 
 boolean

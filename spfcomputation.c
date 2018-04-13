@@ -41,6 +41,8 @@
 #include "advert.h"
 #include "spftrace.h"
 
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 extern instance_t *instance;
 
 int

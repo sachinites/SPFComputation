@@ -1028,7 +1028,7 @@ _redblack_flush(rbroot *root){
 
 rbnode *
 _redblack_lookup(rbroot *rbroot, void *key, 
-        int *(key_match)(void *, rbnode *)){
+        int (*key_match)(void *, rbnode *)){
 
     rbnode *curr = NULL;
     void *user_data = NULL;
@@ -1036,8 +1036,10 @@ _redblack_lookup(rbroot *rbroot, void *key,
     ITERATE_RB_TREE_BEGIN(rbroot, curr){
         user_data = (unsigned char *)curr - rbroot->key_offset;
         rc = 0;
-        rc = key_match ? key_match(key, user_data):\
-            rbroot->key_match_fn(key, user_data);
+        if(key_match != NULL)
+            rc = key_match(key, user_data);
+        else
+            rc = rbroot->key_match_fn(key, user_data);
         if(rc == 0)
             return curr;
     } ITERATE_RB_TREE_END;

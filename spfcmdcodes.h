@@ -128,7 +128,7 @@
 #define CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS                 77 /*show instance node <node-name> mpls ldp bindings <prefix> <mask>*/
 #define CMDCODE_CONFIG_NODE_LDP_SR_PREFERENCE               78 /*config node <node-name> ldp sr preference set*/
 #define CMDCODE_CONFIG_NODE_ENABLE_LDP                      79 /*config node <node-name> ldp*/
-#define CMDCODE_CONFIG_NODE_LDP_TUNNNEL                     89 /*config node <node-name> ldp tunnel <router-id>*/
+#define CMDCODE_CONFIG_NODE_LDP_TUNNEL                     89 /*config node <node-name> ldp tunnel <router-id>*/
 
 /*Mapping Server*/
 #define CMDCODE_CONFIG_NODE_SRMS_LCL_POLICY                 80 /*config node <node-name> source-packet-routing mapping-server <prefix> <mask> <first-sid-index> range <range>*/
@@ -142,5 +142,6 @@
 /*RSVP*/
 #define CMDCODE_CONFIG_NODE_ENABLE_RSVP                     87 /*config node <node-name> rsvp*/
 #define CMDCODE_SHOW_NODE_MPLS_RSVP_BINDINGS                88 /*show instance node <node-name> mpls rsvp bindings <prefix> <mask>*/
+#define CMDCODE_CONFIG_NODE_RSVP_TUNNEL                     90 /*config node <node-name> rsvp tunnel <router-id> <tunnel-name>*/
 
 #endif /* __SPFCMDCODES__H */

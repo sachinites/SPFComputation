@@ -43,6 +43,8 @@
 #include "sr_tlv_api.h"
 #include "bitarr.h"
 
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 extern instance_t *instance;
 
 boolean

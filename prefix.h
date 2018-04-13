@@ -77,17 +77,17 @@ typedef struct prefix_pref_data_t_{
 } prefix_pref_data_t;
    
 /* Key structure for a prefix*/
+struct pfx{
+    char prefix[PREFIX_LEN + 1];
+    unsigned char mask;
+};
 typedef struct common_pfx_{
 
-    struct pfx{
-        char prefix[PREFIX_LEN + 1];
-        unsigned char mask;
-    };
     struct _u{
         struct pfx prefix;
         mpls_label_t label; /*Incoming label*/
-    };
-    struct _u u;
+    }u;
+    //struct _u u;
 } common_pfx_key_t;
 
 typedef struct _node_t node_t;

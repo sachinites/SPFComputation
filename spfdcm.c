@@ -54,6 +54,8 @@ extern void
 inet_0_display(rt_un_table_t *rib, char *prefix, char mask);
 extern void
 inet_3_display(rt_un_table_t *rib, char *prefix, char mask);
+extern int
+ping_backup(char *node_name, char *dst_prefix);
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
@@ -692,7 +694,7 @@ static int
 config_static_route_handler(param_t *param, 
                             ser_buff_t *tlv_buf, 
                             op_mode enable_or_disable){
-
+#if 0
     node_t *host_node = NULL;
     tlv_struct_t *tlv = NULL;
     char *nh_name = NULL, 
@@ -723,7 +725,7 @@ config_static_route_handler(param_t *param,
     } TLV_LOOP_END;
 
     host_node = singly_ll_search_by_key(instance->instance_node_list, host_node_name);
-
+#endif
 #if 0
     switch(enable_or_disable){
         case CONFIG_ENABLE:
@@ -1361,7 +1363,7 @@ spf_init_dcm(){
                     static param_t router_id;
                     init_param(&router_id, LEAF, 0, instance_node_ldp_config_handler, 0, IPV4, "router-id", "router id without mask");
                     libcli_register_param(&tunnel, &router_id);
-                    set_param_cmd_code(&router_id, CMDCODE_CONFIG_NODE_LDP_TUNNNEL);
+                    set_param_cmd_code(&router_id, CMDCODE_CONFIG_NODE_LDP_TUNNEL);
                 }
             }
         }
@@ -1372,6 +1374,22 @@ spf_init_dcm(){
             init_param(&rsvp, CMD, "rsvp", instance_node_rsvp_config_handler, 0, INVALID, 0, "Enable Disable RSVP");
             libcli_register_param(&config_node_node_name, &rsvp);
             set_param_cmd_code(&rsvp, CMDCODE_CONFIG_NODE_ENABLE_RSVP);
+            {
+                static param_t tunnel;
+                init_param(&tunnel, CMD, "tunnel", 0, 0, INVALID, 0, "RSVP tunnel");
+                libcli_register_param(&rsvp, &tunnel);
+                {
+                    static param_t router_id;
+                    init_param(&router_id, LEAF, 0, 0, 0, IPV4, "router-id", "router id without mask");
+                    libcli_register_param(&tunnel, &router_id);
+                    {
+                       static param_t rsvp_lsp_name;
+                       init_param(&rsvp_lsp_name, LEAF, 0, instance_node_rsvp_config_handler, 0, STRING, "rsvp-lsp-name", "RSVP LSP name");
+                       libcli_register_param(&router_id, &rsvp_lsp_name);
+                       set_param_cmd_code(&rsvp_lsp_name, CMDCODE_CONFIG_NODE_RSVP_TUNNEL);
+                    }
+                }
+            }
         }
         /*config node <node-name> backup-spf-options*/
         

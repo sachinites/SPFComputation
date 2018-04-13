@@ -42,6 +42,9 @@
 #include "spftrace.h"
 #include "sr_tlv_api.h"
 #include "igp_sr_ext.h"
+#include "common.h"
+
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 
 extern instance_t * instance;
 
@@ -1108,7 +1111,7 @@ instance_node_ldp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
                 assert(0);
         }
         break;
-        case CMDCODE_CONFIG_NODE_LDP_TUNNNEL:
+        case CMDCODE_CONFIG_NODE_LDP_TUNNEL:
             rc = create_targeted_ldp_tunnel(node, LEVEL1, router_id, 0, 0, 0);
             if(rc == -1) {
                 printf("LDP tunnel creation failed\n");   
@@ -1125,11 +1128,18 @@ instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
     tlv_struct_t *tlv = NULL;
     node_t *node = NULL;
     char *node_name = NULL;
-       
+    char *router_id = NULL;
+    char *rsvp_lsp_name = NULL;
+    int rc = -1;
+           
     TLV_LOOP_BEGIN(tlv_buf, tlv){
 
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "router-id", strlen("router-id")) ==0)
+            router_id = tlv->value;
+        else if(strncmp(tlv->leaf_id, "rsvp-lsp-name", strlen("rsvp-lsp-name")) ==0)
+            rsvp_lsp_name = tlv->value;
         else
             assert(0);
     } TLV_LOOP_END;
@@ -1148,6 +1158,13 @@ instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
             default:
                 assert(0);
         }
+        break;
+        case CMDCODE_CONFIG_NODE_RSVP_TUNNEL:
+            rc = create_targeted_rsvp_tunnel(node, LEVEL1, router_id, 0, 0, 0);
+            if(rc == -1) {
+                printf("RSVP tunnel creation failed\n");   
+            }
+        break;
     }
     return 0;
 }

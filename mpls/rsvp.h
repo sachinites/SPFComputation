@@ -39,6 +39,7 @@
 #define RSVP_LABEL_RANGE_MAX     500000
 
 typedef struct _node_t node_t;
+typedef struct edge_end_ edge_end_t;
 
 typedef struct _rsvp_config_{
     
@@ -55,4 +56,10 @@ mpls_label_t
 get_rsvp_label_binding(node_t *down_stream_node,
         char *prefix, char mask);
 
+int
+create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
+        char *edgress_lsr_rtr_id,                             /*Egress LSR router id*/
+        edge_end_t *oif, char *gw_ip,
+        node_t *proxy_nbr);
+                     
 #endif /* __RSVP__*/

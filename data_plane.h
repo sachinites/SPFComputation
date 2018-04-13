@@ -77,16 +77,16 @@ typedef enum{
 } rib_type_t;
 
 
+struct rt_pfx{
+    char prefix[PREFIX_LEN + 1];
+    unsigned char mask;
+};
+struct rt_u{
+    struct rt_pfx prefix;
+    mpls_label_t label; /*Incoming label*/
+};
 typedef struct rt_key_{
 
-    struct rt_pfx{
-        char prefix[PREFIX_LEN + 1];
-        unsigned char mask;
-    };
-    struct rt_u{
-        struct rt_pfx prefix;
-        mpls_label_t label; /*Incoming label*/
-    };
     struct rt_u u;
 } rt_key_t;
 
@@ -143,6 +143,19 @@ SWAP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label);
 
 /*MPLS data plane*/
 
+/*inet.3 nexthop*/
+struct inet_3_nh_t{
+    mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
+    MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];    
+};
+
+/*mpls.0 nexthop*/
+struct mpls_0_nh_t{
+    //mpls_label_t mpls_label_in;
+    mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
+    MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
+} ;
+
 typedef struct internal_un_nh_t_{
 
     /*Common properties (All 4 fields are applicable for Unicast Nexthops)*/
@@ -151,28 +164,12 @@ typedef struct internal_un_nh_t_{
     node_t *nh_node;        /*This member should be removed*/
     char gw_prefix[PREFIX_LEN + 1];
 
-    /*inet.0 next hop*/
-    /*No extra field required for inet.0 nexthop*/
-
-    /*inet.3 nexthop*/
-    struct inet_3_nh_t{
-        mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
-        MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];    
-    };
-
-    /*mpls.0 nexthop*/
-    struct mpls_0_nh_t{
-        //mpls_label_t mpls_label_in;
-        mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
-        MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];
-    } ;
-
     union u_t{
         struct inet_3_nh_t inet3_nh;
         struct mpls_0_nh_t mpls0_nh;
-    }; 
+    }nh; 
 
-    union u_t nh;
+    //union u_t nh;
 
     /*Bits 0 and 1 is used to identify whether the nexthop is primary
      * or backup nexthop. Same can also be identified using NULL check

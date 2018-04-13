@@ -113,7 +113,7 @@ int
 create_targeted_ldp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
         char *edgress_lsr_rtr_id,                             /*Egress LSR router id*/
         edge_end_t *oif, char *gw_ip,
-        node_t *proxy_nbr){                                /*oif from ingress LSR to immediate strict nexthop*/
+        node_t *proxy_nbr){                                   /*oif from ingress LSR to immediate strict nexthop*/
 
     boolean rc = FALSE;
     glthread_t *curr = NULL;

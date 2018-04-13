@@ -256,42 +256,6 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level, rtttype_t rt_type){
    return i;
 }
 
-
-static void
-mark_all_routes_stale_except_direct_routes(spf_info_t *spf_info, LEVEL level){
-
-   singly_ll_node_t* list_node = NULL,
-                     *list_node1 = NULL;
-   routes_t *route = NULL;
-   prefix_t *prefix = NULL;
-   
-   ITERATE_LIST_BEGIN(spf_info->routes_list[UNICAST_T], list_node){
-           
-       route = list_node->data;
-       
-       if(!IS_LEVEL_SET(route->level, level))
-           continue;
-      
-       /*Do not stale direct or leaked routes*/ 
-       if(route->hosting_node != GET_SPF_INFO_NODE(spf_info, level))
-           route->install_state = RTE_STALE; /**/
-       else
-           route->install_state = RTE_NO_CHANGE;
-
-           /*Delete all prefixes except the local prefixes*/
-           ITERATE_LIST_BEGIN(route->like_prefix_list, list_node1){
-             /*This is a bug. Deletion of list nodes while traversing the list
-              * will leave holes in the list. Hence memory leak*/ 
-             prefix = list_node1->data;
-             if(prefix->hosting_node != GET_SPF_INFO_NODE(spf_info, level)){
-                //free_prefix(list_node1->data);
-                free(list_node1);
-             }
-           } ITERATE_LIST_END;
-           //delete_singly_ll(route->like_prefix_list);
-   }ITERATE_LIST_END;
-}
-
 void
 mark_all_routes_stale(spf_info_t *spf_info, LEVEL level, rtttype_t topology){
 
@@ -1546,6 +1510,7 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
     } ITERATE_LIST_END;
 }
 
+#if 0
 static boolean
 is_route_have_backup_protection(routes_t *route, edge_end_t *protected_link){
 
@@ -1567,7 +1532,7 @@ is_route_have_backup_protection(routes_t *route, edge_end_t *protected_link){
     } ITERATE_NH_TYPE_END;
     return FALSE;
 }
-
+#endif
 
 static void
 enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
