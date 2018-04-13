@@ -1136,8 +1136,9 @@ spf_init_dcm(){
             }
             {
                 static param_t rsvp;
-                init_param(&rsvp, CMD, "rsvp", 0, 0, INVALID, 0, "Enable Disable RSVP");
+                init_param(&rsvp, CMD, "rsvp", instance_node_spring_show_handler, 0, INVALID, 0, "Show Mpls RSVP LSPs");
                 libcli_register_param(&mpls, &rsvp);
+                set_param_cmd_code(&rsvp, CMDCODE_SHOW_NODE_MPLS_RSVP_LSP);
                 {
                     static param_t bindings;
                     init_param(&bindings, CMD, "bindings", instance_node_spring_show_handler, 0, INVALID, 0, "Show local LDP label Bindings");

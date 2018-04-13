@@ -34,17 +34,39 @@
 #define __RSVP__
 
 #include "instanceconst.h"
+#include "glthread.h"
 
 #define RSVP_LABEL_RANGE_MIN     300000
 #define RSVP_LABEL_RANGE_MAX     500000
+#define RSVP_LSP_NAME_SIZE       32
 
 typedef struct _node_t node_t;
 typedef struct edge_end_ edge_end_t;
 
+typedef struct rsvp_tunnel_{
+
+    char lsp_name[RSVP_LSP_NAME_SIZE];/*key*/
+    edge_end_t *physical_oif;
+    char gateway[PREFIX_LEN];
+    node_t *egress_lsr;
+    mpls_label_t rsvp_label;
+    glthread_t glthread;
+} rsvp_tunnel_t;
+
+GLTHREAD_TO_STRUCT(glthread_to_rsvp_tunnel, rsvp_tunnel_t, glthread, glthreadptr);
+
+void
+print_rsvp_tunnel_info(rsvp_tunnel_t *rsvp_tunnel);
+
+
 typedef struct _rsvp_config_{
     
     boolean is_enabled; /*Is RSVP enabled on the node*/
+    glthread_t lspdb;
 } rsvp_config_t;
+
+void
+init_rsvp_config(rsvp_config_t *rsvp_config);
 
 void
 enable_rsvp(node_t *node);
@@ -60,6 +82,16 @@ int
 create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
         char *edgress_lsr_rtr_id,                             /*Egress LSR router id*/
         edge_end_t *oif, char *gw_ip,
-        node_t *proxy_nbr);
-                     
+        node_t *proxy_nbr,
+        rsvp_tunnel_t *rsvp_tunnel_data);
+
+int
+add_new_rsvp_tunnel(node_t *node, rsvp_tunnel_t *rsvp_tunnel);
+
+rsvp_tunnel_t *
+look_up_rsvp_tunnel(node_t *node, char *lsp_name);
+
+void
+print_all_rsvp_lsp(node_t *node);
+
 #endif /* __RSVP__*/

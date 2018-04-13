@@ -110,10 +110,11 @@ get_rsvp_label_binding(node_t *down_stream_node,
 }
 
 int
-create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
+create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level ,/*Ingress LSR*/
         char *edgress_lsr_rtr_id,                             /*Egress LSR router id*/
                 edge_end_t *oif, char *gw_ip,
-                node_t *proxy_nbr){                           /*oif from ingress LSR to immediate strict nexthop*/
+                node_t *proxy_nbr,                            /*oif from ingress LSR to immediate strict nexthop*/
+                rsvp_tunnel_t *rsvp_tunnel_data){
 
     boolean rc = FALSE;
     glthread_t *curr = NULL;
@@ -146,9 +147,12 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
     }
 
     if(!edgress_lsr){
-        printf("Error : could not find edgress_lsr node with router id %s/32", edgress_lsr_rtr_id);
+        printf("Error : could not find edgress_lsr node with router id %s/32\n", edgress_lsr_rtr_id);
         return -1;
     }
+    
+    rsvp_tunnel_data->egress_lsr = edgress_lsr;
+
     if(!oif){
         int nh_type = -1;
         /*If strict next hop is not given, choose the IGP nexthop*/
@@ -197,6 +201,9 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
             /*No action needed, there is already RSVP nexthop installed locally towards egress LSR*/
             next_node = nexthop->nh_node;
             outgoing_rsvp_label = nexthop->nh.inet3_nh.mpls_label_out[0];
+            rsvp_tunnel_data->physical_oif = nexthop->oif;
+            strncpy(rsvp_tunnel_data->gateway, nexthop->gw_prefix, PREFIX_LEN);
+            rsvp_tunnel_data->rsvp_label = nexthop->nh.inet3_nh.mpls_label_out[0];
             goto NEXT_NODE;
         }
         else if(nh_type == IPV4_NH){
@@ -232,6 +239,11 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
             new_nexthop->dest_metric = 0;
             time(&new_nexthop->last_refresh_time);
             init_glthread(&new_nexthop->glthread);
+            
+            /*collect RSVP data*/
+            rsvp_tunnel_data->physical_oif = new_nexthop->oif;
+            strncpy(rsvp_tunnel_data->gateway, new_nexthop->gw_prefix, PREFIX_LEN);
+            rsvp_tunnel_data->rsvp_label = new_nexthop->nh.inet3_nh.mpls_label_out[0];
 
             /*Now install it in inet.3 table*/
             rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, level, new_nexthop);
@@ -267,6 +279,11 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
         if(is_exist){
             next_node = nexthop->nh_node;
             outgoing_rsvp_label = nexthop->nh.inet3_nh.mpls_label_out[0];
+
+            /*collect RSVP data*/
+            rsvp_tunnel_data->physical_oif = nexthop->oif;
+            strncpy(rsvp_tunnel_data->gateway, nexthop->gw_prefix, PREFIX_LEN);
+            rsvp_tunnel_data->rsvp_label = nexthop->nh.inet3_nh.mpls_label_out[0];
             goto NEXT_NODE;
         }
 
@@ -297,6 +314,11 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
         new_nexthop->dest_metric = 0;
         time(&new_nexthop->last_refresh_time);
         init_glthread(&new_nexthop->glthread);
+            
+        /*collect RSVP data*/
+        rsvp_tunnel_data->physical_oif = new_nexthop->oif;
+        strncpy(rsvp_tunnel_data->gateway, new_nexthop->gw_prefix, PREFIX_LEN);
+        rsvp_tunnel_data->rsvp_label = new_nexthop->nh.inet3_nh.mpls_label_out[0];
 
         /*Now install it in inet.3 table*/
         rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, level, new_nexthop);
@@ -367,6 +389,10 @@ NEXT_NODE:
             new_nexthop->dest_metric = 0;
             time(&new_nexthop->last_refresh_time);
             init_glthread(&new_nexthop->glthread);
+            
+            /*collect RSVP data*/
+            rsvp_tunnel_data->physical_oif = new_nexthop->oif;
+            strncpy(rsvp_tunnel_data->gateway, new_nexthop->gw_prefix, PREFIX_LEN);
 
             /*Now install it in inet.3 table*/
             rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, level, new_nexthop);
@@ -491,3 +517,57 @@ NEXT_NODE:
     return 0;
 }
 
+void
+init_rsvp_config(rsvp_config_t *rsvp_config){
+
+    rsvp_config->is_enabled = FALSE;
+    init_glthread(&rsvp_config->lspdb);
+}
+
+
+rsvp_tunnel_t *
+look_up_rsvp_tunnel(node_t *node, char *lsp_name){
+
+    glthread_t *curr = NULL;
+    ITERATE_GLTHREAD_BEGIN(&node->rsvp_config.lspdb, curr){
+        rsvp_tunnel_t *rsvpt = glthread_to_rsvp_tunnel(curr);
+        if(strncmp(rsvpt->lsp_name, lsp_name, RSVP_LSP_NAME_SIZE) == 0)
+            return rsvpt;
+    } ITERATE_GLTHREAD_END(&node->rsvp_config.lspdb, curr);
+    return NULL;
+}
+
+
+int
+add_new_rsvp_tunnel(node_t *node, rsvp_tunnel_t *rsvp_tunnel){
+
+  init_glthread(&rsvp_tunnel->glthread);
+
+  rsvp_tunnel_t *rsvpt = look_up_rsvp_tunnel(node, rsvp_tunnel->lsp_name);
+  if(rsvpt){
+    printf("Error : RSVP tunnel %s already exists\n", rsvp_tunnel->lsp_name);
+    return -1;
+  }
+  glthread_add_next(&node->rsvp_config.lspdb, &rsvp_tunnel->glthread);
+  return 0;
+}
+
+void
+print_rsvp_tunnel_info(rsvp_tunnel_t *rsvp_tunnel){
+
+    printf("lsp name : %s\n", rsvp_tunnel->lsp_name);
+    printf("oif = %s, gw : %s, egress_lsr : %s, label : %u\n", 
+        rsvp_tunnel->physical_oif->intf_name, rsvp_tunnel->gateway,
+        rsvp_tunnel->egress_lsr->node_name, rsvp_tunnel->rsvp_label);
+}
+
+void
+print_all_rsvp_lsp(node_t *node){
+
+    glthread_t *curr = NULL;
+    rsvp_tunnel_t *rsvp_tunnel = NULL;
+    ITERATE_GLTHREAD_BEGIN(&node->rsvp_config.lspdb, curr){
+        rsvp_tunnel = glthread_to_rsvp_tunnel(curr);
+        print_rsvp_tunnel_info(rsvp_tunnel);
+    } ITERATE_GLTHREAD_END(&node->rsvp_config.lspdb, curr);
+}

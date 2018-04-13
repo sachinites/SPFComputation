@@ -1038,6 +1038,9 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
         case CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE:
             mpls_0_display(node->spf_info.rib[MPLS_0], 0);
             break;
+        case CMDCODE_SHOW_NODE_MPLS_RSVP_LSP:
+            print_all_rsvp_lsp(node);
+            break;
         default:
             ;
     } 
@@ -1160,10 +1163,26 @@ instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
         }
         break;
         case CMDCODE_CONFIG_NODE_RSVP_TUNNEL:
-            rc = create_targeted_rsvp_tunnel(node, LEVEL1, router_id, 0, 0, 0);
+        {
+            rsvp_tunnel_t *rsvp_tunnel = look_up_rsvp_tunnel(node, rsvp_lsp_name);
+            if(rsvp_tunnel){
+                printf("Error : RSVP tunnel %s already exists\n", rsvp_lsp_name);
+                return 0;
+            }
+            rsvp_tunnel_t rsvp_tunnel_data;
+            memset(&rsvp_tunnel_data, 0, sizeof(rsvp_tunnel_t));
+            rc = create_targeted_rsvp_tunnel(node, LEVEL1, router_id, 0, 0, 0, &rsvp_tunnel_data);
             if(rc == -1) {
                 printf("RSVP tunnel creation failed\n");   
             }
+            rsvp_tunnel = calloc(1, sizeof(rsvp_tunnel_t));
+            memcpy(rsvp_tunnel, &rsvp_tunnel_data, sizeof(rsvp_tunnel_t));
+            strncpy(rsvp_tunnel->lsp_name, rsvp_lsp_name, RSVP_LSP_NAME_SIZE);
+            rc = add_new_rsvp_tunnel(node, rsvp_tunnel);
+            if(rc == -1){
+                free(rsvp_tunnel);
+            }
+        }   
         break;
     }
     return 0;

@@ -72,9 +72,9 @@ spfutil.o:spfutil.c
 spfclihandler.o:spfclihandler.c
 	@echo "Building spfclihandler.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} spfclihandler.c -o spfclihandler.o
-libtrace.o:./Libtrace/libtrace.c
-	@echo "Building libtrace.o" 
-	@ ${CC} ${CFLAGS} -c ${INCLUDES} ./Libtrace/libtrace.c -o ./Libtrace/libtrace.o
+Libtrace/libtrace.o:Libtrace/libtrace.c
+	@echo "Building Libtrace/libtrace.o" 
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} Libtrace/libtrace.c -o Libtrace/libtrace.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
 	@echo "Building Queue/Queue.o"

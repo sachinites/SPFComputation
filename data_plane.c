@@ -898,7 +898,7 @@ inet_0_display(rt_un_table_t *rib, char *prefix, char mask){
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
-            printf("\t%s %-16s %s   %s %s\n", protocol_name(nexthop->protocol), 
+            printf("\t%-12s %-16s %-16s   %s %-8s\n", protocol_name(nexthop->protocol),
                     nexthop->oif->intf_name, nexthop->gw_prefix,
                     IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
                     get_str_nexthop_type(nexthop->flags));
@@ -914,7 +914,7 @@ inet_0_display(rt_un_table_t *rib, char *prefix, char mask){
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
-            printf("\t%s %-16s %s   %s %s\n", protocol_name(nexthop->protocol), 
+            printf("\t%-12s %-16s %-16s   %s %-8s\n", protocol_name(nexthop->protocol),
                     nexthop->oif->intf_name, nexthop->gw_prefix,
                     IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
                     get_str_nexthop_type(nexthop->flags));
@@ -947,7 +947,7 @@ inet_3_display(rt_un_table_t *rib, char *prefix, char mask){
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
-            printf("\t%s %-16s %s   %s %s\n", protocol_name(nexthop->protocol), 
+            printf("\t%-12s %-16s %-16s   %s %-8s\n", protocol_name(nexthop->protocol), 
                     nexthop->oif->intf_name, nexthop->gw_prefix,
                     IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
                     get_str_nexthop_type(nexthop->flags));
@@ -980,7 +980,7 @@ inet_3_display(rt_un_table_t *rib, char *prefix, char mask){
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
-            printf("\t%s %-16s %s   %s %s\n", protocol_name(nexthop->protocol), 
+            printf("\t%-12s %-16s %-16s   %s %-8s\n", protocol_name(nexthop->protocol),
                     nexthop->oif->intf_name, nexthop->gw_prefix,
                     IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
                     get_str_nexthop_type(nexthop->flags));
@@ -1029,7 +1029,7 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
-            printf("\tInLabel : %u, %s %-16s %s   %s %s\n", in_label, 
+            printf("\tInLabel : %u, %-12s %-16s %-16s   %-8s %s\n", in_label, 
                     protocol_name(nexthop->protocol), 
                     nexthop->oif ? nexthop->oif->intf_name : "NULL", 
                     nexthop->gw_prefix,
@@ -1065,7 +1065,7 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr1){
             nexthop = glthread_to_unified_nh(curr1);
-            printf("\t%s %-16s %s   %s %s\n", 
+            printf("\t%-12s %-16s %-16s   %-8s %s\n", 
                     protocol_name(nexthop->protocol), 
                     nexthop->oif ? nexthop->oif->intf_name : "NULL", 
                     nexthop->gw_prefix,
@@ -1173,11 +1173,6 @@ execute_nexthop_mpls_label_stack_on_packet(internal_un_nh_t *nxthop,
     }
 }
 
-
-#define ITERATE_PREF_ROUTE_ORDER_BEGIN(_pref_order)   \
-    for(_pref_order = ROUTE_TYPE_MIN + 1; _pref_order < ROUTE_TYPE_MAX; _pref_order++)
-
-#define ITERATE_PREF_ROUTE_ORDER_END(_pref_order)
 
 #define FIRST_PREF_ORDER     (ROUTE_TYPE_MIN + 1)
 
@@ -1425,10 +1420,10 @@ static pfe_engine pfe[ROUTE_TYPE_MAX];
 void
 init_pfe(){
 
-    pfe[IP_ROUTE] = ipv4_pfe_engine;
+    pfe[IP_ROUTE]     = ipv4_pfe_engine;
     pfe[SPRING_ROUTE] = sr_pfe_engine;
-    pfe[LDP_ROUTE] = ldp_pfe_engine;
-    pfe[RSVP_ROUTE] = rsvp_pfe_engine;
+    pfe[LDP_ROUTE]    = ldp_pfe_engine;
+    pfe[RSVP_ROUTE]   = rsvp_pfe_engine;
 }
 
 int
