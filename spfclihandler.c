@@ -1080,11 +1080,15 @@ instance_node_ldp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
     tlv_struct_t *tlv = NULL;
     node_t *node = NULL;
     char *node_name = NULL;
-       
+    char *router_id = NULL;
+    int rc = 0 ;
+
     TLV_LOOP_BEGIN(tlv_buf, tlv){
 
         if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
             node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "router-id", strlen("router-id")) ==0)
+            router_id = tlv->value;
         else
             assert(0);
     } TLV_LOOP_END;
@@ -1103,6 +1107,13 @@ instance_node_ldp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
             default:
                 assert(0);
         }
+        break;
+        case CMDCODE_CONFIG_NODE_LDP_TUNNNEL:
+            rc = create_targeted_ldp_tunnel(node, LEVEL1, router_id, 0, 0, 0);
+            if(rc == -1) {
+                printf("LDP tunnel creation failed\n");   
+            }
+        break;
     }
     return 0;
 }

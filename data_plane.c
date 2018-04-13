@@ -184,7 +184,7 @@ malloc_un_nexthop(){
     return calloc(1, sizeof(internal_un_nh_t));
 }
 
-void
+int
 free_rt_un_entry(rt_un_entry_t *rt_un_entry){
 
     internal_un_nh_t *nxt_hop = NULL;
@@ -192,12 +192,18 @@ free_rt_un_entry(rt_un_entry_t *rt_un_entry){
 
     ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
         nxt_hop = glthread_to_unified_nh(curr);
+        if(nxt_hop->protocol == LDP_PROTO)
+            continue;
         remove_glthread(curr);
         free_un_nexthop(nxt_hop);    
     } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);
     
-    remove_glthread(&rt_un_entry->glthread);
-    free(rt_un_entry);
+    if(IS_GLTHREAD_LIST_EMPTY((&rt_un_entry->glthread))){
+        remove_glthread(&rt_un_entry->glthread);
+        free(rt_un_entry);
+        return 0;
+    }
+    return -1;
 }
 
 internal_un_nh_t *
@@ -855,14 +861,15 @@ flush_rib(rt_un_table_t *rib, LEVEL level){
     unsigned int count = 0; 
     glthread_t *curr = NULL;
     rt_un_entry_t *rt_un_entry = NULL;
+    int rc = 0;
 
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
 
         rt_un_entry = glthread_to_rt_un_entry(curr);
         if(rt_un_entry->level != level)
             continue;
-        free_rt_un_entry(rt_un_entry);
-        count++;
+        rc = free_rt_un_entry(rt_un_entry);
+        if(rc == 0) count++;
     } ITERATE_GLTHREAD_END(&rib->head, curr);
     rib->count -= count;
 }
@@ -1024,7 +1031,8 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
             nexthop = glthread_to_unified_nh(curr1);
             printf("\tInLabel : %u, %s %-16s %s   %s %s\n", in_label, 
                     protocol_name(nexthop->protocol), 
-                    nexthop->oif->intf_name, nexthop->gw_prefix,
+                    nexthop->oif ? nexthop->oif->intf_name : "NULL", 
+                    nexthop->gw_prefix,
                     IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
                     get_str_nexthop_type(nexthop->flags));
 
@@ -1059,7 +1067,8 @@ mpls_0_display(rt_un_table_t *rib, mpls_label_t in_label){
             nexthop = glthread_to_unified_nh(curr1);
             printf("\t%s %-16s %s   %s %s\n", 
                     protocol_name(nexthop->protocol), 
-                    nexthop->oif->intf_name, nexthop->gw_prefix,
+                    nexthop->oif ? nexthop->oif->intf_name : "NULL", 
+                    nexthop->gw_prefix,
                     IS_BIT_SET(nexthop->flags, PRIMARY_NH) ? "PRIMARY": "BACKUP",
                     get_str_nexthop_type(nexthop->flags));
 
@@ -1336,7 +1345,6 @@ transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
     rt_key_t rt_key;
 
     assert(!IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack));
-    *next_node = node;
 
     do{
         rt_key.u.label = GET_MPLS_LABEL_STACK_TOP(mpls_label_stack);
@@ -1349,7 +1357,7 @@ transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
 
         /* In mpls table, Flag to identify nexthop type really do not matter becase
          * for a given incoming label - there will be unique nexthop types*/
-        internal_un_nh_t *prim_nh = GET_FIRST_NH(rt_un_entry, 0xFF, PRIMARY_NH);
+        internal_un_nh_t *prim_nh = GET_FIRST_NH(rt_un_entry, PRIMARY_NH, PRIMARY_NH);
         assert(prim_nh); /*MPLS table has to have a primary nexthop, even for local labels*/
 
         MPLS_STACK_OP stack_op = get_internal_un_nh_stack_top_operation(prim_nh);

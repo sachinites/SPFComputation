@@ -287,7 +287,7 @@ typedef struct rt_un_table_{
 rt_un_table_t *
 init_rib(rib_type_t rib);
 
-void
+int
 free_rt_un_entry(rt_un_entry_t *rt_un_entry);
 
 internal_un_nh_t *

@@ -1353,6 +1353,17 @@ spf_init_dcm(){
             init_param(&ldp, CMD, "ldp", instance_node_ldp_config_handler, 0, INVALID, 0, "Enable Disable LDP");
             libcli_register_param(&config_node_node_name, &ldp);
             set_param_cmd_code(&ldp, CMDCODE_CONFIG_NODE_ENABLE_LDP);
+            {
+                static param_t tunnel;
+                init_param(&tunnel, CMD, "tunnel", 0, 0, INVALID, 0, "LDP tunnel");
+                libcli_register_param(&ldp, &tunnel);
+                {
+                    static param_t router_id;
+                    init_param(&router_id, LEAF, 0, instance_node_ldp_config_handler, 0, IPV4, "router-id", "router id without mask");
+                    libcli_register_param(&tunnel, &router_id);
+                    set_param_cmd_code(&router_id, CMDCODE_CONFIG_NODE_LDP_TUNNNEL);
+                }
+            }
         }
         
         /*config node <node-name> rsvp*/

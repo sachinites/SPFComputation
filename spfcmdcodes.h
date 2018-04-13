@@ -128,6 +128,7 @@
 #define CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS                 77 /*show instance node <node-name> mpls ldp bindings <prefix> <mask>*/
 #define CMDCODE_CONFIG_NODE_LDP_SR_PREFERENCE               78 /*config node <node-name> ldp sr preference set*/
 #define CMDCODE_CONFIG_NODE_ENABLE_LDP                      79 /*config node <node-name> ldp*/
+#define CMDCODE_CONFIG_NODE_LDP_TUNNNEL                     89 /*config node <node-name> ldp tunnel <router-id>*/
 
 /*Mapping Server*/
 #define CMDCODE_CONFIG_NODE_SRMS_LCL_POLICY                 80 /*config node <node-name> source-packet-routing mapping-server <prefix> <mask> <first-sid-index> range <range>*/
