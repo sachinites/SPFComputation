@@ -474,31 +474,16 @@ insert_lsp_as_forward_adjacency(node_t *ingress_lsr_node,
                            char *tail_end_ip, 
                            LEVEL level){
 
-    node_t *tail_end_node = NULL;
-    edge_t *lsp = create_new_lsp_adj(lsp_name, metric, level);
-
-    switch(level){
-        case LEVEL1:
-        case LEVEL2:
-            tail_end_node = get_system_id_from_router_id(ingress_lsr_node, tail_end_ip, level);    
-            break;
-        case LEVEL12:
-            tail_end_node = get_system_id_from_router_id(ingress_lsr_node, tail_end_ip, LEVEL1);
-            if(!tail_end_node)
-                tail_end_node = get_system_id_from_router_id(ingress_lsr_node, tail_end_ip, LEVEL2);
-            break;
-        default:
-            assert(0);
-    }
-
-    if(!tail_end_node){
-        printf("Error : Could not find Node for Router id %s in LEVEL%u", tail_end_ip, level);   
-        free(lsp);
-        lsp = NULL;
+    rsvp_tunnel_t *rsvp_tunnel = look_up_rsvp_tunnel(ingress_lsr_node, lsp_name);
+    if(!rsvp_tunnel){
+        printf("Error : RSVP tunnel : %s do not exist, LSP export into IGP failed.\n", rsvp_tunnel->lsp_name);
         return FALSE;
     }
 
-    insert_edge_between_2_nodes(lsp, ingress_lsr_node, tail_end_node, UNIDIRECTIONAL);
+    edge_t *lsp = create_new_lsp_adj(lsp_name, metric, level);
+    lsp->fa = rsvp_tunnel;
+
+    insert_edge_between_2_nodes(lsp, ingress_lsr_node, lsp->fa->egress_lsr, UNIDIRECTIONAL);
     return TRUE;
 }
 

@@ -1665,7 +1665,7 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                 nxthop = list_node2->data;
                 if(is_internal_backup_nexthop_rsvp(nxthop))
                     continue;
-                if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop) || !is_node_spring_enabled(nxthop->rlfa, level)){
+                if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop) || (nxthop->rlfa && !is_node_spring_enabled(nxthop->rlfa, level))){
                     sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed, not spring capable", 
                     GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                             get_str_level(level), next_hop_oif_name(*nxthop), nxthop->node ? nxthop->node->node_name :
@@ -1675,19 +1675,19 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                 }
                 rc = FALSE;
                 un_nxthop = mpls_0_unifiy_nexthop(nxthop, L_IGP_PROTO);
-                /* un_nxthop returned would have label stack depth 2 in case the nexthop
-                 * prepresents RLFA nexthop. While the 2-depth stack should be installed in
-                 * inet,3 table, in mpls.0 table only a label required to steer the traffic
-                 * upto PQ node is required. The destination label must already been present in
-                 * packet since, mpls.0 routes are hit by transit traffic only.*/
-                /* We need to PUSH a label to the packet which steer the packet to RLFA through proxy nbr
-                 * For this, oif and gateway ip as filled by mpls_0_unifiy_nexthop() would remain unchanged.
-                 * We need to remove the [0] stack element from nexthop stack, and move [1] stack element
-                 * to [0] position */
-                un_nxthop->nh.mpls0_nh.mpls_label_out[0] = un_nxthop->nh.mpls0_nh.mpls_label_out[1];
-                un_nxthop->nh.mpls0_nh.stack_op[0] = un_nxthop->nh.mpls0_nh.stack_op[1];
-                un_nxthop->nh.mpls0_nh.mpls_label_out[1] = 0;
-                un_nxthop->nh.mpls0_nh.stack_op[1] = STACK_OPS_UNKNOWN;
+                    /*In case if RLFA is also a destination, then mpls label stack depth would only be 1.
+                     * The below stack modificiation need not done*/
+                    if(un_nxthop->nh.mpls0_nh.mpls_label_out[1] && 
+                            un_nxthop->nh.mpls0_nh.stack_op[1] != STACK_OPS_UNKNOWN){
+                        /*Means, RLFA is a transient router to destination, and RLFA itself is not
+                         * a destination*/
+                        un_nxthop->nh.mpls0_nh.stack_op[1] = SWAP;
+                    }
+                    else{
+                        /*if RLFA it self is a destination*/
+                        un_nxthop->nh.mpls0_nh.stack_op[0] = SWAP;
+                    }
+                }
                 rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, level, un_nxthop);
                 if(rc == FALSE){
                     free_un_nexthop(un_nxthop);

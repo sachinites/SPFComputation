@@ -97,11 +97,8 @@ typedef struct _node_t{
 
     /*RSVP related config*/
     rsvp_config_t rsvp_config;
-    /* While storing the routes with outgoing label in inet.3 table, if both
-     * SR and LDP nexthop is available, then which one is to be installed. By
-     * default LDP is preferred*/
-    unsigned int is_ldp_preferred_over_sr:1,
-                 am_i_mapping_client:1,/*TRUE is node is a mapping client*/
+    
+    unsigned int am_i_mapping_client:1,/*TRUE is node is a mapping client*/
                  am_i_mapping_server:1;
 
     /*Mapping Server local policy database*/
@@ -140,7 +137,8 @@ typedef struct _edge_t{
     edge_end_t to;
     struct _edge_t *inv_edge;
     edge_type_t etype;
-    char status;/* 0 down, 1 up*/
+    rsvp_tunnel_t *fa;      /*Forwarding adjacency*/
+    char status;            /* 0 down, 1 up*/
     unsigned int bandwidth; /*bandwidth for WECMP in mpbs*/
 } edge_t;
 

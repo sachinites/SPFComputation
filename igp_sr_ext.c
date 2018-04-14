@@ -698,23 +698,34 @@ springify_rlfa_nexthop(node_t *spf_root,
      2. lookup RLFA router id node segment index in nxthop->node->srgb, and perform SWAP 
      */
 
-    /*Op 2*/ /*Remember this operation is being done on PLR and RLFA needs to be installed in inet.3 table
-     only as LDP tunnel or SR tunnel. For Transient SR tunnel protection we have TI-LFAs*/
+    /*Op 2*/ /*Remember this operation is being done on PLR and RLFA needs to be installed in inet.3 and mpls.0  table
+     only as LDP tunnel or SR tunnel*/
     rlfa_node_prefix_sid = get_node_segment_prefix_sid(nxthop->rlfa, route->level);
     mpls_label = get_label_from_srgb_index(nxthop->proxy_nbr->srgb, rlfa_node_prefix_sid->sid.sid);
     nxthop->mpls_label_out[0] = mpls_label;
     nxthop->stack_op[0] = PUSH;
 
     /*Op 1*/
-    mpls_label = get_label_from_srgb_index(nxthop->rlfa->srgb, prefix_sid_index); 
-    nxthop->mpls_label_out[1] = mpls_label;
-    nxthop->stack_op[1] = PUSH;
+    /*If RLFA is also the Destination, then this operation is not required*/
+    if(!is_node_best_prefix_originator(nxthop->rlfa, route)){
+        
+        mpls_label = get_label_from_srgb_index(nxthop->rlfa->srgb, prefix_sid_index); 
+        nxthop->mpls_label_out[1] = mpls_label;
+        nxthop->stack_op[1] = PUSH;
 
+        sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u\n\tStack : %s:%u\t%s:%u, oif : %s, gw : %s, nexthop : %s", 
+                spf_root->node_name, route->rt_key.u.prefix.prefix,
+                route->rt_key.u.prefix.mask, get_str_level(route->level), route->rt_key.u.label,
+                get_str_stackops(nxthop->stack_op[1]) , nxthop->mpls_label_out[1],
+                get_str_stackops(nxthop->stack_op[0]) , nxthop->mpls_label_out[0], next_hop_oif_name(*nxthop),
+                next_hop_gateway_pfx(nxthop), nxthop->proxy_nbr->node_name);
+        trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+        return;
+    }
 
-    sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u\n\tStack : %s:%u\t%s:%u, oif : %s, gw : %s, nexthop : %s", 
+    sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u\n\tStack : %s:%u, oif : %s, gw : %s, nexthop : %s", 
         spf_root->node_name, route->rt_key.u.prefix.prefix,
         route->rt_key.u.prefix.mask, get_str_level(route->level), route->rt_key.u.label,
-        get_str_stackops(nxthop->stack_op[1]) , nxthop->mpls_label_out[1],
         get_str_stackops(nxthop->stack_op[0]) , nxthop->mpls_label_out[0], next_hop_oif_name(*nxthop),
         next_hop_gateway_pfx(nxthop), nxthop->proxy_nbr->node_name);
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);

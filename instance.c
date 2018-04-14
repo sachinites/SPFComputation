@@ -119,7 +119,6 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
 
     node->am_i_mapping_client = TRUE; /*By default it should be TRUE, pg 335*/
     node->am_i_mapping_server = FALSE;
-    node->is_ldp_preferred_over_sr = TRUE;
 
     add_node_to_owning_instance(instance, node);
     return node;    
@@ -172,6 +171,7 @@ create_new_edge(char *from_ifname,
     edge->status    = 1;
     edge->inv_edge  = NULL;
     edge->etype = UNICAST;
+    edge->fa = NULL;
     edge->bandwidth = DEFAULT_LINK_BW;
     return edge;
 }
