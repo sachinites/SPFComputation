@@ -45,6 +45,8 @@
 #include "advert.h"
 #include "data_plane.h"
 
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
 extern
 instance_t *instance;
 
@@ -269,12 +271,6 @@ show_traceroute_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
     switch(cmdcode){
         case CMDCODE_SHOW_NODE_TRACEROUTE_PRIMARY:
             ping(node_name, prefix);
-            break;
-        case CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP:
-            ping_backup(node_name, prefix);
-            break;
-        case CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS:
-            //show_mpls_traceroute(node_name, prefix); 
             break;
         default:
             assert(0);
@@ -1080,21 +1076,6 @@ spf_init_dcm(){
     init_param(&traceroute_prefix, LEAF, 0, show_traceroute_handler, 0, IPV4, "prefix", "Destination address (ipv4)");
     libcli_register_param(&traceroute, &traceroute_prefix);
     set_param_cmd_code(&traceroute_prefix, CMDCODE_SHOW_NODE_TRACEROUTE_PRIMARY);
-        /*show instance node <node-name> traceroute <prefix> backup*/
-    {
-        static param_t backup;
-        init_param(&backup, CMD, "backup", show_traceroute_handler, 0, INVALID, 0, "trace backup route");
-        libcli_register_param(&traceroute_prefix, &backup);
-        set_param_cmd_code(&backup, CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP);
-    }
-
-        /*show instance node <node-name> traceroute <prefix> sr-mpls*/
-    {
-        static param_t mpls;
-        init_param(&mpls, CMD, "sr-mpls", show_traceroute_handler, 0, INVALID, 0, "trace SR-tunnel");
-        libcli_register_param(&traceroute_prefix, &mpls);
-        set_param_cmd_code(&mpls, CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS);
-    }
 
     /*show instance node <node-name> route*/
     static param_t route;

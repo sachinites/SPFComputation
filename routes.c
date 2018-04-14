@@ -1281,37 +1281,38 @@ show_internal_routing_tree(node_t *node, char *prefix, char mask, rtttype_t rt_t
                 } ITERATE_LIST_END;
             } ITERATE_NH_TYPE_END;
 
-                /*print the back up here*/
-                ITERATE_NH_TYPE_BEGIN(nh){
-                    ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
-                        nexthop = list_node->data;
-                        printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
-                        nh = next_hop_type(*nexthop);
-                        /*print the back as per its type*/
-                        switch(nh){
-                            case IPNH:
-                                printf("%-15s    %s|%-22s   %-12s    %-10s       %-5u\n",
-                                        next_hop_gateway_pfx(nexthop),
-                                        nexthop->node->node_name,
-                                        "IPNH",
-                                        next_hop_oif_name(*nexthop),
-                                        backup_next_hop_protection_name(*nexthop), 5000);
-                                break;
-                            case LSPNH:
-                                printf("%-15s    %s->%s|%-17s   %-12s    %-10s       %-5u\n",
-                                        "",
-                                        is_internal_backup_nexthop_rsvp(nexthop) ? "RSVP" : "LDP",
-                                        is_internal_backup_nexthop_rsvp(nexthop) ?  nexthop->node->node_name :
-                                        nexthop->rlfa->node_name,
-                                        nexthop->rlfa->router_id,
-                                        next_hop_oif_name(*nexthop),
-                                        backup_next_hop_protection_name(*nexthop), 6000);
-                                break;
-                            default:
-                                assert(0);
-                        }
-                    } ITERATE_LIST_END;
-                } ITERATE_NH_TYPE_END;
+            /*print the back up here*/
+            ITERATE_NH_TYPE_BEGIN(nh){
+                ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
+                    nexthop = list_node->data;
+                    printf("%-20s      %-4s        %-3s  %-3s      %-2s    ", "","","","","");
+                    nh = next_hop_type(*nexthop);
+                    /*print the back as per its type*/
+                    switch(nh){
+                        case IPNH:
+                            printf("%-15s    %s|%-22s   %-12s    %-10s       %-5u\n",
+                                    next_hop_gateway_pfx(nexthop),
+                                    nexthop->node->node_name,
+                                    "IPNH",
+                                    next_hop_oif_name(*nexthop),
+                                    backup_next_hop_protection_name(*nexthop), 5000);
+                            break;
+                        case LSPNH:
+                            printf("%-15s    %s->%s|%-17s   %-12s    %-10s       %-5u\n",
+                                    "",
+                                    is_internal_backup_nexthop_rsvp(nexthop) ? "RSVP" : \
+                                               rt_type == UNICAST_T ? "LDP" : "SPRING",
+                                    is_internal_backup_nexthop_rsvp(nexthop) ?  nexthop->node->node_name :
+                                    nexthop->rlfa->node_name,
+                                    nexthop->rlfa->router_id,
+                                    next_hop_oif_name(*nexthop),
+                                    backup_next_hop_protection_name(*nexthop), 6000);
+                            break;
+                        default:
+                            assert(0);
+                    }
+                } ITERATE_LIST_END;
+            } ITERATE_NH_TYPE_END;
                 if(prefix)
                     return;
         }ITERATE_LIST_END;
@@ -1687,7 +1688,6 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                         /*if RLFA it self is a destination*/
                         un_nxthop->nh.mpls0_nh.stack_op[0] = SWAP;
                     }
-                }
                 rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, level, un_nxthop);
                 if(rc == FALSE){
                     free_un_nexthop(un_nxthop);

@@ -171,7 +171,7 @@ typedef struct internal_un_nh_t_{
 
     //union u_t nh;
 
-    /*Bits 0 and 1 is used to identify whether the nexthop is primary
+    /* Bit 0 is used to identify whether the nexthop is primary
      * or backup nexthop. Same can also be identified using NULL check
      * on protected_link member*/
     #define PRIMARY_NH      0
@@ -259,6 +259,23 @@ GET_FIRST_NH(rt_un_entry_t *rt_un_entry, FLAG nh_type,
         
         nexthop = glthread_to_unified_nh(curr);
         if(IS_BIT_SET(nexthop->flags, is_primary) &&
+            IS_BIT_SET(nexthop->flags, nh_type))
+            return nexthop;
+    } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);
+    return NULL;
+}
+
+static inline internal_un_nh_t *
+GET_FIRST_BACKUP_NH(rt_un_entry_t *rt_un_entry, FLAG nh_type, 
+             FLAG is_primary){
+
+    glthread_t *curr = NULL;
+    internal_un_nh_t *nexthop = NULL;
+
+    ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
+        
+        nexthop = glthread_to_unified_nh(curr);
+        if(!IS_BIT_SET(nexthop->flags, is_primary) &&
             IS_BIT_SET(nexthop->flags, nh_type))
             return nexthop;
     } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);

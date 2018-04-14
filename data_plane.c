@@ -705,6 +705,7 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
      * of LDP (RLFA) backups, nexthop is nexthop->proxy_nbr*/
     node_t *nexthop_node = nexthop->node ?  nexthop->node : nexthop->proxy_nbr;
     internal_un_nh_t *un_nh = inet_0_unifiy_nexthop(nexthop, proto);
+    un_nh->nh_node = nexthop_node;
     UNSET_BIT(un_nh->flags, IPV4_NH);
     switch(proto){
         case IGP_PROTO:
@@ -1191,8 +1192,10 @@ typedef enum{
 typedef mpls_label_stack_t * (*pfe_engine)(node_t *node, char *dst_prefix, 
                         trace_rc_t *trace_rc, node_t **next_node);
 
+
 mpls_label_stack_t *
-ipv4_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **next_node){
+ipv4_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, 
+                    node_t **next_node){
 
     unsigned int i = 1;
 
@@ -1206,62 +1209,46 @@ ipv4_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **n
             return NULL;   
         }
 
-        internal_un_nh_t *prim_nexthop = NULL; 
+        internal_un_nh_t *prim_nh = GET_FIRST_NH(rt_un_entry, IPV4_NH, PRIMARY_NH);
+        internal_un_nh_t *backup_nh = NULL;
 
-        prim_nexthop =  GET_FIRST_NH(rt_un_entry, IPV4_NH, PRIMARY_NH);
-
-        if(!prim_nexthop){
+        if(!prim_nh){
             *trace_rc = TRACE_COMPLETE;
             *next_node = node;
-            return NULL;
+            backup_nh = GET_FIRST_BACKUP_NH(rt_un_entry, IPV4_NH, PRIMARY_NH);
+            if(!backup_nh)
+                return NULL;
         }
 
-        printf("%u. %s(%s)--IPNH-->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nexthop),
-                get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
+        edge_t *oif_adjacency = NULL;
 
-        node = get_un_next_hop_node(prim_nexthop);
+        if(prim_nh){
+            oif_adjacency = GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif);
+            if(!oif_adjacency->status){
+                backup_nh = GET_FIRST_BACKUP_NH(rt_un_entry, IPV4_NH, PRIMARY_NH);
+                if(!backup_nh || !((GET_EGDE_PTR_FROM_FROM_EDGE_END(backup_nh->oif))->status)){
+                    /*Means, Primary and backup both are not available*/
+                    return NULL;
+                }
+            }
+        }
+
+        if(backup_nh)
+            prim_nh = backup_nh;
+
+        printf("%u. %s(%s)--IPNH-->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nh),
+                get_un_next_hop_gateway_pfx(prim_nh), get_un_next_hop_node(prim_nh)->node_name);
+
+        node = get_un_next_hop_node(prim_nh);
     }while(1);
 
     return NULL;
 }
 
-mpls_label_stack_t *
-ldp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **next_node){
-
-    unsigned int i = 1;
-
-    rt_un_entry_t * rt_un_entry = 
-        get_longest_prefix_match2(node->spf_info.rib[INET_3], dst_prefix);
-
-    if(!rt_un_entry){
-        *trace_rc = TRACE_INCOMPLETE;
-        *next_node = node;
-        return NULL;   
-    }
-
-    internal_un_nh_t *prim_nexthop = NULL; 
-
-    prim_nexthop =  GET_FIRST_NH(rt_un_entry, IPV4_LDP_NH, PRIMARY_NH);
-
-    if(!prim_nexthop){
-        *trace_rc = TRACE_INCOMPLETE;
-        *next_node = node;
-        return NULL;
-    }
-
-    printf("%u. %s(%s)--LDP_TUNN-IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nexthop),
-            get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
-
-    mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
-    execute_nexthop_mpls_label_stack_on_packet(prim_nexthop, mpls_label_stack);
-
-    *next_node = get_un_next_hop_node(prim_nexthop);
-    *trace_rc = TRACE_INCOMPLETE;
-    return mpls_label_stack;
-}
 
 mpls_label_stack_t *
-sr_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **next_node){
+ldp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, 
+                node_t **next_node){
     
     unsigned int i = 1;
 
@@ -1274,29 +1261,49 @@ sr_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **nex
         return NULL;   
     }
 
-    internal_un_nh_t *prim_nexthop = NULL; 
+    internal_un_nh_t *prim_nh = GET_FIRST_NH(rt_un_entry, IPV4_LDP_NH, PRIMARY_NH);
+    internal_un_nh_t *backup_nh = NULL;
 
-    prim_nexthop =  GET_FIRST_NH(rt_un_entry, IPV4_SPRING_NH, PRIMARY_NH);
-
-    if(!prim_nexthop){
+    if(!prim_nh){
         *trace_rc = TRACE_INCOMPLETE;
         *next_node = node;
-        return NULL;
+        backup_nh = GET_FIRST_BACKUP_NH(rt_un_entry, IPV4_LDP_NH, PRIMARY_NH);
+        if(!backup_nh)
+            return NULL;
     }
 
-    printf("%u. %s(%s)--SPR_TUNN_IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nexthop),
-            get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
+    edge_t *oif_adjacency = NULL;
+
+    if(prim_nh){
+        
+        oif_adjacency = GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif);
+
+        if(!oif_adjacency->status){
+            backup_nh = GET_FIRST_BACKUP_NH(rt_un_entry, IPV4_LDP_NH, PRIMARY_NH);
+            if(!backup_nh || !((GET_EGDE_PTR_FROM_FROM_EDGE_END(backup_nh->oif))->status)){
+                /*Means, Primary and backup both are not available*/
+                return NULL;
+            }
+        }
+    }
+
+    if(backup_nh)
+        prim_nh = backup_nh;
+
+    printf("%u. %s(%s)--LDP_TUNN_IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nh),
+            get_un_next_hop_gateway_pfx(prim_nh), get_un_next_hop_node(prim_nh)->node_name);
 
     mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
-    execute_nexthop_mpls_label_stack_on_packet(prim_nexthop, mpls_label_stack);
+    execute_nexthop_mpls_label_stack_on_packet(prim_nh, mpls_label_stack);
 
-    *next_node = get_un_next_hop_node(prim_nexthop);
+    *next_node = get_un_next_hop_node(prim_nh);
     *trace_rc = TRACE_INCOMPLETE;
     return mpls_label_stack;
 }
 
 mpls_label_stack_t *
-rsvp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **next_node){
+sr_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, 
+                node_t **next_node){
     
     unsigned int i = 1;
 
@@ -1309,27 +1316,100 @@ rsvp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, node_t **n
         return NULL;   
     }
 
-    internal_un_nh_t *prim_nexthop = NULL; 
+    internal_un_nh_t *prim_nh = GET_FIRST_NH(rt_un_entry, IPV4_SPRING_NH, PRIMARY_NH);
+    internal_un_nh_t *backup_nh = NULL;
 
-    prim_nexthop =  GET_FIRST_NH(rt_un_entry, IPV4_RSVP_NH, PRIMARY_NH);
-
-    if(!prim_nexthop){
+    if(!prim_nh){
         *trace_rc = TRACE_INCOMPLETE;
         *next_node = node;
-        return NULL;
+        backup_nh = GET_FIRST_BACKUP_NH(rt_un_entry, IPV4_SPRING_NH, PRIMARY_NH);
+        if(!backup_nh)
+            return NULL;
     }
 
-    printf("%u. %s(%s)--RSVP_TUNN-IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nexthop),
-            get_un_next_hop_gateway_pfx(prim_nexthop), get_un_next_hop_node(prim_nexthop)->node_name);
+    edge_t *oif_adjacency = NULL;
+
+    if(prim_nh){
+        
+        oif_adjacency = GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif);
+
+        if(!oif_adjacency->status){
+            backup_nh = GET_FIRST_BACKUP_NH(rt_un_entry, IPV4_SPRING_NH, PRIMARY_NH);
+            if(!backup_nh || !((GET_EGDE_PTR_FROM_FROM_EDGE_END(backup_nh->oif))->status)){
+                /*Means, Primary and backup both are not available*/
+                return NULL;
+            }
+        }
+    }
+
+    if(backup_nh)
+        prim_nh = backup_nh;
+
+    printf("%u. %s(%s)--SPR_TUNN_IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nh),
+            get_un_next_hop_gateway_pfx(prim_nh), get_un_next_hop_node(prim_nh)->node_name);
 
     mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
-    execute_nexthop_mpls_label_stack_on_packet(prim_nexthop, mpls_label_stack);
+    execute_nexthop_mpls_label_stack_on_packet(prim_nh, mpls_label_stack);
 
-    *next_node = get_un_next_hop_node(prim_nexthop);
+    *next_node = get_un_next_hop_node(prim_nh);
     *trace_rc = TRACE_INCOMPLETE;
     return mpls_label_stack;
 }
 
+mpls_label_stack_t *
+rsvp_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, 
+                node_t **next_node){
+    
+    unsigned int i = 1;
+
+    rt_un_entry_t * rt_un_entry = 
+        get_longest_prefix_match2(node->spf_info.rib[INET_3], dst_prefix);
+
+    if(!rt_un_entry){
+        *trace_rc = TRACE_INCOMPLETE;
+        *next_node = node;
+        return NULL;   
+    }
+
+    internal_un_nh_t *prim_nh = GET_FIRST_NH(rt_un_entry, IPV4_RSVP_NH, PRIMARY_NH);
+    internal_un_nh_t *backup_nh = NULL;
+
+    if(!prim_nh){
+        *trace_rc = TRACE_INCOMPLETE;
+        *next_node = node;
+        backup_nh = GET_FIRST_BACKUP_NH(rt_un_entry, IPV4_RSVP_NH, PRIMARY_NH);
+        if(!backup_nh)
+            return NULL;
+    }
+
+    edge_t *oif_adjacency = NULL;
+
+    if(prim_nh){
+        
+        oif_adjacency = GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif);
+
+        if(!oif_adjacency->status){
+            backup_nh = GET_FIRST_BACKUP_NH(rt_un_entry, IPV4_RSVP_NH, PRIMARY_NH);
+            if(!backup_nh || !((GET_EGDE_PTR_FROM_FROM_EDGE_END(backup_nh->oif))->status)){
+                /*Means, Primary and backup both are not available*/
+                return NULL;
+            }
+        }
+    }
+
+    if(backup_nh)
+        prim_nh = backup_nh;
+
+    printf("%u. %s(%s)--RSVP_TUNN_IN->(%s)%s\n", i++, node->node_name, get_un_next_hop_oif_name(prim_nh),
+            get_un_next_hop_gateway_pfx(prim_nh), get_un_next_hop_node(prim_nh)->node_name);
+
+    mpls_label_stack_t *mpls_label_stack = get_new_mpls_label_stack();
+    execute_nexthop_mpls_label_stack_on_packet(prim_nh, mpls_label_stack);
+
+    *next_node = get_un_next_hop_node(prim_nh);
+    *trace_rc = TRACE_INCOMPLETE;
+    return mpls_label_stack;
+}
 
 void
 transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack, 
@@ -1353,7 +1433,18 @@ transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
         /* In mpls table, Flag to identify nexthop type really do not matter becase
          * for a given incoming label - there will be unique nexthop types*/
         internal_un_nh_t *prim_nh = GET_FIRST_NH(rt_un_entry, PRIMARY_NH, PRIMARY_NH);
+
         assert(prim_nh); /*MPLS table has to have a primary nexthop, even for local labels*/
+
+        edge_t *oif_adjacency = GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif);
+         
+        if(!oif_adjacency->status){
+            prim_nh = GET_FIRST_BACKUP_NH(rt_un_entry, PRIMARY_NH, PRIMARY_NH);
+            if(!prim_nh || !((GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif))->status)){
+                /*Means, Primary and backup both are not available*/
+                return;
+            }
+        }
 
         MPLS_STACK_OP stack_op = get_internal_un_nh_stack_top_operation(prim_nh);
         mpls_label_t outgoing_mpls_label = get_internal_un_nh_stack_top_label(prim_nh);
@@ -1424,11 +1515,6 @@ init_pfe(){
     pfe[SPRING_ROUTE] = sr_pfe_engine;
     pfe[LDP_ROUTE]    = ldp_pfe_engine;
     pfe[RSVP_ROUTE]   = rsvp_pfe_engine;
-}
-
-int
-ping_backup(char *node_name, char *dst_prefix){
-    return 0;
 }
 
 /*To be implemented as state machine*/

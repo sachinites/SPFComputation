@@ -71,7 +71,7 @@
 #define CMDCODE_CONFIG_NODE_SPF_BACKUP_OPTIONS              32 /*config node <node-name> spf-backup-options */
 #define CMDCODE_CONFIG_INTF_LINK_PROTECTION_RLFA            33 /*config node <node-name> interface <ifname> link-protection rlfa*/ 
 #define CMDCODE_SHOW_NODE_TRACEROUTE_PRIMARY                34 /*show instance node <node-name> traceroute <destination prefix>*/
-#define CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP                 35 /*show instance node <node-name> traceroute <destination prefix> backup*/
+//#define CMDCODE_SHOW_NODE_TRACEROUTE_BACKUP                 35 /*show instance node <node-name> traceroute <destination prefix> backup*/
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_EXPSPACE               36 /*debug show instance node <node-name> interface <slot-no> expspace*/
 #define CMDCODE_DEBUG_SHOW_NODE_INTF_PQSPACE                37 /*debug show instance node <node-name> interface <slot-no> pqspace*/
 
@@ -108,7 +108,7 @@
 //#define CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION  61 /*conf debug set trace mpls-route-installation*/
 #define CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE       62 /*conf node <node-name> mpls install route <dst-prefix> <mask>*/
 #define CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE            63 /*show instance node <node-name> mpls forwarding-table*/
-#define CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS                64 /*show instance node <node-name> traceroute <prefix> sr-mpls*/
+//#define CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS                64 /*show instance node <node-name> traceroute <prefix> sr-mpls*/
 #define CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK               65 /*debug trace mpls stack labels <label1> <label2> <label3> <label4>*/
 #define CMDCODE_CONFIG_NODE_SR_EXPLICIT_NULL                71 /*config node <node-name> source-packet-routing explicit-null*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_SPRING_ROUTE_CAL         73 /*config debug set trace spring-route-calculation*/

@@ -128,6 +128,8 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
     node_t *nbr_node = edge->to.node;
     unsigned int old_nbr_node_spf_version = 0;
 
+    /*Run spf manually when interface state is changed by admin*/
+#if 0
     for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
         if(!IS_LEVEL_SET(edge->level, level_it))
             continue;
@@ -143,6 +145,7 @@ spf_node_slot_enable_disable(node_t *node, char *slot_name,
         dist_info_hdr.advert_id = TLV2;
         generate_lsp(instance, nbr_node, lsp_distribution_routine, &dist_info_hdr);
     }
+#endif
 }
 
 
