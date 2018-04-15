@@ -43,8 +43,7 @@
 #include "sr_tlv_api.h"
 #include "igp_sr_ext.h"
 #include "common.h"
-
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#include "no_warn.h"
 
 extern instance_t * instance;
 

@@ -40,8 +40,7 @@
 #include "Queue.h"
 #include "advert.h"
 #include "spftrace.h"
-
-#pragma GCC diagnostic ignored "-Wunused-function"
+#include "no_warn.h"
 
 extern instance_t *instance;
 

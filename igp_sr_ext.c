@@ -42,8 +42,7 @@
 #include "spftrace.h"
 #include "sr_tlv_api.h"
 #include "bitarr.h"
-
-#pragma GCC diagnostic ignored "-Wunused-function"
+#include "no_warn.h"
 
 extern instance_t *instance;
 

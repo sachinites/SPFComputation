@@ -44,8 +44,7 @@
 #include "routes.h"
 #include "advert.h"
 #include "data_plane.h"
-
-#pragma GCC diagnostic ignored "-Wunused-variable"
+#include "no_warn.h"
 
 extern
 instance_t *instance;

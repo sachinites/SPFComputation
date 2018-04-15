@@ -1511,7 +1511,6 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
     } ITERATE_LIST_END;
 }
 
-#if 0
 static boolean
 is_route_have_backup_protection(routes_t *route, edge_end_t *protected_link){
 
@@ -1533,7 +1532,6 @@ is_route_have_backup_protection(routes_t *route, edge_end_t *protected_link){
     } ITERATE_NH_TYPE_END;
     return FALSE;
 }
-#endif
 
 static void
 enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
