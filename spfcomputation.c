@@ -779,6 +779,9 @@ spf_computation(node_t *spf_root,
     if(spf_type == FORWARD_RUN)
         return;
 
+    /* Flush off backups from all nodes unconditionally 
+     * otherwise they will be reflected in routes computed.*/ 
+    init_back_up_computation(spf_root, level); 
     compute_backup_routine(spf_root, level);
     /* Route Building After SPF computation*/
     /*We dont build routing table for reverse spf run*/
