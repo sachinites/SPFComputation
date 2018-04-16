@@ -76,10 +76,34 @@ _run_spf_run_all_nodes(){
     }
 }
 
+static void
+_reconstruct_all_rsvp_tunnels(){
+
+    node_t *node = NULL;
+    singly_ll_node_t *list_node = NULL;
+    rsvp_tunnel_t *rsvp_tunnel = NULL;
+    glthread_t *curr = NULL;
+    rsvp_tunnel_t rsvp_tunnel_data;
+    int rc = 0;
+
+    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
+        node = list_node->data;
+        ITERATE_GLTHREAD_BEGIN(&node->rsvp_config.lspdb, curr){
+            rsvp_tunnel = glthread_to_rsvp_tunnel(curr);
+            rc = create_targeted_rsvp_tunnel(node, rsvp_tunnel->egress_lsr->router_id, 
+                    0, 0, 0, &rsvp_tunnel_data);
+            if(!rc)
+                memcpy(rsvp_tunnel, &rsvp_tunnel_data, sizeof(rsvp_tunnel_t));
+        } ITERATE_GLTHREAD_END(&node->rsvp_config.lspdb, curr);
+    } ITERATE_LIST_END;
+}
+
 int
 run_spf_run_all_nodes(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
 
     _run_spf_run_all_nodes();
+    /*now reconstruct all RSVP tunnels*/
+    _reconstruct_all_rsvp_tunnels();
     return 0;
 }
 
@@ -1158,7 +1182,7 @@ instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
             }
             rsvp_tunnel_t rsvp_tunnel_data;
             memset(&rsvp_tunnel_data, 0, sizeof(rsvp_tunnel_t));
-            rc = create_targeted_rsvp_tunnel(node, LEVEL1, router_id, 0, 0, 0, &rsvp_tunnel_data);
+            rc = create_targeted_rsvp_tunnel(node, router_id, 0, 0, 0, &rsvp_tunnel_data);
             if(rc == -1) {
                 printf("RSVP tunnel creation failed\n");   
             }

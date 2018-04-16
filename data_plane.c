@@ -192,8 +192,6 @@ free_rt_un_entry(rt_un_entry_t *rt_un_entry){
 
     ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
         nxt_hop = glthread_to_unified_nh(curr);
-        if(nxt_hop->protocol == LDP_PROTO)
-            continue;
         remove_glthread(curr);
         free_un_nexthop(nxt_hop);    
     } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);
@@ -1445,16 +1443,21 @@ transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
 
         assert(prim_nh); /*MPLS table has to have a primary nexthop, even for local labels*/
 
-        edge_t *oif_adjacency = GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif);
-         
-        if(!oif_adjacency->status){
-            prim_nh = GET_FIRST_BACKUP_NH(rt_un_entry, PRIMARY_NH, PRIMARY_NH);
-            if(!prim_nh || !((GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif))->status)){
-                /*Means, Primary and backup both are not available*/
-                return;
+        /*primary nexthop may not have oif in case if this orimary nexthop 
+         * represents only POP operation on destination router*/
+                
+        if(prim_nh->oif){
+
+            edge_t *oif_adjacency = GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif);
+
+            if(!oif_adjacency->status){
+                prim_nh = GET_FIRST_BACKUP_NH(rt_un_entry, PRIMARY_NH, PRIMARY_NH);
+                if(!prim_nh || !((GET_EGDE_PTR_FROM_FROM_EDGE_END(prim_nh->oif))->status)){
+                    /*Means, Primary and backup both are not available*/
+                    return;
+                }
             }
         }
-
         MPLS_STACK_OP stack_op = get_internal_un_nh_stack_top_operation(prim_nh);
         mpls_label_t outgoing_mpls_label = get_internal_un_nh_stack_top_label(prim_nh);
 

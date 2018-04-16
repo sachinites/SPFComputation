@@ -103,18 +103,17 @@ get_rsvp_label_binding(node_t *down_stream_node,
     buff[NODE_NAME_SIZE + PREFIX_LEN_WITH_MASK - 1] = '\0';
     
     mpls_label_t label = hash_code(buff, sizeof(buff));
-    label = label % (RSVP_LABEL_RANGE_MAX - LDP_LABEL_RANGE_MIN);
+    label = label % (RSVP_LABEL_RANGE_MAX - RSVP_LABEL_RANGE_MIN);
     label += RSVP_LABEL_RANGE_MIN;
-
     return label;
 }
 
 int
-create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level ,/*Ingress LSR*/
-        char *edgress_lsr_rtr_id,                             /*Egress LSR router id*/
+create_targeted_rsvp_tunnel(node_t *ingress_lsr,                      /*Ingress LSR*/
+                char *edgress_lsr_rtr_id,                             /*Egress LSR router id*/
                 edge_end_t *oif, char *gw_ip,
-                node_t *proxy_nbr,                            /*oif from ingress LSR to immediate strict nexthop*/
-                rsvp_tunnel_t *rsvp_tunnel_data){
+                node_t *proxy_nbr,                                    /*oif from ingress LSR to immediate strict nexthop*/
+                rsvp_tunnel_t *rsvp_tunnel_data){                     /*output*/
 
     boolean rc = FALSE;
     glthread_t *curr = NULL;
@@ -140,10 +139,9 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level ,/*Ingress LSR*/
     inet_key.u.prefix.mask = 32;
 
     /*This is Non production code compliance*/
-    node_t *edgress_lsr = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id, level);
+    node_t *edgress_lsr = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id, LEVEL1);
     if(!edgress_lsr){
-        edgress_lsr = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id,
-                level == LEVEL1 ? LEVEL2 : LEVEL1);
+        edgress_lsr = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id, LEVEL2);
     }
 
     if(!edgress_lsr){
@@ -231,8 +229,8 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level ,/*Ingress LSR*/
             SET_BIT(new_nexthop->flags, PRIMARY_NH);
             SET_BIT(new_nexthop->flags, IPV4_RSVP_NH);
             /* Backup properties need to be filled by caller
-             *              * depending on whether this tunnel if primary
-             *                           * tunnel or backup tunnel*/
+             * depending on whether this tunnel if primary
+             * tunnel or backup tunnel*/
             new_nexthop->lfa_type = NO_LFA;
             new_nexthop->protected_link = NULL;
             new_nexthop->root_metric = 0;
@@ -246,7 +244,7 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level ,/*Ingress LSR*/
             rsvp_tunnel_data->rsvp_label = new_nexthop->nh.inet3_nh.mpls_label_out[0];
 
             /*Now install it in inet.3 table*/
-            rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, level, new_nexthop);
+            rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, rt_un_entry->level, new_nexthop);
             if(!rc){
                 printf("Failed to install RSVP nexthop in %s\n", inet_3_rib->rib_name);
                 free_un_nexthop(new_nexthop);
@@ -321,7 +319,7 @@ create_targeted_rsvp_tunnel(node_t *ingress_lsr, LEVEL level ,/*Ingress LSR*/
         rsvp_tunnel_data->rsvp_label = new_nexthop->nh.inet3_nh.mpls_label_out[0];
 
         /*Now install it in inet.3 table*/
-        rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, level, new_nexthop);
+        rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, rt_un_entry->level, new_nexthop);
         if(!rc){
             printf("Failed to install RSVP nexthop in %s. Tunnel construction aborted\n", inet_3_rib->rib_name);
             free_un_nexthop(new_nexthop);
@@ -395,7 +393,7 @@ NEXT_NODE:
             strncpy(rsvp_tunnel_data->gateway, new_nexthop->gw_prefix, PREFIX_LEN);
 
             /*Now install it in inet.3 table*/
-            rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, level, new_nexthop);
+            rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, rt_un_entry->level, new_nexthop);
             if(!rc){
                 printf("Failed to install RSVP transit nexthop in %s on node %s. Tunnel construction aborted\n",
                         mpls_0_rib->rib_name, next_node->node_name);
@@ -457,7 +455,7 @@ NEXT_NODE:
 
 
                 /*Now install it in mpls.0 table*/
-                rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, level, new_nexthop);
+                rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, rt_un_entry->level, new_nexthop);
                 if(!rc){
                     printf("Failed to install RSVP transit nexthop in %s. Tunnel construction aborted\n\n", mpls_0_rib->rib_name);
                     free_un_nexthop(new_nexthop);
@@ -490,8 +488,8 @@ NEXT_NODE:
         SET_BIT(new_nexthop->flags, PRIMARY_NH);
         SET_BIT(new_nexthop->flags, RSVP_TRANSIT_NH);
         /* Backup properties need to be filled by caller
-         *          * depending on whether this tunnel if primary
-         *                   * tunnel or backup tunnel*/
+         * depending on whether this tunnel if primary
+         * tunnel or backup tunnel*/
         new_nexthop->lfa_type = NO_LFA;
         new_nexthop->protected_link = NULL;
         new_nexthop->root_metric = 0;
@@ -500,7 +498,7 @@ NEXT_NODE:
         init_glthread(&new_nexthop->glthread);
 
         /*Now install it in inet.3 table*/
-        rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, level, new_nexthop);
+        rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, LEVEL1/*dont matter*/, new_nexthop);
         if(!rc){
             printf("Failed to install RSVP transit nexthop in %s on node %s\n",
                     mpls_0_rib->rib_name, next_node->node_name);
