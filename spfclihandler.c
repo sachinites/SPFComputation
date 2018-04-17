@@ -1126,7 +1126,7 @@ instance_node_ldp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
         }
         break;
         case CMDCODE_CONFIG_NODE_LDP_TUNNEL:
-            rc = create_targeted_ldp_tunnel(node, LEVEL1, router_id, 0, 0, 0);
+            rc = create_targeted_ldp_tunnel(node, router_id, 0, 0, 0);
             if(rc == -1) {
                 printf("LDP tunnel creation failed\n");   
             }

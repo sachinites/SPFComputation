@@ -236,7 +236,8 @@ show_route_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disabl
     switch(cmd_code){
         case CMDCODE_SHOW_NODE_INTERNAL_ROUTES:
             show_internal_routing_tree(node, prefix, mask, UNICAST_T);
-            show_internal_routing_tree(node, prefix, mask, SPRING_T);
+            if(node->spring_enabled)
+                show_internal_routing_tree(node, prefix, mask, SPRING_T);
             break;
         case CMDCODE_SHOW_NODE_FORWARDING_TABLE:
            inet_0_display(node->spf_info.rib[INET_0], prefix, mask);

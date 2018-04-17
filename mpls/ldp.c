@@ -110,7 +110,7 @@ get_ldp_label_binding(node_t *down_stream_node,
 }
 
 int
-create_targeted_ldp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
+create_targeted_ldp_tunnel(node_t *ingress_lsr, /*Ingress LSR*/
         char *edgress_lsr_rtr_id,                             /*Egress LSR router id*/
         edge_end_t *oif, char *gw_ip,
         node_t *proxy_nbr){                                   /*oif from ingress LSR to immediate strict nexthop*/
@@ -139,10 +139,9 @@ create_targeted_ldp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
     inet_key.u.prefix.mask = 32;
 
     /*This is Non production code compliance*/
-    node_t *edgress_lsr = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id, level);
+    node_t *edgress_lsr = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id, LEVEL1);
     if(!edgress_lsr){
-        edgress_lsr = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id, 
-                level == LEVEL1 ? LEVEL2 : LEVEL1);   
+        edgress_lsr = get_system_id_from_router_id(ingress_lsr, edgress_lsr_rtr_id, LEVEL2);   
     }
 
     if(!edgress_lsr){
@@ -235,7 +234,7 @@ create_targeted_ldp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
             init_glthread(&new_nexthop->glthread);
 
             /*Now install it in inet.3 table*/
-            rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, level, new_nexthop);
+            rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, rt_un_entry->level, new_nexthop);
             if(!rc){
                 printf("Failed to install LDP nexthop in %s\n", inet_3_rib->rib_name);
                 free_un_nexthop(new_nexthop);
@@ -300,7 +299,7 @@ create_targeted_ldp_tunnel(node_t *ingress_lsr, LEVEL level , /*Ingress LSR*/
         init_glthread(&new_nexthop->glthread);
 
         /*Now install it in inet.3 table*/
-        rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, level, new_nexthop);
+        rc = inet_3_rt_un_route_install_nexthop(inet_3_rib, &inet_key, rt_un_entry->level, new_nexthop);
         if(!rc){
             printf("Failed to install LDP nexthop in %s. Tunnel construction aborted\n", inet_3_rib->rib_name);
             free_un_nexthop(new_nexthop);
@@ -370,7 +369,7 @@ NEXT_NODE:
             init_glthread(&new_nexthop->glthread);
 
             /*Now install it in inet.3 table*/
-            rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, level, new_nexthop);
+            rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, rt_un_entry->level, new_nexthop);
             if(!rc){
                 printf("Failed to install LDP transit nexthop in %s on node %s. Tunnel construction aborted\n", 
                         mpls_0_rib->rib_name, next_node->node_name);
@@ -431,7 +430,7 @@ NEXT_NODE:
                 init_glthread(&new_nexthop->glthread);
 
                 /*Now install it in mpls.0 table*/
-                rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, level, new_nexthop);
+                rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, rt_un_entry->level, new_nexthop);
                 if(!rc){
                     printf("Failed to install LDP transit nexthop in %s. Tunnel construction aborted\n\n", mpls_0_rib->rib_name);
                     free_un_nexthop(new_nexthop);
@@ -474,7 +473,8 @@ NEXT_NODE:
         init_glthread(&new_nexthop->glthread);
 
         /*Now install it in inet.3 table*/
-        rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, level, new_nexthop);
+        rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, LEVEL1/*dont matter*/, new_nexthop);
+
         if(!rc){
             printf("Failed to install LDP transit nexthop in %s on node %s\n", 
                     mpls_0_rib->rib_name, next_node->node_name);

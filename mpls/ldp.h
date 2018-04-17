@@ -57,7 +57,7 @@ get_ldp_label_binding(node_t *down_stream_node,
         char *prefix, char mask);
 
 int
-create_targeted_ldp_tunnel(node_t *ingress_lsr, LEVEL level, 
+create_targeted_ldp_tunnel(node_t *ingress_lsr, 
                            char *edgress_lsr_rtr_id,
                            edge_end_t *oif, char *gw_ip,
                            node_t *proxy_nbr);

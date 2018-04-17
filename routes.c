@@ -37,6 +37,7 @@
 #include "spftrace.h"
 #include "igp_sr_ext.h"
 #include "sr_tlv_api.h"
+#include "no_warn.h"
 
 extern instance_t *instance;
 
