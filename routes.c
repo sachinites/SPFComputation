@@ -1249,7 +1249,7 @@ show_internal_routing_tree(node_t *node, char *prefix, char mask, rtttype_t rt_t
                         IS_BIT_SET(route->flags, PREFIX_METRIC_TYPE_EXT) ? "EXT" : "INT",
                         route->level,
                         "Direct", "",
-                        "--", "--", "");
+                        "--", "", "");
                 if(prefix)
                     return;
                 else

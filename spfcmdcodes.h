@@ -106,10 +106,10 @@
 #define CMDCODE_CONFIG_NODE_SR_ADJ_SID                      59 /*config node <node-name> interface <if-name> adjacency-sid <adj-sid>*/
 #define CMDCODE_SHOW_NODE_SPRING                            60 /*show instance node <node-name> level <level-no> spring*/
 //#define CMDCODE_DEBUG_TRACEOPTIONS_MPLS_ROUTE_INSTALLATION  61 /*conf debug set trace mpls-route-installation*/
-#define CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE       62 /*conf node <node-name> mpls install route <dst-prefix> <mask>*/
+//#define CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE       62 /*conf node <node-name> mpls install route <dst-prefix> <mask>*/
 #define CMDCODE_SHOW_NODE_MPLS_FORWARDINNG_TABLE            63 /*show instance node <node-name> mpls forwarding-table*/
 //#define CMDCODE_SHOW_NODE_TRACEROUTE_SR_MPLS                64 /*show instance node <node-name> traceroute <prefix> sr-mpls*/
-#define CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK               65 /*debug trace mpls stack labels <label1> <label2> <label3> <label4>*/
+//#define CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK               65 /*debug trace mpls stack labels <label1> <label2> <label3> <label4>*/
 #define CMDCODE_CONFIG_NODE_SR_EXPLICIT_NULL                71 /*config node <node-name> source-packet-routing explicit-null*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_SPRING_ROUTE_CAL         73 /*config debug set trace spring-route-calculation*/
 

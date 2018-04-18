@@ -1448,33 +1448,6 @@ spf_init_dcm(){
             }
         }
 
-        /* config node <node-name> mpls install route <dst-prefix> <mask>*/
-        {
-            static param_t mpls;
-            init_param(&mpls, CMD, "mpls", 0, 0, INVALID, 0, "MPLS configurations");
-            libcli_register_param(&config_node_node_name, &mpls);
-            {
-                static param_t install;
-                init_param(&install, CMD, "install", 0, 0, INVALID, 0, "Install static Configuration");
-                libcli_register_param(&mpls, &install);
-                {
-                    static param_t route;
-                    init_param(&route, CMD, "route", 0, 0, INVALID, 0, "Install static route");
-                    libcli_register_param(&install, &route);
-                    {
-                        static param_t prefix;
-                        init_param(&prefix, LEAF, 0, 0, 0, IPV4, "prefix", "Ipv4 prefix without mask");
-                        libcli_register_param(&route, &prefix);
-                        {
-                            static param_t mask;
-                            init_param(&mask, LEAF, 0, instance_node_spring_config_handler, validate_ipv4_mask, INT, "mask", "mask (0-32)");
-                            libcli_register_param(&prefix, &mask);
-                            set_param_cmd_code(&mask, CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE);
-                        }
-                    }
-                }
-            }
-        }
         static param_t config_node_node_name_slot;
         init_param(&config_node_node_name_slot, CMD, "interface", 0, 0, INVALID, 0, "interface");
         libcli_register_param(&config_node_node_name, &config_node_node_name_slot);
@@ -1779,52 +1752,6 @@ spf_init_dcm(){
         static param_t instance_node_name;
         init_param(&instance_node_name, LEAF, 0, 0, validate_node_extistence, STRING, "node-name", "Node Name");
         libcli_register_param(&instance_node, &instance_node_name);
-
-        /*debug instance node <node-name> trace mpls stack labels <label> <label> <label> <label>*/
-        {
-            static param_t trace;
-            init_param(&trace, CMD, "trace", 0, 0, INVALID, 0, "trace"); 
-            libcli_register_param(&instance_node_name, &trace);
-            {
-                static param_t mpls;
-                init_param(&mpls, CMD, "mpls", 0, 0, INVALID, 0, "MPLS protocol"); 
-                libcli_register_param(&trace, &mpls);
-                {
-                    static param_t stack;
-                    init_param(&stack, CMD, "stack", 0, 0, INVALID, 0, "stack"); 
-                    libcli_register_param(&mpls, &stack);
-                    {
-                        static param_t labels;
-                        init_param(&labels, CMD, "labels", 0, 0, INVALID, 0, "labels"); 
-                        libcli_register_param(&stack, &labels);
-                        {
-                            static param_t label1;
-                            init_param(&label1, LEAF, 0, debug_trace_mpls_stack_label, validate_global_sid_value, INT, "label", "SR MPLS label value"); 
-                            libcli_register_param(&stack, &label1);
-                            set_param_cmd_code(&label1, CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK);
-                            {
-                                static param_t label2;
-                                init_param(&label2, LEAF, 0, debug_trace_mpls_stack_label, validate_global_sid_value, INT, "label", "SR MPLS label value"); 
-                                libcli_register_param(&label1, &label2);
-                                set_param_cmd_code(&label2, CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK);
-                                {
-                                    static param_t label3;
-                                    init_param(&label3, LEAF, 0, debug_trace_mpls_stack_label, validate_global_sid_value, INT, "label", "SR MPLS label value"); 
-                                    libcli_register_param(&label2, &label3);
-                                    set_param_cmd_code(&label3, CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK);
-                                    {
-                                        static param_t label4;
-                                        init_param(&label4, LEAF, 0, debug_trace_mpls_stack_label, validate_global_sid_value, INT, "label", "SR MPLS label value"); 
-                                        libcli_register_param(&label3, &label4);
-                                        set_param_cmd_code(&label4, CMDCODE_DEBUG_TRACE_SR_MPLS_SID_STACK);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         static param_t route;
         init_param(&route, CMD, "route", show_route_tree_handler, 0, INVALID, 0,  "route on a node");

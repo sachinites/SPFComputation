@@ -950,17 +950,6 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
         }
         node->srgb->first_sid.sid = first_sid;
         break; 
-        case CMDCODE_CONFIG_NODE_STATIC_INSTALL_MPLS_ROUTE:
-        switch(enable_or_disable){
-            case CONFIG_ENABLE:
-                //igp_install_mpls_spring_route(node, prefix, mask);
-                break;
-            case CONFIG_DISABLE:
-                //igp_uninstall_mpls_spring_route(node, prefix, mask);
-                break;
-             default:
-                ;
-        }
         default:
         ;
     }
