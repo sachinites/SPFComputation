@@ -9,7 +9,7 @@ DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethr
 OBJ=advert.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
 	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 				   \
 	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o igp_sr_ext.o 			\
-	sr_tlv_api.o data_plane.o srms.o conflct_res.o ${DSOBJ}
+	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -24,6 +24,9 @@ testapp.o:testapp.c
 data_plane.o:data_plane.c
 	@echo "Building data_plane.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} data_plane.c  -o data_plane.o
+complete_spf_path.o:complete_spf_path.c
+	@echo "Building complete_spf_path.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} complete_spf_path.c -o complete_spf_path.o
 srms.o:srms.c
 	@echo "Building srms.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} srms.c -o srms.o

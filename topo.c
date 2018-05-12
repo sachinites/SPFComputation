@@ -924,18 +924,18 @@ multi_primary_nxt_hops(){
 #if 0
                                                                        +---------+
                                                               11.1.1.2 |         |
-                                                  +------------------+-+  R2     |
+                                                  +---------10-------+-+  R2     |
                                                   |11.1.1.1       0/1  |         |
                                                   |0/2                 |         |
                                              +----+---+                +-----+-+-+
            +------+10.1.1.1              0/1 |        |                      |0/2 20.1.1.1  
-           |      +--------------------------+   R1   |                      +
+           |      +---------10---------------+   R1   |                      +10(cost)
            | R0   |0/0               10.1.1.2|        |                      |
            +--+--+                          +-+-+----+                      |0/2 20.1.1.2
               |0/1                        0/3 |  |0/0                   +----++---+
               |30.1.1.1               30.1.1.2|  |12.1.1.1              |         |
               |                               |  |                  0/1 |         |
-              +---------------15--------------+  +----------------------+   R3    |
+              +---------------10--------------+  +----------10----------+   R3    |
                                                                 12.1.1.2|         |
                                                                         +---------+
 
@@ -952,7 +952,7 @@ multi_primary_nxt_hops(){
     insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30, LEVEL1), create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R0, R1, BIDIRECTIONAL);
 
-    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/3", 15, create_new_prefix("30.1.1.1", 30, LEVEL1), create_new_prefix("30.1.1.2", 30, LEVEL1), LEVEL1)),
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/3", 10, create_new_prefix("30.1.1.1", 30, LEVEL1), create_new_prefix("30.1.1.2", 30, LEVEL1), LEVEL1)),
                                 R0, R1, BIDIRECTIONAL);
 
     insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/1", 10, create_new_prefix("11.1.1.1", 30, LEVEL1), create_new_prefix("11.1.1.2", 30, LEVEL1), LEVEL1)),

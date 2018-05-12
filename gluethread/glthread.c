@@ -98,7 +98,7 @@ remove_glthread(glthread_t *curr_glthread){
 }
 
 void
-delete_thread_list(glthread_t *base_glthread){
+delete_glthread_list(glthread_t *base_glthread){
 
     glthread_t *glthreadptr = NULL;
                

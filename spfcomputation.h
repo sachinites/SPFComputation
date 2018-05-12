@@ -196,6 +196,10 @@ typedef struct spf_result_{
     unsigned int lsp_metric;
     internal_nh_t next_hop[NH_MAX][MAX_NXT_HOPS];
     node_backup_req_t backup_requirement[MAX_LEVEL];
+    /*In production code, probably you dont need to copy
+     * the spf path list into this structure because there is
+     * only one spf_root*/
+    glthread_t spf_path_list[NH_MAX];
 } spf_result_t;
 
 /*We dont need next_hop[][] memory*/

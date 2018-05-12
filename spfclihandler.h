@@ -95,4 +95,5 @@ instance_node_ldp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode en
 
 int
 instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
+
 #endif /* __SPFCLIHANDLER__ */

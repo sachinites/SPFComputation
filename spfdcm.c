@@ -57,6 +57,8 @@ extern void
 inet_3_display(rt_un_table_t *rib, char *prefix, char mask);
 extern int
 ping_backup(char *node_name, char *dst_prefix);
+extern void
+show_spf_path(node_t *spf_root, LEVEL level);
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
@@ -901,6 +903,9 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
         case CMDCODE_SHOW_SPF_RUN:
             spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);
             show_spf_results(spf_root, level);
+            break;
+        case CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE:
+            show_spf_path(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_RUN_PRC:
             partial_spf_run(spf_root, level);
@@ -1827,6 +1832,13 @@ spf_init_dcm(){
                             init_param(&sid_prefix_conflict_result, CMD, "sid-prefix-conflict-result", instance_node_spring_show_handler, 0, INVALID, 0, "SR : sid-prefix-conflict results"); 
                             libcli_register_param(&level_no, &sid_prefix_conflict_result);
                             set_param_cmd_code(&sid_prefix_conflict_result, CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT);
+                        }
+                        /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
+                        {
+                            static param_t spf_path;
+                            init_param(&spf_path, CMD, "spf-path", show_spf_run_handler, 0, INVALID, 0, "trace spf-path");
+                            libcli_register_param(&level_no, &spf_path);
+                            set_param_cmd_code(&spf_path, CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE);
                         }
                     }
                 }

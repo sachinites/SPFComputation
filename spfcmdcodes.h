@@ -144,4 +144,8 @@
 #define CMDCODE_SHOW_NODE_MPLS_RSVP_BINDINGS                88 /*show instance node <node-name> mpls rsvp bindings <prefix> <mask>*/
 #define CMDCODE_CONFIG_NODE_RSVP_TUNNEL                     90 /*config node <node-name> rsvp tunnel <router-id> <tunnel-name>*/
 #define CMDCODE_SHOW_NODE_MPLS_RSVP_LSP                     91 /*show instance node <node-name> mpls rsvp*/
+
+/*Complete SPF path trace*/
+#define CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE                   92 /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
+
 #endif /* __SPFCMDCODES__H */

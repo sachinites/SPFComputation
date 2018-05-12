@@ -44,6 +44,7 @@
 #include "igp_sr_ext.h"
 #include "common.h"
 #include "no_warn.h"
+#include "complete_spf_path.h"
 
 extern instance_t * instance;
 
@@ -614,8 +615,13 @@ show_spf_initialization(node_t *spf_root, LEVEL level){
 
    node_t *phy_nbr = NULL, 
           *logical_nbr = NULL;
+
    edge_t *edge = NULL, *pn_edge = NULL;
    
+   glthread_t *spf_path_list = NULL;
+   nh_type_t nh;
+   glthread_t *curr = NULL;
+
    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, phy_nbr, logical_nbr, edge, pn_edge, level){ 
        
         printf("Nbr = %s, IP Direct NH count = %u, LSP Direct NH count = %u, metric = %u\n", 
@@ -624,6 +630,26 @@ show_spf_initialization(node_t *spf_root, LEVEL level){
                 !is_nh_list_empty2(&phy_nbr->direct_next_hop[level][IPNH][0]) ? 
                     get_direct_next_hop_metric(phy_nbr->direct_next_hop[level][IPNH][0], level) :
                     get_direct_next_hop_metric(phy_nbr->direct_next_hop[level][LSPNH][0], level));
+   } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, phy_nbr, logical_nbr, level);
+
+   ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, phy_nbr, logical_nbr, edge, pn_edge, level){
+
+       ITERATE_NH_TYPE_BEGIN(nh){
+           printf("Node : %s, spf path list for NH-TYPE : %s\n", phy_nbr->node_name,
+                   nh == IPNH ? "IPNH" : "LSPNH");            
+           spf_path_list = &phy_nbr->pred_lst[level][nh];
+
+           ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+
+               pred_info_t *pred_info = glthread_to_pred_info(curr);
+               printf("\tNode-name = %s, oif = %s, gw-prefix = %s\n",
+                       pred_info->node->node_name,
+                       pred_info->oif->intf_name,
+                       pred_info->gw_prefix);
+           } ITERATE_GLTHREAD_END(spf_path_list, curr);
+
+       } ITERATE_NH_TYPE_END;
+              
    } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, phy_nbr, logical_nbr, level);
 }
 
@@ -955,6 +981,38 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
     }
     return 0;
 }
+
+void
+show_spf_path(node_t *spf_root, LEVEL level){
+
+    glthread_t *curr = NULL;
+    pred_info_t *pred_info = NULL;
+    singly_ll_node_t *list_node = NULL;
+    nh_type_t nh;
+
+    ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
+
+        spf_result_t *res = list_node->data;
+
+        ITERATE_NH_TYPE_BEGIN(nh){
+
+            printf("Node : %s, %s spf path list for NH-TYPE : %s\n", res->node->node_name,
+                    get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH");
+
+            ITERATE_GLTHREAD_BEGIN(&res->spf_path_list[nh], curr){
+
+                pred_info = glthread_to_pred_info(curr);
+                printf("\tNode-name = %s, oif = %s, gw-prefix = %s\n",
+                        pred_info->node->node_name,
+                        pred_info->oif->intf_name,
+                        pred_info->gw_prefix);
+
+            } ITERATE_GLTHREAD_END(&res->spf_path_list[nh], curr);
+        } ITERATE_NH_TYPE_END;
+    } ITERATE_LIST_END;
+}
+
+
 
 int
 instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){

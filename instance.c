@@ -50,6 +50,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     
     LEVEL level;
     prefix_t *router_id_pfx = NULL;
+    nh_type_t nh;
 
     assert(node_name);
     node_t * node = calloc(1, sizeof(node_t));
@@ -88,6 +89,11 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
                         self_spf_run_result_comparison_fn);
         
         init_glthread(&node->prefix_sids_thread_lst[level]);
+
+        /*Initialize predecessor path lists*/
+        ITERATE_NH_TYPE_BEGIN(nh){
+            init_glthread(&node->pred_lst[level][nh]);
+        } ITERATE_NH_TYPE_END;
     }
 
     rtttype_t rt_type;

@@ -63,7 +63,13 @@ typedef struct _node_t{
     internal_nh_t backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     //internal_nh_t old_backup_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
     internal_nh_t direct_next_hop[MAX_LEVEL][NH_MAX][MAX_NXT_HOPS];
+
+    /*Complete path spf run*/
+    glthread_t pred_lst[MAX_LEVEL][NH_MAX];
+
+    /*Fields to handle pseudonode case*/
     edge_end_t *pn_intf[MAX_LEVEL];
+    node_t *pred_node[MAX_LEVEL];
 
     ll_t *local_prefix_list[MAX_LEVEL];
     ll_t *self_spf_result[MAX_LEVEL];                       /*Used for LFA and RLFA computation*/ 
