@@ -170,8 +170,84 @@ union_spf_path_lists(glthread_t *spf_path_list1,
     } ITERATE_GLTHREAD_END(spf_path_list2, curr);
 }
 
+/*API to construct the SPF path from spf_root to dst_node*/
+
+typedef struct pred_info_wrapper_t_{
+
+    pred_info_t *pred_info;
+    glthread_t glue;
+} pred_info_wrapper_t;
+
+GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue, glthreadptr);
+
+static void
+print_pred_info_wrapper_path_list(glthread_t *path){
+
+    glthread_t *curr = NULL;
+    pred_info_t *pred_info = NULL;
+    pred_info_wrapper_t *pred_info_wrapper = NULL;
+
+    ITERATE_GLTHREAD_BEGIN(path, curr){
+
+        pred_info_wrapper = glthread_to_pred_info_wrapper(curr);
+        pred_info = pred_info_wrapper->pred_info;
+        printf("%s -> ", pred_info->node->node_name);
+    } ITERATE_GLTHREAD_END(path, curr);
+}
+
+
+static void
+print_spf_path_recursively(node_t *spf_root, glthread_t *spf_path_list, 
+                           LEVEL level, nh_type_t nh, glthread_t *path){
+    
+    glthread_t *curr = NULL;
+    pred_info_t *pred_info = NULL;
+    spf_result_t *res = NULL;
+
+    ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+
+        pred_info = glthread_to_pred_info(curr);
+        pred_info_wrapper_t pred_info_wrapper;
+        pred_info_wrapper.pred_info = pred_info;
+        init_glthread(&pred_info_wrapper.glue);
+        glthread_add_next(path, &pred_info_wrapper.glue);
+        res = GET_SPF_RESULT((&spf_root->spf_info), pred_info->node, level);
+        assert(res);
+        print_spf_path_recursively(spf_root, &res->spf_path_list[nh], 
+                                    level, nh, path);
+        if(pred_info->node == spf_root){
+            print_pred_info_wrapper_path_list(path);
+            printf("\n");
+        }
+        remove_glthread(path->right);
+    } ITERATE_GLTHREAD_END(spf_path_list, curr);
+}
+
 void
 trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level){
 
+   nh_type_t nh;
+   glthread_t path;
+   spf_result_t *res = NULL;
+   init_glthread(&path);
+   pred_info_wrapper_t pred_info_wrapper;
+   pred_info_t pred_info;
 
+   /*Add destination node as pred_info*/
+   memset(&pred_info, 0 , sizeof(pred_info_t));
+   pred_info.node = dst_node;
+   pred_info_wrapper.pred_info = &pred_info;
+   init_glthread(&pred_info_wrapper.glue);
+   glthread_add_next(&path, &pred_info_wrapper.glue);               
+             
+   ITERATE_NH_TYPE_BEGIN(nh){    
+       res = GET_SPF_RESULT((&spf_root->spf_info), dst_node, level);
+       if(!res){
+            printf("Spf root : %s, Dst Node : %s. Path not found", 
+                spf_root->node_name, dst_node->node_name);
+            return;
+       }
+       glthread_t *spf_path_list = &res->spf_path_list[nh];
+       print_spf_path_recursively(spf_root, spf_path_list, level, nh, &path);
+   } ITERATE_NH_TYPE_END;
 }

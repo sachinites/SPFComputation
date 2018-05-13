@@ -59,6 +59,8 @@ extern int
 ping_backup(char *node_name, char *dst_prefix);
 extern void
 show_spf_path(node_t *spf_root, LEVEL level);
+extern void 
+trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level);
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
@@ -878,8 +880,10 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
 
     tlv_struct_t *tlv = NULL;
     LEVEL level = LEVEL1 | LEVEL2;;
-    char *node_name = NULL;
-    node_t *spf_root = NULL;
+    char *node_name = NULL,
+         *dst_node_name = NULL;
+    node_t *spf_root = NULL,
+           *dst_node = NULL;
     int CMDCODE = -1;
 
     CMDCODE = EXTRACT_CMD_CODE(tlv_buf);
@@ -891,6 +895,9 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
         else if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0){
             node_name = tlv->value;
         }
+        else if(strncmp(tlv->leaf_id, "dst-node-name", strlen("dst-node-name")) ==0){
+            dst_node_name = tlv->value;
+        }
     } TLV_LOOP_END;
 
     if(node_name == NULL)
@@ -898,7 +905,9 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
     else
         spf_root = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
    
-   
+    if(dst_node_name)
+        dst_node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, dst_node_name);
+
     switch(CMDCODE){
         case CMDCODE_SHOW_SPF_RUN:
             spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);
@@ -906,6 +915,9 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             break;
         case CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE:
             show_spf_path(spf_root, level);
+            break;
+        case CMDCODE_DEBUG_SHOW_SPF_PATH_LIST:
+            trace_spf_path(spf_root, dst_node, level);
             break;
         case CMDCODE_SHOW_SPF_RUN_PRC:
             partial_spf_run(spf_root, level);
@@ -1833,12 +1845,20 @@ spf_init_dcm(){
                             libcli_register_param(&level_no, &sid_prefix_conflict_result);
                             set_param_cmd_code(&sid_prefix_conflict_result, CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT);
                         }
-                        /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
+                        /*debug show instance node <node-name> level <level-no> spf-path*/
                         {
                             static param_t spf_path;
                             init_param(&spf_path, CMD, "spf-path", show_spf_run_handler, 0, INVALID, 0, "trace spf-path");
                             libcli_register_param(&level_no, &spf_path);
                             set_param_cmd_code(&spf_path, CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE);
+                            {
+                                /*debug show instance node <node-name> level <level-no> spf-path <dst-node-name>*/
+                                static param_t dst_node_name;
+                                init_param(&dst_node_name, LEAF, 0, show_spf_run_handler, 
+                                        validate_node_extistence, STRING, "dst-node-name", "Dest Node Name");
+                                libcli_register_param(&spf_path, &dst_node_name);
+                                set_param_cmd_code(&dst_node_name, CMDCODE_DEBUG_SHOW_SPF_PATH_LIST);
+                            }
                         }
                     }
                 }

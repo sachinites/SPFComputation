@@ -146,6 +146,6 @@
 #define CMDCODE_SHOW_NODE_MPLS_RSVP_LSP                     91 /*show instance node <node-name> mpls rsvp*/
 
 /*Complete SPF path trace*/
-#define CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE                   92 /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
-
+#define CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE                   92 /*debug show instance node <node-name> level <level-no> spf-path */
+#define CMDCODE_DEBUG_SHOW_SPF_PATH_LIST                    93 /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
 #endif /* __SPFCMDCODES__H */
