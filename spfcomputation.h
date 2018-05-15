@@ -199,7 +199,7 @@ typedef struct spf_result_{
     /*In production code, probably you dont need to copy
      * the spf path list into this structure because there is
      * only one spf_root*/
-    glthread_t spf_path_list[NH_MAX];
+    glthread_t spf_predecessors[NH_MAX];
 } spf_result_t;
 
 /*We dont need next_hop[][] memory*/

@@ -618,7 +618,7 @@ show_spf_initialization(node_t *spf_root, LEVEL level){
 
    edge_t *edge = NULL, *pn_edge = NULL;
    
-   glthread_t *spf_path_list = NULL;
+   glthread_t *spf_predecessors = NULL;
    nh_type_t nh;
    glthread_t *curr = NULL;
 
@@ -637,16 +637,16 @@ show_spf_initialization(node_t *spf_root, LEVEL level){
        ITERATE_NH_TYPE_BEGIN(nh){
            printf("Node : %s, spf path list for NH-TYPE : %s\n", phy_nbr->node_name,
                    nh == IPNH ? "IPNH" : "LSPNH");            
-           spf_path_list = &phy_nbr->pred_lst[level][nh];
+           spf_predecessors = &phy_nbr->pred_lst[level][nh];
 
-           ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+           ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
 
                pred_info_t *pred_info = glthread_to_pred_info(curr);
                printf("\tNode-name = %s, oif = %s, gw-prefix = %s\n",
                        pred_info->node->node_name,
                        pred_info->oif->intf_name,
                        pred_info->gw_prefix);
-           } ITERATE_GLTHREAD_END(spf_path_list, curr);
+           } ITERATE_GLTHREAD_END(spf_predecessors, curr);
 
        } ITERATE_NH_TYPE_END;
               
@@ -999,7 +999,7 @@ show_spf_path(node_t *spf_root, LEVEL level){
             printf("Node : %s, %s spf path list for NH-TYPE : %s\n", res->node->node_name,
                     get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH");
 
-            ITERATE_GLTHREAD_BEGIN(&res->spf_path_list[nh], curr){
+            ITERATE_GLTHREAD_BEGIN(&res->spf_predecessors[nh], curr){
 
                 pred_info = glthread_to_pred_info(curr);
                 printf("\tNode-name = %s, oif = %s, gw-prefix = %s\n",
@@ -1007,7 +1007,7 @@ show_spf_path(node_t *spf_root, LEVEL level){
                         pred_info->oif->intf_name,
                         pred_info->gw_prefix);
 
-            } ITERATE_GLTHREAD_END(&res->spf_path_list[nh], curr);
+            } ITERATE_GLTHREAD_END(&res->spf_predecessors[nh], curr);
         } ITERATE_NH_TYPE_END;
     } ITERATE_LIST_END;
 }

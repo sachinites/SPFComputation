@@ -62,21 +62,21 @@ init_spf_paths_lists(instance_t *instance, LEVEL level){
 }
 
 void
-clear_spf_path_list(glthread_t *spf_path_list){
+clear_spf_predecessors(glthread_t *spf_predecessors){
 
     glthread_t *curr = NULL;
 
-    ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+    ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
 
         pred_info_t *pred_info = glthread_to_pred_info(curr);
         free(pred_info);
-    } ITERATE_GLTHREAD_END(spf_path_list, curr);
+    } ITERATE_GLTHREAD_END(spf_predecessors, curr);
 
-    delete_glthread_list(spf_path_list);
+    delete_glthread_list(spf_predecessors);
 }
 
 void
-add_pred_info_to_spf_path_list(glthread_t *spf_path_list,
+add_pred_info_to_spf_predecessors(glthread_t *spf_predecessors,
                                node_t *pred_node,
                                edge_end_t *oif, char *gw_prefix){
 
@@ -90,16 +90,16 @@ add_pred_info_to_spf_path_list(glthread_t *spf_path_list,
     init_glthread(&(pred_info->glue));
 
     /*Check for duplicates*/
-    ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+    ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
         temp = glthread_to_pred_info(curr);
         assert(pred_info_compare_fn((void *)pred_info, (void *)temp));
-    } ITERATE_GLTHREAD_END(spf_path_list, curr);
+    } ITERATE_GLTHREAD_END(spf_predecessors, curr);
     
-    glthread_add_next(spf_path_list, &(pred_info->glue));
+    glthread_add_next(spf_predecessors, &(pred_info->glue));
 }
 
 void
-del_pred_info_from_spf_path_list(glthread_t *spf_path_list, node_t *pred_node,
+del_pred_info_from_spf_predecessors(glthread_t *spf_predecessors, node_t *pred_node,
                                  edge_end_t *oif, char *gw_prefix){
 
     pred_info_t pred_info, *lst_pred_info = NULL;
@@ -109,7 +109,7 @@ del_pred_info_from_spf_path_list(glthread_t *spf_path_list, node_t *pred_node,
 
     glthread_t *curr = NULL;
 
-    ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+    ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
         
         lst_pred_info = glthread_to_pred_info(curr);
         if(pred_info_compare_fn(&pred_info, lst_pred_info))
@@ -117,57 +117,57 @@ del_pred_info_from_spf_path_list(glthread_t *spf_path_list, node_t *pred_node,
         remove_glthread(&(lst_pred_info->glue));
         free(lst_pred_info);
         return; 
-    } ITERATE_GLTHREAD_END(spf_path_list, curr);
+    } ITERATE_GLTHREAD_END(spf_predecessors, curr);
     assert(0);
 }
 
 boolean
-is_pred_exist_in_spf_path_list(glthread_t *spf_path_list, 
+is_pred_exist_in_spf_predecessors(glthread_t *spf_predecessors, 
                                 pred_info_t *pred_info){
     
     glthread_t *curr = NULL;
     pred_info_t *lst_pred_info = NULL;
 
-    ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+    ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
         
         lst_pred_info = glthread_to_pred_info(curr);
         if(pred_info_compare_fn(lst_pred_info, pred_info))
             continue;
         return TRUE;
-    } ITERATE_GLTHREAD_END(spf_path_list, curr);
+    } ITERATE_GLTHREAD_END(spf_predecessors, curr);
     return FALSE;
 }
 
 void
-print_local_spf_path_list(glthread_t *spf_path_list){
+print_local_spf_predecessors(glthread_t *spf_predecessors){
 
     glthread_t *curr = NULL;
 
-    ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+    ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
 
         pred_info_t *pred_info = glthread_to_pred_info(curr);
         printf("Node-name = %s, oif = %s, gw-prefix = %s\n", 
                 pred_info->node->node_name, 
                 pred_info->oif->intf_name, 
                 pred_info->gw_prefix);
-    } ITERATE_GLTHREAD_END(spf_path_list, curr);
+    } ITERATE_GLTHREAD_END(spf_predecessors, curr);
 }
 
 void
-union_spf_path_lists(glthread_t *spf_path_list1, 
-                     glthread_t *spf_path_list2){
+union_spf_predecessorss(glthread_t *spf_predecessors1, 
+                     glthread_t *spf_predecessors2){
 
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;
 
-    ITERATE_GLTHREAD_BEGIN(spf_path_list2, curr){
+    ITERATE_GLTHREAD_BEGIN(spf_predecessors2, curr){
 
         pred_info = glthread_to_pred_info(curr);
-        if(is_pred_exist_in_spf_path_list(spf_path_list1, pred_info))
+        if(is_pred_exist_in_spf_predecessors(spf_predecessors1, pred_info))
             continue;
         remove_glthread(&pred_info->glue);
-        glthread_add_next(spf_path_list1, &pred_info->glue);
-    } ITERATE_GLTHREAD_END(spf_path_list2, curr);
+        glthread_add_next(spf_predecessors1, &pred_info->glue);
+    } ITERATE_GLTHREAD_END(spf_predecessors2, curr);
 }
 
 /*API to construct the SPF path from spf_root to dst_node*/
@@ -186,25 +186,38 @@ print_pred_info_wrapper_path_list(glthread_t *path){
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;
     pred_info_wrapper_t *pred_info_wrapper = NULL;
+    boolean first = TRUE;
 
     ITERATE_GLTHREAD_BEGIN(path, curr){
 
         pred_info_wrapper = glthread_to_pred_info_wrapper(curr);
         pred_info = pred_info_wrapper->pred_info;
-        printf("%s -> ", pred_info->node->node_name);
+        if(first){
+            printf("%s(%s) -> ", pred_info->node->node_name, 
+                pred_info->oif->intf_name);
+            first = FALSE;
+            continue;
+        }
+        if(!curr->right)
+            break;
+        printf("(%s)%s(%s) -> (%s)", pred_info->gw_prefix, 
+            pred_info->node->node_name, pred_info->oif->intf_name,
+            pred_info->gw_prefix);
     } ITERATE_GLTHREAD_END(path, curr);
+
+    printf("%s", pred_info->node->node_name);
 }
 
 
 static void
-print_spf_path_recursively(node_t *spf_root, glthread_t *spf_path_list, 
+print_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors, 
                            LEVEL level, nh_type_t nh, glthread_t *path){
     
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;
     spf_result_t *res = NULL;
 
-    ITERATE_GLTHREAD_BEGIN(spf_path_list, curr){
+    ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
 
         pred_info = glthread_to_pred_info(curr);
         pred_info_wrapper_t pred_info_wrapper;
@@ -213,14 +226,14 @@ print_spf_path_recursively(node_t *spf_root, glthread_t *spf_path_list,
         glthread_add_next(path, &pred_info_wrapper.glue);
         res = GET_SPF_RESULT((&spf_root->spf_info), pred_info->node, level);
         assert(res);
-        print_spf_path_recursively(spf_root, &res->spf_path_list[nh], 
+        print_spf_path_recursively(spf_root, &res->spf_predecessors[nh], 
                                     level, nh, path);
         if(pred_info->node == spf_root){
             print_pred_info_wrapper_path_list(path);
             printf("\n");
         }
         remove_glthread(path->right);
-    } ITERATE_GLTHREAD_END(spf_path_list, curr);
+    } ITERATE_GLTHREAD_END(spf_predecessors, curr);
 }
 
 void
@@ -229,10 +242,10 @@ trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level){
    nh_type_t nh;
    glthread_t path;
    spf_result_t *res = NULL;
-   init_glthread(&path);
    pred_info_wrapper_t pred_info_wrapper;
    pred_info_t pred_info;
 
+   init_glthread(&path);
    /*Add destination node as pred_info*/
    memset(&pred_info, 0 , sizeof(pred_info_t));
    pred_info.node = dst_node;
@@ -247,7 +260,7 @@ trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level){
                 spf_root->node_name, dst_node->node_name);
             return;
        }
-       glthread_t *spf_path_list = &res->spf_path_list[nh];
-       print_spf_path_recursively(spf_root, spf_path_list, level, nh, &path);
+       glthread_t *spf_predecessors = &res->spf_predecessors[nh];
+       print_spf_path_recursively(spf_root, spf_predecessors, level, nh, &path);
    } ITERATE_NH_TYPE_END;
 }

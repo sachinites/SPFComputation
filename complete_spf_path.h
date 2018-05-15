@@ -54,33 +54,33 @@ init_spf_paths_lists(instance_t *instance, LEVEL level);
 /*clear the results in the spf path list in all nodes of graph
  * at level L*/
 void
-clear_spf_path_list(glthread_t *spf_path_list);
+clear_spf_predecessors(glthread_t *spf_predecessors);
 
 /*Add predecessor info to path list*/
 typedef struct _glthread glthread_t;
 
 void
-add_pred_info_to_spf_path_list(glthread_t *spf_path_list, 
+add_pred_info_to_spf_predecessors(glthread_t *spf_predecessors, 
                            node_t *pred_node, 
                            edge_end_t *oif, char *gw_prefix);
 
 /*Del predecessor info from path list*/
 void
-del_pred_info_from_spf_path_list(glthread_t *spf_path_list, node_t *pred_node, 
+del_pred_info_from_spf_predecessors(glthread_t *spf_predecessors, node_t *pred_node, 
                                 edge_end_t *oif, char *gw_prefix);
 
 /*print the local spf path list*/
 void
-print_local_spf_path_list(glthread_t *spf_path_list);
+print_local_spf_predecessors(glthread_t *spf_predecessors);
 
 boolean 
-is_pred_exist_in_spf_path_list(glthread_t *spf_path_list,
+is_pred_exist_in_spf_predecessors(glthread_t *spf_predecessors,
                                 pred_info_t *pred_info);
 
-/*copy spf_path_list2 into spf_path_list1 without duplicates*/
+/*copy spf_predecessors2 into spf_predecessors1 without duplicates*/
 void
-union_spf_path_lists(glthread_t *spf_path_list1,
-                     glthread_t *spf_path_list2);
+union_spf_predecessorss(glthread_t *spf_predecessors1,
+                     glthread_t *spf_predecessors2);
 
 void
 trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level);

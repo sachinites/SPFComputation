@@ -564,9 +564,8 @@ IS_ROUTE_SPRING_CAPABLE(routes_t *route) {
 boolean
 is_node_spring_enabled(node_t *node, LEVEL level){
 
-    if(node->spring_enabled == FALSE)
-        return FALSE;
-
+    return node->spring_enabled;
+/*
     prefix_t *router_id = node_local_prefix_search(node, level, node->router_id, 32);
     assert(router_id);
 
@@ -575,6 +574,7 @@ is_node_spring_enabled(node_t *node, LEVEL level){
         return TRUE;
     }
     return FALSE;
+*/
 }
 
 void
