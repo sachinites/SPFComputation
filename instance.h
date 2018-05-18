@@ -386,4 +386,9 @@ create_new_lsp_adj(char *lsp_name,
 edge_end_t *
 get_interface_from_intf_name(node_t *node, char *intf_name);
 
+
+void
+process_all_network_graph_nodes(void (*fn_ptr)(node_t *, void *), 
+                                void *arg);
+
 #endif /* __INSTANCE__ */
