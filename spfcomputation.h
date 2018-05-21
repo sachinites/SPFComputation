@@ -196,20 +196,7 @@ typedef struct spf_result_{
     unsigned int lsp_metric;
     internal_nh_t next_hop[NH_MAX][MAX_NXT_HOPS];
     node_backup_req_t backup_requirement[MAX_LEVEL];
-    /*In production code, probably you dont need to copy
-     * the spf path list into this structure because there is
-     * only one spf_root*/
-    glthread_t spf_predecessors[NH_MAX];
 } spf_result_t;
-
-/*We dont need next_hop[][] memory*/
-static inline spf_result_t *
-get_forward_spf_result_t(){
-
-    unsigned int next_hop_offset = (unsigned int)((char *)(&(((spf_result_t *)0)->lsp_metric)) + \
-            sizeof(((spf_result_t *)0)->lsp_metric));
-    return calloc(1, next_hop_offset);
-}
 
 
 /* spf result of a node wrt to spf_root */
@@ -217,7 +204,6 @@ typedef struct self_spf_result_{
 
     spf_result_t *res;
     struct _node_t *spf_root;
-
 } self_spf_result_t ;
 
 /*A DS to hold level independant SPF configuration
@@ -229,7 +215,8 @@ typedef enum {
     FORWARD_RUN,/*To compute LFA and RLFAs*/
     REVERSE_SPF_RUN,
     FULL_RUN,     /*To compute Main routes*/
-    PRC_RUN
+    PRC_RUN,
+    SPF_PATH_RUN
 } spf_type_t;
 
 typedef struct spf_level_info_{
@@ -274,8 +261,7 @@ typedef struct spf_info_{
     ll_t *priority_routes_list[TOPO_MAX];/*Always add route in this list*/
     ll_t *deferred_routes_list[TOPO_MAX];
 
-    /*Routing table*/
-    rttable *rttable;
+    /*Routing tables*/
     rt_un_table_t *rib[RIB_COUNT];
 } spf_info_t;
 

@@ -194,14 +194,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         ITERATE_NH_TYPE_BEGIN(nh){
             
             copy_nh_list2(&candidate_node->next_hop[level][nh][0], &res->next_hop[nh][0]); 
-
-            /*copy spf path list from node to its result*/
-            if(is_node_spring_enabled(spf_root, level)){
-                init_glthread(&res->spf_predecessors[nh]);
-                if(candidate_node->pred_lst[level][nh].right)
-                    glthread_add_next(&res->spf_predecessors[nh], candidate_node->pred_lst[level][nh].right);
-                init_glthread(&candidate_node->pred_lst[level][nh]);
-            }
         } ITERATE_NH_TYPE_END;
 
         if(candidate_node->node_type[level] != PSEUDONODE)
@@ -232,7 +224,8 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
             /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
              * not consider the node for SPF computation if we find 2-way nbrship is broken. */
-            if(!is_two_way_nbrship(candidate_node, nbr_node, level)){
+            if(!is_two_way_nbrship(candidate_node, nbr_node, level) || 
+                edge->status == 0){
                 sprintf(instance->traceopts->b, "Two Way nbrship broken with nbr %s", nbr_node->node_name); 
                 trace(instance->traceopts, DIJKSTRA_BIT);
                 continue;
@@ -266,7 +259,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     /*Drain all NH first*/
                     ITERATE_NH_TYPE_BEGIN(nh){
                         empty_nh_list(nbr_node, level, nh);
-                        //clear_spf_predecessors(&nbr_node->pred_lst[level][nh]);
                     } ITERATE_NH_TYPE_END;
 
                     /*copy only appropriate direct mexthops to nexthops*/
@@ -295,14 +287,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                         sprintf(instance->traceopts->b, "Copying %s next_hop list %s %s to %s next_hop list", candidate_node->node_name, get_str_level(level), 
                                 nh == IPNH ? "IPNH" : "LSPNH", nbr_node->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
                         copy_nh_list2(&candidate_node->next_hop[level][nh][0], &nbr_node->next_hop[level][nh][0]);
-
-                        if(is_node_spring_enabled(spf_root, level)){
-                            clear_spf_predecessors(&nbr_node->pred_lst[level][nh]);
-                            if(nh == IPNH){
-                                add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][nh], 
-                                        candidate_node, &edge->from, edge->to.prefix[level]->prefix);
-                            }
-                        }
                         sprintf(instance->traceopts->b, "printing %s next_hop list at %s %s after copy", nbr_node->node_name, get_str_level(level),
                                 nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
                         print_nh_list2(&nbr_node->next_hop[level][nh][0]);
@@ -354,15 +338,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                             nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
 
                     union_nh_list2(&candidate_node->next_hop[level][nh][0]  , &nbr_node->next_hop[level][nh][0]);
-                    
-                    if(is_node_spring_enabled(spf_root, level)){
-                        if(nh == IPNH){
-                            if(candidate_node != spf_root){ /*No need to do it again, already done in spf_init*/
-                                add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][nh], 
-                                        candidate_node, &edge->from, edge->to.prefix[level]->prefix);
-                            }
-                        }
-                    }
                     sprintf(instance->traceopts->b, "next_hop of %s at %s %s after Union", nbr_node->node_name,
                             get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
                     print_nh_list2(&nbr_node->next_hop[level][nh][0]);
@@ -413,16 +388,9 @@ spf_clear_result(node_t *spf_root, LEVEL level){
        result = NULL;    
    }ITERATE_LIST_END;
    delete_singly_ll(spf_root->spf_run_result[level]);
-
-   /*If spring is enabled, drain of spf path list */
-   if(is_node_spring_enabled(spf_root, level)){
-       ITERATE_NH_TYPE_BEGIN(nh){
-           clear_spf_predecessors(&spf_root->pred_lst[level][nh]);
-       } ITERATE_NH_TYPE_END;
-   }
 }
 
-static void
+void
 spf_init(candidate_tree_t *ctree, 
          node_t *spf_root, 
          LEVEL level){
@@ -437,6 +405,7 @@ spf_init(candidate_tree_t *ctree,
     edge_t *edge = NULL, *pn_edge = NULL;
     nh_type_t nh;
     /*Drain off results list for level */
+
     spf_clear_result(spf_root, level);
 
     /* You should intialize the nxthops and direct nxthops only for 
@@ -477,12 +446,6 @@ spf_init(candidate_tree_t *ctree,
                     init_internal_nh_t(nbr_node->next_hop[level][nh][i]);
                     init_internal_nh_t(nbr_node->direct_next_hop[level][nh][i]);
                 }
-
-                /*clear spf path list*/
-                if(is_node_spring_enabled(nbr_node, level)){
-                    clear_spf_predecessors(&nbr_node->pred_lst[level][nh]);
-                }
-
             } ITERATE_NH_TYPE_END;
             
             nbr_node->spf_metric[level] = INFINITE_METRIC;
@@ -520,12 +483,6 @@ spf_init(candidate_tree_t *ctree,
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
                 set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][0], pn_edge->to.prefix[level]->prefix);
-                
-                /*Add the predecessor info in nbr_node's spf path list*/
-                if(is_node_spring_enabled(nbr_node, level)){
-                    add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][IPNH], 
-                            spf_root, &edge->from, pn_edge->to.prefix[level]->prefix);
-                }
             }
             ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(spf_root, nbr_node, pn_node, level);
         }
@@ -546,11 +503,6 @@ spf_init(candidate_tree_t *ctree,
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
                 set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][0], pn_edge->to.prefix[level]->prefix);
-                /*Add the predecessor info in nbr_node's spf path list*/
-                if(is_node_spring_enabled(nbr_node, level)){
-                    add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][IPNH], 
-                            spf_root, &edge->from, pn_edge->to.prefix[level]->prefix);
-                }
             }
             ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(spf_root, nbr_node, pn_node, level);
         }
@@ -570,12 +522,6 @@ spf_init(candidate_tree_t *ctree,
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][nh_index], level, edge, nbr_node);
                 set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][IPNH][nh_index], pn_edge->to.prefix[level]->prefix);
-
-                /*Add the predecessor info in nbr_node's spf path list*/
-                if(is_node_spring_enabled(nbr_node, level)){
-                    add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][IPNH], 
-                            spf_root, &edge->from, pn_edge->to.prefix[level]->prefix);
-                }
             }
             ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(spf_root, nbr_node, pn_node, level);
         }
@@ -610,6 +556,7 @@ spf_only_intitialization(node_t *spf_root, LEVEL level){
     RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
     spf_init(&instance->ctree, spf_root, level);
+    spf_clear_spf_path_result(spf_root, level);
 }
 
 static void

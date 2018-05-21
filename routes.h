@@ -75,6 +75,12 @@ routes_t *
 search_route_in_spf_route_list(spf_info_t *spf_info,
                                 prefix_t *prefix, rtttype_t);
 
+/*Search internal route using longest prefix
+ * match*/
+routes_t *
+search_route_in_spf_route_list_by_lpm(spf_info_t *spf_info, 
+                                       char *prefix, rtttype_t);
+
 void
 route_set_key(routes_t *route, char *ipv4_addr, char mask);
 

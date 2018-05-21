@@ -212,6 +212,37 @@ search_route_in_spf_route_list(spf_info_t *spf_info,
     return NULL;
 }
 
+/*Search internal route using longest prefix
+ *  * match*/
+routes_t *
+search_route_in_spf_route_list_by_lpm(spf_info_t *spf_info,
+                                char *prefix, rtttype_t rt_type){
+
+    routes_t *route = NULL,
+             *default_route = NULL,
+             *lpm_route = NULL;
+
+    char longest_mask = 0;
+    singly_ll_node_t* list_node = NULL;
+
+    ITERATE_LIST_BEGIN(spf_info->routes_list[rt_type], list_node){
+
+        route = list_node->data;
+        if(strncmp("0.0.0.0", route->rt_key.u.prefix.prefix, strlen("0.0.0.0")) == 0 &&
+                route->rt_key.u.prefix.mask == 0){
+            default_route = route;
+        }
+        else if(strncmp(prefix, route->rt_key.u.prefix.prefix, PREFIX_LEN) == 0){
+            if( route->rt_key.u.prefix.mask > longest_mask){
+                longest_mask = route->rt_key.u.prefix.mask;
+                lpm_route = route;   
+            }
+        }
+    } ITERATE_LIST_END;
+    return lpm_route ? lpm_route : default_route;
+}
+
+
 char * 
 route_intall_status_str(route_intall_status install_status){
 

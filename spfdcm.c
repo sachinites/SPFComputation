@@ -1111,6 +1111,18 @@ spf_init_dcm(){
         }
     }
 
+    {
+        static param_t sr_tunnel;
+        init_param(&sr_tunnel, CMD, "sr-tunnel", 0, 0, INVALID, 0, "Segment Routing protocol");
+        libcli_register_param(&instance_node_name, &sr_tunnel);
+        {
+            static param_t prefixes;
+            init_param(&prefixes, CMD, "prefixes", instance_node_spring_show_handler, 0, INVALID, 0, "Enable trace for prefixes");
+            libcli_register_param(&sr_tunnel, &prefixes);
+            set_param_cmd_code(&prefixes, CMDCODE_SHOW_SR_TUNNEL);
+        }
+    }
+
     /*show instance node <node-name> mpls forwarding-table*/
     {
         static param_t mpls;

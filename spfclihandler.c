@@ -57,7 +57,6 @@ show_mpls_rsvp_label_local_bindings(node_t *node);
 extern void
 transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
                           node_t **next_node);
-
 static void
 _run_spf_run_all_nodes(){
 
@@ -985,31 +984,33 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
 void
 show_spf_path(node_t *spf_root, LEVEL level){
 
-    glthread_t *curr = NULL;
-    pred_info_t *pred_info = NULL;
-    singly_ll_node_t *list_node = NULL;
+    glthread_t *curr = NULL, *curr2 = NULL;
+    glthread_t *pred_db = NULL;
+    spf_path_result_t *spf_path_result = NULL;
     nh_type_t nh;
 
-    ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
+    compute_spf_paths(spf_root, level);
 
-        spf_result_t *res = list_node->data;
+    ITERATE_NH_TYPE_BEGIN(nh){
 
-        ITERATE_NH_TYPE_BEGIN(nh){
+        ITERATE_GLTHREAD_BEGIN(&spf_root->spf_path_result[level][nh], curr){
 
-            printf("Node : %s, %s spf path list for NH-TYPE : %s\n", res->node->node_name,
+            spf_path_result = glthread_to_spf_path_result(curr);
+
+            printf("Node : %s, %s spf path list for NH-TYPE : %s\n", spf_path_result->node->node_name,
                     get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH");
 
-            ITERATE_GLTHREAD_BEGIN(&res->spf_predecessors[nh], curr){
+            pred_db = &spf_path_result->pred_db;
 
-                pred_info = glthread_to_pred_info(curr);
+            ITERATE_GLTHREAD_BEGIN(pred_db, curr2){
+                pred_info_t *pred_info = glthread_to_pred_info(curr2);
                 printf("\tNode-name = %s, oif = %s, gw-prefix = %s\n",
                         pred_info->node->node_name,
                         pred_info->oif->intf_name,
                         pred_info->gw_prefix);
-
-            } ITERATE_GLTHREAD_END(&res->spf_predecessors[nh], curr);
-        } ITERATE_NH_TYPE_END;
-    } ITERATE_LIST_END;
+            } ITERATE_GLTHREAD_END(pred_db, curr2);
+        } ITERATE_GLTHREAD_END(&spf_root->spf_path_result[level][nh], curr);
+    } ITERATE_NH_TYPE_END;
 }
 
 
@@ -1022,6 +1023,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
     LEVEL level = MAX_LEVEL;
     tlv_struct_t *tlv = NULL;
     int cmd_code = -1;
+    char *prefix = NULL;
     char str_prefix_with_mask[PREFIX_LEN_WITH_MASK + 1];
 
     cmd_code = EXTRACT_CMD_CODE(tlv_buf);
@@ -1031,6 +1033,8 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
             level = atoi(tlv->value);
+        else if (strncmp(tlv->leaf_id, "prefixes" , strlen("prefixes")) ==0)
+            prefix = tlv->value;
         else
             assert(0);
     } TLV_LOOP_END;
@@ -1099,6 +1103,8 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
         case CMDCODE_SHOW_NODE_MPLS_RSVP_LSP:
             print_all_rsvp_lsp(node);
             break;
+        case CMDCODE_SHOW_SR_TUNNEL:
+            show_sr_tunnels(node, prefix);
         default:
             ;
     } 

@@ -67,6 +67,9 @@ typedef struct _node_t{
     /*Complete path spf run*/
     glthread_t pred_lst[MAX_LEVEL][NH_MAX];
 
+    /*list of spf_path_result_t*/
+    glthread_t spf_path_result[MAX_LEVEL][NH_MAX];
+
     /*Fields to handle pseudonode case*/
     edge_end_t *pn_intf[MAX_LEVEL];
     node_t *pred_node[MAX_LEVEL];

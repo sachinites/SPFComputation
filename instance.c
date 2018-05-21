@@ -92,11 +92,14 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
 
         /*Initialize predecessor path lists*/
         ITERATE_NH_TYPE_BEGIN(nh){
+
             init_glthread(&node->pred_lst[level][nh]);
+            init_glthread(&node->spf_path_result[level][nh]);
         } ITERATE_NH_TYPE_END;
     }
 
     rtttype_t rt_type;
+
     for(rt_type = UNICAST_T; rt_type < TOPO_MAX; rt_type++){
         node->spf_info.routes_list[rt_type] = init_singly_ll();/*List of routes calculated, routes are not categorised under Levels*/
         singly_ll_set_comparison_fn(node->spf_info.routes_list[rt_type], route_search_comparison_fn);

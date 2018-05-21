@@ -40,13 +40,42 @@
 
 typedef struct pred_info_t_{
 
-    node_t *node;
+    node_t *node;   /*predecessor node*/
     edge_end_t *oif;
     char gw_prefix[PREFIX_LEN];
     glthread_t glue;
 } pred_info_t;
 
 GLTHREAD_TO_STRUCT(glthread_to_pred_info, pred_info_t, glue, glthreadptr);
+
+typedef struct spf_path_result_t_{
+
+    node_t *node;   /*key*/
+    glthread_t pred_db;
+    glthread_t glue;
+} spf_path_result_t;
+
+GLTHREAD_TO_STRUCT(glthread_to_spf_path_result, spf_path_result_t, glue, glthreadptr);
+
+typedef enum{
+
+    SR_NOT_ENABLED_SPF_ROOT,
+    SR_NOT_ENABLED_ON_NODE,
+    NO_DEF_ROUTE_TO_L1L2,
+    PREFIX_UNREACHABLE,
+    LOCAL_LABEL_NOT_AVAILABLE,
+    NEXT_HOP_LABEL_NOT_AVAILABLE,
+    REASON_UNKNOWN
+} sr_incomplete_tunnel_reason_t;
+
+typedef struct sr_tunn_trace_info_t_{
+
+    node_t *curr_node;
+    node_t *succ_node;
+    LEVEL level;
+    sr_incomplete_tunnel_reason_t reason;
+} sr_tunn_trace_info_t;
+
 
 void
 init_spf_paths_lists(instance_t *instance, LEVEL level);
@@ -85,4 +114,27 @@ union_spf_predecessorss(glthread_t *spf_predecessors1,
 void
 trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level);
 
+sr_tunn_trace_info_t
+show_sr_tunnels(node_t *spf_root, char *prefix);
+
+static inline spf_path_result_t *
+GET_SPF_PATH_RESULT(node_t *node, node_t *node2, LEVEL level, nh_type_t nh){
+
+    glthread_t *curr = NULL;
+    ITERATE_GLTHREAD_BEGIN(&node->spf_path_result[level][nh], curr){
+
+        spf_path_result_t *spf_path_result = glthread_to_spf_path_result(curr);
+        if(spf_path_result->node == node2){
+            return spf_path_result; 
+        }
+    } ITERATE_GLTHREAD_END(&node->spf_path_result[level][nh], curr);
+    return NULL;
+}
+
+void
+compute_spf_paths(node_t *spf_root, LEVEL level);
+
+void
+spf_clear_spf_path_result(node_t *spf_root, LEVEL level);
+    
 #endif /* __COMPLETE_SPF_PATH__ */
