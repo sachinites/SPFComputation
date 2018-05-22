@@ -38,6 +38,8 @@
 #include "spftrace.h"
 #include "complete_spf_path.h"
 #include "spf_candidate_tree.h"
+#include "no_warn.h"
+
 
 extern instance_t *instance;
 extern void init_instance_traversal(instance_t * instance);
@@ -190,7 +192,7 @@ typedef struct pred_info_wrapper_t_{
 
 GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue, glthreadptr);
 
-static void
+void
 print_spf_paths(glthread_t *path){
 
     glthread_t *curr = NULL;
@@ -223,7 +225,8 @@ print_spf_paths(glthread_t *path){
 
 static void
 construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors, 
-                           LEVEL level, nh_type_t nh, glthread_t *path){
+                           LEVEL level, nh_type_t nh, glthread_t *path, 
+                           spf_path_processing_fn_ptr fn_ptr){
     
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;
@@ -239,9 +242,9 @@ construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors,
         res = GET_SPF_PATH_RESULT(spf_root, pred_info->node, level, nh);
         assert(res);
         construct_spf_path_recursively(spf_root, &res->pred_db, 
-                                    level, nh, path);
+                                    level, nh, path, fn_ptr);
         if(pred_info->node == spf_root){
-            print_spf_paths(path);
+            fn_ptr(path);
             printf("\n");
         }
         remove_glthread(path->right);
@@ -249,7 +252,8 @@ construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors,
 }
 
 void
-trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level){
+trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level, 
+                spf_path_processing_fn_ptr fn_ptr){
 
    nh_type_t nh;
    glthread_t path;
@@ -274,7 +278,8 @@ trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level){
        return;
    }
    glthread_t *spf_predecessors = &res->pred_db;
-   construct_spf_path_recursively(spf_root, spf_predecessors, level, nh, &path);
+   construct_spf_path_recursively(spf_root, spf_predecessors, 
+                                    level, nh, &path, fn_ptr);
 }
 
 /*List of best originators of a prefix*/

@@ -76,6 +76,10 @@ typedef struct sr_tunn_trace_info_t_{
     sr_incomplete_tunnel_reason_t reason;
 } sr_tunn_trace_info_t;
 
+/*Fn pointer type to process the spf path. User may want to
+ *  * do different processing on SPF paths*/
+
+typedef void (*spf_path_processing_fn_ptr)(glthread_t *);
 
 void
 init_spf_paths_lists(instance_t *instance, LEVEL level);
@@ -112,7 +116,8 @@ union_spf_predecessorss(glthread_t *spf_predecessors1,
                      glthread_t *spf_predecessors2);
 
 void
-trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level);
+trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level, 
+                spf_path_processing_fn_ptr fn_ptr);
 
 sr_tunn_trace_info_t
 show_sr_tunnels(node_t *spf_root, char *prefix);
@@ -136,5 +141,8 @@ compute_spf_paths(node_t *spf_root, LEVEL level);
 
 void
 spf_clear_spf_path_result(node_t *spf_root, LEVEL level);
+
+void
+print_spf_paths(glthread_t *path);
     
 #endif /* __COMPLETE_SPF_PATH__ */

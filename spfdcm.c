@@ -46,7 +46,7 @@
 #include "data_plane.h"
 #include "no_warn.h"
 #include "spf_candidate_tree.h"
-
+#include "complete_spf_path.h"
 
 extern
 instance_t *instance;
@@ -59,10 +59,6 @@ extern void
 inet_3_display(rt_un_table_t *rib, char *prefix, char mask);
 extern int
 ping_backup(char *node_name, char *dst_prefix);
-extern void
-show_spf_path(node_t *spf_root, LEVEL level);
-extern void 
-trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level);
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
@@ -919,7 +915,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             show_spf_path(spf_root, level);
             break;
         case CMDCODE_DEBUG_SHOW_SPF_PATH_LIST:
-            trace_spf_path(spf_root, dst_node, level);
+            trace_spf_path(spf_root, dst_node, level, print_spf_paths);
             break;
         case CMDCODE_SHOW_SPF_RUN_PRC:
             partial_spf_run(spf_root, level);
