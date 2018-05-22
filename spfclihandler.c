@@ -631,6 +631,7 @@ show_spf_initialization(node_t *spf_root, LEVEL level){
                     get_direct_next_hop_metric(phy_nbr->direct_next_hop[level][LSPNH][0], level));
    } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, phy_nbr, logical_nbr, level);
 
+#if 0
    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, phy_nbr, logical_nbr, edge, pn_edge, level){
 
        ITERATE_NH_TYPE_BEGIN(nh){
@@ -646,10 +647,9 @@ show_spf_initialization(node_t *spf_root, LEVEL level){
                        pred_info->oif->intf_name,
                        pred_info->gw_prefix);
            } ITERATE_GLTHREAD_END(spf_predecessors, curr);
-
        } ITERATE_NH_TYPE_END;
-              
    } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, phy_nbr, logical_nbr, level);
+#endif
 }
 
 int

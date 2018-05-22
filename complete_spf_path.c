@@ -191,7 +191,7 @@ typedef struct pred_info_wrapper_t_{
 GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue, glthreadptr);
 
 static void
-print_pred_info_wrapper_path_list(glthread_t *path){
+print_spf_paths(glthread_t *path){
 
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;
@@ -222,7 +222,7 @@ print_pred_info_wrapper_path_list(glthread_t *path){
 
 
 static void
-print_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors, 
+construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors, 
                            LEVEL level, nh_type_t nh, glthread_t *path){
     
     glthread_t *curr = NULL;
@@ -238,10 +238,10 @@ print_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors,
         glthread_add_next(path, &pred_info_wrapper.glue);
         res = GET_SPF_PATH_RESULT(spf_root, pred_info->node, level, nh);
         assert(res);
-        print_spf_path_recursively(spf_root, &res->pred_db, 
+        construct_spf_path_recursively(spf_root, &res->pred_db, 
                                     level, nh, path);
         if(pred_info->node == spf_root){
-            print_pred_info_wrapper_path_list(path);
+            print_spf_paths(path);
             printf("\n");
         }
         remove_glthread(path->right);
@@ -265,18 +265,16 @@ trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level){
    pred_info.node = dst_node;
    pred_info_wrapper.pred_info = &pred_info;
    init_glthread(&pred_info_wrapper.glue);
-   glthread_add_next(&path, &pred_info_wrapper.glue);               
-             
-   ITERATE_NH_TYPE_BEGIN(nh){    
-       res = GET_SPF_PATH_RESULT(spf_root, dst_node, level, nh);
-       if(!res){
-            printf("Spf root : %s, Dst Node : %s. Path not found", 
-                spf_root->node_name, dst_node->node_name);
-            return;
-       }
-       glthread_t *spf_predecessors = &res->pred_db;
-       print_spf_path_recursively(spf_root, spf_predecessors, level, nh, &path);
-   } ITERATE_NH_TYPE_END;
+   glthread_add_next(&path, &pred_info_wrapper.glue);    
+   nh = IPNH;           
+   res = GET_SPF_PATH_RESULT(spf_root, dst_node, level, nh);
+   if(!res){
+       printf("Spf root : %s, Dst Node : %s. Path not found", 
+               spf_root->node_name, dst_node->node_name);
+       return;
+   }
+   glthread_t *spf_predecessors = &res->pred_db;
+   construct_spf_path_recursively(spf_root, spf_predecessors, level, nh, &path);
 }
 
 /*List of best originators of a prefix*/

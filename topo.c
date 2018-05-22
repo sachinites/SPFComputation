@@ -720,7 +720,7 @@ pseudonode_ecmp_topo(){
                |                                                                             |
                |                                                                         0/3 |70.1.1.2
        60.1.1.1|0/2                      +-----------+                                  +----+----+
-          +----+----+                    |           |            0                 0/1 |         |
+          +----+----+                    |           |             10               0/1 |         |
           |         |50.1.1.1            |    PN     +----------------------------------+   C     |
           |   A     +--------------------+           |                         50.1.1.2 |         |
           |         |0/1      10         |           |                                  +---------+
@@ -734,7 +734,7 @@ pseudonode_ecmp_topo(){
     node_t *C  = create_new_node(instance, "C",  AREA1, "192.168.0.3");
     node_t *D  = create_new_node(instance, "D" , AREA1, "192.168.0.2");
 
-    insert_edge_between_2_nodes((create_new_edge(0, "eth0/1", 0, 
+    insert_edge_between_2_nodes((create_new_edge(0, "eth0/1", 10, 
                                  0, create_new_prefix("50.1.1.2", 30, LEVEL1),
                                  LEVEL1)),
                                  PN, C, BIDIRECTIONAL);

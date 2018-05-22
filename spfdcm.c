@@ -45,6 +45,8 @@
 #include "advert.h"
 #include "data_plane.h"
 #include "no_warn.h"
+#include "spf_candidate_tree.h"
+
 
 extern
 instance_t *instance;
@@ -934,6 +936,9 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
         case CMDCODE_SHOW_SPF_RUN_INIT:
             spf_only_intitialization(spf_root, level);
             show_spf_initialization(spf_root, level);
+            SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
+            spf_root->traversing_bit = 0;
+            spf_root->is_node_on_heap = FALSE;
             break;
         default:
             assert(0);

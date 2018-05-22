@@ -552,9 +552,7 @@ spf_only_intitialization(node_t *spf_root, LEVEL level){
     }
 
     SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
-
     spf_init(&instance->ctree, spf_root, level);
-    spf_clear_spf_path_result(spf_root, level);
 }
 
 static void
