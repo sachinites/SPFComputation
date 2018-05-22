@@ -58,7 +58,7 @@ build_ecmp_topo2(){
  *       |                                              |
  *       |               +----------+                   |
          |               |          |                   |
-         |         8     |   PN     |      0            |
+         |         7     |   PN     |      0            |
          +---------------+          +-------------------+
                       0/2|          |0/3
                          +----------+
@@ -91,7 +91,7 @@ build_ecmp_topo2(){
     edge_t *S_E_edge = create_new_edge("eth0/1", "eth0/1", 5,
             prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL1);
 
-    edge_t *S_PN_edge = create_new_edge("eth0/2", "eth0/2", 8,
+    edge_t *S_PN_edge = create_new_edge("eth0/2", "eth0/2", 7,
             prefix_40_1_1_1_24, 0, LEVEL1);
 
     edge_t *PN_D_edge = create_new_edge("eth0/3", "eth0/3", 0,

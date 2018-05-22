@@ -122,14 +122,9 @@ typedef struct rbroot_ rbroot;
 typedef struct rbnode_ rbnode;
 
 /* 
- * boolean here should match macros defined in kernel 
+ * char here should match macros defined in kernel 
  * like rtsock_ifstate.h 
  */
-#ifndef boolean
-#define boolean char
-#define TRUE 1
-#define FALSE 0
-#endif 
 /**
  * @brief
  * Key comparison callback function.
@@ -213,9 +208,9 @@ void _redblack_set_allocator (_redblack_root_alloc_fn my_alloc,
  *     A pointer to a new tree root.
  */
 rbroot *_redblack_root_init(rbroot *root,
-			   boolean key_via_ptr,
+			   char key_via_ptr,
 			   char key_offset,
-			   boolean key_dupes);
+			   char key_dupes);
 
 /**
  * @brief
@@ -247,7 +242,7 @@ void _redblack_root_delete(rbroot *root);
  *     otherwise, @c FALSE if the key is a duplicate, and the tree
  *     does not allow duplicates.
  */
-boolean _redblack_add(rbroot *root, rbnode *node,
+char _redblack_add(rbroot *root, rbnode *node,
 		     _redblack_compare_func compare);
 
 /**
@@ -263,7 +258,7 @@ boolean _redblack_add(rbroot *root, rbnode *node,
  *     @c TRUE if the node was removed successfully;
  *     otherwise, @c FALSE if the tree has no root node.
  */
-boolean _redblack_delete(rbroot *root, rbnode *node);
+char _redblack_delete(rbroot *root, rbnode *node);
 
 
 /**
@@ -385,7 +380,7 @@ rbnode *_redblack_get_leq(const rbroot *root, const void *key,
  */
 rbnode *_redblack_getnext(rbroot *root,
 			 const void *key,
-			 boolean return_eq,	/* FALSE for classic getnext */
+			 char return_eq,	/* FALSE for classic getnext */
 			 _redblack_compare_func compare);
 
 /**
@@ -401,7 +396,7 @@ rbnode *_redblack_getnext(rbroot *root,
  *     @c TRUE if the parent of @a node is @a root;
  *     @c FALSE otherwise.
  */
-boolean _redblack_node_in_tree(rbroot *root, rbnode *node);
+char _redblack_node_in_tree(rbroot *root, rbnode *node);
 
 /**
  * @brief
@@ -449,8 +444,8 @@ struct rbroot_ {
     rbnode	*root;			/* root node */
     rbnode	nil;			/* NIL node for this tree */
     char	key_offset;		/* offset to key material */
-    char	key_via_ptr;		/* key via pointer (really boolean) */
-    char	key_dupes;		/* dupes allowed (really boolean) */
+    char	key_via_ptr;		/* key via pointer (really char) */
+    char	key_dupes;		/* dupes allowed (really char) */
     _redblack_compare_func compare_fn;
     _redblack_key_match_func key_match_fn;
 };
@@ -466,7 +461,7 @@ _redblack_key (const rbroot *root, rbnode *node)
     if (root->key_via_ptr) {
 	return(node->rb_keys.rbu_key_ptr[0] + root->key_offset);
     }
-    return(node->rb_keys.rbu_key + root->key_offset);
+    return((char *)node - root->key_offset);
 }
 
 /**
@@ -480,7 +475,7 @@ _redblack_key (const rbroot *root, rbnode *node)
  *     @c TRUE if the tree is empty;
  *     @c FALSE otherwise.
  */
-static inline boolean
+static inline char
 _redblack_tree_empty (const rbroot *root)
 {
     return(root->root == &root->nil);
@@ -499,7 +494,7 @@ _redblack_tree_empty (const rbroot *root)
  *     @c TRUE if the node is null or nil;
  *     @c FALSE otherwise.
  */
-static inline boolean
+static inline char
 _redblack_node_null (const rbroot *root, const rbnode *node)
 {
     return((node == 0) || (node == &root->nil));

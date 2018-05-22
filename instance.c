@@ -37,6 +37,7 @@
 #include "instance.h"
 #include "spfutil.h"
 #include "spftrace.h"
+#include "spf_candidate_tree.h"
 
 extern instance_t *instance;
 
@@ -61,6 +62,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
 
     node->area = area;
     node->is_node_on_heap = FALSE;
+    SPF_CANDIDATE_TREE_NODE_INIT(&instance->ctree, node); 
 
     for(level = LEVEL1; level <= LEVEL2; level++){
 
@@ -390,8 +392,9 @@ get_new_instance(){
 
     instance_t *instance = calloc(1, sizeof(instance_t));
     instance->instance_node_list = init_singly_ll();
-    singly_ll_set_comparison_fn(instance->instance_node_list, instance_node_comparison_fn);
-    CANDIDATE_TREE_INIT(&instance->ctree);
+    singly_ll_set_comparison_fn(instance->instance_node_list, 
+        instance_node_comparison_fn);
+    SPF_CANDIDATE_TREE_INIT(&instance->ctree);
     instance->traceopts = calloc(1, sizeof(traceoptions));
     init_trace(instance->traceopts);
     register_display_trace_options(instance->traceopts, _spf_display_trace_options);

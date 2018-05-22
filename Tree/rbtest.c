@@ -94,6 +94,10 @@ main(int argc, char **argv){
     _redblack_add(&crbroot, &c2.node, 0);
     _redblack_add(&crbroot, &c3.node, 0);
 
+    rbroot *first_node = _redblack_find_next(&crbroot, NULL);
+    complex_t *first_c = rbnode_to_complex_no(first_node);
+    printf("first_c : look up result = a,b = %d,%d\n", first_c->a, first_c->b);
+
     rbnode *curr = NULL;
     ITERATE_RB_TREE_BEGIN(&crbroot, curr){
 

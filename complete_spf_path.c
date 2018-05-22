@@ -35,7 +35,9 @@
 #include "prefix.h"
 #include "spfutil.h"
 #include "Queue.h"
+#include "spftrace.h"
 #include "complete_spf_path.h"
+#include "spf_candidate_tree.h"
 
 extern instance_t *instance;
 extern void init_instance_traversal(instance_t * instance);
@@ -93,7 +95,8 @@ add_pred_info_to_spf_predecessors(glthread_t *spf_predecessors,
     pred_info_t *pred_info = calloc(1, sizeof(pred_info_t));
     pred_info->node = pred_node;
     pred_info->oif = oif;
-    strncpy(pred_info->gw_prefix, gw_prefix, PREFIX_LEN);
+    if(gw_prefix)
+        strncpy(pred_info->gw_prefix, gw_prefix, PREFIX_LEN);
     init_glthread(&(pred_info->glue));
 
     /*Check for duplicates*/
@@ -368,8 +371,6 @@ show_sr_tunnels(node_t *spf_root, char *str_prefix){
     return reason;
 }
 
-/*make sure to call spf_init() before invoking any call to this function*/
-/*ToDo : To Support Pseudonodes*/
 static void
 run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
@@ -378,83 +379,185 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
     edge_t *edge = NULL; 
 
+    glthread_t *curr = NULL;
+    pred_info_t *pred_info = NULL,
+                *pred_info_copy = NULL;
+
     nh_type_t nh = NH_MAX;
 
-    while(!IS_CANDIDATE_TREE_EMPTY(ctree)){
+    sprintf(instance->traceopts->b, "Node : %s : Running %s() with spf_root = %s, at %s", 
+        spf_root->node_name, __FUNCTION__, spf_root->node_name, get_str_level(level));
+    trace(instance->traceopts, DIJKSTRA_BIT);
+
+    while(!SPF_IS_CANDIDATE_TREE_EMPTY(ctree)){
 
         /*Take the node with miminum spf_metric off the candidate tree*/
-
-        candidate_node = GET_CANDIDATE_TREE_TOP(ctree, level);
-        REMOVE_CANDIDATE_TREE_TOP(ctree);
+        candidate_node = SPF_GET_CANDIDATE_TREE_TOP(ctree);
+        SPF_REMOVE_CANDIDATE_TREE_TOP(ctree);
         candidate_node->is_node_on_heap = FALSE;
+    
+        sprintf(instance->traceopts->b, "Node : %s : Candidate node removed : %s(spf_metric = %u)", 
+                        spf_root->node_name, candidate_node->node_name, candidate_node->spf_metric[level]);
+        trace(instance->traceopts, DIJKSTRA_BIT);
+        
+        if(candidate_node->node_type[level] != PSEUDONODE){
+            ITERATE_NH_TYPE_BEGIN(nh){
 
-        ITERATE_NH_TYPE_BEGIN(nh){
+                /*copy spf path list from node to its result*/
+                spf_path_result_t *res = calloc(1, sizeof(spf_path_result_t));
+                init_glthread(&res->pred_db);
+                init_glthread(&res->glue);
 
-            /*copy spf path list from node to its result*/
-            spf_path_result_t *res = calloc(1, sizeof(spf_path_result_t));
-            init_glthread(&res->pred_db);
-            init_glthread(&res->glue);
+                res->node = candidate_node;
+                glthread_add_next(&spf_root->spf_path_result[level][nh], &res->glue);
+                sprintf(instance->traceopts->b, "Node : %s : Result Recorded for node %s for NH type : %s", 
+                        spf_root->node_name, candidate_node->node_name, nh == IPNH ? "IPNH" : "LSPNH");
+                trace(instance->traceopts, DIJKSTRA_BIT);
 
-            res->node = candidate_node;
-            glthread_add_next(&spf_root->spf_path_result[level][nh], &res->glue);
+                if(candidate_node->pred_lst[level][nh].right)
+                    glthread_add_next(&res->pred_db, candidate_node->pred_lst[level][nh].right);
 
-            if(candidate_node->pred_lst[level][nh].right)
-                glthread_add_next(&res->pred_db, candidate_node->pred_lst[level][nh].right);
+                init_glthread(&candidate_node->pred_lst[level][nh]);
 
-            init_glthread(&candidate_node->pred_lst[level][nh]);
-
-        } ITERATE_NH_TYPE_END;
+            } ITERATE_NH_TYPE_END;
+        }
 
         /*Iterare over all the nbrs of Candidate node*/
 
         ITERATE_NODE_LOGICAL_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
             /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
              * not consider the node for SPF computation if we find 2-way nbrship is broken. */
+            sprintf(instance->traceopts->b, "Node : %s : Exploring : Candidate Node = %s, Nbr = %s, oif = %s",
+                spf_root->node_name, candidate_node->node_name, nbr_node->node_name, edge->from.intf_name);
+            trace(instance->traceopts, DIJKSTRA_BIT);
             if(!is_two_way_nbrship(candidate_node, nbr_node, level) || 
-                edge->status == 0){
+                    edge->status == 0){
+                sprintf(instance->traceopts->b, "Node : %s : Two way nbr ship failed for Candidate Node = %s, Nbr = %s",
+                    spf_root->node_name, candidate_node->node_name, nbr_node->node_name);
+                trace(instance->traceopts, DIJKSTRA_BIT);
                 continue;
             }
 
+            
             if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
-                        ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) < (unsigned long long)nbr_node->spf_metric[level]){
+                        ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) < 
+                    (unsigned long long)nbr_node->spf_metric[level]){
 
                 ITERATE_NH_TYPE_BEGIN(nh){
                     clear_spf_predecessors(&nbr_node->pred_lst[level][nh]);
                     if(nh == IPNH){
-                        add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][nh], 
-                                candidate_node, &edge->from, edge->to.prefix[level]->prefix);
-                    }
-                    ITERATE_NH_TYPE_END;
+                        if(candidate_node->node_type[level] != PSEUDONODE){
+                            sprintf(instance->traceopts->b, "Node : %s : Node = %s , predecossor Added = %s",
+                                spf_root->node_name,  nbr_node->node_name, candidate_node->node_name);
+                            trace(instance->traceopts, DIJKSTRA_BIT);
+                            add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][nh], 
+                                    candidate_node, &edge->from, 
+                                    nbr_node->node_type[level] != PSEUDONODE ? \
+                                    edge->to.prefix[level]->prefix : NULL);
+                        }
+                        else{
+                            /*copy (do not move) all predecessors of PN into nbr node*/
+                            sprintf(instance->traceopts->b, "Node : %s : Candidate Node = %s (PN case), presecessor copied to %s",
+                                    spf_root->node_name,  candidate_node->node_name, nbr_node->node_name);
+                            trace(instance->traceopts, DIJKSTRA_BIT);
+                            ITERATE_GLTHREAD_BEGIN(&candidate_node->pred_lst[level][nh], curr){
+
+                                pred_info = glthread_to_pred_info(curr);  
+                                pred_info_copy = calloc(1, sizeof(pred_info_t));
+                                memcpy(pred_info_copy, pred_info, sizeof(pred_info_t));
+                                sprintf(instance->traceopts->b, "Node : %s : Predecessor copied = %s", 
+                                    spf_root->node_name, pred_info->node->node_name);
+                                trace(instance->traceopts, DIJKSTRA_BIT);
+                                init_glthread(&pred_info_copy->glue);
+                                strncpy(pred_info_copy->gw_prefix, edge->to.prefix[level]->prefix, PREFIX_LEN);
+                                glthread_add_next(&nbr_node->pred_lst[level][nh], &pred_info_copy->glue);   
+                            } ITERATE_GLTHREAD_END(&candidate_node->pred_lst[level][nh], curr);
+                        }
+                    } ITERATE_NH_TYPE_END;
                 }
 
                 nbr_node->spf_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
                     INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
-
+                sprintf(instance->traceopts->b, "Node : %s : Node = %s metric improved to = %u",
+                    spf_root->node_name,  nbr_node->node_name, nbr_node->spf_metric[level]);
+                trace(instance->traceopts, DIJKSTRA_BIT);
+            
                 if(nbr_node->is_node_on_heap == FALSE){
-                    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
+                    SPF_INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
+                    sprintf(instance->traceopts->b, "Node : %s : Node %s Added to Candidate tree", 
+                            spf_root->node_name, nbr_node->node_name);
+                    trace(instance->traceopts, DIJKSTRA_BIT);
                     nbr_node->is_node_on_heap = TRUE;
                 }
                 else{
                     /* We should remove the node and then add again into candidate tree
                      * But now i dont have brain cells to do this useless work. It has impact
                      * on performance, but not on output*/
+                    SPF_CANDIDATE_TREE_NODE_REFRESH(ctree, nbr_node, level);
                 }
             }
 
             else if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
-                        ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) == (unsigned long long)nbr_node->spf_metric[level]){
+                        ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) == 
+                    (unsigned long long)nbr_node->spf_metric[level]){
 
                 ITERATE_NH_TYPE_BEGIN(nh){
-
                     if(nh == IPNH){
+                        if(candidate_node->node_type[level] != PSEUDONODE){
+                        sprintf(instance->traceopts->b, "Node : %s : Node = %s , predecossor Added = %s",
+                            spf_root->node_name,  nbr_node->node_name, candidate_node->node_name);
+                        trace(instance->traceopts, DIJKSTRA_BIT);
                             add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][nh], 
-                                    candidate_node, &edge->from, edge->to.prefix[level]->prefix);
+                                    candidate_node, &edge->from, 
+                                    nbr_node->node_type[level] != PSEUDONODE ? \
+                                    edge->to.prefix[level]->prefix : NULL);
+                        }
+                        else{
+                            /*copy (do not move) all predecessors of PN into nbr node*/
+                            sprintf(instance->traceopts->b, "Node : %s : Candidate Node = %s (PN case), presecessor copied to %s",
+                                    spf_root->node_name,  candidate_node->node_name, nbr_node->node_name);
+                            trace(instance->traceopts, DIJKSTRA_BIT);
+
+                            ITERATE_GLTHREAD_BEGIN(&candidate_node->pred_lst[level][nh], curr){
+
+                                pred_info = glthread_to_pred_info(curr);  
+                                pred_info_copy = calloc(1, sizeof(pred_info_t));
+                                memcpy(pred_info_copy, pred_info, sizeof(pred_info_t));
+                                sprintf(instance->traceopts->b, "Node : %s : Predecessor copied = %s", 
+                                    spf_root->node_name, pred_info->node->node_name);
+                                trace(instance->traceopts, DIJKSTRA_BIT);
+                                init_glthread(&pred_info_copy->glue);
+                                strncpy(pred_info_copy->gw_prefix, edge->to.prefix[level]->prefix, PREFIX_LEN);
+                                glthread_add_next(&nbr_node->pred_lst[level][nh], &pred_info_copy->glue);   
+                            } ITERATE_GLTHREAD_END(&candidate_node->pred_lst[level][nh], curr);
+                        }
                     }
                 } ITERATE_NH_TYPE_END;
             }
         }
         ITERATE_NODE_LOGICAL_NBRS_END;
-    }
+        
+        /*Delete the PN's predecessor list*/
+        if(candidate_node->node_type[level] == PSEUDONODE){
+            sprintf(instance->traceopts->b, "Node : %s : PN = %s, Clean up pred db",
+                    spf_root->node_name, candidate_node->node_name);
+            trace(instance->traceopts, DIJKSTRA_BIT); 
+            ITERATE_NH_TYPE_BEGIN(nh){
+                ITERATE_GLTHREAD_BEGIN(&candidate_node->pred_lst[level][nh], curr){
+
+                    pred_info = glthread_to_pred_info(curr);
+                    remove_glthread(&pred_info->glue);
+                    free(pred_info);
+                } ITERATE_GLTHREAD_END(&candidate_node->pred_lst[level][nh], curr);
+            } ITERATE_NH_TYPE_END;
+        }
+        sprintf(instance->traceopts->b, "Node : %s : Node = %s has been processed",
+                spf_root->node_name, candidate_node->node_name);
+        trace(instance->traceopts, DIJKSTRA_BIT);
+    } /* while loop ends*/
+    sprintf(instance->traceopts->b, "Node : %s : Running %s() with spf_root = %s, at %s Finished", 
+        spf_root->node_name, __FUNCTION__, spf_root->node_name, get_str_level(level));
+    trace(instance->traceopts, DIJKSTRA_BIT);
 }
 
 void
@@ -490,8 +593,8 @@ compute_spf_paths(node_t *spf_root, LEVEL level){
     edge_t *edge = NULL;
 
     spf_clear_spf_path_result(spf_root, level);
-    RE_INIT_CANDIDATE_TREE(&instance->ctree);
-    INSERT_NODE_INTO_CANDIDATE_TREE(&instance->ctree, spf_root, level);
+    SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
+    SPF_INSERT_NODE_INTO_CANDIDATE_TREE(&instance->ctree, spf_root, level);
     spf_root->is_node_on_heap = TRUE;
 
     /*Initialize all metric to infinite*/
@@ -524,5 +627,5 @@ compute_spf_paths(node_t *spf_root, LEVEL level){
     assert(is_queue_empty(q));
     free(q);
     q = NULL;
-    RE_INIT_CANDIDATE_TREE(&instance->ctree);
+    SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
 }

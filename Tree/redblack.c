@@ -115,8 +115,8 @@ redblack_find_rightmost (const rbroot *root, rbnode *node)
  * Initialize a red-black root node.  Allocate one if not provided.
  */
 rbroot *
-_redblack_root_init (rbroot *root, boolean via_ptr, char off,
-		    boolean dupes)
+_redblack_root_init (rbroot *root, char via_ptr, char off,
+		    char dupes)
 {
     if (alloc_info.root_alloc == NULL) {
         _redblack_set_allocator(redblack_root_alloc, redblack_root_free);
@@ -154,7 +154,7 @@ _redblack_root_delete (rbroot *root)
  * Return TRUE if a node is in the tree.  For now, this is only a syntactic
  * check.
  */
-boolean
+char
 _redblack_node_in_tree (rbroot *root, rbnode *node)
 {
     return(node->rb_parent != NULL || node == root->root);
@@ -277,7 +277,7 @@ rb_right_rotate (rbroot *root, rbnode *node)
  *
  * Add a node to a red-black tree.  Returns TRUE on success.
  */
-boolean
+char
 _redblack_add (rbroot *root, rbnode *node, _redblack_compare_func compare)
 {
     int cmp = 0;
@@ -294,7 +294,7 @@ _redblack_add (rbroot *root, rbnode *node, _redblack_compare_func compare)
      */
     if (root->root == &root->nil) {
 	root->root = node;
-	return(TRUE);
+	return(1);
     }
 
     /*
@@ -308,8 +308,10 @@ _redblack_add (rbroot *root, rbnode *node, _redblack_compare_func compare)
     t = root->root;
     while (t != &root->nil) {
 	parent = t;
+
 	cmp = compare ? (*compare)(_redblack_key(root, node), _redblack_key(root, t)):
             (root->compare_fn)(_redblack_key(root, node), _redblack_key(root, t));
+
 	if (cmp < 0) {
 	    t = t->rb_left;
 	} else if (cmp > 0) {
@@ -322,7 +324,7 @@ _redblack_add (rbroot *root, rbnode *node, _redblack_compare_func compare)
 	    if (root->key_dupes) {
 		t = t->rb_left;
 	    } else {
-		return(FALSE);
+		return(0);
 	    }
 	}
     }
@@ -405,7 +407,7 @@ _redblack_add (rbroot *root, rbnode *node, _redblack_compare_func compare)
 
     root->root->rb_color = RB_BLACK;
 
-    return(TRUE);
+    return(1);
 }
 
 /*
@@ -584,7 +586,7 @@ rbtree_predecessor (rbroot *root, rbnode *node)
  * Note that this code doesn't know whether or not the node
  * is actually in the tree.
  */
-boolean
+char
 _redblack_delete (rbroot *root, rbnode *node)
 {
     rbnode *child, *y;
@@ -594,7 +596,7 @@ _redblack_delete (rbroot *root, rbnode *node)
      * Is there even a tree?
      */
     if (root->root == &root->nil) {
-	return(FALSE);
+	return(0);
     }
 
     /*
@@ -692,7 +694,7 @@ _redblack_delete (rbroot *root, rbnode *node)
      */
     node->rb_left = node->rb_right = &root->nil;
     node->rb_parent = NULL;
-    return(TRUE);
+    return(1);
 }
 
 /*
@@ -768,7 +770,7 @@ _redblack_find_prev (rbroot *root, rbnode *node)
  */
 static rbnode *
 redblack_get_internal (const rbroot *root, const void *key,
-		       _redblack_compare_func compare, boolean leq)
+		       _redblack_compare_func compare, char leq)
 {
     rbnode *current, *leq_node = NULL;
     int cmp;
@@ -819,7 +821,7 @@ rbnode *
 _redblack_get (const rbroot *root, const void *key,
 	      _redblack_compare_func compare)
 {
-    return(redblack_get_internal(root, key, compare, FALSE));
+    return(redblack_get_internal(root, key, compare, 0));
 }
 
 /*
@@ -831,7 +833,7 @@ rbnode *
 _redblack_get_leq (const rbroot *root, const void *key,
 		  _redblack_compare_func compare)
 {
-    return(redblack_get_internal(root, key, compare, TRUE));
+    return(redblack_get_internal(root, key, compare, 1));
 }
 
 /*
@@ -842,7 +844,7 @@ _redblack_get_leq (const rbroot *root, const void *key,
  * one.
  */
 rbnode *
-_redblack_getnext (rbroot *root, const void *key, boolean eq,
+_redblack_getnext (rbroot *root, const void *key, char eq,
 		  _redblack_compare_func compare)
 {
     rbnode *current;

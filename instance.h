@@ -39,12 +39,12 @@
 #include "LinkedListApi.h"
 #include "spfcomputation.h"
 #include "prefix.h"
-#include "heap_interface.h"
 #include "rlfa.h"
 #include "Libtrace/libtrace.h"
 #include "glthread.h"
 #include "ldp.h"
 #include "rsvp.h"
+#include "Tree/candidate_tree.h"
 
 typedef struct edge_end_ edge_end_t;
 
@@ -54,7 +54,7 @@ typedef struct _node_t{
     AREA area;
     edge_end_t *edges[MAX_NODE_INTF_SLOTS];
     NODE_TYPE node_type[MAX_LEVEL];
-    
+    rbnode candiate_tree_node;  /*Node to be plugged into candidate tree*/ 
     unsigned int spf_metric[MAX_LEVEL];
     unsigned int lsp_metric[MAX_LEVEL];
 
@@ -72,7 +72,6 @@ typedef struct _node_t{
 
     /*Fields to handle pseudonode case*/
     edge_end_t *pn_intf[MAX_LEVEL];
-    node_t *pred_node[MAX_LEVEL];
 
     ll_t *local_prefix_list[MAX_LEVEL];
     ll_t *self_spf_result[MAX_LEVEL];                       /*Used for LFA and RLFA computation*/ 
@@ -118,7 +117,6 @@ typedef struct _node_t{
     ll_t *backup_mapping_policy[MAX_LEVEL];
 
 } node_t;
-
 
 struct edge_end_{
     node_t *node;

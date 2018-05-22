@@ -1,4 +1,5 @@
 /*
+            nbr_node->pred_node[level] = spf_root;
  * =====================================================================================
  *
  *       Filename:  spfcomputation.c
@@ -31,8 +32,6 @@
  */
 
 #include <stdio.h>
-#include "instance.h"
-#include "heap_interface.h"
 #include "spfutil.h"
 #include "spfcomputation.h"
 #include "routes.h"
@@ -42,7 +41,7 @@
 #include "spftrace.h"
 #include "no_warn.h"
 #include "complete_spf_path.h"
-
+#include "spf_candidate_tree.h"
 
 extern instance_t *instance;
 
@@ -170,15 +169,15 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
     /*Process untill candidate tree is not empty*/
     sprintf(instance->traceopts->b, "Running Dijkastra with root node = %s, Level = %u", 
-            (GET_CANDIDATE_TREE_TOP(ctree, level))->node_name, level); 
+            (SPF_GET_CANDIDATE_TREE_TOP(ctree))->node_name, level); 
     trace(instance->traceopts, DIJKSTRA_BIT);
 
-    while(!IS_CANDIDATE_TREE_EMPTY(ctree)){
+    while(!SPF_IS_CANDIDATE_TREE_EMPTY(ctree)){
 
         /*Take the node with miminum spf_metric off the candidate tree*/
 
-        candidate_node = GET_CANDIDATE_TREE_TOP(ctree, level);
-        REMOVE_CANDIDATE_TREE_TOP(ctree);
+        candidate_node = SPF_GET_CANDIDATE_TREE_TOP(ctree);
+        SPF_REMOVE_CANDIDATE_TREE_TOP(ctree);
         candidate_node->is_node_on_heap = FALSE;
         sprintf(instance->traceopts->b, "Candidate node %s Taken off candidate list", candidate_node->node_name); 
         trace(instance->traceopts, DIJKSTRA_BIT);
@@ -303,7 +302,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                         nbr_node->node_name, nbr_node->spf_metric[level]); trace(instance->traceopts, DIJKSTRA_BIT);
 
                 if(nbr_node->is_node_on_heap == FALSE){
-                    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
+                    SPF_INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
                     nbr_node->is_node_on_heap = TRUE;
                     sprintf(instance->traceopts->b, "%s inserted into candidate tree", nbr_node->node_name); 
                     trace(instance->traceopts, DIJKSTRA_BIT);
@@ -312,7 +311,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     /* We should remove the node and then add again into candidate tree
                      * But now i dont have brain cells to do this useless work. It has impact
                      * on performance, but not on output*/
-
+                    SPF_CANDIDATE_TREE_NODE_REFRESH(ctree, nbr_node, level);
                     sprintf(instance->traceopts->b, "%s is already present in candidate tree", nbr_node->node_name); 
                     trace(instance->traceopts, DIJKSTRA_BIT);
                 }
@@ -529,7 +528,7 @@ spf_init(candidate_tree_t *ctree,
 
 
     /*Step 4 : Initialize candidate tree with root*/
-    INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
+    SPF_INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
     spf_root->is_node_on_heap = TRUE;
 
     /*Step 5 : Link Directly Connected PN to the instance root. This
@@ -539,7 +538,6 @@ spf_init(candidate_tree_t *ctree,
 
         if(nbr_node->node_type[level] == PSEUDONODE){
             nbr_node->pn_intf[level] = &edge->from;/*There is exactly one PN per LAN per level*/            
-            nbr_node->pred_node[level] = spf_root;
         }
     }
     ITERATE_NODE_LOGICAL_NBRS_END;
@@ -553,7 +551,7 @@ spf_only_intitialization(node_t *spf_root, LEVEL level){
         return;
     }
 
-    RE_INIT_CANDIDATE_TREE(&instance->ctree);
+    SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
     spf_init(&instance->ctree, spf_root, level);
     spf_clear_spf_path_result(spf_root, level);
@@ -653,7 +651,7 @@ spf_computation(node_t *spf_root,
                 spf_root->node_name, spf_type == FULL_RUN ? "FULL_RUN" : "FORWARD_RUN",
                 get_str_level(level)); trace(instance->traceopts, DIJKSTRA_BIT);
                  
-    RE_INIT_CANDIDATE_TREE(&instance->ctree);
+    SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
     spf_init(&instance->ctree, spf_root, level);
 

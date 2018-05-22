@@ -1932,7 +1932,8 @@ dump_nbrs(node_t *node, LEVEL level){
 
     node_t *nbr_node = NULL;
     edge_t *edge = NULL;
-    printf("Node : %s(0x%x)(%s) (%s : %s)\n", node->node_name, (unsigned int)node, node->router_id, get_str_level(level), 
+    printf("Node : %s(0x%x)(%s) (%s : %s)\n", node->node_name, 
+                (unsigned int)node, node->router_id, get_str_level(level), 
                 (node->node_type[level] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
     printf("Overloaded ? %s\n", IS_BIT_SET(node->attributes[level], OVERLOAD_BIT) ? "Yes" : "No");
 

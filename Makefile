@@ -1,15 +1,15 @@
 CC=gcc
 #GCOV=-fprofile-arcs -ftest-coverage
 CFLAGS=-g -Wall -O0 ${GCOV}
-INCLUDES=-I . -I ./gluethread -I ./Stack -I ./CommandParser -I ./LinkedList -I ./Heap -I ./Queue -I ./mpls -I ./BitOp -I ./Libtrace
+INCLUDES=-I . -I ./gluethread -I ./Stack -I ./CommandParser -I ./LinkedList -I ./Queue -I ./mpls -I ./BitOp -I ./Libtrace
 USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
-DSOBJ=LinkedList/LinkedListApi.o Heap/heap.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o Tree/redblack.o
+DSOBJ=LinkedList/LinkedListApi.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o Tree/redblack.o
 OBJ=advert.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
-	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 				   \
-	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o igp_sr_ext.o 			\
-	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o ${DSOBJ}
+	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 		 \
+	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o igp_sr_ext.o 	 \
+	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o glevel.o ${DSOBJ}
 ${TARGET_NAME}:testapp.o ${OBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -18,6 +18,9 @@ ${TARGET_NAME}:testapp.o ${OBJ}
 conflct_res.o:conflct_res.c
 	@echo "Building conflct_res.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} conflct_res.c -o conflct_res.o
+glevel.o:glevel.c
+	@echo "Building glevel.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} glevel.c -o glevel.o
 testapp.o:testapp.c
 	@echo "Building testapp.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} testapp.c -o testapp.o
@@ -82,8 +85,6 @@ ${DSOBJ}:
 	(cd LinkedList;  make)
 	@echo "Building Queue/Queue.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Queue/Queue.c -o Queue/Queue.o
-	@echo "Building Heap/heap.o"
-	@ ${CC} ${CFLAGS} -c ${INCLUDES} Heap/heap.c -o Heap/heap.o
 	@echo "Building Stack/stack.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Stack/stack.c -o Stack/stack.o
 	@echo "Building gluethread/glthread.o"
