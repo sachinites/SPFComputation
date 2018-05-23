@@ -9,11 +9,11 @@ DSOBJ=LinkedList/LinkedListApi.o Queue/Queue.o Stack/stack.o gluethread/glthread
 OBJ=advert.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
 	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 		 \
 	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o igp_sr_ext.o 	 \
-	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o glevel.o ${DSOBJ}
-${TARGET_NAME}:testapp.o ${OBJ}
+	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o glevel.o
+${TARGET_NAME}:testapp.o ${OBJ} ${DSOBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
-	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} -o ${TARGET_NAME} -L ./CommandParser ${USECLILIB}
+	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} ${DSOBJ} -o ${TARGET_NAME} -L ./CommandParser ${USECLILIB}
 	@echo "Executable created : ${TARGET_NAME}. Finished."
 conflct_res.o:conflct_res.c
 	@echo "Building conflct_res.o"

@@ -97,6 +97,6 @@ int
 instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 
 void
-show_spf_path(node_t *spf_root, LEVEL level);
+show_spf_path_predecessors(node_t *spf_root, LEVEL level);
 
 #endif /* __SPFCLIHANDLER__ */

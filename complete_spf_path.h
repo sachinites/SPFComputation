@@ -116,7 +116,7 @@ union_spf_predecessorss(glthread_t *spf_predecessors1,
                      glthread_t *spf_predecessors2);
 
 void
-trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level, 
+trace_spf_path_to_destination_node(node_t *spf_root, node_t *dst_node, LEVEL level, 
                 spf_path_processing_fn_ptr fn_ptr);
 
 sr_tunn_trace_info_t

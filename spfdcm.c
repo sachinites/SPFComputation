@@ -912,10 +912,10 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             show_spf_results(spf_root, level);
             break;
         case CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE:
-            show_spf_path(spf_root, level);
+            show_spf_path_predecessors(spf_root, level);
             break;
-        case CMDCODE_DEBUG_SHOW_SPF_PATH_LIST:
-            trace_spf_path(spf_root, dst_node, level, print_spf_paths);
+        case CMDCODE_SHOW_SPF_PATH_LIST:
+            trace_spf_path_to_destination_node(spf_root, dst_node, level, print_spf_paths);
             break;
         case CMDCODE_SHOW_SPF_RUN_PRC:
             partial_spf_run(spf_root, level);
@@ -1195,6 +1195,21 @@ spf_init_dcm(){
     init_param(&instance_node_name_level_level, LEAF, 0, show_instance_handler, validate_level_no, INT, "level-no", "level");
     libcli_register_param(&instance_node_name_level, &instance_node_name_level_level);
     set_param_cmd_code(&instance_node_name_level_level, CMDCODE_SHOW_INSTANCE_NODE_LEVEL);
+
+    /*show instance node <node-name> level <level-no> spf-path*/
+    {
+        static param_t spf_path;
+        init_param(&spf_path, CMD, "spf-path", 0, 0, INVALID, 0, "trace spf-path");
+        libcli_register_param(&instance_node_name_level_level, &spf_path);
+        {
+            /*show instance node <node-name> level <level-no> spf-path <dst-node-name>*/
+            static param_t dst_node_name;
+            init_param(&dst_node_name, LEAF, 0, show_spf_run_handler, 
+                    validate_node_extistence, STRING, "dst-node-name", "Dest Node Name");
+            libcli_register_param(&spf_path, &dst_node_name);
+            set_param_cmd_code(&dst_node_name, CMDCODE_SHOW_SPF_PATH_LIST);
+        }
+    }
    
     {
         /*show instance node <node-name> spring*/
@@ -1252,7 +1267,8 @@ spf_init_dcm(){
     libcli_register_display_callback(&show_spf_run_level_N_root, display_instance_nodes); 
      
     static param_t show_spf_run_level_N_root_root_name;
-    init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, validate_node_extistence, STRING, "node-name", "node name to be SPF root");
+    init_param(&show_spf_run_level_N_root_root_name, LEAF, 0, show_spf_run_handler, 
+        validate_node_extistence, STRING, "node-name", "node name to be SPF root");
     libcli_register_param(&show_spf_run_level_N_root, &show_spf_run_level_N_root_root_name);
     set_param_cmd_code(&show_spf_run_level_N_root_root_name, CMDCODE_SHOW_SPF_RUN);
     
@@ -1859,20 +1875,6 @@ spf_init_dcm(){
                             set_param_cmd_code(&sid_prefix_conflict_result, CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT);
                         }
                         /*debug show instance node <node-name> level <level-no> spf-path*/
-                        {
-                            static param_t spf_path;
-                            init_param(&spf_path, CMD, "spf-path", show_spf_run_handler, 0, INVALID, 0, "trace spf-path");
-                            libcli_register_param(&level_no, &spf_path);
-                            set_param_cmd_code(&spf_path, CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE);
-                            {
-                                /*debug show instance node <node-name> level <level-no> spf-path <dst-node-name>*/
-                                static param_t dst_node_name;
-                                init_param(&dst_node_name, LEAF, 0, show_spf_run_handler, 
-                                        validate_node_extistence, STRING, "dst-node-name", "Dest Node Name");
-                                libcli_register_param(&spf_path, &dst_node_name);
-                                set_param_cmd_code(&dst_node_name, CMDCODE_DEBUG_SHOW_SPF_PATH_LIST);
-                            }
-                        }
                     }
                 }
                 {

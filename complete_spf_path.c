@@ -44,6 +44,8 @@
 extern instance_t *instance;
 extern void init_instance_traversal(instance_t * instance);
 
+static unsigned int spf_level_version[MAX_LEVEL] = {0, 0, 0};
+
 static int
 pred_info_compare_fn(void *_pred_info_1, void *_pred_info_2){
 
@@ -192,6 +194,7 @@ typedef struct pred_info_wrapper_t_{
 
 GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue, glthreadptr);
 
+/*A function to print the path*/
 void
 print_spf_paths(glthread_t *path){
 
@@ -252,8 +255,10 @@ construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors,
 }
 
 void
-trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level, 
-                spf_path_processing_fn_ptr fn_ptr){
+trace_spf_path_to_destination_node(node_t *spf_root, 
+                                   node_t *dst_node, 
+                                   LEVEL level, 
+                                   spf_path_processing_fn_ptr fn_ptr){
 
    nh_type_t nh;
    glthread_t path;
@@ -262,7 +267,20 @@ trace_spf_path(node_t *spf_root, node_t *dst_node, LEVEL level,
    pred_info_t pred_info;
 
    init_glthread(&path);
-   compute_spf_paths(spf_root, level);
+
+   /*Optimization - If Full spf run hasnt been run since the last
+    * time user triggered the command to display all SR tunnels, 
+    * then there is no need to recompute all tunnel paths again*/
+
+   if((spf_level_version[level] != 
+           spf_root->spf_info.spf_level_info[level].version) ||
+           !spf_level_version[level]){
+
+       spf_level_version[level] = 
+           spf_root->spf_info.spf_level_info[level].version;
+
+       compute_spf_paths(spf_root, level);
+   }
 
    /*Add destination node as pred_info*/
    memset(&pred_info, 0 , sizeof(pred_info_t));

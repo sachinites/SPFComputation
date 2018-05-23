@@ -982,7 +982,7 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
 }
 
 void
-show_spf_path(node_t *spf_root, LEVEL level){
+show_spf_path_predecessors(node_t *spf_root, LEVEL level){
 
     glthread_t *curr = NULL, *curr2 = NULL;
     glthread_t *pred_db = NULL;
