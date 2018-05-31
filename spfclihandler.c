@@ -1033,7 +1033,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
             node_name = tlv->value;
         else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
             level = atoi(tlv->value);
-        else if (strncmp(tlv->leaf_id, "prefixes" , strlen("prefixes")) ==0)
+        else if (strncmp(tlv->leaf_id, "prefix" , strlen("prefix")) ==0)
             prefix = tlv->value;
         else
             assert(0);
@@ -1054,7 +1054,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                 singly_ll_node_t *list_node = NULL;
                 prefix_t *prefix = NULL;
                 printf("prefix-conflict free prefixes :\n");
-                printf("\t%s/%-10s %-20s   %s\n", "prefix", "mask", "Hosting node", "mpls-label");
+                printf("\t%s/%-10s %-20s   %s\n", "prefix", "mask", "Hosting node", "prefix-sid");
                 printf("\t--------------------------------------------------------\n");
                 ITERATE_LIST_BEGIN(res, list_node){
                     
@@ -1078,7 +1078,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                 singly_ll_node_t *list_node = NULL;
                 prefix_t *prefix = NULL;
                 printf("prefixSID-conflict free prefixes :\n");
-                printf("\t%s/%-10s %-20s   %s\n", "prefix", "mask", "Hosting node", "mpls-label");
+                printf("\t%s/%-10s %-20s   %s\n", "prefix", "mask", "Hosting node", "prefix-sid");
                 printf("\t--------------------------------------------------------\n");
                 ITERATE_LIST_BEGIN(res, list_node){
                     

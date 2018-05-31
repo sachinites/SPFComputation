@@ -39,7 +39,7 @@
 #include "complete_spf_path.h"
 #include "spf_candidate_tree.h"
 #include "no_warn.h"
-
+#include "sr_tlv_api.h"
 
 extern instance_t *instance;
 extern void init_instance_traversal(instance_t * instance);
@@ -196,7 +196,7 @@ GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue, glt
 
 /*A function to print the path*/
 void
-print_spf_paths(glthread_t *path){
+print_spf_paths(glthread_t *path, void *arg){
 
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;
@@ -225,11 +225,52 @@ print_spf_paths(glthread_t *path){
     printf("(%s)%s", prev_gw_prefix, pred_info->node->node_name);
 }
 
+void
+print_sr_tunnel_paths(glthread_t *path, void *arg){
+
+    glthread_t *curr = NULL;
+    pred_info_t *pred_info = NULL;
+    pred_info_wrapper_t *pred_info_wrapper = NULL;
+    boolean first = TRUE;
+    char *prev_gw_prefix = NULL;
+    unsigned int prefix_sid = (unsigned int)arg;
+    mpls_label_t incoming_label = 0 ,
+                 outgoing_label = 0;
+
+    ITERATE_GLTHREAD_BEGIN(path, curr){
+
+        pred_info_wrapper = glthread_to_pred_info_wrapper(curr);
+        pred_info = pred_info_wrapper->pred_info;
+        
+        if(first){
+
+            incoming_label = get_label_from_srgb_index(pred_info->node->srgb, prefix_sid);
+            printf("(%u) %s(%s) -> ", incoming_label, pred_info->node->node_name, 
+                                     pred_info->oif->intf_name);
+            first = FALSE;
+            prev_gw_prefix = pred_info->gw_prefix;
+            continue;
+        }
+
+        if(!curr->right)
+            break;
+
+        outgoing_label = get_label_from_srgb_index(pred_info->node->srgb, prefix_sid);
+
+        printf("(%s)%s(%s) (%u) -> ", prev_gw_prefix, 
+            pred_info->node->node_name, pred_info->oif->intf_name, outgoing_label);
+            prev_gw_prefix = pred_info->gw_prefix;
+
+    } ITERATE_GLTHREAD_END(path, curr);
+
+    outgoing_label = get_label_from_srgb_index(pred_info->node->srgb, prefix_sid);
+    printf("(%s)%s (%u)", prev_gw_prefix, pred_info->node->node_name, outgoing_label);
+}
 
 static void
 construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors, 
                            LEVEL level, nh_type_t nh, glthread_t *path, 
-                           spf_path_processing_fn_ptr fn_ptr){
+                           spf_path_processing_fn_ptr fn_ptr, void *fn_ptr_arg){
     
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;
@@ -245,9 +286,9 @@ construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors,
         res = GET_SPF_PATH_RESULT(spf_root, pred_info->node, level, nh);
         assert(res);
         construct_spf_path_recursively(spf_root, &res->pred_db, 
-                                    level, nh, path, fn_ptr);
+                                    level, nh, path, fn_ptr, fn_ptr_arg);
         if(pred_info->node == spf_root){
-            fn_ptr(path);
+            fn_ptr(path, fn_ptr_arg);
             printf("\n");
         }
         remove_glthread(path->right);
@@ -258,7 +299,8 @@ void
 trace_spf_path_to_destination_node(node_t *spf_root, 
                                    node_t *dst_node, 
                                    LEVEL level, 
-                                   spf_path_processing_fn_ptr fn_ptr){
+                                   spf_path_processing_fn_ptr fn_ptr,
+                                   void *fn_ptr_arg){
 
    nh_type_t nh;
    glthread_t path;
@@ -297,98 +339,46 @@ trace_spf_path_to_destination_node(node_t *spf_root,
    }
    glthread_t *spf_predecessors = &res->pred_db;
    construct_spf_path_recursively(spf_root, spf_predecessors, 
-                                    level, nh, &path, fn_ptr);
+                                    level, nh, &path, fn_ptr, fn_ptr_arg);
 }
-
-/*List of best originators of a prefix*/
-/* Pfx best originators can come be computed at two Bus stops. 
- * For L1-only routers, pfx best originators could be some L1L2 routers , 
- * and each of those L1L2 routers could see L2|L1L2 routers as prefix 
- * best originators*/
-
-typedef struct pfx_best_orginators_t_{
-
-    node_t *node;
-    glthread_t glue;
-    glthread_t nested_pfx_best_orginators_list;
-} pfx_best_orginators_t;
-
-GLTHREAD_TO_STRUCT(glthread_to_pfx_best_orginator, pfx_best_orginators_t, glue, glthreadptr);
-
 
 sr_tunn_trace_info_t
 show_sr_tunnels(node_t *spf_root, char *str_prefix){
-    
+
     sr_tunn_trace_info_t reason;
+    routes_t *route = NULL;
+    singly_ll_node_t *list_node = NULL; 
+    prefix_pref_data_t route_pref, prefix_pref;
     prefix_t *prefix = NULL;
-    singly_ll_node_t *list_node = NULL;
-    prefix_pref_data_t route_pref,
-                       prefix_pref;
+    node_t *dst_node = NULL;
 
-    boolean use_node_sids = FALSE;
-    pfx_best_orginators_t *pfx_best_orginators = NULL;
-    glthread_t pfx_best_orginators_list;
-     
+    printf("SR Tunnel : Root : %s, prefix : %s\n", spf_root->node_name, str_prefix);
+    
     memset(&reason, 0, sizeof(sr_tunn_trace_info_t));
-    init_glthread(&pfx_best_orginators_list);
 
-    if(!is_node_spring_enabled(spf_root, LEVEL12)){
-        reason.curr_node = spf_root;
-        reason.reason = SR_NOT_ENABLED_SPF_ROOT;
-        return reason;
+    route = search_route_in_spf_route_list_by_lpm(&spf_root->spf_info, str_prefix, SPRING_T);
+
+    if(!route){
+       reason.curr_node = spf_root;
+       reason.succ_node = 0;
+       reason.level = LEVEL_UNKNOWN;
+       reason.reason = PREFIX_UNREACHABLE;
+       return reason;  
     }
 
-    routes_t *route = search_route_in_spf_route_list_by_lpm(&spf_root->spf_info,
-                        str_prefix, SPRING_T);
+    route_pref = route_preference(route->flags, route->level);
 
-       if(!route){
-            /*Means, Neither the route is reachable, nor L1L2 Attached router 
-             * is advertised*/   
-           reason.curr_node = spf_root;
-           reason.reason = PREFIX_UNREACHABLE;
-           return reason;
-       }
+    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
 
-       route_pref = route_preference(route->flags, route->level);
-
-       /*Collect the best prefix originators for the prefix*/
-       ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
-
-           prefix = list_node->data;
-           if(!is_node_spring_enabled(prefix->hosting_node, LEVEL12))
-               continue;
-
-           prefix_pref = route_preference(prefix->prefix_flags, route->level);
-
-           if(prefix_pref.pref != route_pref.pref)
-               break;
-
-           pfx_best_orginators = calloc(1, sizeof(pfx_best_orginators_t));
-           init_glthread(&pfx_best_orginators->nested_pfx_best_orginators_list);
-           pfx_best_orginators->node = prefix->hosting_node;
-           glthread_add_next(&pfx_best_orginators_list, &pfx_best_orginators->glue); 
-       } ITERATE_LIST_END;
-       
-       if(IS_DEFAULT_ROUTE(route)){
-           assert(route->level == LEVEL1);
-
-           /*To reach L1L2 routers for a prefix, we need to use L1L2 router's 
-            * node SIDs since 0.0.0.0/0 do not have any SID value*/
-           use_node_sids = TRUE;
-           /*Calculate the nested best prefix originators*/
-       }
-
+        prefix = list_node->data;
+        prefix_pref = route_preference(prefix->prefix_flags, route->level);
+        if(route_pref.pref != prefix_pref.pref)
+            break;
+        dst_node = prefix->hosting_node;
+        trace_spf_path_to_destination_node(spf_root, dst_node, route->level, 
+            print_sr_tunnel_paths, (void *)(PREFIX_SID_INDEX(prefix)));      
+    } ITERATE_LIST_END;
     
-#if 0
-
-    if(!rt_un_entry){
-        /*Route to prefix is not found in inet.3 routing table. Possible reasons
-         * for this are :
-         * case 1. I am L1-only router, and prefix is in L2 doman
-         * case 2. I am L1-only router, and prefix is in another L1-domain
-         * case 3. I am L2-only router, and prefix is in L1 domain
-         * case 4. I am L1L2 router, and prefix is in another L1-domain*/
-#endif
     return reason;
 }
 

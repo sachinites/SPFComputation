@@ -915,7 +915,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             show_spf_path_predecessors(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_PATH_LIST:
-            trace_spf_path_to_destination_node(spf_root, dst_node, level, print_spf_paths);
+            trace_spf_path_to_destination_node(spf_root, dst_node, level, print_spf_paths, NULL);
             break;
         case CMDCODE_SHOW_SPF_RUN_PRC:
             partial_spf_run(spf_root, level);
@@ -1112,15 +1112,16 @@ spf_init_dcm(){
         }
     }
 
+    /*show instance node <node-name> sr-tunnel <prefix>*/ 
     {
         static param_t sr_tunnel;
         init_param(&sr_tunnel, CMD, "sr-tunnel", 0, 0, INVALID, 0, "Segment Routing protocol");
         libcli_register_param(&instance_node_name, &sr_tunnel);
         {
-            static param_t prefixes;
-            init_param(&prefixes, CMD, "prefixes", instance_node_spring_show_handler, 0, INVALID, 0, "Enable trace for prefixes");
-            libcli_register_param(&sr_tunnel, &prefixes);
-            set_param_cmd_code(&prefixes, CMDCODE_SHOW_SR_TUNNEL);
+            static param_t prefix;
+            init_param(&prefix, LEAF, 0, instance_node_spring_show_handler, 0, IPV4, "prefix", "Ipv4 prefix without mask");
+            libcli_register_param(&sr_tunnel, &prefix);
+            set_param_cmd_code(&prefix, CMDCODE_SHOW_SR_TUNNEL);
         }
     }
 

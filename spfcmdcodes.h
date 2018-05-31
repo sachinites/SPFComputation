@@ -147,6 +147,6 @@
 
 /*Complete SPF path trace*/
 #define CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE                   92 /*debug show instance node <node-name> level <level-no> spf-path */
-#define CMDCODE_SHOW_SPF_PATH_LIST                    93 /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
-#define CMDCODE_SHOW_SR_TUNNEL                              94 /*show instance node <node-name> sr-tunnel <prefix-wihout-mask>*/
+#define CMDCODE_SHOW_SPF_PATH_LIST                          93 /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
+#define CMDCODE_SHOW_SR_TUNNEL                              94 /*show instance node <node-name> sr-tunnel <prefix>*/
 #endif /* __SPFCMDCODES__H */
