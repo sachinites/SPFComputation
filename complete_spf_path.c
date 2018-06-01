@@ -363,6 +363,7 @@ show_sr_tunnels(node_t *spf_root, char *str_prefix){
        reason.succ_node = 0;
        reason.level = LEVEL_UNKNOWN;
        reason.reason = PREFIX_UNREACHABLE;
+       printf("No SR tunnel exist\n");
        return reason;  
     }
 

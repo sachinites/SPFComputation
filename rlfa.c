@@ -55,6 +55,7 @@ clear_pq_nodes(node_t *S, LEVEL level){
     }
 }
 
+
 void
 init_back_up_computation(node_t *S, LEVEL level){
 
@@ -611,7 +612,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                         rlfa->protected_link = &protected_link->from;
                         rlfa->node = NULL;
                         if(edge1->etype == UNICAST)
-                            set_next_hop_gw_pfx(*rlfa, edge1->to.prefix[level]->prefix);
+                            set_next_hop_gw_pfx(*rlfa, edge2->to.prefix[level]->prefix);
                         rlfa->nh_type = LSPNH;
                         rlfa->lfa_type = LINK_AND_NODE_PROTECTION_RLFA;
                         rlfa->proxy_nbr = nbr_node;
@@ -643,7 +644,7 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                             rlfa->protected_link = &protected_link->from;
                             rlfa->node = NULL;
                             if(edge1->etype == UNICAST)
-                                set_next_hop_gw_pfx(*rlfa, edge1->to.prefix[level]->prefix);
+                                set_next_hop_gw_pfx(*rlfa, edge2->to.prefix[level]->prefix);
                             rlfa->nh_type = LSPNH;
                             rlfa->lfa_type = LINK_PROTECTION_RLFA;
                             rlfa->proxy_nbr = nbr_node;
@@ -1236,6 +1237,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                 }
                 sprintf(instance->traceopts->b, "Node : %s : Inequality 2 passed, lfa promoted from %s to %s", S->node_name, 
                                 get_str_lfa_type(lfa_type), get_str_lfa_type(LINK_PROTECTION_LFA_DOWNSTREAM)); 
+                lfa_type = LINK_PROTECTION_LFA_DOWNSTREAM;
                 trace(instance->traceopts, BACKUP_COMPUTATION_BIT); 
             }
 
