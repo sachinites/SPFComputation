@@ -124,6 +124,7 @@ struct edge_end_{
     unsigned int ifindex;
     common_pfx_key_t if_prefix;/*ToDo : use this sata structure instead if below prefix_t */
     prefix_t * prefix[MAX_LEVEL];
+    char mac_address[MAC_LEN];
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
     FLAG edge_config_flags;
     /*SR support, per level Adj SIDs*/

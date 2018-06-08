@@ -1252,3 +1252,33 @@ instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
     return 0;
 }
 
+int
+clear_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    char *node_name = NULL;
+    tlv_struct_t *tlv = NULL;
+    node_t *node = NULL;
+    int rc = 0;
+
+    int cmd_code = EXTRACT_CMD_CODE(tlv_buf); 
+
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+         else
+             assert(0);
+    } TLV_LOOP_END;
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+
+    switch(cmd_code){
+        case CMDCODE_CLEAR_NODE_ROUTE_DB:
+            flush_routes(node);
+            break;        
+        default:
+            ;
+    }
+    return 0;
+}
+
+

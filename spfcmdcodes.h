@@ -117,7 +117,7 @@
 #define CMDCODE_NODE_PING                                   66 /*ping <prefix>*/
 
 /* CLEAR Commands*/
-#define CMDCODE_CLEAR_NODE_ROUTE_DB                         67 /*clear instance node <node-name> routes level <level-no>*/
+#define CMDCODE_CLEAR_NODE_ROUTE_DB                         67 /*clear instance node <node-name> routes*/
 
 /*Routing table commands*/
 #define CMDCODE_SHOW_NODE_INTERNAL_ROUTES                   68 /*show instance node <node-name> routes*/
@@ -128,7 +128,7 @@
 #define CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS                 77 /*show instance node <node-name> mpls ldp bindings <prefix> <mask>*/
 #define CMDCODE_CONFIG_NODE_LDP_SR_PREFERENCE               78 /*config node <node-name> ldp sr preference set*/
 #define CMDCODE_CONFIG_NODE_ENABLE_LDP                      79 /*config node <node-name> ldp*/
-#define CMDCODE_CONFIG_NODE_LDP_TUNNEL                     89 /*config node <node-name> ldp tunnel <router-id>*/
+#define CMDCODE_CONFIG_NODE_LDP_TUNNEL                      89 /*config node <node-name> ldp tunnel <router-id>*/
 
 /*Mapping Server*/
 #define CMDCODE_CONFIG_NODE_SRMS_LCL_POLICY                 80 /*config node <node-name> source-packet-routing mapping-server <prefix> <mask> <first-sid-index> range <range>*/
@@ -149,4 +149,15 @@
 #define CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE                   92 /*debug show instance node <node-name> level <level-no> spf-path */
 #define CMDCODE_SHOW_SPF_PATH_LIST                          93 /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
 #define CMDCODE_SHOW_SR_TUNNEL                              94 /*show instance node <node-name> sr-tunnel <prefix>*/
+
+/*Create Topology Dynamically*/
+/*Config topology */
+
+#define TOPO_CREATE_NODE                                    95 /*config topo create node <node-name1>*/
+#define TOPO_NODE_ASSIGN_LOOPBACK_IP                        96 /*config topo node <node-name1> loopback <ip-address>*/
+#define TOPO_NODE_INSERT_LINK                               97 /*config topo node1 <node-name1> from-if <intf-name1> node2 <node-name2> to-if <intf-name2>*/
+#define TOPO_NODE_INTF_ASSIGN_IP_ADDRESS                    98 /*config topo node <node-name1> if <intf-name1> ip-address <ip-address> <mask>*/
+#define TOPO_NODE_INTF_ASSIGN_MAC_ADDRESS                   99 /*config topo node <node-name1> if <intf-name1> mac <mac-address>*/
+#define CONFIG_TOPO                                         100 /*config topo*/
+
 #endif /* __SPFCMDCODES__H */

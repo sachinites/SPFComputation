@@ -31,7 +31,11 @@
  */
 
 #include "instance.h"
+#include "cmdtlv.h"
+#include "libcli.h"
+#include "spfcmdcodes.h"
 
+extern instance_t *instance;
 
 instance_t *
 build_ecmp_topo2(){
@@ -967,4 +971,227 @@ multi_primary_nxt_hops(){
     set_instance_root(instance, R0);                                        
     return instance;                                                        
 }                                                                           
-                                                                     
+
+static instance_t *old_instance = NULL;
+
+int
+config_dynamic_topology(param_t *param, 
+                        ser_buff_t *tlv_buf, 
+                        op_mode enable_or_disable){
+    
+    int cmd_code = -1;
+    char *node_name1 = NULL,
+         *node_name2 = NULL;
+    char *loopback_ip = NULL;
+    char *intf_name1 = NULL,
+         *intf_name2 = NULL;
+    char *ip_address = NULL;
+    char mask = 0;
+    char *mac = NULL;
+    int i = 0;
+    edge_end_t *edge_end = NULL;
+    edge_t *edge = NULL;
+
+
+    tlv_struct_t *tlv = NULL;
+
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+
+        if(strncmp(tlv->leaf_id, "node-name1", strlen("node-name1")) ==0)
+            node_name1 = tlv->value;
+        else if(strncmp(tlv->leaf_id, "node-name2", strlen("node-name2")) ==0)
+            node_name2 = tlv->value;
+        else if(strncmp(tlv->leaf_id, "intf-name1", strlen("intf-name1")) ==0)
+            intf_name1 = tlv->value;
+        else if(strncmp(tlv->leaf_id, "intf-name2", strlen("intf-name2")) ==0)
+            intf_name2 = tlv->value;
+        else if(strncmp(tlv->leaf_id, "ip-address", strlen("ip-address")) ==0)
+            ip_address = tlv->value;
+        else if(strncmp(tlv->leaf_id, "mac-address", strlen("mac-address")) ==0)
+            mac = tlv->value;
+        else if(strncmp(tlv->leaf_id, "mask", strlen("mask")) ==0)
+            mask = atoi(tlv->value);
+        else
+            assert(0);
+    } TLV_LOOP_END;
+
+
+    switch(cmd_code){
+     
+        case CONFIG_TOPO:
+        {
+            switch(enable_or_disable){
+                case CONFIG_ENABLE:
+                    if(old_instance)
+                        return 0;
+                    old_instance = instance;
+                    instance = get_new_instance();
+                break;
+                case CONFIG_DISABLE:    
+                    instance = old_instance;
+                    old_instance = NULL; /*Memory Leak, sorry!*/
+                    break;
+                default:
+                    assert(0);
+            }
+        }
+        break;
+
+        case TOPO_CREATE_NODE:
+        {
+           node_t *node = create_new_node(instance, node_name1, AREA1, "0.0.0.0") ;
+           if(GET_NODE_COUNT_SINGLY_LL(instance->instance_node_list) == 1)
+               set_instance_root(instance, node);
+        }
+        break;
+
+        case TOPO_NODE_ASSIGN_LOOPBACK_IP:
+        {
+            node_t *node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name1);
+            memset(node->router_id, 0, PREFIX_LEN);
+            memcpy(node->router_id, loopback_ip, PREFIX_LEN);
+        }
+        break;
+
+        case TOPO_NODE_INSERT_LINK:
+        {
+            node_t *node1 = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name1);
+            node_t *node2= (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name2);
+            if(!node1){
+                printf("Node %s do not exist. Please create this node first\n", node_name1);
+                return 0;
+            }
+            if(!node2){
+                printf("Node %s do not exist. Please create this node first\n", node_name2);
+                return 0;
+            }
+
+            insert_edge_between_2_nodes((create_new_edge(intf_name1, 
+                                                         intf_name2, 10, 
+                                                         create_new_prefix("0.0.0.0", 0, LEVEL1), 
+                                                         create_new_prefix("0.0.0.0", 0, LEVEL1), 
+                                                         LEVEL1)), 
+                                                         node1, node2, 
+                                                         BIDIRECTIONAL);
+        }
+        break;
+
+        case TOPO_NODE_INTF_ASSIGN_IP_ADDRESS:
+        {
+            node_t *node1 = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name1);
+            edge_t *inv_edge = NULL;
+
+            if(!node1){
+                printf("Node %s do not exist. Please create this node first\n", node_name1);
+                return 0;   
+            }
+            for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+
+                edge_end = node1->edges[i];
+
+                if(!edge_end){
+                    return 0;
+                }
+
+                if(edge_end->dirn == INCOMING) continue;
+
+                if(strncmp(edge_end->intf_name, intf_name1, strlen(edge_end->intf_name)) || 
+                        strlen(edge_end->intf_name) != strlen(intf_name1)){
+                    continue;
+                }
+                break;
+            }
+
+            if(!edge_end || i == MAX_NODE_INTF_SLOTS){
+                printf("Error : Interface %s on node %s not found\n", intf_name1, node1->node_name);
+                return 0;
+            }
+
+            edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+            inv_edge = edge->inv_edge;
+
+            prefix_t *prefix = edge_end->prefix[LEVEL1];
+            assert(prefix);
+
+            if(strncmp(prefix->prefix, ip_address, PREFIX_LEN) == 0 && 
+                    mask == prefix->mask){
+                printf("Info : Already configured\n");
+                return 0;
+            }
+
+            delete_prefix_from_prefix_list(node1->local_prefix_list[LEVEL1], 
+                    prefix->prefix, prefix->mask);
+
+            memset(prefix, 0, sizeof(prefix_t));
+            memcpy(prefix->prefix, ip_address, PREFIX_LEN);
+            prefix->prefix[PREFIX_LEN] = '\0';
+            prefix->mask = mask;
+            prefix->level = LEVEL1;
+            set_prefix_property_metric(prefix, DEFAULT_LOCAL_PREFIX_METRIC);
+
+            prefix_t *clone_prefix = create_new_prefix(prefix->prefix, prefix->mask, prefix->level);
+            set_prefix_property_metric(clone_prefix, DEFAULT_LOCAL_PREFIX_METRIC);
+
+            assert(add_prefix_to_prefix_list(node1->local_prefix_list[LEVEL1], 
+                        clone_prefix, 0));
+
+            edge_end = &inv_edge->to;
+            prefix = edge_end->prefix[LEVEL1];
+            assert(prefix);
+
+            memset(prefix, 0, sizeof(prefix_t));
+            memcpy(prefix->prefix, ip_address, PREFIX_LEN);
+            prefix->prefix[PREFIX_LEN] = '\0';
+            prefix->mask = mask;
+            prefix->level = LEVEL1;
+            set_prefix_property_metric(prefix, DEFAULT_LOCAL_PREFIX_METRIC);
+        }
+        break;
+        case TOPO_NODE_INTF_ASSIGN_MAC_ADDRESS:
+        {
+            node_t *node1 = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name1);
+            edge_t *inv_edge = NULL;
+
+            if(!node1){
+                printf("Node %s do not exist. Please create this node first\n", node_name1);
+                return 0;   
+            }
+            for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
+
+                edge_end = node1->edges[i];
+                if(!edge_end){
+                    return 0;
+                }
+                if(edge_end->dirn == INCOMING) continue;
+                if(strncmp(edge_end->intf_name, intf_name1, strlen(edge_end->intf_name)) || 
+                        strlen(edge_end->intf_name) != strlen(intf_name1)){
+                    continue;
+                }
+                break;
+            }
+
+            if(!edge_end || i == MAX_NODE_INTF_SLOTS){
+                printf("Error : Interface %s on node %s not found\n", intf_name1, node1->node_name);
+                return 0;
+            }
+
+            edge = GET_EGDE_PTR_FROM_EDGE_END(edge_end);
+            inv_edge = edge->inv_edge;
+            memset(edge_end->mac_address, 0, MAC_LEN);
+            memcpy(edge_end->mac_address, mac, MAC_LEN);
+            edge_end = &inv_edge->to;
+            memset(edge_end->mac_address, 0, MAC_LEN);
+            memcpy(edge_end->mac_address, mac, MAC_LEN);
+        }
+        break;
+        default:
+            ;
+    } 
+    return 0;   
+}
+
+void
+config_topology_commands(void){
+
+         
+}

@@ -1744,3 +1744,9 @@ enhanced_start_route_installation(spf_info_t *spf_info,
     }
     delete_stale_routes(spf_info, level, rtttype);
 }
+
+void 
+flush_routes(node_t *node){
+
+}
+

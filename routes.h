@@ -204,4 +204,7 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
 void
 show_internal_routing_tree(node_t *node, char *prefix, char mask, rtttype_t rt_type);
 
+void
+flush_routes(node_t *node);
+
 #endif /* __ROUTES__ */

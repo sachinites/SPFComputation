@@ -1000,6 +1000,38 @@ show_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_o
 }
 
 
+static void
+register_clear_commands(){
+
+    /*clear instance node <node-name> routes*/
+
+    param_t *clear = libcli_get_clear_hook(); 
+
+    {
+        static param_t instance;
+        init_param(&instance, CMD, "instance", 0, 0, INVALID, 0, "Network graph");
+        libcli_register_param(clear, &instance);
+        {        
+            static param_t instance_node;
+            init_param(&instance_node, CMD, "node", 0, 0, INVALID, 0, "node");
+            libcli_register_param(&instance, &instance_node);
+            libcli_register_display_callback(&instance_node, display_instance_nodes);
+            {
+                static param_t instance_node_name;
+                init_param(&instance_node_name, LEAF, 0, 0, 
+                        validate_node_extistence, STRING, "node-name", "Node Name");
+                libcli_register_param(&instance_node, &instance_node_name);
+                {
+                    static param_t routes;
+                    init_param(&routes, CMD, "routes", clear_instance_node_handler, 0, INVALID, 0, "routes");
+                    libcli_register_param(&instance_node_name, &routes);
+                    set_param_cmd_code(&routes, CMDCODE_CLEAR_NODE_ROUTE_DB);    
+                }
+            }
+        }   
+    }
+}
+
 
 void
 spf_init_dcm(){
@@ -1921,6 +1953,8 @@ spf_init_dcm(){
             }           
         }
     }
+
+    register_clear_commands();
 
     /* Added Negation support to appropriate command, post this
      * do not extend any negation supported commands*/
