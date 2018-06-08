@@ -153,11 +153,11 @@
 /*Create Topology Dynamically*/
 /*Config topology */
 
-#define TOPO_CREATE_NODE                                    95 /*config topo create node <node-name1>*/
+#define TOPO_CREATE_NODE                                    95 /*config topo node node create <node-name1>*/
 #define TOPO_NODE_ASSIGN_LOOPBACK_IP                        96 /*config topo node <node-name1> loopback <ip-address>*/
-#define TOPO_NODE_INSERT_LINK                               97 /*config topo node1 <node-name1> from-if <intf-name1> node2 <node-name2> to-if <intf-name2>*/
-#define TOPO_NODE_INTF_ASSIGN_IP_ADDRESS                    98 /*config topo node <node-name1> if <intf-name1> ip-address <ip-address> <mask>*/
-#define TOPO_NODE_INTF_ASSIGN_MAC_ADDRESS                   99 /*config topo node <node-name1> if <intf-name1> mac <mac-address>*/
+#define TOPO_NODE_INSERT_LINK                               97 /*config topo node <node-name1> from-if <intf-name1> peer <node-name2> to-if <intf-name2>*/
+#define TOPO_NODE_INTF_ASSIGN_IP_ADDRESS                    98 /*config topo node <node-name1> interface <intf-name1> ip <ip-address> <mask>*/
+#define TOPO_NODE_INTF_ASSIGN_MAC_ADDRESS                   99 /*config topo node <node-name1> interface <intf-name1> mac <mac-address>*/
 #define CONFIG_TOPO                                         100 /*config topo*/
 
 #endif /* __SPFCMDCODES__H */

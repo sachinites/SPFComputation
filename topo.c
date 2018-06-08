@@ -34,6 +34,7 @@
 #include "cmdtlv.h"
 #include "libcli.h"
 #include "spfcmdcodes.h"
+#include "spfclihandler.h"
 
 extern instance_t *instance;
 
@@ -982,7 +983,6 @@ config_dynamic_topology(param_t *param,
     int cmd_code = -1;
     char *node_name1 = NULL,
          *node_name2 = NULL;
-    char *loopback_ip = NULL;
     char *intf_name1 = NULL,
          *intf_name2 = NULL;
     char *ip_address = NULL;
@@ -992,6 +992,7 @@ config_dynamic_topology(param_t *param,
     edge_end_t *edge_end = NULL;
     edge_t *edge = NULL;
 
+    cmd_code = EXTRACT_CMD_CODE(tlv_buf);
 
     tlv_struct_t *tlv = NULL;
 
@@ -1048,8 +1049,12 @@ config_dynamic_topology(param_t *param,
         case TOPO_NODE_ASSIGN_LOOPBACK_IP:
         {
             node_t *node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name1);
+            deattach_prefix_on_node(node, node->router_id, 32, LEVEL1); 
+            deattach_prefix_on_node(node, node->router_id, 32, LEVEL2);
             memset(node->router_id, 0, PREFIX_LEN);
-            memcpy(node->router_id, loopback_ip, PREFIX_LEN);
+            memcpy(node->router_id, ip_address, PREFIX_LEN);
+            attach_prefix_on_node(node, node->router_id, 32, LEVEL1, 0, 0); 
+            attach_prefix_on_node(node, node->router_id, 32, LEVEL2, 0, 0); 
         }
         break;
 
@@ -1127,9 +1132,11 @@ config_dynamic_topology(param_t *param,
             prefix->prefix[PREFIX_LEN] = '\0';
             prefix->mask = mask;
             prefix->level = LEVEL1;
+            prefix->hosting_node = node1;
             set_prefix_property_metric(prefix, DEFAULT_LOCAL_PREFIX_METRIC);
 
             prefix_t *clone_prefix = create_new_prefix(prefix->prefix, prefix->mask, prefix->level);
+            clone_prefix->hosting_node = node1;
             set_prefix_property_metric(clone_prefix, DEFAULT_LOCAL_PREFIX_METRIC);
 
             assert(add_prefix_to_prefix_list(node1->local_prefix_list[LEVEL1], 
@@ -1144,6 +1151,7 @@ config_dynamic_topology(param_t *param,
             prefix->prefix[PREFIX_LEN] = '\0';
             prefix->mask = mask;
             prefix->level = LEVEL1;
+            prefix->hosting_node = node1;
             set_prefix_property_metric(prefix, DEFAULT_LOCAL_PREFIX_METRIC);
         }
         break;
@@ -1191,7 +1199,120 @@ config_dynamic_topology(param_t *param,
 }
 
 void
-config_topology_commands(void){
+config_topology_commands(param_t *config_hook){
 
-         
+    static param_t topo;
+    init_param(&topo, CMD, "topo", config_dynamic_topology, 0, INVALID, 0, "Topology Configuration");
+    libcli_register_param(config_hook, &topo);
+    set_param_cmd_code(&topo, CONFIG_TOPO);
+    {
+        /*config topo node create <node-name1>*/
+        {
+            static param_t node;
+            init_param(&node, CMD, "node" , 0, 0, INVALID, 0, "node");
+            libcli_register_param(&topo, &node);
+            {
+                static param_t create;
+                init_param(&create, CMD, "create" , 0, 0, INVALID, 0, "Create Topo entity");
+                libcli_register_param(&node, &create);
+                {
+                    static param_t node_name;
+                    init_param(&node_name, LEAF, 0, config_dynamic_topology, 
+                            0, STRING, "node-name1", "Node Name"); 
+                    libcli_register_param(&create, &node_name);    
+                    set_param_cmd_code(&node_name, TOPO_CREATE_NODE);
+                }
+            }
+            /*config topo node <node-name1> loopback <ip-address>*/
+            {
+                static param_t node_name;
+                init_param(&node_name, LEAF, 0, 0, 
+                        0, STRING, "node-name1", "Node Name"); 
+                libcli_register_param(&node, &node_name);    
+                {
+                    static param_t lo;
+                    init_param(&lo, CMD, "loopback", 0, 0, INVALID, 0, "Loopback ip");
+                    libcli_register_param(&node_name, &lo);
+                    {
+                        static param_t prefix;
+                        init_param(&prefix, LEAF, 0, config_dynamic_topology, 0, IPV4, "ip-address", "Ipv4 prefix without mask");
+                        libcli_register_param(&lo, &prefix);
+                        set_param_cmd_code(&prefix, TOPO_NODE_ASSIGN_LOOPBACK_IP);
+                    }    
+                }
+                /*config topo node <node-name1> from-if <intf-name1> peer <node-name2> to-if <intf-name2>*/
+                {
+                    static param_t from_if;
+                    init_param(&from_if, CMD, "from-if", 0, 0, INVALID, 0, "from interface");
+                    libcli_register_param(&node_name, &from_if);
+                    {
+                        static param_t intf_name1;
+                        init_param(&intf_name1, LEAF, 0, 0, 0, STRING, "intf-name1", "interface name ethx/y format");
+                        libcli_register_param(&from_if, &intf_name1);    
+                        {
+                            static param_t peer;
+                            init_param(&peer, CMD, "peer", 0, 0, INVALID, 0, "Peer node");
+                            libcli_register_param(&intf_name1, &peer);
+                            {
+                                static param_t node_name;
+                                init_param(&node_name, LEAF, 0, 0, 
+                                        0, STRING, "node-name2", "Node Name"); 
+                                libcli_register_param(&peer, &node_name);    
+                                {
+                                    static param_t to_if;
+                                    init_param(&to_if, CMD, "to-if", 0, 0, INVALID, 0, "other end interface");
+                                    libcli_register_param(&node_name, &to_if);
+                                    {
+                                        static param_t intf_name2;
+                                        init_param(&intf_name2, LEAF, 0, config_dynamic_topology, 0, STRING, "intf-name2", "interface name ethx/y format");
+                                        libcli_register_param(&to_if, &intf_name2);
+                                        set_param_cmd_code(&intf_name2, TOPO_NODE_INSERT_LINK);    
+                                    }
+                                }
+                            }    
+                        }    
+                    }
+                }
+                /*config topo node <node-name1> interface <intf-name1> ip <ip-address> <mask>*/
+                {
+                    static param_t interface;
+                    init_param(&interface, CMD, "interface", 0, 0, INVALID, 0, "from interface");
+                    libcli_register_param(&node_name, &interface);
+                    {
+                        static param_t intf_name1;
+                        init_param(&intf_name1, LEAF, 0, 0, 0, STRING, "intf-name1", "interface name ethx/y format");
+                        libcli_register_param(&interface, &intf_name1); 
+                        {
+                            static param_t ip;
+                            init_param(&ip, CMD, "ip", 0, 0, INVALID, 0, "Interface Ip address");
+                            libcli_register_param(&intf_name1, &ip);
+                            {
+                                static param_t prefix;
+                                init_param(&prefix, LEAF, 0, 0, 0, IPV4, "ip-address", "Ipv4 prefix without mask");
+                                libcli_register_param(&ip, &prefix);
+                                {
+                                   static param_t mask;
+                                   init_param(&mask,  LEAF, 0, config_dynamic_topology, validate_ipv4_mask, INT, "mask", "mask (0-32)"); 
+                                   libcli_register_param(&prefix, &mask);
+                                   set_param_cmd_code(&mask, TOPO_NODE_INTF_ASSIGN_IP_ADDRESS); 
+                                }
+                            }
+                        }   
+                        {
+                            static param_t mac;
+                            init_param(&mac, CMD, "mac", 0, 0, INVALID, 0, "Interface MAC address");
+                            libcli_register_param(&intf_name1, &mac);
+                            {
+                                static param_t mac_addr;
+                                init_param(&mac_addr, LEAF, 0, config_dynamic_topology, 0, STRING, "mac-address", "Mac adddress");
+                                libcli_register_param(&mac, &mac_addr);
+                                set_param_cmd_code(&mac_addr, TOPO_NODE_INTF_ASSIGN_MAC_ADDRESS); 
+                            }
+                        }   
+                    }
+                    
+                }
+            }
+        }
+    }         
 }

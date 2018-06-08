@@ -36,6 +36,27 @@
 #include "instance.h"
 #include "libcli.h"
 
+int
+validate_debug_log_enable_disable(char *value_passed);
+
+int
+validate_node_extistence(char *node_name);
+
+int
+validate_level_no(char *value_passed);
+
+boolean
+is_global_sid_value_valid(unsigned int sid_value);
+
+int
+validate_global_sid_value(char *value_passed);
+
+int
+validate_index_range_value(char *value_passed);
+
+int
+validate_metric_value(char *value_passed);
+
 void
 spf_node_slot_enable_disable(node_t *node, char *slot_name, 
                             op_mode enable_or_disable);

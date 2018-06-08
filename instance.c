@@ -54,6 +54,12 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     nh_type_t nh;
 
     assert(node_name);
+
+    if(singly_ll_search_by_key(instance->instance_node_list, node_name)){
+        printf("Error : Node %s already exists\n", node_name);
+        return NULL;
+    }
+
     node_t * node = calloc(1, sizeof(node_t));
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';

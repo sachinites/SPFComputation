@@ -59,6 +59,8 @@ extern void
 inet_3_display(rt_un_table_t *rib, char *prefix, char mask);
 extern int
 ping_backup(char *node_name, char *dst_prefix);
+extern 
+void config_topology_commands(param_t *config);
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
@@ -98,7 +100,7 @@ show_spf_results(node_t *spf_root, LEVEL level){
     }ITERATE_LIST_END;
 }
 
-static int
+int
 validate_debug_log_enable_disable(char *value_passed){
 
     if(strncmp(value_passed, "enable", strlen(value_passed)) == 0 ||
@@ -109,7 +111,7 @@ validate_debug_log_enable_disable(char *value_passed){
     return VALIDATION_FAILED;
 }
 
-static int 
+int 
 validate_node_extistence(char *node_name){
 
     if(singly_ll_search_by_key(instance->instance_node_list, node_name))
@@ -119,7 +121,7 @@ validate_node_extistence(char *node_name){
     return VALIDATION_FAILED;
 }
 
-static int
+int
 validate_level_no(char *value_passed){
 
     LEVEL level = atoi(value_passed);
@@ -130,7 +132,7 @@ validate_level_no(char *value_passed){
     return VALIDATION_FAILED;
 }
 
-static boolean
+boolean
 is_global_sid_value_valid(unsigned int sid_value){
 
     if(sid_value >= SRGB_DEF_LOWER_BOUND && sid_value <= SRGB_DEF_UPPER_BOUND)
@@ -138,7 +140,7 @@ is_global_sid_value_valid(unsigned int sid_value){
     return FALSE;
 }
 
-static int
+int
 validate_global_sid_value(char *value_passed){
 
     return VALIDATION_SUCCESS;
@@ -151,7 +153,7 @@ validate_global_sid_value(char *value_passed){
     return VALIDATION_FAILED;
 }
 
-static int
+int
 validate_index_range_value(char *value_passed){
 
    unsigned int range = atoi(value_passed);
@@ -160,7 +162,8 @@ validate_index_range_value(char *value_passed){
    printf("Error : Incorrect index range specified.\n");
    return VALIDATION_FAILED;
 }
-static int
+
+int
 validate_metric_value(char *value_passed){
 
     unsigned int metric = atoi(value_passed);
@@ -1032,7 +1035,6 @@ register_clear_commands(){
     }
 }
 
-
 void
 spf_init_dcm(){
     
@@ -1044,6 +1046,9 @@ spf_init_dcm(){
     param_t *run    = libcli_get_run_hook();
     param_t *debug_show = libcli_get_debug_show_hook();
     param_t *root = libcli_get_root_hook();
+
+    /*register dynamic topology creation commands */
+    config_topology_commands(config);
 
     /*ping prefix*/
 
