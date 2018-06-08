@@ -1132,7 +1132,7 @@ get_longest_prefix_match2(rt_un_table_t *rib, char *prefix){
         rt_un_entry = glthread_to_rt_un_entry(curr);
         memset(subnet, 0, PREFIX_LEN + 1);
         apply_mask(prefix, RT_ENTRY_MASK(&rt_un_entry->rt_key), subnet);
-        if(strncmp("0.0.0.0", RT_ENTRY_PFX(&rt_un_entry->rt_key), strlen("0.0.0.0")) == 0 &&
+        if(strncmp(ZERO_IP, RT_ENTRY_PFX(&rt_un_entry->rt_key), strlen(ZERO_IP)) == 0 &&
                 RT_ENTRY_MASK(&rt_un_entry->rt_key) == 0){
             rt_default_un_entry = rt_un_entry;
         }

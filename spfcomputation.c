@@ -477,7 +477,7 @@ spf_init(candidate_tree_t *ctree,
                 is_nh_list_empty2(&nbr_node->direct_next_hop[level][LSPNH][0])){
             if(edge->etype == LSP){
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
-                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], "0.0.0.0");
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], ZERO_IP);
             }
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
@@ -497,7 +497,7 @@ spf_init(candidate_tree_t *ctree,
             } ITERATE_NH_TYPE_END;
             if(edge->etype == LSP){
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
-                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], "0.0.0.0");
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], ZERO_IP);
             }
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
@@ -516,7 +516,7 @@ spf_init(candidate_tree_t *ctree,
             
             if(edge->etype == LSP){
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][nh_index], level, edge, nbr_node);
-                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][nh_index], "0.0.0.0");
+                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][nh_index], ZERO_IP);
             }
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][nh_index], level, edge, nbr_node);

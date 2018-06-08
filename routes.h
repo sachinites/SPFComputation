@@ -134,7 +134,7 @@ ROUTE_FLUSH_BACKUP_NH_LIST(routes_t *route, nh_type_t nh){
     ((GET_HEAD_SINGLY_LL(routeptr->like_prefix_list))->data)
 
 #define IS_DEFAULT_ROUTE(routeptr)  \
-    (strncmp(routeptr->rt_key.u.prefix.prefix, "0.0.0.0", PREFIX_LEN) == 0 && \
+    (strncmp(routeptr->rt_key.u.prefix.prefix, ZERO_IP, PREFIX_LEN) == 0 && \
         routeptr->rt_key.u.prefix.mask == 0)
 
 void

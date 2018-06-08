@@ -75,7 +75,7 @@ build_ecmp_topo2(){
     node_t *S = create_new_node(instance, "S", AREA1, "192.168.0.1");
     node_t *E = create_new_node(instance, "E", AREA1, "192.168.0.2");
     node_t *B = create_new_node(instance, "B", AREA1, "192.168.0.3");
-    node_t *PN = create_new_node(instance, "PN", AREA1, "0.0.0.0");
+    node_t *PN = create_new_node(instance, "PN", AREA1, ZERO_IP);
     node_t *D = create_new_node(instance, "D", AREA1, "192.168.0.4");
 
     prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24, LEVEL1);
@@ -678,7 +678,7 @@ broadcast_link_protecting_lfa(){
     instance_t *instance = get_new_instance();
 
     node_t *S = create_new_node(instance, "S", AREA1, "192.168.0.1");
-    node_t *PN = create_new_node(instance, "PN", AREA1, "0.0.0.0");
+    node_t *PN = create_new_node(instance, "PN", AREA1, ZERO_IP);
     node_t *E = create_new_node(instance, "E", AREA1, "192.168.0.3");
     node_t *D = create_new_node(instance, "D", AREA1, "192.168.0.4");
     node_t *N = create_new_node(instance, "N", AREA1, "192.168.0.5");
@@ -1040,7 +1040,7 @@ config_dynamic_topology(param_t *param,
 
         case TOPO_CREATE_NODE:
         {
-           node_t *node = create_new_node(instance, node_name1, AREA1, "0.0.0.0") ;
+           node_t *node = create_new_node(instance, node_name1, AREA1, ZERO_IP) ;
            if(GET_NODE_COUNT_SINGLY_LL(instance->instance_node_list) == 1)
                set_instance_root(instance, node);
         }
@@ -1073,8 +1073,8 @@ config_dynamic_topology(param_t *param,
 
             insert_edge_between_2_nodes((create_new_edge(intf_name1, 
                                                          intf_name2, 10, 
-                                                         create_new_prefix("0.0.0.0", 0, LEVEL1), 
-                                                         create_new_prefix("0.0.0.0", 0, LEVEL1), 
+                                                         create_new_prefix(ZERO_IP, 0, LEVEL1), 
+                                                         create_new_prefix(ZERO_IP, 0, LEVEL1), 
                                                          LEVEL1)), 
                                                          node1, node2, 
                                                          BIDIRECTIONAL);
@@ -1310,7 +1310,6 @@ config_topology_commands(param_t *config_hook){
                             }
                         }   
                     }
-                    
                 }
             }
         }

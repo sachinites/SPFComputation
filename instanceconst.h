@@ -48,6 +48,7 @@
 #define MPLS_STACK_OP_LIMIT_MAX 3
 #define TOPOLOGY_NAME_SIZE      32
 #define MAC_LEN                 6
+#define ZERO_IP                 "0.0.0.0"
 
 /* instance global flags */
 
