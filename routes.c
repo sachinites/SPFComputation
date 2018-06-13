@@ -1158,26 +1158,8 @@ build_routing_table(spf_info_t *spf_info,
 
         if(route->install_state != RTE_UPDATED)
             continue;
-#if 0
-        rt_entry = rt_route_lookup(spf_info->rttable, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask);
-        assert(rt_entry); /*This entry MUST exist in RIB*/
-
-        if(is_changed_route(spf_info, rt_entry, route, FULL_RUN, level, UNICAST_T) == TRUE)
-            route->install_state = RTE_CHANGED;
-        else
-            route->install_state = RTE_NO_CHANGE;
-        sprintf(instance->traceopts->b, "Route : %s/%u is Marked as %s at %s", 
-                route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
-                route_intall_status_str(route->install_state),
-                get_str_level(level)); 
-        trace(instance->traceopts, ROUTE_CALCULATION_BIT); 
-#endif
-    }ITERATE_LIST_END;
-}
-
-void
-spf_backup_postprocessing(node_t *spf_root, LEVEL level){
-
+    
+    } ITERATE_LIST_END;
 }
 
 void
@@ -1706,6 +1688,7 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                 }
                 rc = FALSE;
                 un_nxthop = mpls_0_unifiy_nexthop(nxthop, L_IGP_PROTO);
+                if(nh == LSPNH){
                     /*In case if RLFA is also a destination, then mpls label stack depth would only be 1.
                      * The below stack modificiation need not done*/
                     if(un_nxthop->nh.mpls0_nh.mpls_label_out[1] && 
@@ -1718,6 +1701,7 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
                         /*if RLFA it self is a destination*/
                         un_nxthop->nh.mpls0_nh.stack_op[0] = SWAP;
                     }
+                }
                 rc = mpls_0_rt_un_route_install_nexthop(spf_info->rib[MPLS_0], &rt_key, level, un_nxthop);
                 if(rc == FALSE){
                     free_un_nexthop(un_nxthop);

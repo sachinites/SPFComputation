@@ -734,9 +734,6 @@ dump_next_hop(internal_nh_t *nh){
         printf(" Node = %s\n", "NULL");
 
     printf("\tnh_type = %-8s", nh->nh_type == IPNH ? "IPNH" : "LSPNH");
-
-    //if(nh->rlfa) printf("ref_count = %-5u", *(nh->ref_count));
-
     printf("lfa_type = %-25s\n", get_str_lfa_type(nh->lfa_type));
 
     if(nh->proxy_nbr)
@@ -749,7 +746,6 @@ dump_next_hop(internal_nh_t *nh){
     else
         printf("rlfa = %-16s\n", "NULL");
 
-    //printf("\tmpls_label_in = %-17u", nh->mpls_label_in);
     printf("root_metric = %-8u", nh->root_metric);
     printf("dest_metric = %-8u", nh->dest_metric);
     printf("is_eligible = %-6s\n", nh->is_eligible ? "TRUE" : "FALSE");

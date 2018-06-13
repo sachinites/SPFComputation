@@ -53,6 +53,7 @@ extern instance_t * build_ring_topo_7nodes();
 extern instance_t * build_rlfa_topo();
 extern instance_t * build_lfa_topo();
 extern instance_t * multi_primary_nxt_hops();
+extern instance_t * one_hop_backup();
 
 /*Globals */
 instance_t *instance = NULL;
@@ -68,7 +69,7 @@ main(int argc, char **argv){
     //instance = pseudonode_ecmp_topo();
     //instance = lsp_ecmp_topo();
     //instance = build_multi_area_topo();
-    instance = build_ring_topo();
+    //instance = build_ring_topo();
     //instance = build_ring_topo_7nodes();
     //instance = build_ecmp_topo2();
     //instance = build_cisco_example_topo();
@@ -78,8 +79,7 @@ main(int argc, char **argv){
     //instance = build_lfa_topo();
     //instance = overload_router_topo();
     //instance = multi_primary_nxt_hops();
-    //leak_prefix("R3", "100.1.1.1", 24, LEVEL2, LEVEL1);
-
+    instance = one_hop_backup();
     start_shell();
     return 0;
 }

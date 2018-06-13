@@ -973,6 +973,76 @@ multi_primary_nxt_hops(){
     return instance;                                                        
 }                                                                           
 
+instance_t *
+one_hop_backup(){
+
+#if 0
+                                    192.168.0.5
+           192.168.0.4               +------+
+           +------+eth0/1  3.1.1.2/30|      |
+           |  R3  +------------------+ R4   |
+           |      |3.1.1.1/30  eth0/2|      |
+           +--+---+                  +---+--+
+    2.1.1.2/30|eth0/10             eth0/1|4.1.1.1/30
+              |                          |
+              |                          |
+              |                          |
+              |                          |
+              |                          |
+              |                          |
+              |                          |
+              |                          |
+    2.1.1.1/30|eth0/2                    |50
+         +----+---+                      |
+         |  R2    |                      |
+         |192.168.|                      |
+         |  0.3   |                      |
+         +----+---+                      |
+    1.1.1.2/30|eth0/1                    |
+              |                          |
+              |                          |
+              |                          |
+              |                4.1.1.2/30|eth0/2
+    1.1.1.1/30|eth0/0                 +--+--------+
+     +-----+--+---+10.1.1.2/30  eth0/0|  R0       |
+     +       R1   +-------------------+192.168.0.1|
+     | 192.168.0.2|eth0/1  10.1.1.1/30+------+----+
+     |            |
+     +------+-----+
+  
+#endif
+
+  instance_t *instance = get_new_instance();
+
+  node_t *R0 = create_new_node(instance, "R0", AREA1, "192.168.0.1");
+  node_t *R1 = create_new_node(instance, "R1", AREA1, "192.168.0.2");
+  node_t *R2 = create_new_node(instance, "R2", AREA1, "192.168.0.3");
+  node_t *R3 = create_new_node(instance, "R3", AREA1, "192.168.0.4");
+  node_t *R4 = create_new_node(instance, "R4", AREA1, "192.168.0.5");
+
+    
+  insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("10.1.1.1", 30, LEVEL1), create_new_prefix("10.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R0, R1, BIDIRECTIONAL);
+
+  insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 10, create_new_prefix("1.1.1.1", 30, LEVEL1), create_new_prefix("1.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R1, R2, BIDIRECTIONAL);
+
+  insert_edge_between_2_nodes((create_new_edge("eth0/2", "eth0/10", 10, create_new_prefix("2.1.1.1", 30, LEVEL1), create_new_prefix("2.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R2, R3, BIDIRECTIONAL);
+
+  insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/2", 10, create_new_prefix("3.1.1.1", 30, LEVEL1), create_new_prefix("3.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R3, R4, BIDIRECTIONAL);
+  
+  insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/2", 50, create_new_prefix("4.1.1.1", 30, LEVEL1), create_new_prefix("4.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R4, R0, BIDIRECTIONAL);
+
+ 
+  set_instance_root(instance, R0);
+  return instance;
+}
+
+
+
 static instance_t *old_instance = NULL;
 
 int
