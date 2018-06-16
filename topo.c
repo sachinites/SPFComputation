@@ -1142,9 +1142,8 @@ config_dynamic_topology(param_t *param,
             }
 
             insert_edge_between_2_nodes((create_new_edge(intf_name1, 
-                                                         intf_name2, 10, 
-                                                         create_new_prefix(ZERO_IP, 0, LEVEL1), 
-                                                         create_new_prefix(ZERO_IP, 0, LEVEL1), 
+                                                         intf_name2, 10,
+                                                         0,0, 
                                                          LEVEL1)), 
                                                          node1, node2, 
                                                          BIDIRECTIONAL);
@@ -1160,22 +1159,8 @@ config_dynamic_topology(param_t *param,
                 printf("Node %s do not exist. Please create this node first\n", node_name1);
                 return 0;   
             }
-            for(i = 0; i < MAX_NODE_INTF_SLOTS; i++){
 
-                edge_end = node1->edges[i];
-
-                if(!edge_end){
-                    return 0;
-                }
-
-                if(edge_end->dirn == INCOMING) continue;
-
-                if(strncmp(edge_end->intf_name, intf_name1, strlen(edge_end->intf_name)) || 
-                        strlen(edge_end->intf_name) != strlen(intf_name1)){
-                    continue;
-                }
-                break;
-            }
+            edge_end = get_interface_from_intf_name(node1, intf_name1);
 
             if(!edge_end || i == MAX_NODE_INTF_SLOTS){
                 printf("Error : Interface %s on node %s not found\n", intf_name1, node1->node_name);
@@ -1186,19 +1171,27 @@ config_dynamic_topology(param_t *param,
             inv_edge = edge->inv_edge;
 
             prefix_t *prefix = edge_end->prefix[LEVEL1];
-            assert(prefix);
 
-            if(strncmp(prefix->prefix, ip_address, PREFIX_LEN) == 0 && 
+            if(prefix && strncmp(prefix->prefix, ip_address, PREFIX_LEN) == 0 && 
                     mask == prefix->mask){
                 printf("Info : Already configured\n");
                 return 0;
             }
 
-            delete_prefix_from_prefix_list(node1->local_prefix_list[LEVEL1], 
-                    prefix->prefix, prefix->mask);
+            if(prefix){
+                delete_prefix_from_prefix_list(node1->local_prefix_list[LEVEL1], 
+                        prefix->prefix, prefix->mask);
+            }
 
-            memset(prefix, 0, sizeof(prefix_t));
-            memcpy(prefix->prefix, ip_address, PREFIX_LEN);
+            if(!prefix){
+                prefix = calloc(1, sizeof(prefix_t));
+                BIND_PREFIX(edge->from.prefix[LEVEL1], prefix);
+            }
+            else{
+                memset(prefix, 0, sizeof(prefix_t));
+            }
+
+            strncpy(prefix->prefix, ip_address, PREFIX_LEN);
             prefix->prefix[PREFIX_LEN] = '\0';
             prefix->mask = mask;
             prefix->level = LEVEL1;
@@ -1214,9 +1207,15 @@ config_dynamic_topology(param_t *param,
 
             edge_end = &inv_edge->to;
             prefix = edge_end->prefix[LEVEL1];
-            assert(prefix);
+            
+            if(!prefix){
+                prefix = calloc(1, sizeof(prefix_t));
+                BIND_PREFIX(edge_end->prefix[LEVEL1], prefix);
+            }
+            else{
+                memset(prefix, 0, sizeof(prefix_t));
+            }
 
-            memset(prefix, 0, sizeof(prefix_t));
             memcpy(prefix->prefix, ip_address, PREFIX_LEN);
             prefix->prefix[PREFIX_LEN] = '\0';
             prefix->mask = mask;

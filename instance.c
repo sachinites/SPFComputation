@@ -173,13 +173,17 @@ create_new_edge(char *from_ifname,
         edge->metric[LEVEL2] = metric;
 
     if(IS_LEVEL_SET(level, LEVEL1)){
-        BIND_PREFIX(edge->from.prefix[LEVEL1], from_prefix);
-        BIND_PREFIX(edge->to.prefix[LEVEL1], to_prefix);
+        if(from_prefix)
+            BIND_PREFIX(edge->from.prefix[LEVEL1], from_prefix);
+        if(to_prefix)
+            BIND_PREFIX(edge->to.prefix[LEVEL1], to_prefix);
     }
     
     if(IS_LEVEL_SET(level, LEVEL2)){
-        BIND_PREFIX(edge->from.prefix[LEVEL2], from_prefix);
-        BIND_PREFIX(edge->to.prefix[LEVEL2], to_prefix);
+        if(from_prefix)
+            BIND_PREFIX(edge->from.prefix[LEVEL2], from_prefix);
+        if(to_prefix)
+            BIND_PREFIX(edge->to.prefix[LEVEL2], to_prefix);
     }
     
     edge->level     = level;
@@ -537,7 +541,6 @@ get_interface_from_intf_name(node_t *node, char *intf_name){
     for(i = 0; i < MAX_NODE_INTF_SLOTS; i++ ){
         interface = node->edges[i];
         if(interface == NULL){
-            printf("Error : slot-no %s do not exist\n", intf_name);
             return NULL;
         }
 
@@ -552,18 +555,24 @@ get_interface_from_intf_name(node_t *node, char *intf_name){
     return NULL;
 }
 
-/* Function to perform the operation on all nodes of a Network graph*/
+node_t *
+get_peer_node(edge_end_t *oif, LEVEL level, char *gw_ip){
 
-void
-process_all_network_graph_nodes(void (*fn_ptr)(node_t *, void *), void *arg){
-                           
-    singly_ll_node_t *list_node = NULL;
-    node_t *node = NULL;
+    node_t *peer_node = NULL, *pn = NULL;
+    /*P2p case*/
+    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(oif);
+    assert(edge->from.node->node_type[level] != PSEUDONODE);
+    peer_node = edge->to.node;
+    if(peer_node->node_type[level] != PSEUDONODE)
+        return peer_node;
+    
+    /*LAN case*/
+    pn = peer_node;
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(pn, peer_node, edge, level){
 
-    ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
-        
-        node = list_node->data;
-        fn_ptr(node, arg);
-    } ITERATE_LIST_END;
+        if(strncmp(edge->to.prefix[level]->prefix, gw_ip, PREFIX_LEN) == 0){
+            return peer_node;
+        }
+    } ITERATE_NODE_LOGICAL_NBRS_END;
+    return NULL;
 }
-

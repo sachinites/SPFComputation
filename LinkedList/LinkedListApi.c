@@ -400,4 +400,5 @@ singly_ll_add_ordered_data(ll_t *ll, void *data){
     /*Add in the end*/
     singly_ll_node_t *new_node = singly_ll_init_node(data);
     list_node_prev->next = new_node;
+    INC_NODE_COUNT_SINGLY_LL(ll);
 }

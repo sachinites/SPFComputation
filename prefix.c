@@ -49,7 +49,7 @@ create_new_prefix(const char *prefix, unsigned char mask, LEVEL level){
 
     prefix_t *prefix2 = calloc(1, sizeof(prefix_t));
     if(prefix)
-        strncpy(prefix2->prefix, prefix, strlen(prefix));
+        strncpy(prefix2->prefix, prefix, PREFIX_LEN);
     prefix2->prefix[PREFIX_LEN] = '\0';
     prefix2->mask = mask;
     prefix2->level = level;
@@ -427,6 +427,7 @@ add_new_prefix_in_list(ll_t *prefix_list , prefix_t *prefix,
     /*Add in the end*/
     singly_ll_node_t *new_node = singly_ll_init_node(prefix);
     list_node_prev->next = new_node;
+    INC_NODE_COUNT_SINGLY_LL(prefix_list);
 }
 
 FLAG
@@ -450,6 +451,7 @@ add_prefix_to_prefix_list(ll_t *prefix_list,
                           unsigned int hosting_node_metric){
 
     common_pfx_key_t key;
+    memset(&key, 0 , sizeof(common_pfx_key_t));
     strncpy(key.u.prefix.prefix, prefix->prefix, PREFIX_LEN);
     key.u.prefix.prefix[PREFIX_LEN] = '\0'; 
     key.u.prefix.mask = prefix->mask;
@@ -467,7 +469,8 @@ delete_prefix_from_prefix_list(ll_t *prefix_list, char *prefix, char mask){
     key.u.prefix.prefix[PREFIX_LEN] = '\0';
     key.u.prefix.mask = mask;
     old_prefix = singly_ll_search_by_key(prefix_list, &key);
-    assert(old_prefix);
+    if(!old_prefix)
+        return;
     singly_ll_delete_node_by_data_ptr(prefix_list, old_prefix);
     free_prefix(old_prefix);
     old_prefix = NULL;

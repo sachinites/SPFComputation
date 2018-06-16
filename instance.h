@@ -300,6 +300,8 @@ get_min_oif(node_t *node, node_t *node_nbr,
             if(_edge_end->dirn != OUTGOING)                       \
                 continue;                                         \
             _edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);   \
+            if(_edge->to.node->node_type[_level] != PSEUDONODE && \
+                    _edge->to.prefix[_level] == NULL) continue;   \
             if(!_edge->status) continue;                          \
             if(!IS_LEVEL_SET(_edge->level, _level))               \
                 continue;                                         \
@@ -341,21 +343,25 @@ get_min_oif(node_t *node, node_t *node_nbr,
             _nbr_node = __nbr_node;                                        \
             _edge1 = __edge;                                               \
             _edge2 = _edge1;                                               \
-            if(__nbr_node->node_type[_level] != PSEUDONODE) goto NONPN;    \
-                _j = 0;                                                    \
-                for(_j = 0; _j < MAX_NODE_INTF_SLOTS; _j++){               \
-                    _edge_end = __nbr_node->edges[_j];                     \
-                    if(!_edge_end) break;                                  \
-                    if(_edge_end->dirn != OUTGOING)                        \
-                        continue;                                          \
-                    _edge2 = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);   \
-                    if(!_edge2->status) continue;                          \
-                    if(!IS_LEVEL_SET(_edge2->level, _level))               \
-                        continue;                                          \
-                    _nbr_node = _edge2->to.node;                           \
-                    if(_nbr_node == _node)                                 \
-                        continue;                                          \
-                    NONPN:
+            if(__nbr_node->node_type[_level] != PSEUDONODE){               \
+                if(!_edge1->to.prefix[_level]) continue;                   \
+                goto NONPN;                                                \
+            }                                                              \
+            _j = 0;                                                        \
+            for(_j = 0; _j < MAX_NODE_INTF_SLOTS; _j++){                   \
+                _edge_end = __nbr_node->edges[_j];                         \
+                if(!_edge_end) break;                                      \
+                if(_edge_end->dirn != OUTGOING)                            \
+                continue;                                                  \
+                _edge2 = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);       \
+                if(!_edge2->to.prefix[_level]) continue;                   \
+                if(!_edge2->status) continue;                              \
+                if(!IS_LEVEL_SET(_edge2->level, _level))                   \
+                continue;                                                  \
+                _nbr_node = _edge2->to.node;                               \
+                if(_nbr_node == _node)                                     \
+                continue;                                                  \
+                NONPN:
 
 #define ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(_node, _nbr_node, __nbr_node, __level)           \
              if(__nbr_node && __nbr_node->node_type[__level] != PSEUDONODE){                 \
@@ -388,9 +394,7 @@ create_new_lsp_adj(char *lsp_name,
 edge_end_t *
 get_interface_from_intf_name(node_t *node, char *intf_name);
 
-
-void
-process_all_network_graph_nodes(void (*fn_ptr)(node_t *, void *), 
-                                void *arg);
+node_t *
+get_peer_node(edge_end_t *oif, LEVEL level, char *gw_ip);
 
 #endif /* __INSTANCE__ */

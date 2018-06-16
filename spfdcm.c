@@ -695,7 +695,7 @@ static int
 config_static_route_handler(param_t *param, 
                             ser_buff_t *tlv_buf, 
                             op_mode enable_or_disable){
-#if 0
+    
     node_t *host_node = NULL;
     tlv_struct_t *tlv = NULL;
     char *nh_name = NULL, 
@@ -704,8 +704,14 @@ config_static_route_handler(param_t *param,
          *gw_ip   = NULL,
          *intf_name = NULL;
 
-    int mask = 0;
-    rt_un_entry_t *rt_entry = NULL;
+    int mask = 0, k = 0;
+    rt_un_table_t *inet_0_rib = NULL;
+    rt_key_t inet_key;
+    internal_nh_t nexthop;
+    internal_un_nh_t *un_nxthop = NULL;
+    edge_end_t *oif = NULL;
+    boolean rc = FALSE;
+    LEVEL level = LEVEL1;
 
     TLV_LOOP_BEGIN(tlv_buf, tlv){
 
@@ -719,47 +725,63 @@ config_static_route_handler(param_t *param,
             mask = atoi(tlv->value);
         else if(strncmp(tlv->leaf_id, "gateway", strlen("gateway")) ==0)
             gw_ip = tlv->value;
-        else if(strncmp(tlv->leaf_id, "slot-no", strlen("slot-no")) ==0)
+        else if(strncmp(tlv->leaf_id, "oif", strlen("oif")) ==0)
             intf_name =  tlv->value;
         else
             assert(0);
     } TLV_LOOP_END;
 
+    memset(&inet_key, 0, sizeof(rt_key_t));
     host_node = singly_ll_search_by_key(instance->instance_node_list, host_node_name);
-#endif
-#if 0
+    inet_0_rib = host_node->spf_info.rib[INET_0];
+
     switch(enable_or_disable){
         case CONFIG_ENABLE:
-                    
-            rt_entry = calloc(1, sizeof(rt_un_entry_t));
+            
+            oif = get_interface_from_intf_name(host_node, intf_name);
+            strncpy(RT_ENTRY_PFX(&inet_key), dest_ip, PREFIX_LEN);
+            RT_ENTRY_MASK(&inet_key) = mask;       
+            
+            /*Test for local route*/ 
+            if(strncmp(gw_ip, "-", strlen("-")) == 0 || !oif){
+                inet_0_rt_un_route_install_nexthop(inet_0_rib, &inet_key, LEVEL1, NULL);
+                return 0;     
+            }
 
-            strncpy(rt_entry->dest.prefix, dest_ip, 15);
-            rt_entry->dest.prefix[15] = '\0';
-            rt_entry->dest.mask = mask;
-            rt_entry->version = 0;
-            rt_entry->cost = 0;
-            rt_entry->primary_nh_count[IPNH] = 1;
-            rt_entry->primary_nh[IPNH][0].nh_type = IPNH;
-            strncpy(rt_entry->primary_nh[IPNH][0].oif, intf_name, IF_NAME_SIZE);
-            rt_entry->primary_nh[IPNH][0].oif[IF_NAME_SIZE] = '\0'; 
-            strncpy(rt_entry->primary_nh[IPNH][0].nh_name, nh_name, NODE_NAME_SIZE);
-            rt_entry->primary_nh[0][IPNH].nh_name[NODE_NAME_SIZE] = '\0';
-            strncpy(rt_entry->primary_nh[IPNH][0].gwip, gw_ip, 15);
-            rt_entry->primary_nh[IPNH][0].gwip[15] = '\0';
+            if(!oif){
+                printf("Invalid interface name : %s\n", intf_name);
+                return -1;   
+            }
 
-            if(rt_route_install(host_node->spf_info.rttable, rt_entry) > 0)
-                return 0;
-            free(rt_entry);
-            rt_entry = NULL;
-            return -1;
+            nexthop.oif = oif;
+            nexthop.node = get_peer_node(oif, LEVEL1, dest_ip);
+            level = LEVEL1;
+            if(!nexthop.node){
+                nexthop.node = get_peer_node(oif, LEVEL2, dest_ip);
+                level = LEVEL2;
+            }
 
+            if(!nexthop.node){
+                printf("Topology incomplete : Could not find Nexthop\n");
+                return -1;
+            }
+
+            strncpy(nexthop.gw_prefix, gw_ip, PREFIX_LEN);
+            nexthop.gw_prefix[PREFIX_LEN] = '\0';
+
+            un_nxthop = inet_0_unifiy_nexthop(&nexthop, IGP_PROTO);
+            rc = inet_0_rt_un_route_install_nexthop(inet_0_rib, &inet_key, level, un_nxthop);
+            if(!rc){
+                free_un_nexthop(un_nxthop);
+                printf("Error : Route installation failed\n");
+                return -1;
+            }
+            break;
         case CONFIG_DISABLE:
-            rt_route_delete(host_node->spf_info.rttable, dest_ip, mask);
             break;
         default:
             ;
     }
-#endif
     return 0;
 }
 
@@ -1691,7 +1713,7 @@ spf_init_dcm(){
     libcli_register_param(&config_node_node_name_attachbit, &config_node_node_name_attachbit_enable);
     set_param_cmd_code(&config_node_node_name_attachbit_enable, CMDCODE_CONFIG_INSTANCE_ATTACHBIT_ENABLE);
 
-    /*config node <node name> static-route 10.1.1.1 24 20.1.1.1 S eth0/1*/
+    /*config node <node name> static-route 10.1.1.1 24 20.1.1.1 eth0/1*/
 
     static param_t config_node_node_name_static_route;
     init_param(&config_node_node_name_static_route, CMD, "static-route", 0, 0, INVALID, 0, "configure static route");
@@ -1709,13 +1731,9 @@ spf_init_dcm(){
     init_param(&config_node_node_name_static_route_dest_mask_nhip, LEAF, 0, 0, 0, IPV4, "gateway", "Gateway Address(ipv4)");
     libcli_register_param(&config_node_node_name_static_route_dest_mask, &config_node_node_name_static_route_dest_mask_nhip);
 
-    static param_t config_node_node_name_static_route_dest_mask_nhip_nhname;
-    init_param(&config_node_node_name_static_route_dest_mask_nhip_nhname, LEAF, 0, 0, validate_node_extistence, STRING, "nh-name", "Next Hop Node Name");  
-    libcli_register_param(&config_node_node_name_static_route_dest_mask_nhip, &config_node_node_name_static_route_dest_mask_nhip_nhname);
-
     static param_t config_node_node_name_static_route_dest_mask_nhip_nhname_slotno;
-    init_param(&config_node_node_name_static_route_dest_mask_nhip_nhname_slotno, LEAF, 0, config_static_route_handler, 0, STRING, "slot-no", "interface name ethx/y format");
-    libcli_register_param(&config_node_node_name_static_route_dest_mask_nhip_nhname, &config_node_node_name_static_route_dest_mask_nhip_nhname_slotno); 
+    init_param(&config_node_node_name_static_route_dest_mask_nhip_nhname_slotno, LEAF, 0, config_static_route_handler, 0, STRING, "oif", "oif ethx/y format");
+    libcli_register_param(&config_node_node_name_static_route_dest_mask_nhip, &config_node_node_name_static_route_dest_mask_nhip_nhname_slotno); 
 
     /*config node <node-name> lsp <lsp-name> metric <metric-value> to <tail-end-ip> level <level-no>*/
     {
