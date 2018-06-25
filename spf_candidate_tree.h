@@ -93,6 +93,6 @@ SPF_GET_CANDIDATE_TREE_TOP(candidate_tree_t *ctreeptr){
     FREE_CANDIDATE_TREE_INTERNALS(ctreeptr)
 
 #define SPF_CANDIDATE_TREE_NODE_REFRESH(ctreeptr, nodeptr, _level)  \
-    glevel = level;                                                 \
+    glevel = _level;                                                \
     CANDIDATE_TREE_NODE_REFRESH(ctreeptr, &nodeptr->candiate_tree_node)
 #endif /* __SPF_CANDIDATE_TREE__ */

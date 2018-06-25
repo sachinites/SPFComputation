@@ -502,9 +502,7 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     nbr_node->is_node_on_heap = TRUE;
                 }
                 else{
-                    /* We should remove the node and then add again into candidate tree
-                     * But now i dont have brain cells to do this useless work. It has impact
-                     * on performance, but not on output*/
+                    /* We should remove the node and then add again into candidate tree*/
                     SPF_CANDIDATE_TREE_NODE_REFRESH(ctree, nbr_node, level);
                 }
             }
