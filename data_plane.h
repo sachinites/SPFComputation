@@ -203,7 +203,6 @@ typedef struct internal_un_nh_t_{
     unsigned int root_metric;
     unsigned int dest_metric;
     time_t last_refresh_time;
-
     glthread_t glthread;
 } internal_un_nh_t;
 

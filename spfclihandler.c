@@ -293,7 +293,7 @@ display_instance_node_interfaces(param_t *param, ser_buff_t *tlv_buf){
         edge_end = node->edges[i];
         if(!edge_end)
             break;
-        
+        if(edge_end->dirn == INCOMING) continue;
         printf("    %s %s\n", edge_end->intf_name, (edge_end->dirn == OUTGOING) ? "->" : "<-");
     }
 }

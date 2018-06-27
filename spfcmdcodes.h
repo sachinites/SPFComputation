@@ -160,4 +160,7 @@
 #define TOPO_NODE_INTF_ASSIGN_MAC_ADDRESS                   99 /*config topo node <node-name1> interface <intf-name1> mac <mac-address>*/
 #define CONFIG_TOPO                                         100 /*config topo*/
 
+#define CMDCODE_SHOW_INSTANCE_NODE_INTERFACES               101 /*show instance node <node_name> interfaces*/
+#define CMDCODE_SHOW_INSTANCE_NODE                          102 /*show instance node <node_name> */
+
 #endif /* __SPFCMDCODES__H */

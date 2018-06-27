@@ -147,7 +147,7 @@ typedef struct _edge_t{
     edge_type_t etype;
     rsvp_tunnel_t *fa;      /*Forwarding adjacency*/
     char status;            /* 0 down, 1 up*/
-    unsigned int bandwidth; /*bandwidth for WECMP in mpbs*/
+    float bandwidth; /*bandwidth for WECMP in GIG*/
 } edge_t;
 
 typedef struct instance_{

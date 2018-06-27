@@ -1013,14 +1013,25 @@ show_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_o
     tlv_struct_t *tlv = NULL;
     char *node_name = NULL;
     node_t *node = NULL;
-    
+    int cmdcode = -1;
+     
     TLV_LOOP_BEGIN(tlv_buf, tlv){
         node_name = tlv->value;
     } TLV_LOOP_END;
 
+    cmdcode = EXTRACT_CMD_CODE(tlv_buf);
+
     node =  (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
-    
-    dump_node_info(node); 
+    switch(cmdcode){    
+        case CMDCODE_SHOW_INSTANCE_NODE:
+            dump_node_info(node); 
+            break;
+        case CMDCODE_SHOW_INSTANCE_NODE_INTERFACES:
+            display_instance_node_interfaces(param, tlv_buf);
+            break;
+        default:
+            assert(0);
+    }
     return 0;
 }
 
@@ -1127,7 +1138,13 @@ spf_init_dcm(){
     static param_t instance_node_name;
     init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, validate_node_extistence, STRING, "node-name", "Node Name");
     libcli_register_param(&instance_node, &instance_node_name);
-    
+    set_param_cmd_code(&instance_node_name, CMDCODE_SHOW_INSTANCE_NODE); 
+    {
+        static param_t interfaces;
+        init_param(&interfaces, CMD, "interfaces", show_instance_node_handler, 0, INVALID, 0, "Interfaces");
+        libcli_register_param(&instance_node_name, &interfaces);
+        set_param_cmd_code(&interfaces, CMDCODE_SHOW_INSTANCE_NODE_INTERFACES);
+    } 
     {
         /*show instance node <node-name> backup-spf_results */
         static param_t backup_spf_results;

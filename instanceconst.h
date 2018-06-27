@@ -43,7 +43,7 @@
 #define MAX_NXT_HOPS            8
 #define INFINITE_METRIC         (0xFE000000)
 #define LINK_DEFAULT_METRIC     10
-#define DEFAULT_LINK_BW         LINK_DEFAULT_METRIC
+#define DEFAULT_LINK_BW         1 /*1GIG*/
 #define STRING_REASON_LEN       256
 #define MPLS_STACK_OP_LIMIT_MAX 3
 #define TOPOLOGY_NAME_SIZE      32
