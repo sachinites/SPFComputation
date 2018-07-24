@@ -1201,8 +1201,9 @@ typedef mpls_label_stack_t * (*pfe_engine)(node_t *node, char *dst_prefix,
 
 
 mpls_label_stack_t *
-ipv4_pfe_engine(node_t *node, char *dst_prefix, trace_rc_t *trace_rc, 
-                    node_t **next_node){
+ipv4_pfe_engine(node_t *node, char *dst_prefix, 
+                trace_rc_t *trace_rc, 
+                node_t **next_node){
 
     unsigned int i = 1;
 

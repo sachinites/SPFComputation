@@ -300,8 +300,6 @@ get_min_oif(node_t *node, node_t *node_nbr,
             if(_edge_end->dirn != OUTGOING)                       \
                 continue;                                         \
             _edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);   \
-            if(_edge->to.node->node_type[_level] != PSEUDONODE && \
-                    _edge->to.prefix[_level] == NULL) continue;   \
             if(!_edge->status) continue;                          \
             if(!IS_LEVEL_SET(_edge->level, _level))               \
                 continue;                                         \
@@ -344,7 +342,6 @@ get_min_oif(node_t *node, node_t *node_nbr,
             _edge1 = __edge;                                               \
             _edge2 = _edge1;                                               \
             if(__nbr_node->node_type[_level] != PSEUDONODE){               \
-                if(!_edge1->to.prefix[_level]) continue;                   \
                 goto NONPN;                                                \
             }                                                              \
             _j = 0;                                                        \
@@ -354,7 +351,6 @@ get_min_oif(node_t *node, node_t *node_nbr,
                 if(_edge_end->dirn != OUTGOING)                            \
                 continue;                                                  \
                 _edge2 = GET_EGDE_PTR_FROM_FROM_EDGE_END(_edge_end);       \
-                if(!_edge2->to.prefix[_level]) continue;                   \
                 if(!_edge2->status) continue;                              \
                 if(!IS_LEVEL_SET(_edge2->level, _level))                   \
                 continue;                                                  \

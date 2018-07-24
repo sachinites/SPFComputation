@@ -1417,7 +1417,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
             if(lfa_type == LINK_AND_NODE_PROTECTION_LFA){
                 /*Record the LFA*/ 
-                sprintf(instance->traceopts->b, "lfa pair computed : %s(OIF = %s),%s, lfa_type = %s", N->node_name, 
+                sprintf(instance->traceopts->b, "lfa pair computed : %s(OIF = %s), Dest = %s, lfa_type = %s", N->node_name, 
                         edge1->from.intf_name, D->node_name, 
                         get_str_lfa_type(lfa_type)); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 

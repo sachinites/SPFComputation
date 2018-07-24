@@ -1922,7 +1922,7 @@ spf_init_dcm(){
             {
                 /*debug show instance node <node-name>*/
                 static param_t instance_node_name;
-                init_param(&instance_node_name, LEAF, 0, show_instance_node_handler, 
+                init_param(&instance_node_name, LEAF, 0, 0, 
                     validate_node_extistence, STRING, "node-name", "Node Name");
                 libcli_register_param(&instance_node, &instance_node_name);
                 {

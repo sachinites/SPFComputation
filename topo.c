@@ -711,6 +711,59 @@ broadcast_link_protecting_lfa(){
 }                                                                           
 
 instance_t *
+lsp_as_backup_topo(){
+              
+#if 0 
+                              +------+
+                       5.1.1.1|      |4.1.1.2              5
+       +----------------------+  R4  +-------------------------------------+
+       |                   0/2|      |0/1                                  |
+       |                      +------+                                     |
+       |                                                            4.1.1.1|0/2
+       |                                                                +--+-----+
+       |5                                                               |        |
+       |                                                                |  R3    |
+       |                                                                +--+-----+
+       |                                                                   |0/1
+       |                                                                   |3.1.1.2
+       |5.1.1.2                                                            |
+       |0/1                   +------+                +-------+            |
+     +-+---+0/0    2   1.1.1.2| R1   |0/2      2.2.2.2|  R2   |0/2         |(8)
+     |     |------------------+      +------5---------+      +------------+
+     + R0  |1.1.1.1        0/1+------+2.2.2.1      0/1+---++--+3.1.1.1
+     |     |                                              ||
+     +++---+                                              ||
+      ||                                                  ||
+      |+-------------------------R0-R2 RSVP LSP-----------+|
+      +------------------------------9--------------------+
+
+#endif
+
+    instance_t *instance = get_new_instance();
+    node_t *R0_re = create_new_node(instance, "R0_re", AREA1, "192.168.0.1");
+    node_t *R1_re = create_new_node(instance, "R1_re", AREA1, "192.168.0.2");
+    node_t *R2_re = create_new_node(instance, "R2_re", AREA1, "192.168.0.3");
+    node_t *R3_re = create_new_node(instance, "R3_re", AREA1, "192.168.0.4");
+    node_t *R4_re = create_new_node(instance, "R4_re", AREA1, "192.168.0.5");
+
+
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/2", 5, create_new_prefix("5.1.1.2", 30, LEVEL1), create_new_prefix("5.1.1.1", 30, LEVEL1), LEVEL1)),
+                                R0_re, R4_re, BIDIRECTIONAL);
+    insert_edge_between_2_nodes((create_new_edge("eth0/0", "eth0/1", 2, create_new_prefix("1.1.1.1", 30, LEVEL1), create_new_prefix("1.1.1.2", 30, LEVEL1), LEVEL1)),
+                                R0_re, R1_re, BIDIRECTIONAL);
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/2", 5, create_new_prefix("4.1.1.2", 30, LEVEL1), create_new_prefix("4.1.1.1", 30, LEVEL1), LEVEL1)),
+                                R4_re, R3_re, BIDIRECTIONAL);
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/2", 8, create_new_prefix("3.1.1.2", 30, LEVEL1), create_new_prefix("3.1.1.1", 30, LEVEL1), LEVEL1)),
+                                R3_re, R2_re, BIDIRECTIONAL);
+    insert_edge_between_2_nodes((create_new_edge("eth0/1", "eth0/2", 5, create_new_prefix("2.2.2.2", 30, LEVEL1), create_new_prefix("2.2.2.1", 30, LEVEL1), LEVEL1)),
+                                R2_re, R1_re, BIDIRECTIONAL);
+    set_instance_root(instance, R0_re);
+    return instance;
+}
+
+
+
+instance_t *
 pseudonode_ecmp_topo(){
 
 #if 0

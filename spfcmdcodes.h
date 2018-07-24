@@ -163,4 +163,9 @@
 #define CMDCODE_SHOW_INSTANCE_NODE_INTERFACES               101 /*show instance node <node_name> interfaces*/
 #define CMDCODE_SHOW_INSTANCE_NODE                          102 /*show instance node <node_name> */
 
+/*traffic engineering*/
+#define CMDCODE_CONFIG_NODE_TRAFFIC_ENGINEERING             103 /*config node <node-name> traffic-engineering*/
+#define CMDCODE_CONFIG_NODE_TE_IGNORE_LSP_METRICS           104 /*config node <node-name> traffic-engineering ignore-lsp-metric*/
+#define CMDCODE_CONFIG_NODE_TE_SHORTCUTS                    105 /*config node <node-name> traffic-engineering ipv4-shortcuts*/
+
 #endif /* __SPFCMDCODES__H */
