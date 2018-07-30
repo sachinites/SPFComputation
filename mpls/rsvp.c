@@ -511,6 +511,7 @@ NEXT_NODE:
     else{
         printf("RSVP local route already exists on egress lsr node %s for route %s/32\n",
                 next_node->node_name, edgress_lsr_rtr_id);
+            return -1;
     }
     return 0;
 }
