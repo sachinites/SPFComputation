@@ -261,8 +261,6 @@ attach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
 void
 dettach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
 
-    singly_ll_node_t *prefix_list_node = NULL;
-    prefix_t *prefix = NULL;
     LEVEL level_it, level;
 
     if(edge_end->dirn != OUTGOING)
@@ -275,18 +273,8 @@ dettach_edge_end_prefix_on_node(node_t *node, edge_end_t *edge_end){
         if(!IS_LEVEL_SET(level_it, level))
             continue;
 
-        prefix_list_node = singly_ll_get_node_by_data_ptr(GET_NODE_PREFIX_LIST(node, level), 
-                edge_end->prefix[level]);
-        if(!prefix_list_node)
-            continue;
-
-        prefix = (prefix_t *)prefix_list_node->data;
-        prefix->ref_count--;
-        singly_ll_delete_node(GET_NODE_PREFIX_LIST(node, level), prefix_list_node);
-        if(prefix->ref_count == 0){
-            free_prefix(prefix);
-            prefix = NULL;
-        }
+        deattach_prefix_on_node(node, edge_end->prefix[level]->prefix, 
+        edge_end->prefix[level]->mask, level_it);
     }
 }
 

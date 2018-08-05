@@ -1154,11 +1154,9 @@ build_routing_table(spf_info_t *spf_info,
         if(route->level != level)
             continue;
 
-        refine_route_backups(route);
+        if(route->install_state != RTE_STALE)
+            refine_route_backups(route);
 
-        if(route->install_state != RTE_UPDATED)
-            continue;
-    
     } ITERATE_LIST_END;
 }
 
@@ -1187,11 +1185,11 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
 
     build_routing_table(spf_info, spf_root, level);
     //start_route_installation(spf_info, level);
-    //delete_stale_routes(spf_info, level, UNICAST_T);
+    delete_stale_routes(spf_info, level, UNICAST_T);
     if(is_node_spring_enabled(spf_root, level)){
         //start_spring_routes_installation(spf_info, level);
         update_node_segment_routes_for_remote(spf_info, level);
-        //delete_stale_routes(spf_info, level, SPRING_T);
+        delete_stale_routes(spf_info, level, SPRING_T);
     }
   
     /*Flush all Ribs before route installation*/ 
@@ -1441,8 +1439,8 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
 
         route = list_node->data;
         if(route->level != level) continue;
-        if(route->install_state == RTE_STALE)
-            continue;
+
+        assert(route->install_state != RTE_STALE);
 
         memset(&rt_key, 0, sizeof(rt_key_t));
         strncpy(RT_ENTRY_PFX(&rt_key), route->rt_key.u.prefix.prefix, PREFIX_LEN);
@@ -1567,8 +1565,8 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
         
         route = list_node->data;
         if(route->level != level) continue;
-        if(route->install_state == RTE_STALE)
-            continue;
+        
+        assert(route->install_state != RTE_STALE);
 
         /*First install primary routes in inet.3 table*/
         memset(&rt_key, 0, sizeof(rt_key_t));
@@ -1726,7 +1724,6 @@ enhanced_start_route_installation(spf_info_t *spf_info,
          default:
             assert(0);
     }
-    delete_stale_routes(spf_info, level, rtttype);
 }
 
 void 
