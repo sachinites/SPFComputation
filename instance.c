@@ -465,9 +465,11 @@ attach_prefix_on_node(node_t *node,
     _prefix->hosting_node = node;
     _prefix->prefix_flags = prefix_flags;
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s, prefix attached : %s/%u, prefix metric : %u",
         node->node_name, prefix, mask, metric);
     trace(instance->traceopts, SPF_PREFIX_BIT);
+#endif
 
     if(add_prefix_to_prefix_list(GET_NODE_PREFIX_LIST(node, level), _prefix, 0))
         return _prefix;
@@ -495,9 +497,11 @@ deattach_prefix_on_node(node_t *node,
     if(!_prefix)
         return;
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s, prefix deattached : %s/%u, prefix metric : %u",
         node->node_name, prefix, mask, _prefix->metric); 
     trace(instance->traceopts, SPF_PREFIX_BIT);
+#endif
     singly_ll_remove_node_by_dataptr(GET_NODE_PREFIX_LIST(node, level), _prefix);
     free_prefix(_prefix);
     _prefix = NULL;

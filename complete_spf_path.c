@@ -407,11 +407,12 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         candidate_node = SPF_GET_CANDIDATE_TREE_TOP(ctree);
         SPF_REMOVE_CANDIDATE_TREE_TOP(ctree);
         candidate_node->is_node_on_heap = FALSE;
-    
+
+#ifdef __ENABLE_TRACE__    
         sprintf(instance->traceopts->b, "Node : %s : Candidate node removed : %s(spf_metric = %u)", 
                         spf_root->node_name, candidate_node->node_name, candidate_node->spf_metric[level]);
         trace(instance->traceopts, DIJKSTRA_BIT);
-        
+#endif
         if(candidate_node->node_type[level] != PSEUDONODE){
             ITERATE_NH_TYPE_BEGIN(nh){
 
@@ -422,10 +423,11 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
                 res->node = candidate_node;
                 glthread_add_next(&spf_root->spf_path_result[level][nh], &res->glue);
+#ifdef __ENABLE_TRACE__
                 sprintf(instance->traceopts->b, "Node : %s : Result Recorded for node %s for NH type : %s", 
                         spf_root->node_name, candidate_node->node_name, nh == IPNH ? "IPNH" : "LSPNH");
                 trace(instance->traceopts, DIJKSTRA_BIT);
-
+#endif
                 if(candidate_node->pred_lst[level][nh].right)
                     glthread_add_next(&res->pred_db, candidate_node->pred_lst[level][nh].right);
 
@@ -439,9 +441,11 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         ITERATE_NODE_LOGICAL_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
             /*Two way handshake check. Nbr-ship should be two way with nbr, even if nbr is PN. Do
              * not consider the node for SPF computation if we find 2-way nbrship is broken. */
+#ifdef __ENABLE_TRACE__            
             sprintf(instance->traceopts->b, "Node : %s : Exploring : Candidate Node = %s, Nbr = %s, oif = %s",
                 spf_root->node_name, candidate_node->node_name, nbr_node->node_name, edge->from.intf_name);
             trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
             if(!is_two_way_nbrship(candidate_node, nbr_node, level) || 
                     edge->status == 0){
                 sprintf(instance->traceopts->b, "Node : %s : Two way nbr ship failed for Candidate Node = %s, Nbr = %s",
@@ -459,9 +463,11 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     clear_spf_predecessors(&nbr_node->pred_lst[level][nh]);
                     if(nh == IPNH){
                         if(candidate_node->node_type[level] != PSEUDONODE){
+#ifdef __ENABLE_TRACE__                            
                             sprintf(instance->traceopts->b, "Node : %s : Node = %s , predecossor Added = %s",
                                 spf_root->node_name,  nbr_node->node_name, candidate_node->node_name);
                             trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
                             add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][nh], 
                                     candidate_node, &edge->from, 
                                     nbr_node->node_type[level] != PSEUDONODE ? \
@@ -469,17 +475,21 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                         }
                         else{
                             /*copy (do not move) all predecessors of PN into nbr node*/
+#ifdef __ENABLE_TRACE__                            
                             sprintf(instance->traceopts->b, "Node : %s : Candidate Node = %s (PN case), presecessor copied to %s",
                                     spf_root->node_name,  candidate_node->node_name, nbr_node->node_name);
                             trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
                             ITERATE_GLTHREAD_BEGIN(&candidate_node->pred_lst[level][nh], curr){
 
                                 pred_info = glthread_to_pred_info(curr);  
                                 pred_info_copy = calloc(1, sizeof(pred_info_t));
                                 memcpy(pred_info_copy, pred_info, sizeof(pred_info_t));
+#ifdef __ENABLE_TRACE__                                
                                 sprintf(instance->traceopts->b, "Node : %s : Predecessor copied = %s", 
                                     spf_root->node_name, pred_info->node->node_name);
                                 trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
                                 init_glthread(&pred_info_copy->glue);
                                 strncpy(pred_info_copy->gw_prefix, edge->to.prefix[level]->prefix, PREFIX_LEN);
                                 glthread_add_next(&nbr_node->pred_lst[level][nh], &pred_info_copy->glue);   
@@ -490,15 +500,19 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
                 nbr_node->spf_metric[level] =  IS_OVERLOADED(candidate_node, level) ? 
                     INFINITE_METRIC : candidate_node->spf_metric[level] + edge->metric[level]; 
+#ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "Node : %s : Node = %s metric improved to = %u",
                     spf_root->node_name,  nbr_node->node_name, nbr_node->spf_metric[level]);
                 trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
             
                 if(nbr_node->is_node_on_heap == FALSE){
                     SPF_INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
+#ifdef __ENABLE_TRACE__                    
                     sprintf(instance->traceopts->b, "Node : %s : Node %s Added to Candidate tree", 
                             spf_root->node_name, nbr_node->node_name);
                     trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
                     nbr_node->is_node_on_heap = TRUE;
                 }
                 else{
@@ -514,9 +528,11 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 ITERATE_NH_TYPE_BEGIN(nh){
                     if(nh == IPNH){
                         if(candidate_node->node_type[level] != PSEUDONODE){
+#ifdef __ENABLE_TRACE__                        
                         sprintf(instance->traceopts->b, "Node : %s : Node = %s , predecossor Added = %s",
                             spf_root->node_name,  nbr_node->node_name, candidate_node->node_name);
                         trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
                             add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][nh], 
                                     candidate_node, &edge->from, 
                                     nbr_node->node_type[level] != PSEUDONODE ? \
@@ -524,18 +540,22 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                         }
                         else{
                             /*copy (do not move) all predecessors of PN into nbr node*/
+#ifdef __ENABLE_TRACE__                            
                             sprintf(instance->traceopts->b, "Node : %s : Candidate Node = %s (PN case), presecessor copied to %s",
                                     spf_root->node_name,  candidate_node->node_name, nbr_node->node_name);
                             trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
 
                             ITERATE_GLTHREAD_BEGIN(&candidate_node->pred_lst[level][nh], curr){
 
                                 pred_info = glthread_to_pred_info(curr);  
                                 pred_info_copy = calloc(1, sizeof(pred_info_t));
                                 memcpy(pred_info_copy, pred_info, sizeof(pred_info_t));
+#ifdef __ENABLE_TRACE__                                
                                 sprintf(instance->traceopts->b, "Node : %s : Predecessor copied = %s", 
                                     spf_root->node_name, pred_info->node->node_name);
                                 trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
                                 init_glthread(&pred_info_copy->glue);
                                 strncpy(pred_info_copy->gw_prefix, edge->to.prefix[level]->prefix, PREFIX_LEN);
                                 glthread_add_next(&nbr_node->pred_lst[level][nh], &pred_info_copy->glue);   
@@ -549,9 +569,11 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         
         /*Delete the PN's predecessor list*/
         if(candidate_node->node_type[level] == PSEUDONODE){
+#ifdef __ENABLE_TRACE__            
             sprintf(instance->traceopts->b, "Node : %s : PN = %s, Clean up pred db",
                     spf_root->node_name, candidate_node->node_name);
             trace(instance->traceopts, DIJKSTRA_BIT); 
+#endif
             ITERATE_NH_TYPE_BEGIN(nh){
                 ITERATE_GLTHREAD_BEGIN(&candidate_node->pred_lst[level][nh], curr){
 
@@ -561,13 +583,17 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                 } ITERATE_GLTHREAD_END(&candidate_node->pred_lst[level][nh], curr);
             } ITERATE_NH_TYPE_END;
         }
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Node : %s : Node = %s has been processed",
                 spf_root->node_name, candidate_node->node_name);
         trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
     } /* while loop ends*/
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s : Running %s() with spf_root = %s, at %s Finished", 
         spf_root->node_name, __FUNCTION__, spf_root->node_name, get_str_level(level));
     trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
 }
 
 void

@@ -208,16 +208,20 @@ spf_determine_multi_area_attachment(spf_info_t *spf_info,
         if(res->node->area != myarea && 
                 is_two_way_nbrship(res->node, spf_root, LEVEL2)){
             spf_info->spff_multi_area = 1;
+#ifdef __ENABLE_TRACE__            
             sprintf(instance->traceopts->b, "spf_root : %s is L2 Attached with remote Area node : %s", 
                             spf_root->node_name, res->node->node_name); 
             trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+#endif
             break;   
         }
     }ITERATE_LIST_END;
 
     if(spf_info->spff_multi_area == 0){
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "spf_root : %s is not L2 Attached with remote Area", spf_root->node_name);
         trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+#endif
     }
 }
 
@@ -240,6 +244,7 @@ apply_mask2(char *prefix, char mask, char *str_prefix){
     apply_mask(prefix, mask, str_prefix);
     char *mask_ptr = str_prefix + strlen(str_prefix);
     str_prefix[PREFIX_LEN] = 48;
+#ifdef __ENABLE_TRACE__    
     sprintf(mask_ptr, "/%u", mask);
     str_prefix[PREFIX_LEN_WITH_MASK] = '\0';
 } 
@@ -313,11 +318,14 @@ print_nh_list2(internal_nh_t *nh_list){
     
     sprintf(instance->traceopts->b, "printing next hop list"); 
     trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
     for(; i < MAX_NXT_HOPS; i++){
         if(is_nh_list_empty2(&nh_list[i])) return;
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "oif = %s, NH =  %s , Level = %s, gw_prefix = %s", 
             nh_list[i].oif->intf_name, nh_list[i].node->node_name, get_str_level(nh_list[i].level), nh_list[i].gw_prefix);
         trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
     }
 }
 

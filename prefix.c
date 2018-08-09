@@ -303,9 +303,11 @@ leak_prefix(char *node_name, char *_prefix, char mask,
         leaked_prefix = attach_prefix_on_node (node, prefix->prefix, prefix->mask, 
                         to_level, prefix->metric, prefix->prefix_flags);
         if(!leaked_prefix){
+#ifdef __ENABLE_TRACE__            
             sprintf(instance->traceopts->b, "Node : %s, equal best prefix : %s already leaked/present in %s\n",
                 node->node_name, STR_PREFIX(prefix), get_str_level(to_level));
             trace(instance->traceopts, SPF_PREFIX_BIT);
+#endif
             return NULL;
         }
         leaked_prefix->ref_count = 0;
@@ -313,9 +315,11 @@ leak_prefix(char *node_name, char *_prefix, char mask,
         if(from_level == LEVEL2 && to_level == LEVEL1)
             SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, STR_PREFIX(prefix), PREFIX_MASK(prefix), get_str_level(from_level), get_str_level(to_level));
         trace(instance->traceopts, SPF_PREFIX_BIT);
+#endif
 
         return leaked_prefix;
     }
@@ -344,9 +348,11 @@ leak_prefix(char *node_name, char *_prefix, char mask,
                         route_to_be_leaked->ext_metric : route_to_be_leaked->spf_metric, 0);
 
         if(!leaked_prefix){
+#ifdef __ENABLE_TRACE__            
             sprintf(instance->traceopts->b, "Node : %s, equal best prefix : %s already leaked/present in %s\n",
                 node->node_name, STR_PREFIX(prefix), get_str_level(to_level));
             trace(instance->traceopts, SPF_PREFIX_BIT);
+#endif
             return NULL;
         }
 
@@ -356,11 +362,13 @@ leak_prefix(char *node_name, char *_prefix, char mask,
         if(from_level == LEVEL2 && to_level == LEVEL1)
             SET_BIT(leaked_prefix->prefix_flags, PREFIX_DOWNBIT_FLAG);
 
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Node : %s : prefix %s/%u leaked from %s to %s", 
                 node->node_name, route_to_be_leaked->rt_key.u.prefix.prefix, 
                 route_to_be_leaked->rt_key.u.prefix.mask, get_str_level(from_level), 
                 get_str_level(to_level)); 
         trace(instance->traceopts, SPF_PREFIX_BIT); 
+#endif
 
         return leaked_prefix;
     }

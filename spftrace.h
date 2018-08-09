@@ -73,4 +73,6 @@ is_spf_trace_enabled(instance_t *instance, spf_trace_t spf_trace);
 
 void
 spf_display_trace_options();
+
+#define __ENABLE_TRACE__
 #endif /* __SPF_TRACE__ */

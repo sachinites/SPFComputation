@@ -143,9 +143,11 @@ generate_lsp(instance_t *instance,
                 if(nbr_node->lsp_distribution_bit){
                     ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(curr_node, nbr_node, pn_node, level_it);
                 }
+#ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "LSP Distribution Src : %s, Des Node : %s", 
                         lsp_generator->node_name, nbr_node->node_name); 
                 trace(instance->traceopts, SPF_EVENTS_BIT);
+#endif
 
                 fn_ptr(lsp_generator, nbr_node, dist_info);
                 nbr_node->lsp_distribution_bit = 1;

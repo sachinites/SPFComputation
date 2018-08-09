@@ -231,18 +231,22 @@ springify_rlfa_nexthop(node_t *spf_root,
     mpls_label_t mpls_label = 0;
     
     if(!is_node_spring_enabled(nxthop->proxy_nbr, route->level)) {
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, LDP proxy nexthop %s(%s) cannot be springified. SPRING not enabled",
                 spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
                 get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name);
         trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
         return;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, springifying LDP backup nexthops %s(%s), RLFA : %s",
             spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
             get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name,
             nxthop->rlfa->node_name);
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
 
     /* PLR should send the traffic to Destination via RLFA. There are two options to
      * perform this via SR-tunnels:
@@ -269,6 +273,7 @@ springify_rlfa_nexthop(node_t *spf_root,
         nxthop->mpls_label_out[1] = mpls_label;
         nxthop->stack_op[1] = PUSH;
 
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u\n\tStack : %s:%u\t%s:%u, oif : %s, gw : %s, nexthop : %s", 
                 spf_root->node_name, route->rt_key.u.prefix.prefix,
                 route->rt_key.u.prefix.mask, get_str_level(route->level), route->rt_key.u.label,
@@ -276,15 +281,18 @@ springify_rlfa_nexthop(node_t *spf_root,
                 get_str_stackops(nxthop->stack_op[0]) , nxthop->mpls_label_out[0], next_hop_oif_name(*nxthop),
                 next_hop_gateway_pfx(nxthop), nxthop->proxy_nbr->node_name);
         trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
         return;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u\n\tStack : %s:%u, oif : %s, gw : %s, nexthop : %s", 
         spf_root->node_name, route->rt_key.u.prefix.prefix,
         route->rt_key.u.prefix.mask, get_str_level(route->level), route->rt_key.u.label,
         get_str_stackops(nxthop->stack_op[0]) , nxthop->mpls_label_out[0], next_hop_oif_name(*nxthop),
         next_hop_gateway_pfx(nxthop), nxthop->proxy_nbr->node_name);
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
 }
 
 static void
@@ -298,17 +306,21 @@ springify_ipv4_nexthop(node_t *spf_root,
     unsigned int outgoing_label = 0;
    
     if(!is_node_spring_enabled(nxthop->node, route->level)) {
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, IPV4 nexthop %s(%s) cannot be springified. SPRING not enabled",
                 spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
                 get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name);
         trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
         return;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s, springifying IPV4 nexthop %s(%s)",
             spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
             get_str_level(route->level), next_hop_oif_name(*nxthop), nxthop->node->node_name);
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
 
     /*caluclate the SPRING Nexthop related information first*/
     if(is_node_best_prefix_originator(nxthop->node, route)){
@@ -336,12 +348,14 @@ springify_ipv4_nexthop(node_t *spf_root,
     nxthop->stack_op[0] = stack_op;
     
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s : After Springification : route %s/%u at %s InLabel : %u, OutLabel : %u," 
             " Stack Op : %s, oif : %s, gw : %s, nexthop : %s", spf_root->node_name, route->rt_key.u.prefix.prefix, 
             route->rt_key.u.prefix.mask, get_str_level(route->level), route->rt_key.u.label, 
             nxthop->mpls_label_out[0], get_str_stackops(nxthop->stack_op[0]), next_hop_oif_name(*nxthop),
             next_hop_gateway_pfx(nxthop), nxthop->node->node_name);
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
 }
 
 
@@ -355,10 +369,12 @@ springify_unicast_route(node_t *spf_root, routes_t *route){
     internal_nh_t *nxthop = NULL;
     unsigned int  dst_prefix_sid = 0;
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s : Springifying route %s/%u at %s", 
         spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask,
         get_str_level(route->level));
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
 
     prefix_t *prefix = get_best_sr_active_route_prefix(route);/*This prefix is one of the best prefix in case of ECMP*/
     dst_prefix_sid = PREFIX_SID_INDEX(prefix);
@@ -370,11 +386,13 @@ springify_unicast_route(node_t *spf_root, routes_t *route){
         route->rt_key.u.label = incoming_label;
         if(route->install_state != RTE_ADDED)
             route->install_state = RTE_CHANGED;
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s Incoming label updated %u -> %u, route status = %s",
                 spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
                 get_str_level(route->level), old_incoming_label, incoming_label, 
                 route_intall_status_str(route->install_state));
         trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
     }
 
     /*Now Do primary next hops*/

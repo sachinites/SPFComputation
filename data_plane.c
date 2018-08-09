@@ -230,9 +230,11 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     glthread_t *curr = NULL;
     internal_un_nh_t *nxt_hop = NULL;
      
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
     
     rt_un_entry_t *rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
     internal_un_nh_t *existing_nh = NULL;
@@ -262,8 +264,11 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     }
 
     if(!nexthop){
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "RIB : %s : local route %s/%d added to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
+        trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
         return TRUE;
     }
     
@@ -273,10 +278,12 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     existing_nh = lookup_clone_next_hop(rib, rt_un_entry, nexthop);
     
     if(existing_nh){
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Warning : RIB : %s : Nexthop (%s) --> (%s)%s already exists in %s/%d route",
             rib->rib_name, existing_nh->oif->intf_name, existing_nh->gw_prefix, existing_nh->nh_node->node_name,
             RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
         trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
         return FALSE;
     }
 
@@ -292,9 +299,11 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
 static boolean
 inet_0_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
     
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Added route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
     /*Refresh time before adding an enntry*/
     time(&rt_un_entry->last_refresh_time);
     glthread_add_next(&rib->head, &rt_un_entry->glthread);
@@ -331,10 +340,12 @@ inet_0_rt_un_route_update(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
         return FALSE;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Updated route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
             RT_ENTRY_MASK(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
 
     rib->rt_un_route_delete(rib, &rt_un_entry1->rt_key);
     rib->rt_un_route_install(rib, rt_un_entry);
@@ -358,9 +369,11 @@ inet_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
         return FALSE;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Deleted route %s/%d from Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
 
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
@@ -381,9 +394,11 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     glthread_t *curr = NULL;
     internal_un_nh_t *nxt_hop = NULL;
      
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
 
     rt_un_entry_t *rt_un_entry = rib->rt_un_route_lookup(rib, rt_key);
     internal_un_nh_t *existing_nh = NULL;
@@ -413,6 +428,7 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     }
 
     if(!nexthop){
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "RIB : %s : local route %s/%d added to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
         return TRUE;
@@ -424,6 +440,7 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
 
     if(existing_nh){
         sprintf(instance->traceopts->b, "Warning : RIB : %s : Nexthop (%s) --> (%s)%s already exists in %s/%d route",
+#endif
             rib->rib_name, existing_nh->oif->intf_name, existing_nh->gw_prefix, existing_nh->nh_node->node_name,
             RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
         trace(instance->traceopts, ROUTING_TABLE_BIT);
@@ -442,9 +459,11 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
 static boolean
 inet_3_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
     
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Added route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
     /*Refresh time before adding an enntry*/
     time(&rt_un_entry->last_refresh_time);
     glthread_add_next(&rib->head, &rt_un_entry->glthread);
@@ -481,10 +500,12 @@ inet_3_rt_un_route_update(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
         return FALSE;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Updated route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
             RT_ENTRY_MASK(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
 
     rib->rt_un_route_delete(rib, &rt_un_entry1->rt_key);
     rib->rt_un_route_install(rib, rt_un_entry);
@@ -508,9 +529,11 @@ inet_3_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
         return FALSE;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Deleted route %s/%d from Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
 
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
@@ -527,10 +550,12 @@ inet_3_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
 static boolean
 mpls_0_rt_un_route_install(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
     
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Added route %s/%d(%u) to Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key),
             RT_ENTRY_LABEL(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
     /*Refresh time before adding an enntry*/
     time(&rt_un_entry->last_refresh_time);
     glthread_add_next(&rib->head, &rt_un_entry->glthread);
@@ -546,9 +571,11 @@ mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     glthread_t *curr = NULL;
     internal_un_nh_t *nxt_hop = NULL;
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Adding route %s/%d to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
     /*Refresh time before adding an enntry*/
     time(&nexthop->last_refresh_time);
 
@@ -581,10 +608,12 @@ mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
 
     existing_nh = lookup_clone_next_hop(rib, rt_un_entry, nexthop);
     if(existing_nh){
+#ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Warning : RIB : %s : Nexthop (%s) --> (%s)%s already exists in %s/%d route",
             rib->rib_name, existing_nh->oif->intf_name, existing_nh->gw_prefix, existing_nh->nh_node->node_name,
             RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
         trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
         return FALSE;
     }
 
@@ -626,10 +655,12 @@ mpls_0_rt_un_route_update(rt_un_table_t *rib, rt_un_entry_t *rt_un_entry){
         return FALSE;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Updated route %s/%d(%u) to Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
             RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
 
     rib->rt_un_route_delete(rib, &rt_un_entry1->rt_key);
     rib->rt_un_route_install(rib, rt_un_entry);
@@ -654,10 +685,12 @@ mpls_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
         return FALSE;
     }
 
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "RIB : %s : Deleted route %s/%d(%u) from Routing table",
             rib->rib_name, RT_ENTRY_PFX(&rt_un_entry->rt_key), 
             RT_ENTRY_MASK(&rt_un_entry->rt_key), RT_ENTRY_LABEL(&rt_un_entry->rt_key));
     trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
 
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
