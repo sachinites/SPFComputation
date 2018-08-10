@@ -49,7 +49,7 @@
 #define TOPOLOGY_NAME_SIZE      32
 #define MAC_LEN                 6
 #define ZERO_IP                 "0.0.0.0"
-
+#define NH_NAME_SIZE            32
 /* instance global flags */
 
 #define IGNOREATTACHED  1   /*If this bit is set, then L1-only router will not install default gateway to L1L2 router of the local Area*/
@@ -186,5 +186,39 @@ typedef enum{
     IP_ROUTE,
     ROUTE_TYPE_MAX
 } trace_route_pref_order_t;
+
+typedef enum{
+
+    RT_PROTO_IGP,
+    RT_PROTO_RSVP,
+    RT_PROTO_LDP,
+    RT_PROTO_LIGP,
+    RT_PROTO_SRTE
+} RT_PROTO;
+
+typedef enum{
+    IGP_PROTO,   /*nexthop installed by IGP*/
+    LDP_PROTO,   /*nexthop installed by LDP*/
+    L_IGP_PROTO, /*nexthop installed by SPRING*/
+    RSVP_PROTO,  /*nexthop installed by RSVP*/
+    UNKNOWN_PROTO
+} PROTOCOL;
+
+static inline char *
+protocol_name(PROTOCOL proto){
+    switch(proto){
+        case IGP_PROTO:
+            return "IGP_PROTO";
+        case LDP_PROTO:
+            return "LDP_PROTO";
+        case L_IGP_PROTO:
+            return "L_IGP_PROTO";
+        case RSVP_PROTO:
+            return "RSVP_PROTO";
+        default:
+            assert(0);
+    }
+}
+
 
 #endif /* __GRAPHCONST__ */

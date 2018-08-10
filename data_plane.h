@@ -45,30 +45,6 @@ typedef struct edge_end_ edge_end_t;
 typedef struct _node_t node_t;
 
 typedef enum{
-    IGP_PROTO,   /*nexthop installed by IGP*/
-    LDP_PROTO,   /*nexthop installed by LDP*/
-    L_IGP_PROTO, /*nexthop installed by SPRING*/
-    RSVP_PROTO,  /*nexthop installed by RSVP*/
-    UNKNOWN_PROTO
-} PROTOCOL;
-
-static inline char *
-protocol_name(PROTOCOL proto){
-    switch(proto){
-        case IGP_PROTO:
-            return "IGP_PROTO";
-        case LDP_PROTO:
-            return "LDP_PROTO";
-        case L_IGP_PROTO:
-            return "L_IGP_PROTO";
-        case RSVP_PROTO:
-            return "RSVP_PROTO";
-        default:
-            assert(0);
-    }
-}
-
-typedef enum{
 
     INET_0,
     INET_3,

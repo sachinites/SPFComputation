@@ -63,7 +63,7 @@ typedef struct internal_nh_t_{
     lfa_type_t lfa_type;
     node_t *proxy_nbr;
     node_t *rlfa;
-
+    char name[NH_NAME_SIZE];
     /*Spring out information*/
     mpls_label_t mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];/*For SR routes only*/
     MPLS_STACK_OP stack_op[MPLS_STACK_OP_LIMIT_MAX];

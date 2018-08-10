@@ -85,7 +85,7 @@
 #define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_INSTALLATION       43 /*conf debug set trace route-installation*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_ROUTE_CALCULATION        44 /*conf debug set trace route-calculation*/
 //#define CMDCODE_DEBUG_TRACEOPTIONS_LFA                    45 /*conf debug set trace lfa*/
-#define CMDCODE_DEBUG_TRACEOPTIONS_BACKUPS                  46 /*conf debug set trace rlfa*/
+#define CMDCODE_DEBUG_TRACEOPTIONS_BACKUPS                  46 /*conf debug set trace backup*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_ALL                      47 /*conf debug set trace all*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_PREFIXES                 48 /*conf debug set trace prefixes*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_ROUTING_TABLE            49 /*conf debug set trace routing-table*/
@@ -166,6 +166,7 @@
 /*traffic engineering*/
 #define CMDCODE_CONFIG_NODE_TRAFFIC_ENGINEERING             103 /*config node <node-name> traffic-engineering*/
 #define CMDCODE_CONFIG_NODE_TE_IGNORE_LSP_METRICS           104 /*config node <node-name> traffic-engineering ignore-lsp-metric*/
-#define CMDCODE_CONFIG_NODE_TE_SHORTCUTS                    105 /*config node <node-name> traffic-engineering ipv4-shortcuts*/
+#define CMDCODE_CONFIG_NODE_INET_TE_SHORTCUTS               105 /*config node <node-name> traffic-engineering inet shortcuts*/
+#define CMDCODE_CONFIG_NODE_INET_MPLS_TE_SHORTCUTS          106 /*config node <node-name> traffic-engineering inet-mpls shortcuts*/
 
 #endif /* __SPFCMDCODES__H */

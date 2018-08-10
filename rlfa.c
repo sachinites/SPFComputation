@@ -98,7 +98,6 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
     node_t *E = protected_link->to.node;
     
     if(!IS_LEVEL_SET(protected_link->level, level)){
-#ifdef __ENABLE_TRACE__        
         sprintf(impact_reason, "Dest %s Not in same level as protected link(%s)", 
             D->node_name, get_str_level(protected_link->level));
         return FALSE;        
@@ -312,7 +311,7 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
 
         d_S_to_p_node = spf_result_p_node->spf_metric;
         d_PN_to_p_node = DIST_X_Y(PN, P_node, level);
-
+#ifdef __ENABLE_TRACE__
         sprintf(instance->traceopts->b, "Node : %s : Begin ext-pspace computation for S=%s, protected-link = %s, LEVEL = %s",
                 S->node_name, S->node_name, protected_link->from.intf_name, get_str_level(level)); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
@@ -861,6 +860,8 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
             if(!IS_LINK_PROTECTION_ENABLED(protected_link)){
 #ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "Node : %s : node link degradation is not enabled", S->node_name);
+                trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+#endif
                 continue;
             }
 
@@ -868,9 +869,10 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
             d_p_to_E = DIST_X_Y(E, p_node->rlfa, level);
             d_E_to_D = DIST_X_Y(E, D_res->node, level);
             if(!(d_p_to_D < d_p_to_E + d_E_to_D)){
+#ifdef __ENABLE_TRACE__
                 sprintf(instance->traceopts->b, "Node : %s : Node protected p-node %s failed to qualify as link protection Q node for Dest %s",
-#endif
                             S->node_name, p_node->rlfa->node_name, D_res->node->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+#endif
                 continue;
             }
 #ifdef __ENABLE_TRACE__            
@@ -1008,13 +1010,16 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
                 if(!IS_LINK_PROTECTION_ENABLED(protected_link)){
 #ifdef __ENABLE_TRACE__                    
                     sprintf(instance->traceopts->b, "Node : %s : node link degradation is not enabled", S->node_name);
+                    trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+#endif
                     continue;
                 }
 
                 if(MANDATORY_NODE_PROTECTION == TRUE){
+#ifdef __ENABLE_TRACE__
                     sprintf(instance->traceopts->b, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
-#endif
                             S->node_name, p_node->rlfa->node_name, D_res->node->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+#endif
                     continue;
                 }
                 if(!(d_p_to_D < d_p_to_S + protected_link->metric[level])){
@@ -1449,7 +1454,8 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 NBR_PROCESSING_DONE:
 #ifdef __ENABLE_TRACE__            
             sprintf(instance->traceopts->b, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature Done", 
-                S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+                S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); 
+            trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
         } ITERATE_NODE_PHYSICAL_NBRS_END(S, N, pn_node, level);
         
@@ -1746,7 +1752,8 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 NBR_PROCESSING_DONE:
 #ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Node : %s : Testing nbr %s via edge1 = %s edge2 = %s for LFA candidature Done", 
-                S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+                S->node_name, N->node_name, edge1->from.intf_name, edge2->from.intf_name); 
+        trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
 
         } ITERATE_NODE_PHYSICAL_NBRS_END(S, N, pn_node, level);

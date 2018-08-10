@@ -1287,6 +1287,7 @@ spf_postprocessing(spf_info_t *spf_info, /* routes are stored globally*/
          *      * to date before building L2 routes*/
 #ifdef __ENABLE_TRACE__        //
         //sprintf(instance->traceopts->b, "L2 spf run, triggering L1 SPF run first before building L2 routes"); TRACE();
+#endif
         //spf_computation(spf_root, spf_info, LEVEL1, FULL_RUN);
     }
 
@@ -1450,11 +1451,11 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
     routes_t *route = NULL;
     node_t *spf_root = GET_SPF_INFO_NODE(spf_info, level),
            *D_res = NULL;
-
+#ifdef __ENABLE_TRACE__
     sprintf(instance->traceopts->b, "Entered ... spf_root : %s, Level : %s", 
-#endif
         spf_root->node_name, get_str_level(level));
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+#endif
 
     mark_all_routes_stale(spf_info, level, SPRING_T);
 
