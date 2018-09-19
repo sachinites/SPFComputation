@@ -8,7 +8,7 @@ TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o Tree/redblack.o
 OBJ=advert.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
 	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 		 \
-	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o igp_sr_ext.o 	 \
+	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o mpls/mpls_label_mgr.o igp_sr_ext.o 	 \
 	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o glevel.o
 ${TARGET_NAME}:testapp.o ${OBJ} ${DSOBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
@@ -42,6 +42,9 @@ igp_sr_ext.o:igp_sr_ext.c
 instance.o:instance.c
 	@echo "Building instance.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} instance.c -o instance.o
+mpls/mpls_label_mgr.o:mpls/mpls_label_mgr.c
+	@echo "Building mpls/mpls_label_mgr.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} mpls/mpls_label_mgr.c -o mpls/mpls_label_mgr.o
 mpls/ldp.o:mpls/ldp.c
 	@echo "Building mpls/ldp.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} mpls/ldp.c -o mpls/ldp.o

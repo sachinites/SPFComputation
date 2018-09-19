@@ -963,13 +963,16 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
             return 0;
         }
         node->srgb->range = index_range;
+        printf("SRGB config changed, run - \"run instance sync\"\n");
         break;
+
         case CMDCODE_CONFIG_NODE_SR_SRGB_START_LABEL:
         if(node->spring_enabled == FALSE){
             printf("Source Packet Routing Not Enabled\n");
             return 0;
         }
         node->srgb->first_sid.sid = first_sid;
+        printf("SRGB config changed, run - \"run instance sync\"\n");
         break; 
         default:
         ;
