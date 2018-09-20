@@ -1144,6 +1144,12 @@ spf_init_dcm(){
         init_param(&interfaces, CMD, "interfaces", show_instance_node_handler, 0, INVALID, 0, "Interfaces");
         libcli_register_param(&instance_node_name, &interfaces);
         set_param_cmd_code(&interfaces, CMDCODE_SHOW_INSTANCE_NODE_INTERFACES);
+    }
+    {
+        static param_t adjacency_sids;
+        init_param(&adjacency_sids, CMD, "adjacency-sids", instance_node_spring_show_handler, 0, INVALID, 0, "Display Adjacency SIDs");
+        libcli_register_param(&instance_node_name, &adjacency_sids);
+        set_param_cmd_code(&adjacency_sids, CMDCODE_SHOW_NODE_INTF_ADJ_SIDS);
     } 
     {
         /*show instance node <node-name> backup-spf_results */
@@ -1605,24 +1611,109 @@ spf_init_dcm(){
                 set_param_cmd_code(&adj_sid_val, CMDCODE_CONFIG_NODE_SR_ADJ_SID);
             }
         }
-        /*config node <node-name> [no] interface <slot-no> level <level-no> metric <metric_val>*/
+
         {
             static param_t level;
             init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");
             libcli_register_param(&config_node_node_name_slot_slotname, &level);
-
-            static param_t level_no;
-            init_param(&level_no, LEAF, 0, 0, validate_level_no, INT, "level-no", "level : 1 | 2");
-            libcli_register_param(&level, &level_no);
-
-            static param_t metric;
-            init_param(&metric, CMD, "metric", 0, 0, INVALID, 0, "metric");
-            libcli_register_param(&level_no, &metric);
-            
-            static param_t metric_val;
-            init_param(&metric_val, LEAF, 0, node_slot_config_handler, validate_metric_value, INT, "metric", "metric value [0 - 4294967295]");
-            libcli_register_param(&metric, &metric_val);
-            set_param_cmd_code(&metric_val, CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE);
+            {
+                static param_t level_no;
+                init_param(&level_no, LEAF, 0, 0, validate_level_no, INT, "level-no", "level : 1 | 2");
+                libcli_register_param(&level, &level_no);
+                {
+                    static param_t ipv4_adj_seg;  
+                    init_param(&ipv4_adj_seg, CMD, "ipv4-adjacency-segment", 0, 0, INVALID, 0, "ipv4-adjacency-segment");
+                    libcli_register_param(&level_no, &ipv4_adj_seg);
+                    {
+                        static param_t lan_nbr;
+                        init_param(&lan_nbr, CMD, "lan-neighbor", 0, 0, INVALID, 0, "lan neighbor");
+                        libcli_register_param(&ipv4_adj_seg, &lan_nbr);
+                        {
+                            static param_t router_id;
+                            init_param(&router_id, LEAF, 0, 0, 0, IPV4, "router-id", "lan nbr router id without mask");
+                            libcli_register_param(&lan_nbr, &router_id);
+                            {
+                                {
+                                    static param_t adj_protected;
+                                    init_param(&adj_protected, CMD, "protected", 0, 0, INVALID, 0, "protected");
+                                    libcli_register_param(&router_id, &adj_protected);
+                                    {
+                                        static param_t label;
+                                        init_param(&label, CMD, "label", 0, 0, INVALID, 0, "Adj SID static label");
+                                        libcli_register_param(&adj_protected, &label);
+                                        {
+                                            static param_t label_no;
+                                            init_param(&label_no, LEAF, 0, node_slot_adj_sid_config_handler, validate_static_adjsid_label_range, INT, "label", "Adj SID static label value");
+                                            libcli_register_param(&label, &label_no);
+                                            set_param_cmd_code(&label_no, CMDCODE_CONFIG_NODE_INTF_LAN_ADJ_SID_PROTECTED);
+                                        }
+                                    }    
+                                }
+                                {
+                                    static param_t adj_unprotected;
+                                    init_param(&adj_unprotected, CMD, "unprotected", 0, 0, INVALID, 0, "unprotected");
+                                    libcli_register_param(&router_id, &adj_unprotected);
+                                    {
+                                        static param_t label;
+                                        init_param(&label, CMD, "label", 0, 0, INVALID, 0, "Adj SID static label");
+                                        libcli_register_param(&adj_unprotected, &label);
+                                        {
+                                            static param_t label_no;
+                                            init_param(&label_no, LEAF, 0, node_slot_adj_sid_config_handler, validate_static_adjsid_label_range, INT, "label", "Adj SID static label value");
+                                            libcli_register_param(&label, &label_no);
+                                            set_param_cmd_code(&label_no, CMDCODE_CONFIG_NODE_INTF_LAN_ADJ_SID_UNPROTECTED);
+                                        }
+                                    }    
+                                }
+                            }
+                        }    
+                    }
+                    {
+                        static param_t adj_protected;
+                        init_param(&adj_protected, CMD, "protected", 0, 0, INVALID, 0, "protected");
+                        libcli_register_param(&ipv4_adj_seg, &adj_protected);
+                        {
+                            static param_t label;
+                            init_param(&label, CMD, "label", 0, 0, INVALID, 0, "Adj SID static label");
+                            libcli_register_param(&adj_protected, &label);
+                            {
+                                static param_t label_no;
+                                init_param(&label_no, LEAF, 0, node_slot_adj_sid_config_handler, validate_static_adjsid_label_range, INT, "label", "Adj SID static label value");
+                                libcli_register_param(&label, &label_no);
+                                set_param_cmd_code(&label_no, CMDCODE_CONFIG_NODE_INTF_P2P_ADJ_SID_PROTECTED);
+                            }
+                        }    
+                    }
+                    {
+                        static param_t adj_unprotected;
+                        init_param(&adj_unprotected, CMD, "unprotected", 0, 0, INVALID, 0, "unprotected");
+                        libcli_register_param(&ipv4_adj_seg, &adj_unprotected);
+                        {
+                            static param_t label;
+                            init_param(&label, CMD, "label", 0, 0, INVALID, 0, "Adj SID static label");
+                            libcli_register_param(&adj_unprotected, &label);
+                            {
+                                static param_t label_no;
+                                init_param(&label_no, LEAF, 0, node_slot_adj_sid_config_handler, validate_static_adjsid_label_range, INT, "label", "Adj SID static label value");
+                                libcli_register_param(&label, &label_no);
+                                set_param_cmd_code(&label_no, CMDCODE_CONFIG_NODE_INTF_P2P_ADJ_SID_UNPROTECTED);
+                            }
+                        }    
+                    }
+                }
+                {
+                    static param_t metric;
+                    init_param(&metric, CMD, "metric", 0, 0, INVALID, 0, "metric");
+                    libcli_register_param(&level_no, &metric);
+                    {
+                        /*config node <node-name> [no] interface <slot-no> level <level-no> metric <metric_val>*/
+                        static param_t metric_val;
+                        init_param(&metric_val, LEAF, 0, node_slot_config_handler, validate_metric_value, INT, "metric", "metric value [0 - 4294967295]");
+                        libcli_register_param(&metric, &metric_val);
+                        set_param_cmd_code(&metric_val, CMFCODE_CONFIG_NODE_SLOT_METRIC_CHANGE);
+                    }
+                }
+            }
         }
 
         /*config node <node-name> [no] interface <slot-no> link-protection*/
@@ -1648,13 +1739,14 @@ spf_init_dcm(){
             libcli_register_param(&config_node_node_name_slot_slotname, &no_eligible_backup);
             set_param_cmd_code(&no_eligible_backup, CMDCODE_CONFIG_INTF_NO_ELIGIBLE_BACKUP);
         }
-        
-        static param_t config_node_node_name_slot_slotname_enable;
-        init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_handler, 0, INVALID, 0, "enable");
-        libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
-        set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_CONFIG_NODE_SLOT_ENABLE);
+       
+        { 
+            static param_t config_node_node_name_slot_slotname_enable;
+            init_param(&config_node_node_name_slot_slotname_enable, CMD, "enable", node_slot_config_handler, 0, INVALID, 0, "enable");
+            libcli_register_param(&config_node_node_name_slot_slotname, &config_node_node_name_slot_slotname_enable);
+            set_param_cmd_code(&config_node_node_name_slot_slotname_enable, CMDCODE_CONFIG_NODE_SLOT_ENABLE);
+        }
 
-    
     /*config node <node-name> overload level <level-no>*/
     {
         static param_t overload;

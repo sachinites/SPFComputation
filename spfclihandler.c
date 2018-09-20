@@ -45,6 +45,7 @@
 #include "common.h"
 #include "no_warn.h"
 #include "complete_spf_path.h"
+#include "spring_adjsid.h"
 
 extern instance_t * instance;
 
@@ -1041,6 +1042,9 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
 
     switch(cmd_code){
+        case CMDCODE_SHOW_NODE_INTF_ADJ_SIDS:
+            show_node_adj_sids(node);
+            break;
         case CMDCODE_SHOW_NODE_MPLS_LDP_BINDINGS:
             show_mpls_ldp_label_local_bindings(node);
             break;
@@ -1280,4 +1284,43 @@ clear_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_
     return 0;
 }
 
+int
+validate_static_adjsid_label_range(char *value){
 
+    return VALIDATION_SUCCESS;
+}
+
+int
+node_slot_adj_sid_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable){
+
+    char *node_name = NULL;
+    char *intf_name = NULL;
+    LEVEL level;
+    tlv_struct_t *tlv = NULL;
+    char *router_id = NULL;
+    unsigned int label = 0;
+    node_t *node = NULL;
+
+    int cmd_code = EXTRACT_CMD_CODE(tlv_buf);
+
+    TLV_LOOP_BEGIN(tlv_buf, tlv){
+        
+        if(strncmp(tlv->leaf_id, "node-name", strlen("node-name")) ==0)
+            node_name = tlv->value;
+        else if(strncmp(tlv->leaf_id, "level-no", strlen("level-no")) ==0)
+            level = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "router-id", strlen("router-id")) ==0)
+            router_id = tlv->value;
+        else if(strncmp(tlv->leaf_id, "label", strlen("label")) ==0)
+            label = atoi(tlv->value);
+        else if(strncmp(tlv->leaf_id, "slot-no" , strlen("slot-no")) ==0)
+            intf_name = tlv->value;
+        else
+            assert(0);
+
+    } TLV_LOOP_END;
+
+    node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
+    set_adj_sid(node, intf_name, level, label, router_id, cmd_code);
+    return 0;
+}

@@ -264,157 +264,6 @@ prefix_sid_comparison_fn(void * prefix_sid_value,
 
 prefix_sid_subtlv_t *
 PREFIX_SID_SEARCH(node_t *node, LEVEL level, unsigned int prefix_sid_val);
-    
-
-/*Adjacecncy SID*/
-
-/*If this bit set, this Adj has global scope, else local scope*/
-#define ADJ_SID_FLAG_SCOPE  1
-
-/*If unset, Adj is IPV4, else IPV6*/
-#define ADJ_SID_ADDRESS_FAMILY_F_FLAG   7
-
-/*If set, the Adj-SID is eligible for
- * protection*/
-#define ADJ_SID_BACKUP_B_FLAG   6
-
-/*If set, then the Adj-SID carries a value.
- * By default the flag is SET.*/
-#define ADJ_SID_BACKUP_VALUE_V_FLAG 5
-
-/*If set, then the value/index carried by
-the Adj-SID has local significance. By default the flag is
-SET.*/
-#define ADJ_SID_LOCAL_SIGNIFICANCE_L_FLAG   4
-
-/*When set, the S-Flag indicates that the
-Adj-SID refers to a set of adjacencies (and therefore MAY be
-assigned to other adjacencies as well).*/
-#define ADJ_SID_SET_S_FLAG  3
-
-/* When set, the P-Flag indicates that
- * the Adj-SID is persistently allocated, i.e., the Adj-SID value
- * remains consistent across router restart and/or interface flap
- * */
-#define ADJ_SID_PERSISTENT_P_FLAG   2
-
-
-/*All these members are advertised by IGP SR TLVs*/
-typedef struct _p2p_adj_sid_subtlv_t{
-
-    BYTE type;      /*Constant = 31*/
-    BYTE length;
-    BYTE flags;
-    BYTE weight;    /*Used for parallel Adjacencies, section 3.4.1,
-                      draft-ietf-spring-segment-routing-13 pg 15*/
-    /* If local label value is specified (L and V flag sets), then
-     * this field contains label value encoded as last 20 bits.
-     * if index into srgb is specified, then this field contains
-     * is a 4octet value indicating the offset in the SID/Label space
-     * advertised bu this router. In this case L and V flag are unset.
-     * */
-    segment_id_subtlv_t sid[2];/*Two SIDs are associated with each adjacency*/
-   /*draft-ietf-spring-segment-routing-13 pg 15*/
-} p2p_ajd_sid_subtlv_t;
-
-
-/*LAN ADJ SID*/
-typedef struct _lan_adj_sid_subtlv_t{
-
-    BYTE type;      /*Constant = 32*/
-    BYTE length;
-    BYTE flags;
-    BYTE weight;
-    BYTE system_id[6];  /*RFC compliant*/
-    //node_t *nbr_node; /*Our implementation compliant*/
-    segment_id_subtlv_t sid[2];/*Two SIDs are associated with each adjacency*/
-} lan_adg_sid_subtlv_t;
-
-
-/*pg 155, book*/
-typedef enum{
-
-    L1_PROTECTED_ADJ_SID    = 0,
-    L2_PROTECTED_ADJ_SID    = 1,
-    L1_UNPROTECTED_ADJ_SID  = 2,
-    L2_UNPROTECTED_ADJ_SID  = 3
-} ADJ_SID_TYPE;
-
-
-void sr_mpls_fib_local_adj_sid();
-
-/*
-If a node N advertises Prefix-SID SID-R for a prefix R that is
-attached to N, if N specifies CONTINUE as the operation to be
-performed by directly connected neighbors, N MUST maintain the
-following FIB entry:
-Incoming Active Segment: SID-R
-Ingress Operation: NEXT
-Egress interface: NULL
-    Segment routing Architecture-2, pg11
-*/
-
-int
-sr_install_local_prefix_mpls_fib_entry(node_t *node, routes_t *route);
-
-/*
-A remote node M MUST maintain the following FIB entry for any
-learned Prefix-SID SID-R attached to IP prefix R:
-Incoming Active Segment: SID-R
-Ingress Operation:
-If the next-hop of R is the originator of R
-and instructed to remove the active segment: NEXT
-Else: CONTINUE
-Egress interface: the interface towards the next-hop along the
-path computed using the algorithm advertised with
-the SID toward prefix R.
-    Segment routing Architecture-2, pg11
-*/
-
-int
-sr_install_remote_prefix_mpls_fib_entry(node_t *node, routes_t *route);
-
-/*For ipv6 Data plane*/
-/*A node N advertising an IPv6 address R usable as a segment identifier
- * MUST maintain the following FIB entry:
- * Incoming Active Segment: R
- * Ingress Operation: NEXT
- * Egress interface: NULL
- * Segment routing Architecture-2, pg11
- * */
-
-void
-sr_install_local_prefix_ipv6_fib_entry(node_t *node, prefix_t *prefix);
-
-/*
-Independent of Segment Routing support, any remote IPv6 node will
-maintain a plain IPv6 FIB entry for any prefix, no matter if the
-represent a segment or not. This allows forwarding of packets to the
-node which owns the SID even by nodes which do not support Segment
-Routing. */
-/*So, this is simple ipv6 unicast forwarding behavior*/
-void
-sr_install_remote_prefix_ipv6_fib_entry(node_t *node, prefix_t *prefix);
-
-void
-allocate_local_adj_sid(node_t *node, edge_end_t *adjacency);
-
-void
-allocate_global_adj_sid(node_t *node, edge_end_t *adjacency, srgb_t *srgb);
-
-/*
- *When a node binds an Adj-SID to a local data-link L, the node MUST
- install the following FIB entry:
- Incoming Active Segment: V
- Ingress Operation: NEXT
- Egress Interface: L
- Also take care of section 3.4.1 pg 15
- * */
-void
-sr_install_local_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency);
-
-void
-sr_install_global_adj_mpls_fib_entry(node_t *node, edge_end_t *adjacency, srgb_t *srgb);
 
 /*
 +-------------------------------------------------+
@@ -511,12 +360,6 @@ void
 resolve_prefix_sid_conflict(prefix_t *prefix1, sr_mapping_entry_t *pfx_mapping_entry1, 
         prefix_t *prefix2, sr_mapping_entry_t *pfx_mapping_entry2);
 
-int
-igp_install_mpls_spring_route(node_t *node, char *prefix, char mask);
-
-int
-igp_uninstall_mpls_spring_route(node_t *node, char *prefix, char mask);
-
 typedef struct internal_nh_t_ internal_nh_t;
 
 void
@@ -529,17 +372,6 @@ prefix_sid_subtlv_t *
 get_node_segment_prefix_sid(node_t *node, LEVEL level);
 
 typedef struct _mpls_rt_entry mpls_rt_entry_t ;
-
-mpls_rt_entry_t *
-prepare_mpls_entry_template_from_ipv4_route(node_t *node, routes_t *route);
-
-#if 0
-void
-show_all_prefix_conflicts(node_t *node, LEVEL level);
-
-void
-show_all_prefix_sid_conflicts(node_t *node, LEVEL level);
-#endif
 
 typedef struct spf_info_ spf_info_t;
 

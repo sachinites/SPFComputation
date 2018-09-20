@@ -123,4 +123,9 @@ show_spf_path_predecessors(node_t *spf_root, LEVEL level);
 int
 clear_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
 
+int
+node_slot_adj_sid_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disable);
+
+int
+validate_static_adjsid_label_range(char *value);
 #endif /* __SPFCLIHANDLER__ */

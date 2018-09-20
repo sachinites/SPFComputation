@@ -45,6 +45,8 @@
 #include "ldp.h"
 #include "rsvp.h"
 #include "Tree/candidate_tree.h"
+#include "spring_adjsid.h"
+
 
 typedef struct edge_end_ edge_end_t;
 
@@ -118,6 +120,14 @@ typedef struct _node_t{
 
 } node_t;
 
+
+typedef enum{
+    
+    PTP,
+    LAN,
+    INTF_TYPE_MAX
+} INTF_OP_MODE;
+
 struct edge_end_{
     node_t *node;
     char intf_name[IF_NAME_SIZE];
@@ -128,8 +138,12 @@ struct edge_end_{
     EDGE_END_DIRN dirn; /*dirn of edge is not level dependant*/
     FLAG edge_config_flags;
     /*SR support, per level Adj SIDs*/
-    unsigned int adj_sid_count[MAX_LEVEL]; /*A node MAY allocate multiple Adj-SIDs for the same adjacency. draft-ietf-spring-segment-routing-13 pg 15*/
-    char *adj_sid_array[MAX_LEVEL];        /*Also, in case of LAN segment, Section 3.4.3 draft-ietf-spring-segment-routing-13 pg 16 is enhanced project scenario*/
+    /*User configured Adjacency SIDs*/
+    p2p_intf_adj_sid_t cfg_p2p_adj_sid_db[MAX_LEVEL][ADJ_SID_PROTECTION_MAX];
+    glthread_t cfg_lan_adj_sid_db[MAX_LEVEL][ADJ_SID_PROTECTION_MAX];
+    /*Dynamic Adjacency SIDs*/
+    //p2p_intf_adj_sid_t dyn_p2p_adj_sid_db[MAX_LEVEL][ADJ_SID_PROTECTION_MAX];
+    //glthread_t dyn_adj_sid_db[MAX_LEVEL][ADJ_SID_PROTECTION_MAX];
 };
 
 typedef enum {

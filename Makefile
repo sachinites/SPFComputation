@@ -9,7 +9,7 @@ DSOBJ=LinkedList/LinkedListApi.o Queue/Queue.o Stack/stack.o gluethread/glthread
 OBJ=advert.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
 	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 		 \
 	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o mpls/mpls_label_mgr.o igp_sr_ext.o 	 \
-	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o glevel.o
+	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o glevel.o spring_adjsid.o
 ${TARGET_NAME}:testapp.o ${OBJ} ${DSOBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -39,6 +39,9 @@ sr_tlv_api.o:sr_tlv_api.c
 igp_sr_ext.o:igp_sr_ext.c
 	@echo "Building igp_sr_ext.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} igp_sr_ext.c -o igp_sr_ext.o
+spring_adjsid.o:spring_adjsid.c
+	@echo "Building spring_adjsid.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} spring_adjsid.c -o spring_adjsid.o
 instance.o:instance.c
 	@echo "Building instance.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} instance.c -o instance.o
