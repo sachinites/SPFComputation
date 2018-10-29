@@ -1599,19 +1599,6 @@ spf_init_dcm(){
             }
         }
 
-        /*config node <node-name> interface <if-name> adjacency-sid <adj-sid>*/
-        {
-            static param_t adj_sid;
-            init_param(&adj_sid, CMD, "adj-sid", 0, 0, INVALID, 0, "Configure Adjacency SID");
-            libcli_register_param(&config_node_node_name_slot_slotname, &adj_sid);
-            {
-                static param_t adj_sid_val;
-                init_param(&adj_sid_val, LEAF, 0, instance_node_spring_config_handler, 0, INT, "adj-sid" , "Adjacency SID value");  
-                libcli_register_param(&adj_sid, &adj_sid_val);
-                set_param_cmd_code(&adj_sid_val, CMDCODE_CONFIG_NODE_SR_ADJ_SID);
-            }
-        }
-
         {
             static param_t level;
             init_param(&level, CMD, "level", 0, 0, INVALID, 0, "level");

@@ -946,6 +946,7 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
                 ;
         }
         break;
+#if 0
         case CMDCODE_CONFIG_NODE_SR_ADJ_SID:
         switch(enable_or_disable){
             case CONFIG_ENABLE:
@@ -958,6 +959,7 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
                 ;
         }
         break;
+#endif
         case CMDCODE_CONFIG_NODE_SR_SRGB_RANGE:
         if(node->spring_enabled == FALSE){
             printf("Source Packet Routing Not Enabled\n");
