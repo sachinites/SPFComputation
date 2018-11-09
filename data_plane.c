@@ -431,6 +431,8 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
 #ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "RIB : %s : local route %s/%d added to Routing table",
             rib->rib_name, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
+        trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
         return TRUE;
     }
 
@@ -439,11 +441,12 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     existing_nh = lookup_clone_next_hop(rib, rt_un_entry, nexthop);
 
     if(existing_nh){
+#ifdef __ENABLE_TRACE__
         sprintf(instance->traceopts->b, "Warning : RIB : %s : Nexthop (%s) --> (%s)%s already exists in %s/%d route",
-#endif
             rib->rib_name, existing_nh->oif->intf_name, existing_nh->gw_prefix, existing_nh->nh_node->node_name,
             RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
         trace(instance->traceopts, ROUTING_TABLE_BIT);
+#endif
         return FALSE;
     }
 

@@ -77,6 +77,7 @@ void
 construct_srms_sid_mapping_entry(srms_sid_label_binding_tlv_t *srms_sid_label_binding_tlv,
     sr_mapping_entry_t *mapping_entry_out);
 
+/*Local policy MUST be non-overlapping*/
 boolean
 srms_local_policy_configuration_verifier(node_t *node, 
                                          LEVEL level , 
@@ -89,7 +90,7 @@ typedef enum{
    SRMS_RANGES_IDENTICAL,
    SRMS_RANGES_OVERLAPPING,
    SRMS_RANGES_PREFIX_CONFLICT,
-   SRMS_RANGES_SID_CONFLICT, 
+   SRMS_RANGES_SID_CONFLICT 
 } srms_ranges_comparison_result_t;
 
 srms_ranges_comparison_result_t
@@ -103,7 +104,7 @@ srms_ranges_comparison(srms_sid_label_binding_tlv_t *srms_local_policy1,
     singly_ll_add_node_by_val(nodeptr->backup_mapping_policy[_level], srms_sid_label_binding_tlv_t_ptr)
      
 void
-srmc_clean_srms_mapping_cached_policies(node_t *node, LEVEL level);
+srms_clean_srms_mapping_cached_policies(node_t *node, LEVEL level);
 
 
 #endif /* __MAPPINGSERVER__ */
