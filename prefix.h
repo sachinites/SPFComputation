@@ -87,7 +87,6 @@ typedef struct common_pfx_{
         struct pfx prefix;
         mpls_label_t label; /*Incoming label*/
     }u;
-    //struct _u u;
 } common_pfx_key_t;
 
 typedef struct _node_t node_t;
@@ -141,7 +140,7 @@ void
 set_prefix_property_metric(prefix_t *prefix, 
                            unsigned int metric);
 void
-init_prefix_key(prefix_t *prefix, char *_prefix, char mask);
+init_prefix_key(common_pfx_key_t *pfx_key, char *_prefix, char mask);
 
 void
 set_prefix_flag(unsigned int flag);

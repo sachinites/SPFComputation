@@ -249,12 +249,12 @@ route_preference(FLAG route_flags, LEVEL level){
 }
 
 void
-init_prefix_key(prefix_t *prefix, char *_prefix, char mask){
+init_prefix_key(common_pfx_key_t *pfx_key, char *_prefix, char mask){
 
-    memset(prefix, 0, sizeof(prefix_t));
-    apply_mask(_prefix, mask, prefix->prefix);
-    prefix->prefix[PREFIX_LEN] = '\0';
-    prefix->mask = mask;
+    memset(pfx_key, 0, sizeof(common_pfx_key_t));
+    apply_mask(_prefix, mask, pfx_key->u.prefix.prefix);
+    pfx_key->u.prefix.prefix[PREFIX_LEN] = '\0';
+    pfx_key->u.prefix.mask = mask;
 }
 
 
@@ -277,8 +277,8 @@ leak_prefix(char *node_name, char *_prefix, char mask,
                 LEVEL from_level, LEVEL to_level){
 
     node_t *node = NULL;
-    prefix_t *prefix = NULL, *leaked_prefix = NULL,
-              prefix_key;
+    prefix_t *prefix = NULL, *leaked_prefix = NULL;
+    common_pfx_key_t prefix_key;
     routes_t *route_to_be_leaked = NULL;
 
     if(!instance){

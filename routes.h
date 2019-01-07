@@ -35,16 +35,6 @@
 
 #include "instance.h"
 
-/*Routine to build the routing table*/
-typedef enum RTE_INSTALL_STATUS{
-
-    RTE_STALE,
-    RTE_ADDED,
-    RTE_UPDATED, /*Updated route means, route has been re-calculated in subsequent spf run, but may or may not be changed*/
-    RTE_CHANGED,
-    RTE_NO_CHANGE
-} route_intall_status; 
-
 typedef struct routes_{
 
     common_pfx_key_t rt_key;
@@ -55,25 +45,16 @@ typedef struct routes_{
     unsigned int spf_metric;
     unsigned int lsp_metric; /*meaningful if this LSP route*/
     unsigned int ext_metric; /*External metric*/
-
-    /* NH lists*//*ToDo : Convert it into arrays*/
     ll_t *primary_nh_list[NH_MAX];/*Taking it as a list to accomodate ECMP*/
     ll_t *backup_nh_list[NH_MAX]; /*List of node_t pointers*/
-
-    /*same subnet prefix lists*/
     ll_t *like_prefix_list; 
-    route_intall_status install_state; 
-
-    /*SR support*/
-    mpls_label_t prev_mpls_label;/*MPLS label of this route in its previous incarnation*/
-
 } routes_t;
 
 routes_t *route_malloc();
 
 routes_t *
 search_route_in_spf_route_list(spf_info_t *spf_info,
-                                prefix_t *prefix, rtttype_t);
+                                common_pfx_key_t *pfx_key, rtttype_t);
 
 /*Search internal route using longest prefix
  * match*/
@@ -173,12 +154,6 @@ prepare_new_nxt_hop_template(node_t *computing_node, /*Computing node running SP
         internal_nh_t *nxt_hop_node,                        /*Nbr node*/
         nh_t *nh_template,
         LEVEL level, nh_type_t nh);                  /*SPF run level*/
-
-char *
-route_intall_status_str(route_intall_status install_status);
-
-void
-mark_all_routes_stale(spf_info_t *spf_info, LEVEL level, rtttype_t topology);
 
 internal_nh_t *
 backup_selection_policy(routes_t *route);

@@ -327,7 +327,8 @@ springify_ipv4_nexthop(node_t *spf_root,
         /*Check if node advertised PHP service*/
         prefix_sid = prefix_sid_search(nxthop->node, route->level, prefix_sid_index);
         assert(prefix_sid);
-        if(IS_BIT_SET(prefix_sid->flags, NO_PHP_P_FLAG)){
+        if(IS_BIT_SET(prefix_sid->flags, NO_PHP_P_FLAG) || 
+            IS_BIT_SET(prefix_sid->flags, RE_ADVERTISEMENT_R_FLAG)){
             stack_op = SWAP;   
             outgoing_label = get_label_from_srgb_index(nxthop->node->srgb, prefix_sid_index);
             assert(outgoing_label);
@@ -360,14 +361,14 @@ springify_ipv4_nexthop(node_t *spf_root,
 
 
 void
-springify_unicast_route(node_t *spf_root, routes_t *route){
+springify_unicast_route(node_t *spf_root, routes_t *route, 
+                        unsigned int dst_prefix_sid){
 
     mpls_label_t incoming_label = 0,
                  old_incoming_label = 0;
 
     singly_ll_node_t *list_node = NULL;
     internal_nh_t *nxthop = NULL;
-    unsigned int  dst_prefix_sid = 0;
 
 #ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s : Springifying route %s/%u at %s", 
@@ -375,25 +376,6 @@ springify_unicast_route(node_t *spf_root, routes_t *route){
         get_str_level(route->level));
     trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
 #endif
-
-    prefix_t *prefix = get_best_sr_active_route_prefix(route);/*This prefix is one of the best prefix in case of ECMP*/
-    dst_prefix_sid = PREFIX_SID_INDEX(prefix);
-
-    incoming_label = get_label_from_srgb_index(spf_root->srgb, dst_prefix_sid);
-    old_incoming_label = route->rt_key.u.label;
-
-    if(route->rt_key.u.label != incoming_label){
-        route->rt_key.u.label = incoming_label;
-        if(route->install_state != RTE_ADDED)
-            route->install_state = RTE_CHANGED;
-#ifdef __ENABLE_TRACE__        
-        sprintf(instance->traceopts->b, "Node : %s : route %s/%u at %s Incoming label updated %u -> %u, route status = %s",
-                spf_root->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
-                get_str_level(route->level), old_incoming_label, incoming_label, 
-                route_intall_status_str(route->install_state));
-        trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
-#endif
-    }
 
     /*Now Do primary next hops*/
     ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node){

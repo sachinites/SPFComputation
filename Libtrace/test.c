@@ -46,13 +46,13 @@ main(int argc, char **argv){
     traceoptions traceopts;
     init_trace(&traceopts);
     enable_trace_event(&traceopts, LOG1);
-    enable_trace_event(&traceopts, LOG2);
-    trace_enable(&traceopts, TRUE);
+    //enable_trace_event(&traceopts, LOG2);
+    trace_enable(&traceopts, TR_TRUE);
     sprintf(traceopts.b, "I am LOG1"); 
-    TRACE(&traceopts, LOG1);
+    trace(&traceopts, LOG1);
     sprintf(traceopts.b, "I am LOG2"); 
-    TRACE(&traceopts, LOG2);
+    trace(&traceopts, LOG2);
     sprintf(traceopts.b, "I am LOG3"); 
-    TRACE(&traceopts, LOG3);
+    trace(&traceopts, LOG3);
     return 0;
 }

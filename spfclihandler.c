@@ -341,8 +341,6 @@ dump_route_info(routes_t *route){
         get_str_level(prefix->level), prefix_pref.pref_str, prefix_pref.pref);
 
     }ITERATE_LIST_END;
-    
-    printf("Install state : %s\n", route_intall_status_str(route->install_state));
 
     ITERATE_NH_TYPE_BEGIN(nh){
         printf("%s Primary Nxt Hops count : %u\n",
@@ -398,8 +396,6 @@ dump_spring_route_info(routes_t *route){
 
     }ITERATE_LIST_END;
     
-    printf("Install state : %s\n", route_intall_status_str(route->install_state));
-
     ITERATE_NH_TYPE_BEGIN(nh){
         printf("%s Primary Nxt Hops count : %u\n",
                 nh == IPNH ? "IPNH" : "LSPNH", GET_NODE_COUNT_SINGLY_LL(route->primary_nh_list[nh]));
