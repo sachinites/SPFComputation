@@ -68,6 +68,61 @@ is_destination_has_multiple_primary_nxthops(spf_result_t *D_res){
     return TRUE;
 }
 
+void
+delete_route(spf_info_t *spf_info, routes_t *route, 
+             boolean del_from_igp,
+             boolean del_from_rib){
+
+    singly_ll_node_t *list_node1 = NULL,
+                     *list_node2 = NULL;
+    
+    rt_key_t rt_key;
+    memset(&rt_key, 0, sizeof(rt_key_t));
+    boolean is_found = FALSE;
+    rtttype_t rt_type = route->rt_type;
+
+    strncpy((RT_ENTRY_PFX(&rt_key)), route->rt_key.u.prefix.prefix, PREFIX_LEN);
+    RT_ENTRY_MASK(&rt_key) = route->rt_key.u.prefix.mask;
+    
+    if(del_from_igp){           
+        ITERATE_LIST_BEGIN2(spf_info->routes_list[rt_type], list_node1, list_node2){
+
+            if(list_node1->data == route){
+                ITERATIVE_LIST_NODE_DELETE2(spf_info->routes_list[rt_type], list_node1, list_node2);
+                is_found = TRUE;
+                ITERATE_LIST_BREAK2(spf_info->routes_list[rt_type], list_node1, list_node2);
+            }
+        }ITERATE_LIST_END2(spf_info->routes_list[rt_type], list_node1, list_node2);
+    }
+
+    if(del_from_rib){
+        switch(rt_type){
+            case UNICAST_T:
+                {
+                    rt_un_table_t *rib_inet_0 = spf_info->rib[INET_0];
+                    rib_inet_0->rt_un_route_delete(rib_inet_0, &rt_key);
+                } 
+                break;
+            case SPRING_T:
+            {
+                    rt_un_table_t *rib_inet_3 = spf_info->rib[INET_3];
+                    rt_un_table_t *rib_mpls_0 = spf_info->rib[MPLS_0];
+                    rib_inet_3->rt_un_route_delete(rib_inet_3, &rt_key);
+                    RT_ENTRY_LABEL(&rt_key) = route->rt_key.u.label;
+                    rib_mpls_0->rt_un_route_delete(rib_mpls_0, &rt_key);
+            }
+            break;
+            default:
+            assert(0);
+        }
+    }
+
+    if(is_found){
+        free_route(route, rt_type);
+    }
+}
+
+
 routes_t *
 route_malloc(){
 
@@ -176,7 +231,7 @@ route_set_key(routes_t *route, char *ipv4_addr, char mask){
 }
 
 void
-free_route(routes_t *route){
+free_route(routes_t *route, rtttype_t rt_type){
 
     if(!route)  return;
     nh_type_t nh; 
@@ -191,7 +246,9 @@ free_route(routes_t *route){
         route->backup_nh_list[nh] = 0;
     } ITERATE_NH_TYPE_END;
     
-    delete_singly_ll(route->like_prefix_list);
+    if(rt_type == UNICAST_T){
+        delete_singly_ll(route->like_prefix_list);
+    }
     free(route->like_prefix_list);
     route->like_prefix_list = NULL;
     free(route);
@@ -260,7 +317,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level, rtttype_t rt_type){
             i++;
             singly_ll_delete_node_by_data_ptr(spf_info->priority_routes_list[rt_type], route);
             ITERATIVE_LIST_NODE_DELETE2(spf_info->priority_routes_list[rt_type], list_node1, list_node2);
-            free_route(route);
+            free_route(route, rt_type);
             route = NULL;
         }
     }ITERATE_LIST_END2(spf_info->routes_list[rt_type], list_node1, list_node2);
@@ -305,6 +362,17 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         nh_type_t nh = NH_MAX;
         internal_nh_t *int_nxt_hop = NULL,
                       *backup = NULL;
+       
+        /*Once we implement the proper route installation between IGP and RIB,
+         * we dont need to delete route from here anymore*/
+        if(route->level != level){
+#ifdef __ENABLE_TRACE__
+             sprintf(instance->traceopts->b, "Node : %s : IGP route %s/%u at %s will be transformed into %s route, hence deleting it from RIB",
+                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, get_str_level(route->level), get_str_level(level));
+             trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+#endif
+            delete_route(spf_info, route, FALSE, TRUE);   
+        }
 
         delete_singly_ll(route->like_prefix_list);
         route_set_key(route, prefix->prefix, prefix->mask); 
@@ -312,12 +380,12 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
 #ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.u.prefix.prefix, 
                     route->rt_key.u.prefix.mask, get_str_level(level)); 
-        trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+        trace(instance->traceopts, ROUTE_CALCULATION_BIT);
 #endif
 
         route->version = spf_info->spf_level_info[level].version;
         route->flags = prefix->prefix_flags;
-       
+        route->rt_type = UNICAST_T; 
         route->level = level;
         route->hosting_node = prefix->hosting_node;
 
@@ -554,6 +622,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
         route = route_malloc();
         route_set_key(route, prefix->prefix, prefix->mask); 
         route->version = spf_info->spf_level_info[level].version;
+        route->rt_type = UNICAST_T;
 
         /*Copy the prefix flags to route flags. flags include :
          * PREFIX_DOWNBIT_FLAG
@@ -1267,7 +1336,6 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
     prefix_sid_subtlv_t *prefix_sid = NULL;
     routes_t *sr_route = NULL, *igp_route = NULL;
     common_pfx_key_t comm_pfx_key;
-    boolean is_new_route = FALSE;
     nh_type_t nh;
     internal_nh_t *nxthop = NULL, *new_nxthop = NULL;
 
@@ -1321,7 +1389,6 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
                 continue;   
             }
 
-            is_new_route = FALSE;
             comm_pfx_key.u.label = PREFIX_SID_LABEL(spf_root->srgb, prefix_sid->prefix);
             sr_route = search_route_in_spf_route_list(spf_info, &comm_pfx_key, SPRING_T);
 
@@ -1336,10 +1403,12 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
             }
             else if(sr_route->level != level){
 #ifdef __ENABLE_TRACE__
-                sprintf(instance->traceopts->b, "Node : %s : SR route %s/%u at %s will be transformed into %s route",
+                sprintf(instance->traceopts->b, "Node : %s : SR route %s/%u at %s will be transformed into %s route, hence deleting it from RIB",
                         spf_root->node_name, sr_route->rt_key.u.prefix.prefix,  sr_route->rt_key.u.prefix.mask,
                         get_str_level(sr_route->level), get_str_level(level));
                 trace(instance->traceopts, SPRING_ROUTE_CAL_BIT);
+                /*Delete this SR route from RIB here*/
+                delete_route(spf_info, sr_route, FALSE, TRUE);
 #endif
             }
 
@@ -1351,6 +1420,7 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
             sr_route->version = igp_route->version;
             sr_route->flags = igp_route->flags;
             sr_route->level = igp_route->level;
+            sr_route->rt_type = SPRING_T;
             sr_route->hosting_node = igp_route->hosting_node;
             sr_route->spf_metric = igp_route->spf_metric;
             sr_route->lsp_metric = igp_route->lsp_metric;
@@ -1361,8 +1431,6 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
                 ROUTE_FLUSH_PRIMARY_NH_LIST(sr_route, nh);
                 ROUTE_FLUSH_BACKUP_NH_LIST(sr_route, nh);
             } ITERATE_NH_TYPE_END;
-            /*sr_route and igp_route both points to same like_prefix_lists*/
-            //delete_singly_ll(sr_route->like_prefix_list);
 
             ITERATE_NH_TYPE_BEGIN(nh){
                 ITERATE_LIST_BEGIN(igp_route->primary_nh_list[nh], list_node){

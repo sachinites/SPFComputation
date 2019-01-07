@@ -41,6 +41,7 @@ typedef struct routes_{
     int version;
     FLAG flags;
     LEVEL level;
+    rtttype_t rt_type;
     node_t *hosting_node;
     unsigned int spf_metric;
     unsigned int lsp_metric; /*meaningful if this LSP route*/
@@ -66,7 +67,7 @@ void
 route_set_key(routes_t *route, char *ipv4_addr, char mask);
 
 void
-free_route(routes_t *route);
+free_route(routes_t *route, rtttype_t rt_type);
 
 #define ROUTE_ADD_NH(_route_nh_list, _internal_nh_t_ptr)     \
     singly_ll_add_node_by_val(_route_nh_list, _internal_nh_t_ptr)
@@ -83,6 +84,11 @@ ROUTE_FLUSH_PRIMARY_NH_LIST(routes_t *route, nh_type_t nh){
 
     delete_singly_ll(route->primary_nh_list[nh]);
 }
+
+void
+delete_route(spf_info_t *spf_info, routes_t *route, 
+             boolean del_from_igp,
+             boolean del_from_rib);
 
 static inline void
 ROUTE_FLUSH_BACKUP_NH_LIST(routes_t *route, nh_type_t nh){

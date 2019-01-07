@@ -365,7 +365,7 @@ inet_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
 
     if(!rt_un_entry){
         printf("%s() : Warning route for %s/%d not found in routing table\n", 
-            __FUNCTION__, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+            __FUNCTION__, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
         return FALSE;
     }
 
@@ -528,7 +528,7 @@ inet_3_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
 
     if(!rt_un_entry){
         printf("%s() : Warning route for %s/%d not found in routing table\n", 
-            __FUNCTION__, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key));
+            __FUNCTION__, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key));
         return FALSE;
     }
 
@@ -683,8 +683,8 @@ mpls_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
 
     if(!rt_un_entry){
         printf("%s() : Warning route for %s/%d(%u) not found in routing table\n", 
-            __FUNCTION__, RT_ENTRY_PFX(&rt_un_entry->rt_key), RT_ENTRY_MASK(&rt_un_entry->rt_key),
-            RT_ENTRY_LABEL(&rt_un_entry->rt_key));
+            __FUNCTION__, RT_ENTRY_PFX(rt_key), RT_ENTRY_MASK(rt_key),
+            RT_ENTRY_LABEL(rt_key));
         return FALSE;
     }
 
