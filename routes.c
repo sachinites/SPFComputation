@@ -77,10 +77,12 @@ delete_route(spf_info_t *spf_info, routes_t *route,
                      *list_node2 = NULL;
     
     rt_key_t rt_key;
-    memset(&rt_key, 0, sizeof(rt_key_t));
     boolean is_found = FALSE;
     rtttype_t rt_type = route->rt_type;
 
+    assert(del_from_igp || del_from_rib);
+
+    memset(&rt_key, 0, sizeof(rt_key_t));
     strncpy((RT_ENTRY_PFX(&rt_key)), route->rt_key.u.prefix.prefix, PREFIX_LEN);
     RT_ENTRY_MASK(&rt_key) = route->rt_key.u.prefix.mask;
     
@@ -118,7 +120,7 @@ delete_route(spf_info_t *spf_info, routes_t *route,
     }
 
     if(is_found){
-        free_route(route, rt_type);
+        free_route(route);
     }
 }
 
@@ -231,7 +233,7 @@ route_set_key(routes_t *route, char *ipv4_addr, char mask){
 }
 
 void
-free_route(routes_t *route, rtttype_t rt_type){
+free_route(routes_t *route){
 
     if(!route)  return;
     nh_type_t nh; 
@@ -246,7 +248,7 @@ free_route(routes_t *route, rtttype_t rt_type){
         route->backup_nh_list[nh] = 0;
     } ITERATE_NH_TYPE_END;
     
-    if(rt_type == UNICAST_T){
+    if(route->rt_type == UNICAST_T){
         delete_singly_ll(route->like_prefix_list);
     }
     free(route->like_prefix_list);
@@ -317,7 +319,7 @@ delete_stale_routes(spf_info_t *spf_info, LEVEL level, rtttype_t rt_type){
             i++;
             singly_ll_delete_node_by_data_ptr(spf_info->priority_routes_list[rt_type], route);
             ITERATIVE_LIST_NODE_DELETE2(spf_info->priority_routes_list[rt_type], list_node1, list_node2);
-            free_route(route, rt_type);
+            free_route(route);
             route = NULL;
         }
     }ITERATE_LIST_END2(spf_info->routes_list[rt_type], list_node1, list_node2);
@@ -355,7 +357,7 @@ search_route_in_spf_route_list_by_lpm(spf_info_t *spf_info,
 }
 
 static void 
-overwrite_route(spf_info_t *spf_info, routes_t *route, 
+    overwrite_route(spf_info_t *spf_info, routes_t *route, 
                 prefix_t *prefix, spf_result_t *result, LEVEL level){
 
         unsigned int i = 0;
@@ -373,9 +375,11 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
 #endif
             delete_route(spf_info, route, FALSE, TRUE);   
         }
+        else{
+            delete_singly_ll(route->like_prefix_list);
+        }
 
-        delete_singly_ll(route->like_prefix_list);
-        route_set_key(route, prefix->prefix, prefix->mask); 
+        //route_set_key(route, prefix->prefix, prefix->mask); 
 
 #ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.u.prefix.prefix, 
@@ -392,11 +396,11 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
         if(!IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
             /* If the prefix metric type is internal*/
             route->spf_metric =  result->spf_metric + prefix->metric;
-            route->lsp_metric =  result->spf_metric + prefix->metric;; 
+            route->lsp_metric =  result->lsp_metric + prefix->metric;; 
         }else{
             /* If the metric type is external, we only compute the hosting node distance as spf metric*/
             route->spf_metric =  result->spf_metric;
-            route->lsp_metric =  result->spf_metric;
+            route->lsp_metric =  result->lsp_metric;
             route->ext_metric =  prefix->metric;
         }
 
@@ -1453,7 +1457,6 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
             springify_unicast_route(spf_root, (void *)sr_route, prefix_sid->sid.sid);  
         } ITERATE_GLTHREAD_END(&D_res->prefix_sids_thread_lst[level], curr);
     } ITERATE_LIST_END;
-
 }
 
 static void
@@ -1791,10 +1794,5 @@ enhanced_start_route_installation(spf_info_t *spf_info,
          default:
             assert(0);
     }
-}
-
-void 
-flush_routes(node_t *node){
-
 }
 

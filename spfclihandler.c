@@ -627,26 +627,6 @@ show_spf_initialization(node_t *spf_root, LEVEL level){
                     get_direct_next_hop_metric(phy_nbr->direct_next_hop[level][IPNH][0], level) :
                     get_direct_next_hop_metric(phy_nbr->direct_next_hop[level][LSPNH][0], level));
    } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, phy_nbr, logical_nbr, level);
-
-#if 0
-   ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, phy_nbr, logical_nbr, edge, pn_edge, level){
-
-       ITERATE_NH_TYPE_BEGIN(nh){
-           printf("Node : %s, spf path list for NH-TYPE : %s\n", phy_nbr->node_name,
-                   nh == IPNH ? "IPNH" : "LSPNH");            
-           spf_predecessors = &phy_nbr->pred_lst[level][nh];
-
-           ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
-
-               pred_info_t *pred_info = glthread_to_pred_info(curr);
-               printf("\tNode-name = %s, oif = %s, gw-prefix = %s\n",
-                       pred_info->node->node_name,
-                       pred_info->oif->intf_name,
-                       pred_info->gw_prefix);
-           } ITERATE_GLTHREAD_END(spf_predecessors, curr);
-       } ITERATE_NH_TYPE_END;
-   } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, phy_nbr, logical_nbr, level);
-#endif
 }
 
 int
@@ -1274,7 +1254,7 @@ clear_instance_node_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_
 
     switch(cmd_code){
         case CMDCODE_CLEAR_NODE_ROUTE_DB:
-            flush_routes(node);
+            //flush_routes(node);
             break;        
         default:
             ;

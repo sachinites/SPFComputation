@@ -67,7 +67,7 @@ void
 route_set_key(routes_t *route, char *ipv4_addr, char mask);
 
 void
-free_route(routes_t *route, rtttype_t rt_type);
+free_route(routes_t *route);
 
 #define ROUTE_ADD_NH(_route_nh_list, _internal_nh_t_ptr)     \
     singly_ll_add_node_by_val(_route_nh_list, _internal_nh_t_ptr)
@@ -184,8 +184,5 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
 
 void
 show_internal_routing_tree(node_t *node, char *prefix, char mask, rtttype_t rt_type);
-
-void
-flush_routes(node_t *node);
 
 #endif /* __ROUTES__ */
