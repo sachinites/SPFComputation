@@ -357,116 +357,117 @@ search_route_in_spf_route_list_by_lpm(spf_info_t *spf_info,
 }
 
 static void 
-    overwrite_route(spf_info_t *spf_info, routes_t *route, 
-                prefix_t *prefix, spf_result_t *result, LEVEL level){
+overwrite_route(spf_info_t *spf_info, routes_t *route, 
+        prefix_t *prefix, spf_result_t *result, LEVEL level){
 
-        unsigned int i = 0;
-        nh_type_t nh = NH_MAX;
-        internal_nh_t *int_nxt_hop = NULL,
-                      *backup = NULL;
-       
-        /*Once we implement the proper route installation between IGP and RIB,
-         * we dont need to delete route from here anymore*/
-        if(route->level != level){
+    unsigned int i = 0;
+    nh_type_t nh = NH_MAX;
+    internal_nh_t *int_nxt_hop = NULL,
+                  *backup = NULL;
+
+    /*Once we implement the proper route installation between IGP and RIB,
+     * we dont need to delete route from here anymore*/
+    if(route->level != level){
 #ifdef __ENABLE_TRACE__
-             sprintf(instance->traceopts->b, "Node : %s : IGP route %s/%u at %s will be transformed into %s route, hence deleting it from RIB",
-                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, get_str_level(route->level), get_str_level(level));
-             trace(instance->traceopts, ROUTE_CALCULATION_BIT);
-#endif
-            delete_route(spf_info, route, FALSE, TRUE);   
-        }
-        else{
-            delete_singly_ll(route->like_prefix_list);
-        }
-
-        //route_set_key(route, prefix->prefix, prefix->mask); 
-
-#ifdef __ENABLE_TRACE__        
-        sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.u.prefix.prefix, 
-                    route->rt_key.u.prefix.mask, get_str_level(level)); 
+        sprintf(instance->traceopts->b, "Node : %s : IGP route %s/%u at %s will be transformed into %s route, hence deleting it from RIB",
+                GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, 
+                route->rt_key.u.prefix.mask, get_str_level(route->level), get_str_level(level));
         trace(instance->traceopts, ROUTE_CALCULATION_BIT);
 #endif
+        delete_route(spf_info, route, FALSE, TRUE);   
+    }
+    else{
+        delete_singly_ll(route->like_prefix_list);
+    }
 
-        route->version = spf_info->spf_level_info[level].version;
-        route->flags = prefix->prefix_flags;
-        route->rt_type = UNICAST_T; 
-        route->level = level;
-        route->hosting_node = prefix->hosting_node;
+    //route_set_key(route, prefix->prefix, prefix->mask); 
 
-        if(!IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
-            /* If the prefix metric type is internal*/
-            route->spf_metric =  result->spf_metric + prefix->metric;
-            route->lsp_metric =  result->lsp_metric + prefix->metric;; 
-        }else{
-            /* If the metric type is external, we only compute the hosting node distance as spf metric*/
-            route->spf_metric =  result->spf_metric;
-            route->lsp_metric =  result->lsp_metric;
-            route->ext_metric =  prefix->metric;
+#ifdef __ENABLE_TRACE__        
+    sprintf(instance->traceopts->b, "route : %s/%u being over written for %s", route->rt_key.u.prefix.prefix, 
+            route->rt_key.u.prefix.mask, get_str_level(level)); 
+    trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+#endif
+
+    route->version = spf_info->spf_level_info[level].version;
+    route->flags = prefix->prefix_flags;
+    route->rt_type = UNICAST_T; 
+    route->level = level;
+    route->hosting_node = prefix->hosting_node;
+
+    if(!IS_BIT_SET(prefix->prefix_flags, PREFIX_METRIC_TYPE_EXT)){
+        /* If the prefix metric type is internal*/
+        route->spf_metric =  result->spf_metric + prefix->metric;
+        route->lsp_metric =  result->lsp_metric + prefix->metric;; 
+    }else{
+        /* If the metric type is external, we only compute the hosting node distance as spf metric*/
+        route->spf_metric =  result->spf_metric;
+        route->lsp_metric =  result->lsp_metric;
+        route->ext_metric =  prefix->metric;
+    }
+
+    /*Check if Destination node has More than one primary next hops, then we need not copy
+     * only-link protecting backups*/
+    boolean dont_collect_onlylink_protecting_backups = 
+        is_destination_has_multiple_primary_nxthops(result);
+
+    ITERATE_NH_TYPE_BEGIN(nh){
+
+        ROUTE_FLUSH_PRIMARY_NH_LIST(route, nh);
+        ROUTE_FLUSH_BACKUP_NH_LIST(route, nh);
+
+        for(i = 0 ; i < MAX_NXT_HOPS; i++){
+            if(!is_internal_nh_t_empty(result->next_hop[nh][i])){
+                int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+                copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
+                ROUTE_ADD_NH(route->primary_nh_list[nh], int_nxt_hop);   
+#ifdef __ENABLE_TRACE__                    
+                sprintf(instance->traceopts->b, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
+                        route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
+                        result->next_hop[nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+#endif
+            }
+            else
+                break;
         }
-
-        /*Check if Destination node has More than one primary next hops, then we need not copy
-         * only-link protecting backups*/
-        boolean dont_collect_onlylink_protecting_backups = 
-            is_destination_has_multiple_primary_nxthops(result);
-        
-        ITERATE_NH_TYPE_BEGIN(nh){
-
-            ROUTE_FLUSH_PRIMARY_NH_LIST(route, nh);
-            ROUTE_FLUSH_BACKUP_NH_LIST(route, nh);
-
-            for(i = 0 ; i < MAX_NXT_HOPS; i++){
-                if(!is_internal_nh_t_empty(result->next_hop[nh][i])){
-                    int_nxt_hop = calloc(1, sizeof(internal_nh_t));
-                    copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
-                    ROUTE_ADD_NH(route->primary_nh_list[nh], int_nxt_hop);   
-#ifdef __ENABLE_TRACE__                    
-                    sprintf(instance->traceopts->b, "route : %s/%u primary next hop is merged with %s's next hop node %s", 
-                            route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
-                            result->next_hop[nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
-#endif
-                }
-                else
-                    break;
-            }
-            for(i = 0 ; i < MAX_NXT_HOPS; i++){
-                if(!is_internal_nh_t_empty((result->node->backup_next_hop[level][nh][i]))){
-                    backup = &result->node->backup_next_hop[level][nh][i];        
-                    if(dont_collect_onlylink_protecting_backups){
-                        if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
-                                backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
-                                backup->lfa_type == LINK_PROTECTION_RLFA                     ||
-                                backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
-                                backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
-                                backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
-                                backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
-                                backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
+        for(i = 0 ; i < MAX_NXT_HOPS; i++){
+            if(!is_internal_nh_t_empty((result->node->backup_next_hop[level][nh][i]))){
+                backup = &result->node->backup_next_hop[level][nh][i];        
+                if(dont_collect_onlylink_protecting_backups){
+                    if(backup->lfa_type == LINK_PROTECTION_LFA                           ||
+                            backup->lfa_type == LINK_PROTECTION_LFA_DOWNSTREAM           ||
+                            backup->lfa_type == LINK_PROTECTION_RLFA                     ||
+                            backup->lfa_type == LINK_PROTECTION_RLFA_DOWNSTREAM          ||
+                            backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA            ||
+                            backup->lfa_type == BROADCAST_LINK_PROTECTION_LFA_DOWNSTREAM ||
+                            backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA           ||
+                            backup->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
 #ifdef __ENABLE_TRACE__                            
-                            sprintf(instance->traceopts->b, "\t ECMP : only link-protecting backup dropped : %s----%s---->%-s(%s(%s)) protecting link: %s", 
-                                    backup->oif->intf_name,
-                                    next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
-                                    next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
-                                    backup->node ? backup->node->node_name : backup->rlfa->node_name,
-                                    backup->node ? backup->node->router_id : backup->rlfa->router_id, 
-                                    backup->protected_link->intf_name); 
-                            trace(instance->traceopts, ROUTE_CALCULATION_BIT);
+                        sprintf(instance->traceopts->b, "\t ECMP : only link-protecting backup dropped : %s----%s---->%-s(%s(%s)) protecting link: %s", 
+                                backup->oif->intf_name,
+                                next_hop_type(*backup) == IPNH ? "IPNH" : "LSPNH",
+                                next_hop_type(*backup) == IPNH ? next_hop_gateway_pfx(backup) : "",
+                                backup->node ? backup->node->node_name : backup->rlfa->node_name,
+                                backup->node ? backup->node->router_id : backup->rlfa->router_id, 
+                                backup->protected_link->intf_name); 
+                        trace(instance->traceopts, ROUTE_CALCULATION_BIT);
 #endif
-                            continue;
-                        }
+                        continue;
                     }
-
-                    int_nxt_hop = calloc(1, sizeof(internal_nh_t));
-                    copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
-                    ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
-#ifdef __ENABLE_TRACE__                    
-                    sprintf(instance->traceopts->b, "route : %s/%u backup next hop is merged with %s's backup next hop node %s", 
-                            route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
-                            result->node->backup_next_hop[level][nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
-#endif
                 }
-                else
-                    break;
+
+                int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+                copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
+                ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
+#ifdef __ENABLE_TRACE__                    
+                sprintf(instance->traceopts->b, "route : %s/%u backup next hop is merged with %s's backup next hop node %s", 
+                        route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, result->node->node_name, 
+                        result->node->backup_next_hop[level][nh][i].node->node_name); trace(instance->traceopts, ROUTE_CALCULATION_BIT);;
+#endif
             }
-        } ITERATE_NH_TYPE_END;
+            else
+                break;
+        }
+    } ITERATE_NH_TYPE_END;
 }
 
 static void
