@@ -122,7 +122,26 @@ get_label_from_srgb_index(srgb_t *srgb, unsigned int index);
 #define PREFIX_SID_LABEL(srgbptr, prefixptr) \
     (get_label_from_srgb_index(srgbptr, PREFIX_SID_INDEX(prefixptr)))
 
-/*SR algorithm TLV
+typedef struct flex_fad_subtlv_ {
+    BYTE type;          /*26*/
+    BYTE length;
+    BYTE flex_algo;     /*128-255*/
+    BYTE metric_type;   /*0 - igp, 1 -delay metric, 2-te metric*/
+    BYTE calc_type;     /*0 - spf, x - strict spf*/
+    BYTE priority;
+    /* SubTLV of SUBTLV
+     * Flex Algo Extended Admin Group SubTLV
+     * flex algo RFC, section 6.1*/
+    /* The below subtlv can be repeated but for distinct 'type' values.
+     * This subtlv cannot be repeated more than once for same 'type' value*/
+    struct{
+        BYTE type; /*1 - Exclude, 2 - Include any, 3 - Include all*/
+        BYTE length;
+        unsigned int extended_admin_grps[0];
+    }faeag_subtlv_t;
+} flex_fad_subtlv_t;
+
+/* SR algorithm TLV
  * allows the router to advertise the algorithms
  * that the router is currently using*/
 typedef struct _sr_algorithm{
@@ -138,6 +157,9 @@ typedef struct _router_cap_tlv{
     // ...
     srgb_t *srgb;
     sr_algorithm_subtlv_t sr_algo;
+    /* Flex Algo information is shipped as part of
+     * router capability TLV(242)*/
+    flex_fad_subtlv_t fads;
     srlb_t *srlb;
 } router_cap_subtlv_t;
 

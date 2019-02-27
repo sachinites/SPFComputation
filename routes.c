@@ -488,7 +488,7 @@ link_prefix_to_route(routes_t *route, prefix_t *new_prefix,
     prefix_pref_data_t list_prefix_pref = {ROUTE_UNKNOWN_PREFERENCE, 
                                           "ROUTE_UNKNOWN_PREFERENCE"},
 
-                        new_prefix_pref = route_preference(new_prefix->prefix_flags, new_prefix->level);
+    new_prefix_pref = route_preference(new_prefix->prefix_flags, new_prefix->level);
 
 #ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "To Route : %s/%u, %s, Appending prefix : %s/%u to Route prefix list",

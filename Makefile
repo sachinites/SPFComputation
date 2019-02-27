@@ -6,10 +6,30 @@ USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
 DSOBJ=LinkedList/LinkedListApi.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o Tree/redblack.o
-OBJ=advert.o instance.o routes.o prefix.o rlfa.o spfdcm.o topo.o \
-	spfclihandler.o spfcomputation.o spfutil.o spftrace.o 		 \
-	./Libtrace/libtrace.o mpls/ldp.o mpls/rsvp.o mpls/mpls_label_mgr.o igp_sr_ext.o 	 \
-	sr_tlv_api.o data_plane.o srms.o conflct_res.o complete_spf_path.o glevel.o spring_adjsid.o
+OBJ=advert.o \
+	instance.o \
+	routes.o \
+	prefix.o \
+	rlfa.o \
+	spfdcm.o \
+	topo.o \
+	spfclihandler.o \
+	spfcomputation.o \
+	spfutil.o \
+	spftrace.o \
+	./Libtrace/libtrace.o \
+	mpls/ldp.o \
+	mpls/rsvp.o \
+	mpls/mpls_label_mgr.o \
+	igp_sr_ext.o \
+	sr_tlv_api.o \
+	data_plane.o \
+	srms.o \
+	conflct_res.o \
+	complete_spf_path.o \
+	glevel.o \
+	spring_adjsid.o \
+	flex_algo.o
 ${TARGET_NAME}:testapp.o ${OBJ} ${DSOBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -24,6 +44,9 @@ glevel.o:glevel.c
 testapp.o:testapp.c
 	@echo "Building testapp.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} testapp.c -o testapp.o
+flex_algo.o:flex_algo.c
+	@echo "Building flex_algo.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} flex_algo.c -o flex_algo.o
 data_plane.o:data_plane.c
 	@echo "Building data_plane.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} data_plane.c  -o data_plane.o

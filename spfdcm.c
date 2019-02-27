@@ -1794,10 +1794,21 @@ spf_init_dcm(){
 
     static param_t config_node_node_name_add_prefix_prefix_mask_level_level;
     init_param(&config_node_node_name_add_prefix_prefix_mask_level_level, LEAF, 0, 
-                    instance_node_config_handler, validate_level_no, INT, "level-no", "level : 1 | 2");
+                    0, validate_level_no, INT, "level-no", "level : 1 | 2");
     libcli_register_param(&config_node_node_name_add_prefix_prefix_mask_level,
                     &config_node_node_name_add_prefix_prefix_mask_level_level);
-    set_param_cmd_code(&config_node_node_name_add_prefix_prefix_mask_level_level, CMDCODE_CONFIG_NODE_EXPORT_PREFIX);
+    {
+        static param_t metric;
+        init_param(&metric, CMD, "metric", 0, 0, INVALID, 0, "metric");
+        libcli_register_param(&config_node_node_name_add_prefix_prefix_mask_level_level, &metric);
+        {
+            /*config node <node-name> [no] interface <slot-no> level <level-no> metric <metric_val>*/
+            static param_t metric_val;
+            init_param(&metric_val, LEAF, 0, node_slot_config_handler, validate_metric_value, INT, "metric", "metric value [0 - 4294967295]");
+            libcli_register_param(&metric, &metric_val);
+            set_param_cmd_code(&metric_val, CMDCODE_CONFIG_NODE_EXPORT_PREFIX);
+        }
+    }
     
     /* config node <node-name> [no] attachbit enable*/    
     static param_t config_node_node_name_attachbit;
