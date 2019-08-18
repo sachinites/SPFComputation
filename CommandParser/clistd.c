@@ -153,7 +153,7 @@ repeat_last_command(param_t *param, ser_buff_t *b, op_mode enable_or_disable){
  int
 mode_enter_callback(param_t *param, ser_buff_t *b, op_mode enable_or_disable){
  
-    if(param == libcli_get_root_hook()){
+    if(param == libcli_get_root()){
         printf(ANSI_COLOR_YELLOW "Info : Mode not supported at root level\n" ANSI_COLOR_RESET);
         return 0;   
     }
@@ -275,7 +275,6 @@ record_command(char *hist_file, char *cons_input_buffer, unsigned int cmd_len){
     static unsigned int cmd_counter = 0;
     
     if(cmd_counter == MAX_SAVED_CMDS){
-        //printf("Record file limix (%d) reached, cmd not recorded\n", cmd_counter);
         return;
     }
     FILE *f = fopen(CMD_HIST_RECORD_FILE, "a");
@@ -370,7 +369,7 @@ show_resgistered_cmd_handler(param_t *param, ser_buff_t *b, op_mode enable_or_di
     /*Implement DFS and dump all complete commands*/
     re_init_tokens(MAX_CMD_TREE_DEPTH);
 
-    param_t *root = libcli_get_root_hook();
+    param_t *root = libcli_get_root();
     
     unsigned int index = 0;
     dump_all_commands(root, index);

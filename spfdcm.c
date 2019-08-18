@@ -1078,7 +1078,7 @@ spf_init_dcm(){
     param_t *config = libcli_get_config_hook();
     param_t *run    = libcli_get_run_hook();
     param_t *debug_show = libcli_get_debug_show_hook();
-    param_t *root = libcli_get_root_hook();
+    param_t *root = libcli_get_root();
 
     /*register dynamic topology creation commands */
     config_topology_commands(config);

@@ -32,7 +32,7 @@
 #define MODE_CHARACTER          "/"
 #define SUBOPTIONS_CHARACTER    "?"
 #define CMD_EXPANSION_CHARACTER "."
-#define MAX_OPTION_SIZE         32
+#define MAX_OPTION_SIZE         16
 #define CMD_HIST_RECORD_FILE    "CMD_HIST_RECORD_FILE.txt"
 #define FILE_CMD_SIZE_MAX       (LEAF_VALUE_HOLDER_SIZE * MAX_CMD_TREE_DEPTH)
 #define MODE_PARAM_INDEX        0

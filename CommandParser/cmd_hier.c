@@ -68,7 +68,7 @@ libcli_get_cmd_expansion_param(){
 /* Function to be used to get access to above hooks*/
 
 param_t *
-libcli_get_root_hook(void){
+libcli_get_root(void){
     return &root;
 }
 

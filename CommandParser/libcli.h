@@ -50,9 +50,6 @@ libcli_get_clear_hook(void);
 param_t *
 libcli_get_run_hook(void);
 
-param_t *
-libcli_get_root_hook(void);
-
 void
 enable_show_extension_param_brief(param_t *param);
 
