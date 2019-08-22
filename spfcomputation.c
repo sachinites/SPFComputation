@@ -426,13 +426,30 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 static void
 spf_clear_result(node_t *spf_root, LEVEL level){
 
-   singly_ll_node_t *list_node = NULL; 
+   singly_ll_node_t *list_node = NULL,
+                    *list_node1 = NULL; 
+
    spf_result_t *result = NULL;
+   self_spf_result_t *self_result = NULL;
    nh_type_t nh;
 
    ITERATE_LIST_BEGIN(spf_root->spf_run_result[level], list_node){
 
        result = list_node->data;
+        
+       self_result = singly_ll_search_by_key(
+                    result->node->self_spf_result[level], 
+                    spf_root);
+        
+        assert(self_result);
+
+        singly_ll_delete_node_by_data_ptr(
+                    result->node->self_spf_result[level],
+                    self_result);
+
+        free(self_result);
+        self_result = NULL;
+        
        free(result);
        result = NULL;    
    }ITERATE_LIST_END;

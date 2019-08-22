@@ -315,7 +315,8 @@ void
 print_nh_list2(internal_nh_t *nh_list){
 
     unsigned int i = 0;
-    
+
+#ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "printing next hop list"); 
     trace(instance->traceopts, DIJKSTRA_BIT);
 #endif

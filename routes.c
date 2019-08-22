@@ -899,12 +899,14 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
 
     internal_nh_t *prim_next_hop1 = NULL,
                   *prim_next_hop2 = NULL;
-    nh_type_t nh,nh1;
+
+    nh_type_t nh;
     unsigned int dist_prim_nh1_to_D = 0,
                  dist_prim_nh2_to_D = 0,
                  dist_prim_nh1_to_prim_nh2 = 0,
-                 i = 0, j = 0;
-
+                 i = 0, j = 0, 
+                 indep_pr_nh_count = 0;
+    boolean check_next_outer_nh;
     /*This fn assumes that all requires SPF runs has been triggered*/
     //Compute_PHYSICAL_Neighbor_SPFs(S, level);
 
@@ -913,10 +915,11 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
 
 #ifdef __ENABLE_TRACE__    
     sprintf(instance->traceopts->b, "Node : %s : Testing for Independant primary nexthops at %s for Dest %s",
-                    S->node_name, get_str_level(level), dst_node->node_name);
+            S->node_name, get_str_level(level), dst_node->node_name);
     trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
-    
+    check_next_outer_nh = FALSE;
+
     ITERATE_NH_TYPE_BEGIN(nh){
         for(i = 0; i < MAX_NXT_HOPS; i++){
             prim_next_hop1 = &D_res->next_hop[nh][i];
@@ -924,33 +927,43 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
                 break;
             dist_prim_nh1_to_D = DIST_X_Y(prim_next_hop1->node, dst_node, level);
 
-            ITERATE_NH_TYPE_BEGIN(nh1){
-                for(j = 0; j < MAX_NXT_HOPS; j++){
-                    prim_next_hop2 = &D_res->next_hop[nh1][j];
-                    if(is_nh_list_empty2(prim_next_hop2))
-                        break;
-                    if(prim_next_hop1 == prim_next_hop2) continue;
-                    dist_prim_nh2_to_D = DIST_X_Y(prim_next_hop2->node, dst_node, level);
-                    dist_prim_nh1_to_prim_nh2 = DIST_X_Y(prim_next_hop1->node, prim_next_hop2->node, level);
+            for(j = 0; j < MAX_NXT_HOPS; j++){
+                prim_next_hop2 = &D_res->next_hop[nh][j];
+                if(is_nh_list_empty2(prim_next_hop2))
+                    break;
+                if(prim_next_hop1 == prim_next_hop2) continue;
+                dist_prim_nh2_to_D = DIST_X_Y(prim_next_hop2->node, dst_node, level);
+                dist_prim_nh1_to_prim_nh2 = DIST_X_Y(prim_next_hop1->node, prim_next_hop2->node, level);
 
-                    if(dist_prim_nh1_to_D < dist_prim_nh1_to_prim_nh2 + dist_prim_nh2_to_D){
-                        D_res->backup_requirement[level] = NO_BACKUP_REQUIRED;
-#ifdef __ENABLE_TRACE__                        
-                        sprintf(instance->traceopts->b, "Node : %s : Dest %s has independent Primary nexthops at %s",
-                            S->node_name, dst_node->node_name, get_str_level(level));
-                        trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
-#endif
-                        return TRUE;
-                    }
+                if(dist_prim_nh1_to_D < dist_prim_nh1_to_prim_nh2 + dist_prim_nh2_to_D)
+                    continue;
+                else{
+                    check_next_outer_nh = TRUE;
+                    break;
                 }
-            } ITERATE_NH_TYPE_END;
+            }
+
+            if(check_next_outer_nh){
+                check_next_outer_nh = FALSE;
+                continue;
+            }
+            else{
+                indep_pr_nh_count++;
+                if(indep_pr_nh_count == 2)
+                    break;
+            }
         }
-    }
-#ifdef __ENABLE_TRACE__    
-    sprintf(instance->traceopts->b, "Node : %s : Dest %s do not have independent Primary nexthops at %s",
-            S->node_name, dst_node->node_name, get_str_level(level));
-    trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+    } ITERATE_NH_TYPE_END;
+
+    if(indep_pr_nh_count == 2){
+        D_res->backup_requirement[level] = NO_BACKUP_REQUIRED;
+#ifdef __ENABLE_TRACE__                        
+        sprintf(instance->traceopts->b, "Node : %s : Dest %s has independent Primary nexthops at %s",
+                S->node_name, dst_node->node_name, get_str_level(level));
+        trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -971,10 +984,8 @@ is_independant_primary_next_hop_list(routes_t *route){
     LEVEL level = route->level;
     unsigned int dist_prim_nh1_to_D = 0,
                  dist_prim_nh2_to_D = 0,
-                 dist_prim_nh1_to_prim_nh2 = 0;
-
-    prefix_t *first_best_prefix = ROUTE_GET_BEST_PREFIX(route);
-    assert(first_best_prefix);
+                 dist_prim_nh1_to_prim_nh2 = 0,
+                 indep_prim_nh_count = 0;
 
     ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
         prefix = list_node->data;
@@ -985,8 +996,7 @@ is_independant_primary_next_hop_list(routes_t *route){
                 next_hop = list_node2->data;
                 primary_nh1 = next_hop->node;
                 dist_prim_nh1_to_D = DIST_X_Y(primary_nh1, ecmp_dest_node, level);
-                ITERATE_NH_TYPE_BEGIN(nh1){
-                    ITERATE_LIST_BEGIN(route->primary_nh_list[nh1], list_node3){
+                    ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node3){
                         next_hop = list_node3->data;
                         primary_nh2 = next_hop->node;
                         if(primary_nh1 == primary_nh2)
@@ -996,10 +1006,13 @@ is_independant_primary_next_hop_list(routes_t *route){
                          * passing through primary_nh2, then return TRUE*/
                         dist_prim_nh1_to_prim_nh2 = DIST_X_Y(primary_nh1, primary_nh2, level);
                         if(dist_prim_nh1_to_D < dist_prim_nh1_to_prim_nh2 + dist_prim_nh2_to_D){
-                            return TRUE;
+                            indep_prim_nh_count++;
+                            if(indep_prim_nh_count == 1)
+                                break;
+                            if(indep_prim_nh_count == 2)
+                                return TRUE;
                         }
                     } ITERATE_LIST_END;
-                } ITERATE_NH_TYPE_END;
             } ITERATE_LIST_END;
         } ITERATE_NH_TYPE_END;
     } ITERATE_LIST_END;

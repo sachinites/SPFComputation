@@ -69,16 +69,13 @@ init_back_up_computation(node_t *S, LEVEL level){
        
        res = (spf_result_t *)list_node->data;
        ITERATE_NH_TYPE_BEGIN(nh){
-#if 0
-        copy_nh_list2(res->node->backup_next_hop[level][nh], 
-            res->node->old_backup_next_hop[level][nh]); 
-#endif
-        if(is_internal_nh_t_empty(res->node->backup_next_hop[level][nh][0]))
-            continue;
-        for(i=0; i < MAX_NXT_HOPS; i++){
-            init_internal_nh_t(res->node->backup_next_hop[level][nh][i]);    
-        }
+           if(is_internal_nh_t_empty(res->node->backup_next_hop[level][nh][0]))
+               continue;
+           for(i=0; i < MAX_NXT_HOPS; i++){
+               init_internal_nh_t(res->node->backup_next_hop[level][nh][i]);    
+           }
        } ITERATE_NH_TYPE_END;
+       res->backup_requirement[level] = BACKUPS_REQUIRED;
    } ITERATE_LIST_END;
    clear_pq_nodes(S, level);
 }
@@ -88,14 +85,13 @@ boolean
 is_destination_impacted(node_t *S, edge_t *protected_link, 
                         node_t *D, LEVEL level, 
                         char impact_reason[],
-                        boolean *MANDATORY_NODE_PROTECTION){
+                        boolean *mandatory_node_protection){
 
     /*case 1 : Destination has only 1 next hop through protected_link, return TRUE*/
     unsigned int nh_count = 0;
     nh_type_t nh = NH_MAX;
     internal_nh_t *primary_nh = NULL;
     spf_result_t *D_res = NULL;
-    node_t *E = protected_link->to.node;
     
     if(!IS_LEVEL_SET(protected_link->level, level)){
         sprintf(impact_reason, "Dest %s Not in same level as protected link(%s)", 
@@ -112,7 +108,7 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
      * Hence, this variable is not meant for Dest with 1 primary nexthops. The word 
      * MANDATORY means the destination do not needs link-only protecting backups (as they
      * already have ECMP)*/
-    *MANDATORY_NODE_PROTECTION = FALSE;
+    *mandatory_node_protection = FALSE;
 
     if(!IS_LINK_PROTECTION_ENABLED(protected_link) &&
             !IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
@@ -158,11 +154,10 @@ is_destination_impacted(node_t *S, edge_t *protected_link,
             return FALSE;/*ECMP case with only link protection*/
         }
         if(IS_LINK_NODE_PROTECTION_ENABLED(protected_link)){
-            sprintf(impact_reason, "Dest %s has ECMP primary nxt hop count = %u,"
-                    "but all primary nxt hop nodes traverses protected_link next hop"
-                    "node (%s) AND LINK_NODE_PROTECTION Enabled. No only-link protecting backup needed",
-                    D->node_name, nh_count, E->node_name);
-            *MANDATORY_NODE_PROTECTION = TRUE;
+            sprintf(impact_reason, "Dest %s has dependant ECMP primary nxt hop count = %u,"
+                    "LINK_NODE_PROTECTION Enabled. No only-link protecting backup needed",
+                    D->node_name, nh_count);
+            *mandatory_node_protection = TRUE;
             return TRUE;
         }
     }
@@ -767,7 +762,7 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
         Compute_and_Store_Forward_SPF(p_node->rlfa, level);
         /*Now inspect all Destinations which are impacted by the link*/
         boolean is_dest_impacted = FALSE,
-                 MANDATORY_NODE_PROTECTION = FALSE; 
+                 mandatory_node_protection = FALSE; 
 
         ITERATE_LIST_BEGIN(S->spf_run_result[level], list_node1){
             is_dest_impacted = FALSE;
@@ -782,9 +777,9 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
             /*Check if this is impacted destination*/
             memset(impact_reason, 0, STRING_REASON_LEN);
 
-            MANDATORY_NODE_PROTECTION = FALSE;
+            mandatory_node_protection = FALSE;
             is_dest_impacted = is_destination_impacted(S, protected_link, D_res->node, 
-                        level, impact_reason, &MANDATORY_NODE_PROTECTION);
+                        level, impact_reason, &mandatory_node_protection);
 #ifdef __ENABLE_TRACE__            
             sprintf(instance->traceopts->b, "Dest = %s Impact result = %s\n    reason : %s", D_res->node->node_name, 
                     is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -796,7 +791,7 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
                     p_node->lfa_type == BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM){
                 /*This node cannot provide node protection, check only link protection
                  * p_node should be loop free wrt to PN*/
-                if(MANDATORY_NODE_PROTECTION == TRUE){
+                if(mandatory_node_protection == TRUE){
 #ifdef __ENABLE_TRACE__                    
                     sprintf(instance->traceopts->b, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
                             S->node_name, p_node->rlfa->node_name, D_res->node->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -849,7 +844,7 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
 #endif
             /*p_node fails to provide node protection, demote the p_node to LINK_PROTECTION
              * if it provides atleast link protection to Destination D*/
-            if(MANDATORY_NODE_PROTECTION == TRUE){
+            if(mandatory_node_protection == TRUE){
 #ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
                         S->node_name, p_node->rlfa->node_name, D_res->node->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -950,7 +945,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
         Compute_and_Store_Forward_SPF(p_node->rlfa, level);
         /*Now inspect all Destinations which are impacted by the link*/
         boolean is_dest_impacted = FALSE,
-                MANDATORY_NODE_PROTECTION = FALSE;
+                mandatory_node_protection = FALSE;
 
         d_p_to_E = DIST_X_Y(E, p_node->rlfa, level); 
         d_p_to_S = DIST_X_Y(S, p_node->rlfa, level);
@@ -966,9 +961,9 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
 
             /*Check if this is impacted destination*/
             memset(impact_reason, 0, STRING_REASON_LEN);
-            MANDATORY_NODE_PROTECTION = FALSE;
+            mandatory_node_protection = FALSE;
             is_dest_impacted = is_destination_impacted(S, protected_link, D_res->node, 
-                    level, impact_reason, &MANDATORY_NODE_PROTECTION);
+                    level, impact_reason, &mandatory_node_protection);
 #ifdef __ENABLE_TRACE__            
             sprintf(instance->traceopts->b, "Dest = %s Impact result = %s\n    reason : %s", D_res->node->node_name, 
                     is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -1015,7 +1010,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
                     continue;
                 }
 
-                if(MANDATORY_NODE_PROTECTION == TRUE){
+                if(mandatory_node_protection == TRUE){
 #ifdef __ENABLE_TRACE__
                     sprintf(instance->traceopts->b, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
                             S->node_name, p_node->rlfa->node_name, D_res->node->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -1044,7 +1039,7 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
                 if(!IS_LINK_PROTECTION_ENABLED(protected_link)){
                     continue;
                 }
-                if(MANDATORY_NODE_PROTECTION == TRUE){
+                if(mandatory_node_protection == TRUE){
 #ifdef __ENABLE_TRACE__                    
                     sprintf(instance->traceopts->b, "Node : %s : Pnode  %s not considered for link protection RLFA as Dest %s has ECMP, failed to qualify as PQ node",
                             S->node_name, p_node->rlfa->node_name, D_res->node->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -1179,7 +1174,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
 
     assert(is_broadcast_link(protected_link, level));
     boolean is_dest_impacted = FALSE,
-             MANDATORY_NODE_PROTECTION = FALSE;
+             mandatory_node_protection = FALSE;
 
     PN = protected_link->to.node;
     Compute_and_Store_Forward_SPF(PN, level);  
@@ -1197,9 +1192,9 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
         trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
         
-        MANDATORY_NODE_PROTECTION = FALSE;
+        mandatory_node_protection = FALSE;
         is_dest_impacted = is_destination_impacted(S, protected_link, D, level, impact_reason,
-                            &MANDATORY_NODE_PROTECTION);
+                            &mandatory_node_protection);
 #ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Dest = %s Impact result = %s\n    reason : %s", D->node_name, 
                     is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -1375,7 +1370,7 @@ broadcast_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
                 goto NBR_PROCESSING_DONE;
             }
            
-            if(MANDATORY_NODE_PROTECTION == TRUE){
+            if(mandatory_node_protection == TRUE){
 #ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "Node : %s : Nbr %s not considered for link protection LFA as it has ECMP",
                             S->node_name, N->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -1479,7 +1474,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
     edge_t *edge1 = NULL, *edge2 = NULL;
 
     boolean is_dest_impacted = FALSE,
-            MANDATORY_NODE_PROTECTION = FALSE;
+            mandatory_node_protection = FALSE;
     char impact_reason[STRING_REASON_LEN];
 
     spf_result_t *D_res = NULL;
@@ -1512,9 +1507,9 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
             S->node_name, D->node_name, protected_link->from.intf_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
         
-        MANDATORY_NODE_PROTECTION = FALSE;
+        mandatory_node_protection = FALSE;
         is_dest_impacted = is_destination_impacted(S, protected_link, D, level, impact_reason, 
-                             &MANDATORY_NODE_PROTECTION);
+                             &mandatory_node_protection);
 #ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "Dest = %s Impact result = %s\n    reason : %s", D->node_name, 
                     is_dest_impacted ? "IMPACTED" : "NOT-IMPCATED", impact_reason); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -1670,7 +1665,7 @@ p2p_compute_link_node_protection_lfas(node_t * S, edge_t *protected_link,
              * inequality from implementation, but giving explitely knob if admin wants to harness the advantages Or disadvantages
              * of this inequality at his own will
              * */
-            if(MANDATORY_NODE_PROTECTION == TRUE){
+            if(mandatory_node_protection == TRUE){
 #ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "Node : %s : Nbr %s not considered for link protection LFA as it has ECMP",
                             S->node_name, N->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
