@@ -768,11 +768,18 @@ broadcast_filter_select_pq_nodes_from_ex_pspace(node_t *S, edge_t *protected_lin
             is_dest_impacted = FALSE;
             D_res = list_node1->data;
 
-            /*if RLFA's proxy nbr itself is a destination, then no need to find
-             * PQ node for such a destination. p_node->proxy_nbr will surely quality to be
+            /* if RLFA's proxy nbr itself is a destination, then no need to find
+             * PQ node for such a destination. p_node->proxy_nbr will surely qualify to be
              * LFA for such a destination*/
             if(p_node->proxy_nbr == D_res->node)
                 continue;
+
+            /*If potential pq_node itself is a destination, then dont count
+             * such a pq_node, the proxy nbr of such a pq_node is guaranteed
+             * to be LFA*/
+            if(p_node->rlfa == D_res->node){
+                continue;
+            }
             
             /*Check if this is impacted destination*/
             memset(impact_reason, 0, STRING_REASON_LEN);
@@ -958,6 +965,13 @@ p2p_filter_select_pq_nodes_from_ex_pspace(node_t *S,
              * LFA for such a destination*/
             if(p_node->proxy_nbr == D_res->node)
                 continue;
+                 
+            /*If potential pq_node itself is a destination, then dont count
+             * such a pq_node, the proxy nbr of such a pq_node is guaranteed
+             * to be LFA*/
+            if(p_node->rlfa == D_res->node){
+                continue;
+            }
 
             /*Check if this is impacted destination*/
             memset(impact_reason, 0, STRING_REASON_LEN);

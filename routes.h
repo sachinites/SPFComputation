@@ -76,6 +76,10 @@ static inline void
 ROUTE_FLUSH_PRIMARY_NH_LIST(routes_t *route, nh_type_t nh){
 
     singly_ll_node_t *list_node = NULL;
+    
+    if(!route->primary_nh_list[nh]) 
+        return;
+
     ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
 
         free(list_node->data);
@@ -94,6 +98,10 @@ static inline void
 ROUTE_FLUSH_BACKUP_NH_LIST(routes_t *route, nh_type_t nh){
 
     singly_ll_node_t *list_node = NULL;
+
+    if(!route->backup_nh_list[nh])
+        return;
+
     ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
 
         free(list_node->data);

@@ -56,13 +56,12 @@ static boolean
 is_destination_has_multiple_primary_nxthops(spf_result_t *D_res){
 
     if((is_internal_nh_t_empty(D_res->next_hop[IPNH][0]) &&
-                !is_internal_nh_t_empty(D_res->next_hop[LSPNH][0]) &&
-                is_internal_nh_t_empty(D_res->next_hop[LSPNH][1])) 
-            ||
-            (is_internal_nh_t_empty(D_res->next_hop[LSPNH][0]) &&
-             !is_internal_nh_t_empty(D_res->next_hop[IPNH][0]) &&
-             is_internal_nh_t_empty(D_res->next_hop[IPNH][1]))){
-
+        !is_internal_nh_t_empty(D_res->next_hop[LSPNH][0]) &&
+        is_internal_nh_t_empty(D_res->next_hop[LSPNH][1])) 
+        ||
+        (is_internal_nh_t_empty(D_res->next_hop[LSPNH][0]) &&
+        !is_internal_nh_t_empty(D_res->next_hop[IPNH][0]) &&
+        is_internal_nh_t_empty(D_res->next_hop[IPNH][1]))){
         return FALSE;
     }
     return TRUE;
@@ -921,17 +920,25 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
     check_next_outer_nh = FALSE;
 
     ITERATE_NH_TYPE_BEGIN(nh){
+
         for(i = 0; i < MAX_NXT_HOPS; i++){
+
             prim_next_hop1 = &D_res->next_hop[nh][i];
+ 
             if(is_nh_list_empty2(prim_next_hop1))
                 break;
+
             dist_prim_nh1_to_D = DIST_X_Y(prim_next_hop1->node, dst_node, level);
 
             for(j = 0; j < MAX_NXT_HOPS; j++){
+
                 prim_next_hop2 = &D_res->next_hop[nh][j];
+                 
                 if(is_nh_list_empty2(prim_next_hop2))
                     break;
+
                 if(prim_next_hop1 == prim_next_hop2) continue;
+
                 dist_prim_nh2_to_D = DIST_X_Y(prim_next_hop2->node, dst_node, level);
                 dist_prim_nh1_to_prim_nh2 = DIST_X_Y(prim_next_hop1->node, prim_next_hop2->node, level);
 
@@ -957,6 +964,7 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
 
     if(indep_pr_nh_count == 2){
         D_res->backup_requirement[level] = NO_BACKUP_REQUIRED;
+
 #ifdef __ENABLE_TRACE__                        
         sprintf(instance->traceopts->b, "Node : %s : Dest %s has independent Primary nexthops at %s",
                 S->node_name, dst_node->node_name, get_str_level(level));
@@ -971,7 +979,7 @@ is_independant_primary_next_hop_list_for_nodes(node_t *S, node_t *dst_node, LEVE
 boolean
 is_independant_primary_next_hop_list(routes_t *route){
 
-    singly_ll_node_t *list_node = NULL,
+    singly_ll_node_t *list_node1 = NULL,
                      *list_node2 = NULL,
                      *list_node3 = NULL;
 
@@ -980,44 +988,69 @@ is_independant_primary_next_hop_list(routes_t *route){
            *primary_nh1 = NULL,
            *primary_nh2 = NULL;
     internal_nh_t *next_hop = NULL;
-    nh_type_t nh, nh1;
+    nh_type_t nh;
     LEVEL level = route->level;
     unsigned int dist_prim_nh1_to_D = 0,
                  dist_prim_nh2_to_D = 0,
                  dist_prim_nh1_to_prim_nh2 = 0,
                  indep_prim_nh_count = 0;
 
-    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
-        prefix = list_node->data;
-        ecmp_dest_node = prefix->hosting_node;
+    boolean try_next_dest = FALSE;
 
-        ITERATE_NH_TYPE_BEGIN(nh){
-            ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node2){
-                next_hop = list_node2->data;
-                primary_nh1 = next_hop->node;
+    ITERATE_NH_TYPE_BEGIN(nh){
+
+        ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node1){
+
+            next_hop = list_node1->data;
+            primary_nh1 = next_hop->node;
+
+            ITERATE_LIST_BEGIN(route->like_prefix_list, list_node2){
+
+                prefix = list_node2->data;
+                ecmp_dest_node = prefix->hosting_node;
                 dist_prim_nh1_to_D = DIST_X_Y(primary_nh1, ecmp_dest_node, level);
-                    ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node3){
-                        next_hop = list_node3->data;
-                        primary_nh2 = next_hop->node;
-                        if(primary_nh1 == primary_nh2)
-                            continue;
-                        dist_prim_nh2_to_D = DIST_X_Y(primary_nh2, ecmp_dest_node, level);
-                        /*if primary_nh1 can relay traffic to ecmp_dest_node without 
-                         * passing through primary_nh2, then return TRUE*/
-                        dist_prim_nh1_to_prim_nh2 = DIST_X_Y(primary_nh1, primary_nh2, level);
-                        if(dist_prim_nh1_to_D < dist_prim_nh1_to_prim_nh2 + dist_prim_nh2_to_D){
-                            indep_prim_nh_count++;
-                            if(indep_prim_nh_count == 1)
-                                break;
-                            if(indep_prim_nh_count == 2)
-                                return TRUE;
-                        }
-                    } ITERATE_LIST_END;
+                try_next_dest = FALSE;
+
+                ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node3){
+
+                    next_hop = list_node3->data;
+                    primary_nh2 = next_hop->node;
+
+                    if(primary_nh1 == primary_nh2)
+                        continue;
+
+                    dist_prim_nh2_to_D = DIST_X_Y(primary_nh2, ecmp_dest_node, level);
+                    
+                    /* if primary_nh1 can relay traffic to ecmp_dest_node without 
+                     * passing through primary_nh2, then return TRUE*/
+                    dist_prim_nh1_to_prim_nh2 = DIST_X_Y(primary_nh1, primary_nh2, level);
+
+                    if(dist_prim_nh1_to_D < dist_prim_nh1_to_prim_nh2 + dist_prim_nh2_to_D){
+                        continue;
+                    }
+                    else{
+                        try_next_dest = TRUE;
+                        break;
+                    }
+                } ITERATE_LIST_END;
+
+                if(!try_next_dest){
+                    indep_prim_nh_count++;
+                    if(indep_prim_nh_count == 2){
+                        return TRUE;
+                    }
+                    break; 
+                }
+
             } ITERATE_LIST_END;
-        } ITERATE_NH_TYPE_END;
-    } ITERATE_LIST_END;
+
+        } ITERATE_LIST_END;
+
+    } ITERATE_NH_TYPE_END;
+
     return FALSE;
 }
+
 
 static void
 refine_route_backups(routes_t *route){
@@ -1029,7 +1062,9 @@ refine_route_backups(routes_t *route){
         return;
 
     LEVEL level = route->level;
+    
     if(is_independant_primary_next_hop_list(route)){
+
 #ifdef __ENABLE_TRACE__        
         sprintf(instance->traceopts->b, "route %s/%u at %s has independant "
                 "Primary Nexthops, All backup nexthops deleted", 
@@ -1039,6 +1074,7 @@ refine_route_backups(routes_t *route){
         ITERATE_NH_TYPE_BEGIN(nh){
             ROUTE_FLUSH_BACKUP_NH_LIST(route, nh);
         } ITERATE_NH_TYPE_END;
+    
     }else{
         /*If route has more than one primary nexthops, cleanup all only-link protecting
          * backups*/

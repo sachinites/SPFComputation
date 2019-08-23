@@ -244,7 +244,6 @@ apply_mask2(char *prefix, char mask, char *str_prefix){
     apply_mask(prefix, mask, str_prefix);
     char *mask_ptr = str_prefix + strlen(str_prefix);
     str_prefix[PREFIX_LEN] = 48;
-#ifdef __ENABLE_TRACE__    
     sprintf(mask_ptr, "/%u", mask);
     str_prefix[PREFIX_LEN_WITH_MASK] = '\0';
 } 
