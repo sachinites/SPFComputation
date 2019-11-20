@@ -784,8 +784,6 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
             if(is_node_best_prefix_originator(nexthop_node, route)){
                 /* No need to label the packet when src and dest are 
                  * direct nbrs - that is there is not transient nxthop*/
-                SET_BIT(un_nh->flags, IPV4_NH);
-                UNSET_BIT(un_nh->flags, IPV4_SPRING_NH);
                 return un_nh;
             }
             SET_BIT(un_nh->flags, IPV4_SPRING_NH);
