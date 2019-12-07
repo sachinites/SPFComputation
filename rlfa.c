@@ -368,6 +368,15 @@ broadcast_compute_link_node_protecting_extended_p_space(node_t *S,
 #ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "Node : %s : above inequality 1 passed", S->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
+                /*Testing Downstream condition : P-node must be downstream node*/
+                if(!(d_nbr_to_p_node < d_S_to_p_node)){
+#ifdef __ENABLE_TRACE__
+                    sprintf(instance->traceopts->b, "Node : %s : Down Stream Inqequality failed : Nbr = %s(oif = %s), P_node = %s",
+                        S->node_name, nbr_node->node_name, edge1->from.intf_name, P_node->node_name); 
+                    trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+#endif
+                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
+                }
 #ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "Node : %s : Testing node protection inequality for Broadcast link: S = %s, nbr = %s, P_node = %s, PN = %s",
                         S->node_name, S->node_name, nbr_node->node_name, P_node->node_name, PN->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
@@ -636,6 +645,15 @@ p2p_compute_link_node_protecting_extended_p_space(node_t *S,
                 sprintf(instance->traceopts->b, "Node : %s : above inequality 1 passed", S->node_name); trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
 #endif
 
+                /*Testing Downstream condition : P-node must be downstream node*/
+                if(!(d_nbr_to_p_node < d_S_to_p_node)){
+#ifdef __ENABLE_TRACE__
+                    sprintf(instance->traceopts->b, "Node : %s : Down Stream Inqequality failed : Nbr = %s(oif = %s), P_node = %s",
+                        S->node_name, nbr_node->node_name, edge1->from.intf_name, P_node->node_name); 
+                    trace(instance->traceopts, BACKUP_COMPUTATION_BIT);
+#endif
+                    ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(S, nbr_node, pn_node, level);
+                }
                 /*condition for node protection RLFA - RFC : 
                  * draft-ietf-rtgwg-rlfa-node-protection-13 - section 2.2.6.2*/
 #ifdef __ENABLE_TRACE__                

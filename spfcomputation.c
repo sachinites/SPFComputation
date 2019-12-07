@@ -164,8 +164,9 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
     edge_t *edge = NULL, 
            *pn_edge = NULL;
 
-    self_spf_result_t *self_res = NULL;
+    spf_result_t *res = NULL;
     nh_type_t nh = NH_MAX;
+    self_spf_result_t *self_res = NULL;
 
     /*Process untill candidate tree is not empty*/
 #ifdef __ENABLE_TRACE__    
@@ -188,8 +189,12 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
          * however we process it as ususal like other nodes*/
-
-        spf_result_t *res = calloc(1, sizeof(spf_result_t));
+        res = singly_ll_search_by_key(spf_root->spf_run_result[level], candidate_node);
+        if(!res) {
+            res = calloc(1, sizeof(spf_result_t));
+            if(candidate_node->node_type[level] != PSEUDONODE)
+                singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
+        }
         res->node = candidate_node;
         res->spf_metric = candidate_node->spf_metric[level];
         res->lsp_metric = candidate_node->lsp_metric[level];
@@ -198,9 +203,6 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             
             copy_nh_list2(&candidate_node->next_hop[level][nh][0], &res->next_hop[nh][0]); 
         } ITERATE_NH_TYPE_END;
-
-        if(candidate_node->node_type[level] != PSEUDONODE)
-            singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
 
         self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
 
@@ -441,14 +443,14 @@ spf_clear_result(node_t *spf_root, LEVEL level){
                     result->node->self_spf_result[level], 
                     spf_root);
         
-        assert(self_result);
+       if(self_result){
+           singly_ll_delete_node_by_data_ptr(
+                   result->node->self_spf_result[level],
+                   self_result);
 
-        singly_ll_delete_node_by_data_ptr(
-                    result->node->self_spf_result[level],
-                    self_result);
-
-        free(self_result);
-        self_result = NULL;
+           free(self_result);
+           self_result = NULL;
+       }
         
        free(result);
        result = NULL;    
