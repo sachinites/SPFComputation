@@ -395,6 +395,7 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
     pred_info_t *pred_info = NULL,
                 *pred_info_copy = NULL;
 
+    spf_path_result_t *res = NULL;
     nh_type_t nh = NH_MAX;
 
     sprintf(instance->traceopts->b, "Node : %s : Running %s() with spf_root = %s, at %s", 
@@ -417,12 +418,14 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             ITERATE_NH_TYPE_BEGIN(nh){
 
                 /*copy spf path list from node to its result*/
-                spf_path_result_t *res = calloc(1, sizeof(spf_path_result_t));
-                init_glthread(&res->pred_db);
-                init_glthread(&res->glue);
-
+                //res = GET_SPF_PATH_RESULT(spf_root, candidate_node, level, nh);
+                //if(!res){
+                    res = calloc(1, sizeof(spf_path_result_t));
+                    init_glthread(&res->pred_db);
+                    init_glthread(&res->glue);
+                    glthread_add_next(&spf_root->spf_path_result[level][nh], &res->glue);
+                //}
                 res->node = candidate_node;
-                glthread_add_next(&spf_root->spf_path_result[level][nh], &res->glue);
 #ifdef __ENABLE_TRACE__
                 sprintf(instance->traceopts->b, "Node : %s : Result Recorded for node %s for NH type : %s", 
                         spf_root->node_name, candidate_node->node_name, nh == IPNH ? "IPNH" : "LSPNH");
@@ -524,6 +527,16 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             else if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
                         ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) == 
                     (unsigned long long)nbr_node->spf_metric[level]){
+                            
+                if(nbr_node->is_node_on_heap == FALSE){
+                    SPF_INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
+#ifdef __ENABLE_TRACE__                    
+                    sprintf(instance->traceopts->b, "Node : %s : Node %s Added to Candidate tree", 
+                            spf_root->node_name, nbr_node->node_name);
+                    trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
+                    nbr_node->is_node_on_heap = TRUE;
+                }
 
                 ITERATE_NH_TYPE_BEGIN(nh){
                     if(nh == IPNH){
@@ -536,7 +549,7 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                             add_pred_info_to_spf_predecessors(&nbr_node->pred_lst[level][nh], 
                                     candidate_node, &edge->from, 
                                     nbr_node->node_type[level] != PSEUDONODE ? \
-                                    edge->to.prefix[level]->prefix : NULL);
+                                    edge->to.prefix[level]->prefix : NULL); 
                         }
                         else{
                             /*copy (do not move) all predecessors of PN into nbr node*/

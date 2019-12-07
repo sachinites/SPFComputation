@@ -386,6 +386,15 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                             get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH"); trace(instance->traceopts, DIJKSTRA_BIT);
 #endif
                     print_nh_list2(&nbr_node->next_hop[level][nh][0]);
+                    
+                    if(nbr_node->is_node_on_heap == FALSE){
+                        SPF_INSERT_NODE_INTO_CANDIDATE_TREE(ctree, nbr_node, level);
+                        nbr_node->is_node_on_heap = TRUE;
+#ifdef __ENABLE_TRACE__                    
+                        sprintf(instance->traceopts->b, "%s inserted into candidate tree", nbr_node->node_name); 
+                        trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
+                    }
                 } ITERATE_NH_TYPE_END;
                     
                 /* If we reach a node D via PN Or Source S later with same cost, then direct nexthops also
