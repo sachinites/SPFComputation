@@ -29,7 +29,8 @@ OBJ=advert.o \
 	complete_spf_path.o \
 	glevel.o \
 	spring_adjsid.o \
-	flex_algo.o
+	flex_algo.o	\
+	tilfa.o
 ${TARGET_NAME}:testapp.o ${OBJ} ${DSOBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -47,6 +48,9 @@ testapp.o:testapp.c
 flex_algo.o:flex_algo.c
 	@echo "Building flex_algo.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} flex_algo.c -o flex_algo.o
+tilfa.o:tilfa.c
+	@echo "Building tilfa.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} tilfa.c -o tilfa.o
 data_plane.o:data_plane.c
 	@echo "Building data_plane.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} data_plane.c  -o data_plane.o

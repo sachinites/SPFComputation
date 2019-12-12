@@ -48,6 +48,7 @@ typedef struct rbroot_ candidate_tree_t;
     (_redblack_tree_empty(ctreeptr))
 
 #define INSERT_NODE_INTO_CANDIDATE_TREE(ctreeptr, rbnodeptr)    \
+    _redblack_node_init(ctreeptr, rbnodeptr);                   \
     (_redblack_add(ctreeptr, rbnodeptr, 0))
 
 #define GET_CANDIDATE_TREE_TOP(ctreeptr)    \

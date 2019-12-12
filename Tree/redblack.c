@@ -115,7 +115,7 @@ redblack_find_rightmost (const rbroot *root, rbnode *node)
  * Initialize a red-black root node.  Allocate one if not provided.
  */
 rbroot *
-_redblack_root_init (rbroot *root, char via_ptr, char off,
+_redblack_root_init (rbroot *root, char via_ptr, unsigned int off,
 		    char dupes)
 {
     if (alloc_info.root_alloc == NULL) {

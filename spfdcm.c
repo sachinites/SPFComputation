@@ -991,7 +991,7 @@ show_instance_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_dis
     switch(CMDCODE){
         
         case CMDCODE_SHOW_INSTANCE_LEVEL:
-            printf("Graph root : %s(0x%x)\n", instance->instance_root->node_name, (unsigned int)instance->instance_root);
+            printf("Graph root : %s\n", instance->instance_root->node_name);
             ITERATE_LIST_BEGIN(instance->instance_node_list, list_node){
                 dump_nbrs(list_node->data, level);
             }ITERATE_LIST_END;
@@ -2037,7 +2037,13 @@ spf_init_dcm(){
                             libcli_register_param(&level_no, &sid_prefix_conflict_result);
                             set_param_cmd_code(&sid_prefix_conflict_result, CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT);
                         }
-                        /*debug show instance node <node-name> level <level-no> spf-path*/
+                        /*debug show instance node <node-name> level <level-no> pred-db*/
+                        {
+                            static param_t spf_path;
+                            init_param(&spf_path, CMD, "pred-db", show_spf_run_handler, 0, INVALID, 0, "dump predecessors");
+                            libcli_register_param(&level_no, &spf_path);
+                            set_param_cmd_code(&spf_path, CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE);
+                        }
                     }
                 }
                 {
@@ -2100,9 +2106,10 @@ dump_nbrs(node_t *node, LEVEL level){
 
     node_t *nbr_node = NULL;
     edge_t *edge = NULL;
-    printf("Node : %s(0x%x)(%s) (%s : %s)\n", node->node_name, 
-                (unsigned int)node, node->router_id, get_str_level(level), 
-                (node->node_type[level] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
+    printf("Node : %s(%s) (%s : %s)\n", node->node_name, 
+                 node->router_id, get_str_level(level), 
+                 (node->node_type[level] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE");
+
     printf("Overloaded ? %s\n", IS_BIT_SET(node->attributes[level], OVERLOAD_BIT) ? "Yes" : "No");
 
     ITERATE_NODE_LOGICAL_NBRS_BEGIN(node, nbr_node, edge, level){
@@ -2134,8 +2141,8 @@ dump_node_info(node_t *node){
     singly_ll_node_t *list_node = NULL;
     prefix_t *prefix = NULL;
 
-    printf("node->node_name : %s(%s), L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s\n",
-            node->node_name, node->router_id,
+    printf("node->node_name : (%p)%s(%s), L1 PN STATUS = %s, L2 PN STATUS = %s, Area = %s\n",
+            node, node->node_name, node->router_id,
             (node->node_type[LEVEL1] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE", 
             (node->node_type[LEVEL2] == PSEUDONODE) ? "PSEUDONODE" : "NON_PSEUDONODE",
             get_str_node_area(node->area));

@@ -975,7 +975,7 @@ show_spf_path_predecessors(node_t *spf_root, LEVEL level){
 
             spf_path_result = glthread_to_spf_path_result(curr);
 
-            printf("Node : %s, %s spf path list for NH-TYPE : %s\n", spf_path_result->node->node_name,
+            printf("Node : %s, %s pred db for NH-TYPE : %s\n", spf_path_result->node->node_name,
                     get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH");
 
             pred_db = &spf_path_result->pred_db;

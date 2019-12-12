@@ -209,7 +209,7 @@ void _redblack_set_allocator (_redblack_root_alloc_fn my_alloc,
  */
 rbroot *_redblack_root_init(rbroot *root,
 			   char key_via_ptr,
-			   char key_offset,
+			   unsigned int key_offset,
 			   char key_dupes);
 
 /**
@@ -443,7 +443,7 @@ struct rbnode_ {
 struct rbroot_ {
     rbnode	*root;			/* root node */
     rbnode	nil;			/* NIL node for this tree */
-    char	key_offset;		/* offset to key material */
+    unsigned int	key_offset;		/* offset to key material */
     char	key_via_ptr;		/* key via pointer (really char) */
     char	key_dupes;		/* dupes allowed (really char) */
     _redblack_compare_func compare_fn;

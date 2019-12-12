@@ -146,8 +146,8 @@
 #define CMDCODE_SHOW_NODE_MPLS_RSVP_LSP                     91 /*show instance node <node-name> mpls rsvp*/
 
 /*Complete SPF path trace*/
-#define CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE                   92 /*debug show instance node <node-name> level <level-no> spf-path */
-#define CMDCODE_SHOW_SPF_PATH_LIST                          93 /*debug show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
+#define CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE                   92 /*debug show instance node <node-name> level <level-no> pred-db */
+#define CMDCODE_SHOW_SPF_PATH_LIST                          93 /*show instance node <node-name> level <level-no> spf-path <dest-node-name>*/
 #define CMDCODE_SHOW_SR_TUNNEL                              94 /*show instance node <node-name> sr-tunnel <prefix>*/
 
 /*Create Topology Dynamically*/
@@ -175,4 +175,5 @@
 #define CMDCODE_CONFIG_NODE_INTF_LAN_ADJ_SID_PROTECTED      109 /*config node <node-name> interface <intf-name> level <level-no> ipv4-adjacency-segment lan-neighbor <router-id> <protected|unprotected> label <lebel-no>*/
 #define CMDCODE_CONFIG_NODE_INTF_LAN_ADJ_SID_UNPROTECTED    110
 #define CMDCODE_SHOW_NODE_INTF_ADJ_SIDS                     111 /*show instance node <node-name> interface <intf-name> adjacency-sids*/
+
 #endif /* __SPFCMDCODES__H */
