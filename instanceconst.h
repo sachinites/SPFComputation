@@ -45,11 +45,12 @@
 #define LINK_DEFAULT_METRIC     10
 #define DEFAULT_LINK_BW         1 /*1GIG*/
 #define STRING_REASON_LEN       256
-#define MPLS_STACK_OP_LIMIT_MAX 3
+#define MPLS_STACK_OP_LIMIT_MAX 8
 #define TOPOLOGY_NAME_SIZE      32
 #define MAC_LEN                 6
 #define ZERO_IP                 "0.0.0.0"
 #define NH_NAME_SIZE            32
+#define TILFA_MAX_SEGMENTS      8
 /* instance global flags */
 
 #define IGNOREATTACHED  1   /*If this bit is set, then L1-only router will not install default gateway to L1L2 router of the local Area*/

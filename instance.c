@@ -46,6 +46,8 @@ add_node_to_owning_instance(instance_t *instance, node_t *node){
     singly_ll_add_node_by_val(instance->instance_node_list, (void *)node);
 }
 
+extern void init_tilfa(node_t *node);
+
 node_t *
 create_new_node(instance_t *instance, char *node_name, AREA area, char *router_id){
     
@@ -104,8 +106,9 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
             init_glthread(&node->pred_lst[level][nh]);
             init_glthread(&node->spf_path_result[level][nh]);
         } ITERATE_NH_TYPE_END;
+        
+        init_tilfa(node);
     }
-
     rtttype_t rt_type;
 
     for(rt_type = UNICAST_T; rt_type < TOPO_MAX; rt_type++){

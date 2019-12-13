@@ -49,6 +49,7 @@
 
 
 typedef struct edge_end_ edge_end_t;
+typedef struct tilfa_info_ tilfa_info_t;
 
 typedef struct _node_t{
     char node_name[NODE_NAME_SIZE];
@@ -118,6 +119,8 @@ typedef struct _node_t{
     ll_t *active_mapping_policy[MAX_LEVEL];
     ll_t *backup_mapping_policy[MAX_LEVEL];
 
+    /*tilfa support*/
+    tilfa_info_t *tilfa_info;
 } node_t;
 
 
