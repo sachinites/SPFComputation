@@ -45,6 +45,10 @@
 
 extern instance_t *instance;
 
+extern ll_t *
+tilfa_get_spf_result_list(node_t *node, LEVEL level);
+extern void compute_tilfa(node_t *spf_root, LEVEL level);
+
 int
 spf_run_result_comparison_fn(void *spf_result_ptr, void *node_ptr){
 
@@ -155,7 +159,8 @@ inverse_topology(instance_t *instance, LEVEL level){
 }
 
 static void
-run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
+run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
+                    spf_type_t spf_type){
 
     node_t *candidate_node = NULL,
            *nbr_node = NULL,
@@ -189,11 +194,19 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
 
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
          * however we process it as ususal like other nodes*/
-        res = singly_ll_search_by_key(spf_root->spf_run_result[level], candidate_node);
-        if(!res) {
-            res = calloc(1, sizeof(spf_result_t));
-            if(candidate_node->node_type[level] != PSEUDONODE)
-                singly_ll_add_node_by_val(spf_root->spf_run_result[level], (void *)res);
+        if(candidate_node->node_type[level] != PSEUDONODE){
+            res = singly_ll_search_by_key(spf_type != TILFA_RUN ? \
+                    spf_root->spf_run_result[level] : \
+                    tilfa_get_spf_result_list(spf_root, level),
+                    candidate_node);
+
+            if(!res) {
+                res = calloc(1, sizeof(spf_result_t));
+                singly_ll_add_node_by_val(spf_type != TILFA_RUN ? \
+                    spf_root->spf_run_result[level]: \
+                    tilfa_get_spf_result_list(spf_root, level),
+                    (void *)res);
+            }
         }
         res->node = candidate_node;
         res->spf_metric = candidate_node->spf_metric[level];
@@ -204,27 +217,28 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
             copy_nh_list2(&candidate_node->next_hop[level][nh][0], &res->next_hop[nh][0]); 
         } ITERATE_NH_TYPE_END;
 
-        self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
+        if(spf_type != TILFA_RUN){
+            self_res = singly_ll_search_by_key(candidate_node->self_spf_result[level], spf_root);
 
-        if(self_res){
+            if(self_res){
 #ifdef __ENABLE_TRACE__            
-            sprintf(instance->traceopts->b, "Curr node : %s, Overwriting self spf result with spf root %s", 
-                    candidate_node->node_name, spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
+                sprintf(instance->traceopts->b, "Curr node : %s, Overwriting self spf result with spf root %s", 
+                        candidate_node->node_name, spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
 #endif
-            self_res->spf_root = spf_root;
-            self_res->res = res;
-        }
-        else{
+                self_res->spf_root = spf_root;
+                self_res->res = res;
+            }
+            else{
 #ifdef __ENABLE_TRACE__            
-            sprintf(instance->traceopts->b, "Curr node : %s, Creating New self spf result with spf root %s",
-                    candidate_node->node_name, spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
+                sprintf(instance->traceopts->b, "Curr node : %s, Creating New self spf result with spf root %s",
+                        candidate_node->node_name, spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
 #endif
-            self_res = calloc(1, sizeof(self_spf_result_t));
-            self_res->spf_root = spf_root;
-            self_res->res = res;
-            singly_ll_add_node_by_val(candidate_node->self_spf_result[level], self_res);
+                self_res = calloc(1, sizeof(self_spf_result_t));
+                self_res->spf_root = spf_root;
+                self_res->res = res;
+                singly_ll_add_node_by_val(candidate_node->self_spf_result[level], self_res);
+            }
         }
-        
         /*Iterare over all the nbrs of Candidate node*/
 
           ITERATE_NODE_LOGICAL_NBRS_BEGIN(candidate_node, nbr_node, edge, level){
@@ -470,7 +484,7 @@ spf_clear_result(node_t *spf_root, LEVEL level){
 void
 spf_init(candidate_tree_t *ctree, 
          node_t *spf_root, 
-         LEVEL level){
+         LEVEL level, spf_type_t spf_type){
 
     /*step 1 : Purge NH list of all nodes in the topo*/
 
@@ -483,7 +497,9 @@ spf_init(candidate_tree_t *ctree,
     nh_type_t nh;
     /*Drain off results list for level */
 
-    spf_clear_result(spf_root, level);
+    if(spf_type != TILFA_RUN){
+        spf_clear_result(spf_root, level);
+    }
 
     /* You should intialize the nxthops and direct nxthops only for 
      * reachable routers to spf root in the same level, not the entire
@@ -630,7 +646,7 @@ spf_only_intitialization(node_t *spf_root, LEVEL level){
     }
 
     SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
-    spf_init(&instance->ctree, spf_root, level);
+    spf_init(&instance->ctree, spf_root, level, FULL_RUN);
 }
 
 static void
@@ -737,24 +753,24 @@ spf_computation(node_t *spf_root,
                  
     SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
 
-    spf_init(&instance->ctree, spf_root, level);
+    spf_init(&instance->ctree, spf_root, level, spf_type);
 
     if(spf_type == FULL_RUN){
         spf_info->spf_level_info[level].version++;
-        run_dijkastra(spf_root, level, &instance->ctree);
+        run_dijkastra(spf_root, level, &instance->ctree, spf_type);
     }
-    else if(spf_type == FORWARD_RUN){
-        run_dijkastra(spf_root, level, &instance->ctree);
-        //run_dijkastra_forward(spf_root, level, &instance->ctree);
+    else if(spf_type == FORWARD_RUN || spf_type == TILFA_RUN){
+        run_dijkastra(spf_root, level, &instance->ctree, spf_type);
     }
     
-    if(spf_type == FORWARD_RUN)
+    if(spf_type == FORWARD_RUN || spf_type == TILFA_RUN)
         return;
 
     /* Flush off backups from all nodes unconditionally 
      * otherwise they will be reflected in routes computed.*/ 
     init_back_up_computation(spf_root, level); 
     compute_backup_routine(spf_root, level);
+    compute_tilfa(spf_root, level);
     /* Route Building After SPF computation*/
     /*We dont build routing table for reverse spf run*/
     if(spf_type == FULL_RUN){

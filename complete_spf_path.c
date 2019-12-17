@@ -46,6 +46,14 @@ extern void init_instance_traversal(instance_t * instance);
 
 static unsigned int spf_level_version[MAX_LEVEL] = {0, 0, 0};
 
+extern glthread_t *
+tilfa_get_spf_post_convergence_path_head(node_t *node, LEVEL level);
+
+extern
+spf_path_result_t *
+TILFA_GET_SPF_PATH_RESULT(node_t *node, node_t *candidate_node,
+                          LEVEL level);
+
 static int
 pred_info_compare_fn(void *_pred_info_1, void *_pred_info_2){
 
@@ -270,8 +278,9 @@ print_sr_tunnel_paths(glthread_t *path, void *arg){
 static void
 construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors, 
                            LEVEL level, nh_type_t nh, glthread_t *path, 
-                           spf_path_processing_fn_ptr fn_ptr, void *fn_ptr_arg){
-    
+                           spf_path_processing_fn_ptr fn_ptr, void *fn_ptr_arg,
+                           boolean is_post_conv_path){
+
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;
     spf_path_result_t *res = NULL;
@@ -283,10 +292,17 @@ construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors,
         pred_info_wrapper.pred_info = pred_info;
         init_glthread(&pred_info_wrapper.glue);
         glthread_add_next(path, &pred_info_wrapper.glue);
-        res = GET_SPF_PATH_RESULT(spf_root, pred_info->node, level, nh);
+        if(!is_post_conv_path){
+            res = GET_SPF_PATH_RESULT(spf_root, pred_info->node, level, nh);
+        }
+        else{
+            res = TILFA_GET_SPF_PATH_RESULT(spf_root, pred_info->node, level); 
+        }
         assert(res);
+
         construct_spf_path_recursively(spf_root, &res->pred_db, 
-                                    level, nh, path, fn_ptr, fn_ptr_arg);
+                level, nh, path, fn_ptr, fn_ptr_arg, is_post_conv_path);
+
         if(pred_info->node == spf_root){
             fn_ptr(path, fn_ptr_arg);
             printf("\n");
@@ -300,7 +316,8 @@ trace_spf_path_to_destination_node(node_t *spf_root,
                                    node_t *dst_node, 
                                    LEVEL level, 
                                    spf_path_processing_fn_ptr fn_ptr,
-                                   void *fn_ptr_arg){
+                                   void *fn_ptr_arg,
+                                   boolean is_post_conv_path){
 
    nh_type_t nh;
    glthread_t path;
@@ -321,7 +338,7 @@ trace_spf_path_to_destination_node(node_t *spf_root,
        spf_level_version[level] = 
            spf_root->spf_info.spf_level_info[level].version;
 
-       compute_spf_paths(spf_root, level);
+       compute_spf_paths(spf_root, level, FULL_RUN);
    }
 
    /*Add destination node as pred_info*/
@@ -330,8 +347,13 @@ trace_spf_path_to_destination_node(node_t *spf_root,
    pred_info_wrapper.pred_info = &pred_info;
    init_glthread(&pred_info_wrapper.glue);
    glthread_add_next(&path, &pred_info_wrapper.glue);    
-   nh = IPNH;           
-   res = GET_SPF_PATH_RESULT(spf_root, dst_node, level, nh);
+   nh = IPNH;
+   if(!is_post_conv_path){
+       res = GET_SPF_PATH_RESULT(spf_root, dst_node, level, nh);
+   }
+   else{
+       res = TILFA_GET_SPF_PATH_RESULT(spf_root, dst_node, level);
+   }
    if(!res){
        printf("Spf root : %s, Dst Node : %s. Path not found", 
                spf_root->node_name, dst_node->node_name);
@@ -339,7 +361,8 @@ trace_spf_path_to_destination_node(node_t *spf_root,
    }
    glthread_t *spf_predecessors = &res->pred_db;
    construct_spf_path_recursively(spf_root, spf_predecessors, 
-                                    level, nh, &path, fn_ptr, fn_ptr_arg);
+                                    level, nh, &path, fn_ptr, fn_ptr_arg,
+                                    is_post_conv_path);
 }
 
 sr_tunn_trace_info_t
@@ -377,14 +400,15 @@ show_sr_tunnels(node_t *spf_root, char *str_prefix){
             break;
         dst_node = prefix->hosting_node;
         trace_spf_path_to_destination_node(spf_root, dst_node, route->level, 
-            print_sr_tunnel_paths, (void *)(PREFIX_SID_INDEX(prefix)));      
+            print_sr_tunnel_paths, (void *)(PREFIX_SID_INDEX(prefix)), FALSE);      
     } ITERATE_LIST_END;
     
     return reason;
 }
 
 static void
-run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
+run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
+                         spf_type_t spf_type){
 
     node_t *candidate_node = NULL,
            *nbr_node = NULL;
@@ -415,15 +439,36 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
         trace(instance->traceopts, DIJKSTRA_BIT);
 #endif
         if(candidate_node->node_type[level] != PSEUDONODE){
-            ITERATE_NH_TYPE_BEGIN(nh){
+            if(spf_type != TILFA_RUN){
+                ITERATE_NH_TYPE_BEGIN(nh){
 
-                /*copy spf path list from node to its result*/
-                res = GET_SPF_PATH_RESULT(spf_root, candidate_node, level, nh);
+                    /*copy spf path list from node to its result*/
+                    res = GET_SPF_PATH_RESULT(spf_root, candidate_node, level, nh);
+                    assert(!res);
+                    res = calloc(1, sizeof(spf_path_result_t));
+                    init_glthread(&res->pred_db);
+                    init_glthread(&res->glue);
+                    glthread_add_next(&spf_root->spf_path_result[level][nh], &res->glue);
+#ifdef __ENABLE_TRACE__
+                    sprintf(instance->traceopts->b, "Node : %s : New Result Recorded for node %s for NH type : %s", 
+                            spf_root->node_name, candidate_node->node_name, nh == IPNH ? "IPNH" : "LSPNH");
+                    trace(instance->traceopts, DIJKSTRA_BIT);
+#endif
+                    res->node = candidate_node;
+                    clear_spf_predecessors(&res->pred_db);
+                    if(!IS_GLTHREAD_LIST_EMPTY(&candidate_node->pred_lst[level][nh])){
+                        glthread_add_next(&res->pred_db, candidate_node->pred_lst[level][nh].right);
+                        init_glthread(&candidate_node->pred_lst[level][nh]);
+                    }
+                } ITERATE_NH_TYPE_END;
+            }
+            else if(spf_type == TILFA_RUN){
+                res = TILFA_GET_SPF_PATH_RESULT(spf_root, candidate_node, level);
                 assert(!res);
                 res = calloc(1, sizeof(spf_path_result_t));
                 init_glthread(&res->pred_db);
                 init_glthread(&res->glue);
-                glthread_add_next(&spf_root->spf_path_result[level][nh], &res->glue);
+                glthread_add_next(tilfa_get_spf_post_convergence_path_head(spf_root, level), &res->glue);
 #ifdef __ENABLE_TRACE__
                 sprintf(instance->traceopts->b, "Node : %s : New Result Recorded for node %s for NH type : %s", 
                         spf_root->node_name, candidate_node->node_name, nh == IPNH ? "IPNH" : "LSPNH");
@@ -435,7 +480,9 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree){
                     glthread_add_next(&res->pred_db, candidate_node->pred_lst[level][nh].right);
                     init_glthread(&candidate_node->pred_lst[level][nh]);
                 }
-            } ITERATE_NH_TYPE_END;
+            }
+            else
+                assert(0);
         }
 
         /*Iterare over all the nbrs of Candidate node*/
@@ -641,12 +688,17 @@ spf_clear_spf_path_result(node_t *spf_root, LEVEL level){
 }
 
 void
-compute_spf_paths(node_t *spf_root, LEVEL level){
+compute_spf_paths(node_t *spf_root, LEVEL level, spf_type_t spf_type){
 
     node_t *curr_node = NULL, *nbr_node = NULL;
     edge_t *edge = NULL;
 
-    spf_clear_spf_path_result(spf_root, level);
+    /* TILFA rsults has been cleared from the caller
+     * tilfa_run_post_convergence_spf()*/
+    if(spf_type != TILFA_RUN){
+        spf_clear_spf_path_result(spf_root, level);
+    }
+    
     SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
     SPF_INSERT_NODE_INTO_CANDIDATE_TREE(&instance->ctree, spf_root, level);
     spf_root->is_node_on_heap = TRUE;
@@ -677,7 +729,7 @@ compute_spf_paths(node_t *spf_root, LEVEL level){
 
         } ITERATE_NODE_LOGICAL_NBRS_END;
     }
-    run_spf_paths_dijkastra(spf_root, level, &instance->ctree);
+    run_spf_paths_dijkastra(spf_root, level, &instance->ctree, spf_type);
     assert(is_queue_empty(q));
     free(q);
     q = NULL;

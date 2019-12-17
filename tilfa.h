@@ -34,6 +34,7 @@
 #include "instance.h"
 #include "data_plane.h"
 #include <stdint.h>
+#include "complete_spf_path.h"
 
 typedef struct edge_end_ interface_t;
 
@@ -102,13 +103,17 @@ typedef struct tilfa_info_ {
 
     tilfa_cfg_globals_t tilfa_gl_var;
     glthread_t tilfa_lcl_config_head;
-    
+
+    protected_resource_t current_resource_pruned;
     glthread_t post_convergence_spf_path[MAX_LEVEL];
+    ll_t *tilfa_spf_results[MAX_LEVEL];
     
     /*To be stored in Remote Destinations, 
      * not local*/
     glthread_t tilfa_segment_list_head_L1;
     glthread_t tilfa_segment_list_head_L2;
+
+    boolean is_tilfa_pruned;
 } tilfa_info_t;
 
 #define TLIFA_SEGMENT_LST_HEAD(tilfa_info_ptr, level)   \
@@ -132,4 +137,28 @@ tilfa_update_config(tilfa_info_t *tilfa_info,
                     boolean node_protection,
                     boolean add_or_update);
 
+boolean
+tilfa_topology_prune_protected_resource(node_t *node,
+    protected_resource_t *pr_res);
+
+void
+tilfa_topology_unprune_protected_resource(node_t *node,
+    protected_resource_t *pr_res);
+
+void
+tilfa_run_post_convergence_spf(node_t *spf_root, LEVEL level,
+                               protected_resource_t *pr_res);
+
+ll_t *
+tilfa_get_spf_result_list(node_t *node, LEVEL level);
+
+spf_path_result_t *
+TILFA_GET_SPF_PATH_RESULT(node_t *node, node_t *candidate_node,
+                          LEVEL level);
+
+glthread_t *
+tilfa_get_spf_post_convergence_path_head(node_t *node, LEVEL level);
+
+void
+compute_tilfa(node_t *spf_root, LEVEL level);
 #endif /* __TILFA__ */

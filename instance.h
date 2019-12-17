@@ -165,6 +165,7 @@ typedef struct _edge_t{
     rsvp_tunnel_t *fa;      /*Forwarding adjacency*/
     char status;            /* 0 down, 1 up*/
     float bandwidth; /*bandwidth for WECMP in GIG*/
+    boolean is_tilfa_pruned;
 } edge_t;
 
 typedef struct instance_{

@@ -176,4 +176,6 @@
 #define CMDCODE_CONFIG_NODE_INTF_LAN_ADJ_SID_UNPROTECTED    110
 #define CMDCODE_SHOW_NODE_INTF_ADJ_SIDS                     111 /*show instance node <node-name> interface <intf-name> adjacency-sids*/
 
+#define CMDCODE_SHOW_SPF_TILFA_PATH_LIST                    112 /*show instance node <node-name> level <level-no> tilfa-results*/
+
 #endif /* __SPFCMDCODES__H */

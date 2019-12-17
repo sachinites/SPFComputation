@@ -216,7 +216,7 @@ typedef enum {
     REVERSE_SPF_RUN,
     FULL_RUN,     /*To compute Main routes*/
     PRC_RUN,
-    SPF_PATH_RUN
+    TILFA_RUN
 } spf_type_t;
 
 typedef struct spf_level_info_{

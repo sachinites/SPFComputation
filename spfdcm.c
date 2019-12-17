@@ -940,7 +940,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             show_spf_path_predecessors(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_PATH_LIST:
-            trace_spf_path_to_destination_node(spf_root, dst_node, level, print_spf_paths, NULL);
+            trace_spf_path_to_destination_node(spf_root, dst_node, level, print_spf_paths, NULL, FALSE);
             break;
         case CMDCODE_SHOW_SPF_RUN_PRC:
             partial_spf_run(spf_root, level);

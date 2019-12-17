@@ -967,7 +967,7 @@ show_spf_path_predecessors(node_t *spf_root, LEVEL level){
     spf_path_result_t *spf_path_result = NULL;
     nh_type_t nh;
 
-    compute_spf_paths(spf_root, level);
+    compute_spf_paths(spf_root, level, FULL_RUN);
 
     ITERATE_NH_TYPE_BEGIN(nh){
 

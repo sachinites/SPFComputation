@@ -105,9 +105,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
 
             init_glthread(&node->pred_lst[level][nh]);
             init_glthread(&node->spf_path_result[level][nh]);
-        } ITERATE_NH_TYPE_END;
-        
-        init_tilfa(node);
+        } ITERATE_NH_TYPE_END;    
     }
     rtttype_t rt_type;
 
@@ -140,6 +138,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
     node->am_i_mapping_client = TRUE; /*By default it should be TRUE, pg 335*/
     node->am_i_mapping_server = FALSE;
 
+    init_tilfa(node);
     add_node_to_owning_instance(instance, node);
     return node;    
 }
@@ -197,6 +196,7 @@ create_new_edge(char *from_ifname,
     edge->etype = UNICAST;
     edge->fa = NULL;
     edge->bandwidth = DEFAULT_LINK_BW;
+    edge->is_tilfa_pruned = FALSE;
     return edge;
 }
 

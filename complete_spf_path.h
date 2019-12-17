@@ -117,7 +117,7 @@ union_spf_predecessorss(glthread_t *spf_predecessors1,
 
 void
 trace_spf_path_to_destination_node(node_t *spf_root, node_t *dst_node, LEVEL level, 
-                spf_path_processing_fn_ptr fn_ptr, void *fn_ptr_arg);
+                spf_path_processing_fn_ptr fn_ptr, void *fn_ptr_arg, boolean is_post_conv_path);
 
 sr_tunn_trace_info_t
 show_sr_tunnels(node_t *spf_root, char *prefix);
@@ -137,7 +137,7 @@ GET_SPF_PATH_RESULT(node_t *node, node_t *node2, LEVEL level, nh_type_t nh){
 }
 
 void
-compute_spf_paths(node_t *spf_root, LEVEL level);
+compute_spf_paths(node_t *spf_root, LEVEL level, spf_type_t spf_type);
 
 void
 spf_clear_spf_path_result(node_t *spf_root, LEVEL level);
