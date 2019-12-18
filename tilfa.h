@@ -99,26 +99,37 @@ typedef struct tilfa_cfg_globals_{
     uint8_t max_segments_allowed;
 } tilfa_cfg_globals_t;
 
+typedef struct tilfa_rev_spf_result_{
+
+    node_t *node; /*root of rev spf result*/
+    ll_t *rev_spf_result_lst;
+} tilfa_rev_spf_result_t;
+
 typedef struct tilfa_info_ {
 
     tilfa_cfg_globals_t tilfa_gl_var;
     glthread_t tilfa_lcl_config_head;
 
     protected_resource_t current_resource_pruned;
-    glthread_t post_convergence_spf_path[MAX_LEVEL];
+
+    ll_t *tilfa_pre_convergence_spf_results[MAX_LEVEL];
+
+    /*SPF results after pruning of reources*/
     ll_t *tilfa_spf_results[MAX_LEVEL];
     
+    /*SPF Results of FORWARD run without Pruning of Resources*/
+    glthread_t post_convergence_spf_path[MAX_LEVEL];
+
+    /* Reverse SPF Results triggered on a remote node.
+     * Required for PQ node evaluation*/
+    ll_t *rev_spf_results[MAX_LEVEL]; 
+
     /*To be stored in Remote Destinations, 
      * not local*/
-    glthread_t tilfa_segment_list_head_L1;
-    glthread_t tilfa_segment_list_head_L2;
+    glthread_t tilfa_segment_list_head[MAX_LEVEL];
 
     boolean is_tilfa_pruned;
 } tilfa_info_t;
-
-#define TLIFA_SEGMENT_LST_HEAD(tilfa_info_ptr, level)   \
-    (level == LEVEL1 ? (&(tilfa_info_ptr->tilfa_segment_list_head_L1)) :\
-             (&(tilfa_info_ptr->tilfa_segment_list_head_L2)));
 
 segment_list_t *
 tilfa_get_segment_list(node_t *node, 
@@ -131,11 +142,10 @@ void
 init_tilfa(node_t *node);
 
 boolean
-tilfa_update_config(tilfa_info_t *tilfa_info,
+tilfa_update_config(node_t *plr_node,
                     char *protected_link,
                     boolean link_protection,
-                    boolean node_protection,
-                    boolean add_or_update);
+                    boolean node_protection);
 
 boolean
 tilfa_topology_prune_protected_resource(node_t *node,
@@ -149,16 +159,18 @@ void
 tilfa_run_post_convergence_spf(node_t *spf_root, LEVEL level,
                                protected_resource_t *pr_res);
 
-ll_t *
-tilfa_get_spf_result_list(node_t *node, LEVEL level);
-
 spf_path_result_t *
-TILFA_GET_SPF_PATH_RESULT(node_t *node, node_t *candidate_node,
-                          LEVEL level);
-
-glthread_t *
-tilfa_get_spf_post_convergence_path_head(node_t *node, LEVEL level);
+tilfa_lookup_spf_path_result(node_t *node, node_t *candidate_node,
+                             LEVEL level);
 
 void
 compute_tilfa(node_t *spf_root, LEVEL level);
+
+void
+tilfa_clear_rev_spf_results(tilfa_info_t *tilfa_info, 
+                            node_t *node, LEVEL level);
+
+spf_path_result_t *
+TILFA_GET_SPF_PATH_RESULT(node_t *spf_root, node_t *node, LEVEL level);
+
 #endif /* __TILFA__ */

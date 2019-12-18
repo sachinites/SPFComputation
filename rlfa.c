@@ -169,7 +169,7 @@ void
 Compute_and_Store_Forward_SPF(node_t *spf_root,
                               LEVEL level){
 
-    spf_computation(spf_root, &spf_root->spf_info, level, FORWARD_RUN);
+    spf_computation(spf_root, &spf_root->spf_info, level, FORWARD_RUN, 0);
 }
 
 

@@ -160,7 +160,7 @@ inverse_topology(instance_t *instance, LEVEL level){
 
 static void
 run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
-                    spf_type_t spf_type){
+                    spf_type_t spf_type, ll_t *res_lst){
 
     node_t *candidate_node = NULL,
            *nbr_node = NULL,
@@ -179,6 +179,9 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
             (SPF_GET_CANDIDATE_TREE_TOP(ctree))->node_name, level); 
     trace(instance->traceopts, DIJKSTRA_BIT);
 #endif
+    
+    assert(res_lst);
+    assert(is_singly_ll_empty(res_lst));
 
     while(!SPF_IS_CANDIDATE_TREE_EMPTY(ctree)){
 
@@ -195,17 +198,10 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
         /*Add the node just taken off the candidate tree into result list. pls note, we dont want PN in results list
          * however we process it as ususal like other nodes*/
         if(candidate_node->node_type[level] != PSEUDONODE){
-            res = singly_ll_search_by_key(spf_type != TILFA_RUN ? \
-                    spf_root->spf_run_result[level] : \
-                    tilfa_get_spf_result_list(spf_root, level),
-                    candidate_node);
-
+            res = singly_ll_search_by_key(res_lst, candidate_node);
             if(!res) {
                 res = calloc(1, sizeof(spf_result_t));
-                singly_ll_add_node_by_val(spf_type != TILFA_RUN ? \
-                    spf_root->spf_run_result[level]: \
-                    tilfa_get_spf_result_list(spf_root, level),
-                    (void *)res);
+                singly_ll_add_node_by_val(res_lst, (void *)res);
             }
         }
         res->node = candidate_node;
@@ -723,7 +719,8 @@ compute_backup_routine(node_t *spf_root, LEVEL level){
 void
 spf_computation(node_t *spf_root, 
                 spf_info_t *spf_info, 
-                LEVEL level, spf_type_t spf_type){
+                LEVEL level, spf_type_t spf_type,
+                ll_t *res_lst/*output list*/){
 
     if(level != LEVEL1 && level != LEVEL2){
         printf("%s() : Error : invalid level specified\n", __FUNCTION__);
@@ -736,6 +733,17 @@ spf_computation(node_t *spf_root,
         return;
     }
 
+    /*output list provided must be empty by the caller*/
+    if(res_lst){
+        assert(is_singly_ll_empty(res_lst));
+    }
+
+    /*All Tilfa runs must fetch the output in the separate
+     * list. This seggregate the TILFA results from rest of 
+     * the application code*/
+    if(spf_type == TILFA_RUN && !res_lst){
+        assert(0);
+    }
 #if 0
     if(level == LEVEL2 && spf_root->spf_info.spf_level_info[LEVEL1].version == 0){
 #ifdef __ENABLE_TRACE__        
@@ -757,14 +765,21 @@ spf_computation(node_t *spf_root,
 
     if(spf_type == FULL_RUN){
         spf_info->spf_level_info[level].version++;
-        run_dijkastra(spf_root, level, &instance->ctree, spf_type);
+        assert(!res_lst);
+        res_lst = spf_root->spf_run_result[level];
+        run_dijkastra(spf_root, level, &instance->ctree, spf_type, res_lst);
     }
-    else if(spf_type == FORWARD_RUN || spf_type == TILFA_RUN){
-        run_dijkastra(spf_root, level, &instance->ctree, spf_type);
-    }
-    
-    if(spf_type == FORWARD_RUN || spf_type == TILFA_RUN)
+    else if(spf_type == FORWARD_RUN){
+        assert(!res_lst);
+        res_lst = spf_root->spf_run_result[level];
+        run_dijkastra(spf_root, level, &instance->ctree, spf_type, res_lst);
         return;
+    }
+    else if(spf_type == TILFA_RUN){
+        assert(res_lst);
+        run_dijkastra(spf_root, level, &instance->ctree, spf_type, res_lst);
+        return;
+    }
 
     /* Flush off backups from all nodes unconditionally 
      * otherwise they will be reflected in routes computed.*/ 
@@ -808,7 +823,7 @@ partial_spf_run(node_t *spf_root, LEVEL level){
         spf_root->node_name, get_str_level(level)); 
         trace(instance->traceopts, DIJKSTRA_BIT);
 #endif
-        spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);      
+        spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN, 0); 
         return;
     }
 

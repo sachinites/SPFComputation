@@ -63,12 +63,12 @@ lsp_distribution_routine(node_t *lsp_generator,
                 break;
 
         case TLV2:
-                spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN);
+                spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN, 0);
                 break;
 
         case OVERLOAD:
                 /*Trigger full spf run if router overloads/or unoverloads*/
-                spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN);
+                spf_computation(lsp_receiver, &lsp_receiver->spf_info, dist_info->info_dist_level, FULL_RUN, 0);
                 break;  
         default:
             ; 

@@ -41,10 +41,6 @@
 
 extern instance_t *instance;
 
-extern void
-spf_computation(node_t *spf_root,
-                spf_info_t *spf_info,
-                LEVEL level, spf_type_t spf_type);
 extern int
 instance_node_comparison_fn(void *_node, void *input_node_name);
 

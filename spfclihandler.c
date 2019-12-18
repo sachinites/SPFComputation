@@ -58,6 +58,12 @@ show_mpls_rsvp_label_local_bindings(node_t *node);
 extern void
 transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
                           node_t **next_node);
+extern boolean
+tilfa_update_config(node_t *plr_node,
+            char *protected_link,
+            boolean link_protection,
+            boolean node_protection);
+
 static void
 _run_spf_run_all_nodes(){
 
@@ -72,7 +78,7 @@ _run_spf_run_all_nodes(){
             node = list_node->data;
             if(node->node_type[level_it] == PSEUDONODE)
                 continue;
-            spf_computation(node, &node->spf_info, level_it, FULL_RUN);
+            spf_computation(node, &node->spf_info, level_it, FULL_RUN, 0);
         } ITERATE_LIST_END;
     }
 }
@@ -558,9 +564,13 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
         switch(enable_or_disable){
             case CONFIG_ENABLE: 
                 SET_LINK_PROTECTION_TYPE(edge, LINK_PROTECTION);
+                tilfa_update_config(node, edge_end->intf_name, 
+                    TRUE, DONT_KNOW);
                 break;
             case CONFIG_DISABLE:
                 UNSET_LINK_PROTECTION_TYPE(edge, LINK_PROTECTION);
+                tilfa_update_config(node, edge_end->intf_name, 
+                    FALSE, DONT_KNOW);
                 break;
             default:
                 assert(0);
@@ -571,9 +581,13 @@ lfa_rlfa_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_d
             case CONFIG_ENABLE: 
                 SET_LINK_PROTECTION_TYPE(edge, LINK_PROTECTION);
                 SET_LINK_PROTECTION_TYPE(edge, LINK_NODE_PROTECTION);
+                tilfa_update_config(node, edge_end->intf_name, 
+                    DONT_KNOW, TRUE);
                 break;
             case CONFIG_DISABLE:
                 UNSET_LINK_PROTECTION_TYPE(edge, LINK_NODE_PROTECTION);
+                tilfa_update_config(node, edge_end->intf_name, 
+                    DONT_KNOW, FALSE);
                 break;
             default:
                 assert(0);

@@ -122,7 +122,8 @@ typedef enum nh_type{
 
 typedef enum{
     FALSE,
-    TRUE
+    TRUE,
+    DONT_KNOW
 } boolean;
 
 typedef enum{

@@ -279,7 +279,8 @@ typedef struct _node_t node_t;
 void
 spf_computation(node_t *spf_root,
         spf_info_t *spf_info,
-        LEVEL level, spf_type_t spf_type);
+        LEVEL level, spf_type_t spf_type,
+        ll_t *res_lst);
 
 int
 route_search_comparison_fn(void * route, void *key);

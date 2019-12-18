@@ -61,6 +61,9 @@ extern int
 ping_backup(char *node_name, char *dst_prefix);
 extern 
 void config_topology_commands(param_t *config);
+extern int
+show_tilfa_handler(param_t *param, ser_buff_t *tlv_buf,
+                    op_mode enable_or_disable);
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
@@ -933,7 +936,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
 
     switch(CMDCODE){
         case CMDCODE_SHOW_SPF_RUN:
-            spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN);
+            spf_computation(spf_root, &spf_root->spf_info, level, FULL_RUN, 0);
             show_spf_results(spf_root, level);
             break;
         case CMDCODE_DEBUG_SHOW_SPF_PATH_TRACE:
@@ -950,7 +953,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             break;
         case CMDCODE_SHOW_SPF_RUN_INVERSE:
             inverse_topology(instance, level);
-            spf_computation(spf_root, &spf_root->spf_info, level, FORWARD_RUN);
+            spf_computation(spf_root, &spf_root->spf_info, level, FORWARD_RUN, 0);
             inverse_topology(instance, level);
             show_spf_results(spf_root, level);
             break;
@@ -2015,6 +2018,13 @@ spf_init_dcm(){
                 init_param(&instance_node_name, LEAF, 0, 0, 
                     validate_node_extistence, STRING, "node-name", "Node Name");
                 libcli_register_param(&instance_node, &instance_node_name);
+                {
+                    /*debug show instance node <node-name> tilfa*/
+                    static param_t tilfa;
+                    init_param(&tilfa, CMD, "tilfa", show_tilfa_handler, 0, INVALID, 0, "tilfa details");
+                    libcli_register_param(&instance_node_name, &tilfa);
+                    set_param_cmd_code(&tilfa, CMDCODE_DEBUG_SHOW_TILFA);
+                }
                 {
                     /*debug show instance node <node-name> level <level-no> prefix-conflict-result*/    
                     

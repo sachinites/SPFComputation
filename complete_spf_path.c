@@ -46,8 +46,11 @@ extern void init_instance_traversal(instance_t * instance);
 
 static unsigned int spf_level_version[MAX_LEVEL] = {0, 0, 0};
 
+typedef struct tilfa_info_ tilfa_info_t;
+
 extern glthread_t *
-tilfa_get_spf_post_convergence_path_head(node_t *node, LEVEL level);
+tilfa_get_post_convergence_spf_path_head(
+        tilfa_info_t *tilfa_info, LEVEL level);
 
 extern
 spf_path_result_t *
@@ -468,7 +471,8 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
                 res = calloc(1, sizeof(spf_path_result_t));
                 init_glthread(&res->pred_db);
                 init_glthread(&res->glue);
-                glthread_add_next(tilfa_get_spf_post_convergence_path_head(spf_root, level), &res->glue);
+                glthread_add_next(tilfa_get_post_convergence_spf_path_head(
+                        spf_root->tilfa_info, level), &res->glue);
 #ifdef __ENABLE_TRACE__
                 sprintf(instance->traceopts->b, "Node : %s : New Result Recorded for node %s for NH type : %s", 
                         spf_root->node_name, candidate_node->node_name, nh == IPNH ? "IPNH" : "LSPNH");
