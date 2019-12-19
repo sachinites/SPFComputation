@@ -48,7 +48,8 @@ extern instance_t *instance;
 extern ll_t *
 tilfa_get_spf_result_list(node_t *node, LEVEL level);
 extern void compute_tilfa(node_t *spf_root, LEVEL level);
-
+extern boolean tilfa_is_link_pruned(edge_t *edge);
+extern boolean tilfa_is_node_pruned(node_t *node);
 int
 spf_run_result_comparison_fn(void *spf_result_ptr, void *node_ptr){
 
@@ -563,6 +564,12 @@ spf_init(candidate_tree_t *ctree,
 
     ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, nbr_node, pn_node, edge, pn_edge, level){
 
+        if(tilfa_is_link_pruned(edge) || 
+           tilfa_is_node_pruned(pn_node)){
+            
+            ITERATE_NODE_PHYSICAL_NBRS_CONTINUE(spf_root, nbr_node, pn_node, level);
+        }
+
         if(is_nh_list_empty2(&nbr_node->direct_next_hop[level][IPNH][0]) &&
                 is_nh_list_empty2(&nbr_node->direct_next_hop[level][LSPNH][0])){
             if(edge->etype == LSP){
@@ -617,12 +624,12 @@ spf_init(candidate_tree_t *ctree,
     } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, nbr_node, pn_node, level);
 
 
-    /*Step 4 : Initialize candidate tree with root*/
+    /* Step 4 : Initialize candidate tree with root*/
     SPF_INSERT_NODE_INTO_CANDIDATE_TREE(ctree, spf_root, level);
     spf_root->is_node_on_heap = TRUE;
 
-    /*Step 5 : Link Directly Connected PN to the instance root. This
-     * will help identifying the route oif when spf_root is connected to PN */
+    /* Step 5 : Link Directly Connected PN to the instance root. This
+     * will help identifying the right oif when spf_root is connected to PN */
 
     ITERATE_NODE_LOGICAL_NBRS_BEGIN(spf_root, nbr_node, edge, level){
 

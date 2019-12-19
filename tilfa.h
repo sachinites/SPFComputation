@@ -99,11 +99,11 @@ typedef struct tilfa_cfg_globals_{
     uint8_t max_segments_allowed;
 } tilfa_cfg_globals_t;
 
-typedef struct tilfa_rev_spf_result_{
+typedef struct tilfa_remote_spf_result_{
 
     node_t *node; /*root of rev spf result*/
     ll_t *rev_spf_result_lst;
-} tilfa_rev_spf_result_t;
+} tilfa_remote_spf_result_t;
 
 typedef struct tilfa_info_ {
 
@@ -122,7 +122,7 @@ typedef struct tilfa_info_ {
 
     /* Reverse SPF Results triggered on a remote node.
      * Required for PQ node evaluation*/
-    ll_t *rev_spf_results[MAX_LEVEL]; 
+    ll_t *remote_spf_results[MAX_LEVEL]; 
 
     /*To be stored in Remote Destinations, 
      * not local*/
@@ -167,7 +167,7 @@ void
 compute_tilfa(node_t *spf_root, LEVEL level);
 
 void
-tilfa_clear_rev_spf_results(tilfa_info_t *tilfa_info, 
+tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info, 
                             node_t *node, LEVEL level);
 
 spf_path_result_t *

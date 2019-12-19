@@ -37,6 +37,7 @@
 #include "libcli.h"
 #include "cmdtlv.h"
 #include "spfcmdcodes.h"
+#include "spfutil.h"
 
 extern instance_t *instance;
 
@@ -102,7 +103,7 @@ tilfa_dist_from_self(tilfa_info_t *tilfa_info,
 }
 
 static ll_t *
-tilfa_get_rev_spf_result_lst(tilfa_info_t *tilfa_info, 
+tilfa_get_remote_spf_result_lst(tilfa_info_t *tilfa_info, 
                              node_t *node, LEVEL level,
                              boolean flush_old_lst){
 
@@ -110,11 +111,11 @@ tilfa_get_rev_spf_result_lst(tilfa_info_t *tilfa_info,
     singly_ll_node_t *curr1 = NULL, *prev1 = NULL;
 
     spf_result_t *spf_res = NULL;
-    tilfa_rev_spf_result_t *tilfa_rev_spf_result = NULL;
+    tilfa_remote_spf_result_t *tilfa_rev_spf_result = NULL;
 
     ll_t *inner_lst = NULL;
     
-    ll_t *outer_lst = tilfa_info->rev_spf_results[level]; 
+    ll_t *outer_lst = tilfa_info->remote_spf_results[level]; 
     
     assert(node);
 
@@ -135,7 +136,7 @@ tilfa_get_rev_spf_result_lst(tilfa_info_t *tilfa_info,
         }
     } ITERATE_LIST_END2(outer_lst, curr, prev);
 
-    tilfa_rev_spf_result = calloc(1, sizeof(tilfa_rev_spf_result_t));
+    tilfa_rev_spf_result = calloc(1, sizeof(tilfa_remote_spf_result_t));
     tilfa_rev_spf_result->node = node;
     tilfa_rev_spf_result->rev_spf_result_lst = init_singly_ll();
 
@@ -151,24 +152,21 @@ static uint32_t
 tilfa_dist_from_x_to_y(tilfa_info_t *tilfa_info,
                 node_t *x, node_t *y, LEVEL level){
 
-    /*Get reverse spf result of Y*/
-    ll_t *y_rev_spf_result_lst = 
-        tilfa_get_rev_spf_result_lst(tilfa_info, y, level, FALSE);
+    /*Get spf result of remote node X*/
+    ll_t *x_spf_result_lst = 
+        tilfa_get_remote_spf_result_lst(tilfa_info, x, level, FALSE);
 
-    if(is_singly_ll_empty(y_rev_spf_result_lst)){
-        /*Run reverse spf with y as root*/
-        inverse_topology(instance, level);
-        spf_computation(y, &y->spf_info, level, 
-            TILFA_RUN, y_rev_spf_result_lst);
-        inverse_topology(instance, level);
+    if(is_singly_ll_empty(x_spf_result_lst)){
+        spf_computation(x, &x->spf_info, level, 
+            TILFA_RUN, x_spf_result_lst);
     }
 
-    spf_result_t *x_res = singly_ll_search_by_key(
-                y_rev_spf_result_lst, (void *)x); 
+    spf_result_t *y_res = singly_ll_search_by_key(
+                x_spf_result_lst, (void *)y); 
 
-    if(!x_res) return INFINITE_METRIC;
+    if(!y_res) return INFINITE_METRIC;
 
-    return (uint32_t)x_res->spf_metric;
+    return (uint32_t)y_res->spf_metric;
 }
 
 segment_list_t *
@@ -241,7 +239,7 @@ init_tilfa(node_t *node){
 
         init_glthread(&(node->tilfa_info->post_convergence_spf_path[level_it]));
 
-        node->tilfa_info->rev_spf_results[level_it] = init_singly_ll();
+        node->tilfa_info->remote_spf_results[level_it] = init_singly_ll();
     
         init_glthread(&node->tilfa_info->tilfa_segment_list_head[level_it]);
     }
@@ -460,7 +458,7 @@ tilfa_clear_spf_results(node_t *node, LEVEL level){
    
    delete_singly_ll(tilfa_info->tilfa_spf_results[level]);
 
-   tilfa_clear_rev_spf_results(tilfa_info, 0, level);
+   tilfa_clear_remote_spf_results(tilfa_info, 0, level);
 }
 
 
@@ -487,9 +485,8 @@ tilfa_topology_prune_protected_resource(node_t *node,
     assert(pr_res);
     assert(pr_res->plr_node == node);
     edge_t *link = GET_EGDE_PTR_FROM_FROM_EDGE_END(pr_res->protected_link);
-    link->is_tilfa_pruned = TRUE;
     if(pr_res->link_protection){
-        /*Mo more work*/
+        link->is_tilfa_pruned = TRUE;
     }
     if(pr_res->node_protection){
         node_t *nbr_node = link->to.node;
@@ -599,17 +596,17 @@ compute_tilfa(node_t *spf_root, LEVEL level){
 /* Pass node as NULL to clear reverse spf results of all
  * nodes*/
 void
-tilfa_clear_rev_spf_results(tilfa_info_t *tilfa_info,
+tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info,
                             node_t *node, LEVEL level){
 
     singly_ll_node_t *curr = NULL, *prev = NULL;
     singly_ll_node_t *curr1 = NULL, *prev1 = NULL;
 
     spf_result_t *spf_res = NULL;
-    tilfa_rev_spf_result_t *tilfa_rev_spf_result = NULL;
+    tilfa_remote_spf_result_t *tilfa_rev_spf_result = NULL;
 
     ll_t *inner_lst = NULL;
-    ll_t *outer_lst = tilfa_info->rev_spf_results[level];
+    ll_t *outer_lst = tilfa_info->remote_spf_results[level];
 
     ITERATE_LIST_BEGIN2(outer_lst, curr, prev){
 
@@ -640,7 +637,7 @@ tilfa_clear_rev_spf_results(tilfa_info_t *tilfa_info,
 
     if(!node){
         assert(is_singly_ll_empty(
-            tilfa_info->rev_spf_results[level]));
+            tilfa_info->remote_spf_results[level]));
     }
 }
 
@@ -724,4 +721,198 @@ show_tilfa_handler(param_t *param,
             assert(0);
     }
     return 0;
+}
+
+boolean
+tilfa_is_link_pruned(edge_t *edge){
+
+    return edge->is_tilfa_pruned;
+}
+
+boolean 
+tilfa_is_node_pruned(node_t *node){
+
+    return node->tilfa_info->is_tilfa_pruned;
+}
+
+static boolean
+tilfa_does_nexthop_overlap(internal_nh_t *one_nh, 
+                internal_nh_t *nh_lst){
+
+    if(is_nh_list_empty2(nh_lst))
+        return FALSE;
+
+    int i = 0;
+
+    for(; i < MAX_NXT_HOPS; i++){
+        
+        if(is_empty_internal_nh(&nh_lst[i]))
+            return FALSE;
+
+        if(one_nh->oif == nh_lst[i].oif)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+static void
+tilfa_p_node_qualification_test_wrt_root(
+                node_t *spf_root,
+                node_t *node_to_test, 
+                protected_resource_t *pr_res,
+                LEVEL level,
+                internal_nh_t **nexthop){ /*Array of nexthops, O/P*/
+
+/* Algorithm :
+ * step 1 : For a given potential p-node "node_to_test", 
+ * get the primary nexthops from post-convergene results
+ * step 2 : Get the primary nexthops for a p-node from a
+ * pre-convergence spf results
+ * step 3 : Ignore all nexthops of step 1 whose ifindex overlaps with
+ * nexthops of obtained from step 2 i.e. 
+ * Remaining Nexthops = nexthops of step 1 - nexthops of step 2
+ * step 4 : Test p-node criteria of "node_to_test" through remaining
+ * nexthops obtained in step 3
+ * step 5 : Add +ve results obtained in step 4 to nexthop array
+ * */
+    tilfa_info_t *tilfa_info = spf_root->tilfa_info;
+    uint8_t n = 0;
+
+    internal_nh_t *post_convergence_nhps = 
+        tilfa_lookup_post_convergence_primary_nexthops(tilfa_info,
+            node_to_test, level);
+    
+    if(!post_convergence_nhps || 
+        is_nh_list_empty2(post_convergence_nhps))
+        return;
+
+    internal_nh_t *pre_convergence_nhps =
+        tilfa_lookup_pre_convergence_primary_nexthops(tilfa_info,
+            node_to_test, level);
+
+    if(!pre_convergence_nhps || 
+        is_nh_list_empty2(pre_convergence_nhps))
+        return ;
+
+    int i = 0;
+    node_t *nbr_node = NULL;
+
+    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(
+                        pr_res->protected_link);
+    node_t *protected_node = edge->to.node;
+
+    for(; i < MAX_NXT_HOPS; i++){
+        if(is_empty_internal_nh(&post_convergence_nhps[i]))
+            break;
+        /*check if backup nexthop overlaps with any primary nxthop*/
+        if(tilfa_does_nexthop_overlap(&post_convergence_nhps[i],
+                pre_convergence_nhps))
+            continue;
+
+        /*Now test p-node condition*/
+        nbr_node = post_convergence_nhps[i].node;
+        assert(nbr_node);
+        assert(post_convergence_nhps[i].nh_type == IPNH);
+       
+        assert(pr_res->plr_node == spf_root);
+        
+        uint32_t dist_nbr_to_pnode = tilfa_dist_from_x_to_y(
+            tilfa_info, nbr_node, node_to_test , level);
+        uint32_t dist_nbr_to_S = tilfa_dist_from_x_to_y(
+            tilfa_info, nbr_node, spf_root, level);
+        uint32_t dist_S_to_pnode = tilfa_dist_from_self(
+            tilfa_info, node_to_test, level);
+
+        /*loop free wrt Source*/
+        if(!(dist_nbr_to_pnode < dist_nbr_to_S + dist_S_to_pnode))
+            continue;
+
+        /*I think downstream criteria is automatically met since the
+         * p-node lies on post-convergence path*/
+
+        if(pr_res->node_protection){
+            uint32_t dist_nbr_to_E = tilfa_dist_from_x_to_y(
+                tilfa_info, nbr_node, protected_node, level);
+            uint32_t dist_E_to_pnode = tilfa_dist_from_x_to_y(
+                tilfa_info, protected_node, node_to_test, level);
+            if(dist_nbr_to_pnode < dist_nbr_to_E + dist_E_to_pnode){
+                nexthop[n++] = &post_convergence_nhps[i];
+                continue;
+            }
+        }
+
+        if(pr_res->link_protection){
+            if(dist_nbr_to_pnode < 
+                (dist_nbr_to_S + edge->metric[level])){
+                nexthop[n++] = &post_convergence_nhps[i];
+            }
+        }
+    }
+}
+
+
+static boolean
+tilfa_q_node_qualification_test_wrt_destination(
+                node_t *spf_root,
+                node_t *node_to_test, 
+                node_t *destination,
+                protected_resource_t *pr_res,
+                LEVEL level){
+
+
+    /*All nodes are Q-nodes wrt to self*/
+
+    tilfa_info_t *tilfa_info = spf_root->tilfa_info;
+
+    if(node_to_test == destination)
+        return TRUE;
+
+    uint32_t dist_q_to_d = tilfa_dist_from_x_to_y(tilfa_info,
+                node_to_test, destination, level);
+    
+    uint32_t dist_q_to_protected_node = INFINITE_METRIC,
+             dist_protected_node_to_d = INFINITE_METRIC,
+             dist_q_to_S = INFINITE_METRIC,
+             dist_S_to_d = INFINITE_METRIC;
+
+    if(dist_q_to_d == INFINITE_METRIC)
+        return FALSE;
+
+    assert(pr_res->plr_node == spf_root);
+
+    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(
+                pr_res->protected_link);
+    node_t *protected_node = edge->to.node;
+
+    /* Mandatory condition should be satisified : 
+     * q node must be loop-free node wrt S*/
+    dist_q_to_S = tilfa_dist_from_x_to_y(tilfa_info,
+            node_to_test, spf_root, level);
+    
+    dist_S_to_d = tilfa_dist_from_self(tilfa_info,
+            destination, level);
+
+    if(!(dist_q_to_d < dist_q_to_S + dist_S_to_d)){
+        return FALSE;
+    }
+
+    if(pr_res->node_protection){
+        /*Test Node protection status*/
+        dist_q_to_protected_node = tilfa_dist_from_x_to_y(tilfa_info,
+            node_to_test, protected_node, level);
+        dist_protected_node_to_d = tilfa_dist_from_x_to_y(tilfa_info,
+            protected_node, destination, level);
+
+        if(dist_q_to_d < dist_q_to_protected_node + dist_protected_node_to_d){
+            return TRUE;
+        }
+    }
+    /*If node protection is not feasilble, check for link protection*/
+    if(pr_res->link_protection){
+        /*Test Link protection Status*/ 
+        if(dist_q_to_d < dist_q_to_S + edge->metric[level]){
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
