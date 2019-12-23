@@ -38,14 +38,21 @@
 #include "cmdtlv.h"
 #include "spfcmdcodes.h"
 #include "spfutil.h"
+#include "spftrace.h"
 
 extern instance_t *instance;
+typedef struct fn_ptr_arg_{
+
+    tilfa_info_t *tilfa_info;
+    protected_resource_t *pr_res;
+    LEVEL level;
+} fn_ptr_arg_t;
 
 static ll_t *
 tilfa_get_post_convergence_spf_result_list(
         tilfa_info_t *tilfa_info, LEVEL level){
 
-    return tilfa_info->tilfa_spf_results[level];
+    return tilfa_info->tilfa_post_convergence_spf_results[level];
 }
 
 static ll_t *
@@ -73,6 +80,31 @@ tilfa_lookup_pre_convergence_primary_nexthops
     if(!res) return NULL;
 
     return res->next_hop[IPNH];
+}
+
+static internal_nh_t **
+tilfa_lookup_post_convergence_active_primary_nexthops_of_pnodes
+    (tilfa_info_t *tilfa_info, node_t *node, LEVEL level,
+    spf_result_t **spf_result /*O/P*/){
+
+
+     assert(!(*spf_result));
+
+     ll_t *lst = tilfa_get_post_convergence_spf_result_list(
+                    tilfa_info, level);
+
+    spf_result_t *res = singly_ll_search_by_key(lst, (void *)node);
+    if(!res) return NULL;
+
+    *spf_result = res;
+
+    internal_nh_t **active_primary_nxthops = 
+        res->tilfa_post_c_active_nxthops_for_pnodes[level];
+    
+    if(!active_primary_nxthops[0])
+        return NULL;
+
+    return active_primary_nxthops;
 }
 
 static internal_nh_t *
@@ -111,7 +143,7 @@ tilfa_get_remote_spf_result_lst(tilfa_info_t *tilfa_info,
     singly_ll_node_t *curr1 = NULL, *prev1 = NULL;
 
     spf_result_t *spf_res = NULL;
-    tilfa_remote_spf_result_t *tilfa_rev_spf_result = NULL;
+    tilfa_remote_spf_result_t *tilfa_rem_spf_result = NULL;
 
     ll_t *inner_lst = NULL;
     
@@ -121,9 +153,9 @@ tilfa_get_remote_spf_result_lst(tilfa_info_t *tilfa_info,
 
     ITERATE_LIST_BEGIN2(outer_lst, curr, prev){
 
-        tilfa_rev_spf_result = curr->data;
-        if(tilfa_rev_spf_result->node == node){
-            inner_lst = tilfa_rev_spf_result->rev_spf_result_lst;
+        tilfa_rem_spf_result = curr->data;
+        if(tilfa_rem_spf_result->node == node){
+            inner_lst = tilfa_rem_spf_result->rem_spf_result_lst;
             
             if(!flush_old_lst) return inner_lst;
 
@@ -136,15 +168,15 @@ tilfa_get_remote_spf_result_lst(tilfa_info_t *tilfa_info,
         }
     } ITERATE_LIST_END2(outer_lst, curr, prev);
 
-    tilfa_rev_spf_result = calloc(1, sizeof(tilfa_remote_spf_result_t));
-    tilfa_rev_spf_result->node = node;
-    tilfa_rev_spf_result->rev_spf_result_lst = init_singly_ll();
+    tilfa_rem_spf_result = calloc(1, sizeof(tilfa_remote_spf_result_t));
+    tilfa_rem_spf_result->node = node;
+    tilfa_rem_spf_result->rem_spf_result_lst = init_singly_ll();
 
     singly_ll_set_comparison_fn(
-            tilfa_rev_spf_result->rev_spf_result_lst,
+            tilfa_rem_spf_result->rem_spf_result_lst,
             spf_run_result_comparison_fn);
 
-    return tilfa_rev_spf_result->rev_spf_result_lst;
+    return tilfa_rem_spf_result->rem_spf_result_lst;
 }
 
 
@@ -171,14 +203,13 @@ tilfa_dist_from_x_to_y(tilfa_info_t *tilfa_info,
 
 segment_list_t *
 tilfa_get_segment_list(node_t *node,
-                       node_t *plr_node,
                        protected_resource_t *pr_res,
                        LEVEL level,
                        uint8_t *n_segment_list/*O/P*/){
 
     glthread_t *curr;
 
-    if(!plr_node || !pr_res) assert(0);
+    if(!pr_res) assert(0);
 
     tilfa_info_t *tilfa_info = node->tilfa_info;
     if(!tilfa_info) return NULL;
@@ -233,9 +264,9 @@ init_tilfa(node_t *node){
             tilfa_pre_convergence_spf_results[level_it], 
             spf_run_result_comparison_fn);
 
-        node->tilfa_info->tilfa_spf_results[level_it] = init_singly_ll();
+        node->tilfa_info->tilfa_post_convergence_spf_results[level_it] = init_singly_ll();
         singly_ll_set_comparison_fn(node->tilfa_info->\
-            tilfa_spf_results[level_it], spf_run_result_comparison_fn);
+            tilfa_post_convergence_spf_results[level_it], spf_run_result_comparison_fn);
 
         init_glthread(&(node->tilfa_info->post_convergence_spf_path[level_it]));
 
@@ -430,7 +461,7 @@ tilfa_clear_segments_list(
 }
 
 static void
-tilfa_clear_spf_results(node_t *node, LEVEL level){
+tilfa_clear_all_pre_convergence_results(node_t *node, LEVEL level){
 
    tilfa_info_t *tilfa_info = node->tilfa_info;
     
@@ -449,31 +480,32 @@ tilfa_clear_spf_results(node_t *node, LEVEL level){
    
    delete_singly_ll(tilfa_info->tilfa_pre_convergence_spf_results[level]);
 
-   ITERATE_LIST_BEGIN(tilfa_info->tilfa_spf_results[level], list_node){
-
-       result = list_node->data;
-       free(result);
-       result = NULL;
-   }ITERATE_LIST_END;
-   
-   delete_singly_ll(tilfa_info->tilfa_spf_results[level]);
-
    tilfa_clear_remote_spf_results(tilfa_info, 0, level);
 }
 
-
 static void
-clear_tilfa_results(node_t *spf_root, LEVEL level, 
-    protected_resource_t *pre_res){
+tilfa_clear_all_post_convergence_results(node_t *spf_root, LEVEL level, 
+        protected_resource_t *pre_res){
 
     tilfa_info_t *tilfa_info = spf_root->tilfa_info;
-    
+
     if(!tilfa_info) return;
-   
-    tilfa_clear_spf_results(spf_root, level);
+
+    singly_ll_node_t *list_node = NULL;
+
+    spf_result_t *result = NULL;
+
+    ITERATE_LIST_BEGIN(tilfa_info->tilfa_post_convergence_spf_results[level], list_node){
+
+        result = list_node->data;
+        free(result);
+        result = NULL;
+    }ITERATE_LIST_END;
+
+    delete_singly_ll(tilfa_info->tilfa_post_convergence_spf_results[level]);
 
     tilfa_clear_post_convergence_spf_path(
-        tilfa_get_post_convergence_spf_path_head(spf_root->tilfa_info, level));
+            tilfa_get_post_convergence_spf_path_head(spf_root->tilfa_info, level));
 
     tilfa_clear_segments_list(&(tilfa_info->tilfa_segment_list_head[level]), pre_res);
 }
@@ -525,13 +557,6 @@ compute_tilfa_pre_convergence_spf_primary_nexthops(node_t *spf_root, LEVEL level
         TILFA_RUN, tilfa_get_pre_convergence_spf_result_list(spf_root->tilfa_info, level));
 }
 
-static void
-tilfa_compute_segment_lists(node_t *spf_root, LEVEL level, 
-                            protected_resource_t *pr_res){
-
-
-}
-
 spf_path_result_t *
 tilfa_lookup_spf_path_result(node_t *node, node_t *candidate_node, 
                              LEVEL level){
@@ -580,6 +605,14 @@ compute_tilfa(node_t *spf_root, LEVEL level){
     glthread_t *curr;
     tilfa_lcl_config_t *tilfa_lcl_config = NULL;
 
+    sprintf(instance->traceopts->b, "Node : %s : %s() triggered, level %s",
+        spf_root->node_name, __FUNCTION__, get_str_level(level));
+    trace(instance->traceopts, SPF_EVENTS_BIT);
+
+    tilfa_clear_all_pre_convergence_results(spf_root, level);
+
+    compute_tilfa_pre_convergence_spf_primary_nexthops(spf_root, level);
+
     ITERATE_GLTHREAD_BEGIN(&tilfa_info->tilfa_lcl_config_head, curr){
         
         tilfa_lcl_config = tilfa_lcl_config_to_config_glue(curr);
@@ -603,19 +636,19 @@ tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info,
     singly_ll_node_t *curr1 = NULL, *prev1 = NULL;
 
     spf_result_t *spf_res = NULL;
-    tilfa_remote_spf_result_t *tilfa_rev_spf_result = NULL;
+    tilfa_remote_spf_result_t *tilfa_rem_spf_result = NULL;
 
     ll_t *inner_lst = NULL;
     ll_t *outer_lst = tilfa_info->remote_spf_results[level];
 
     ITERATE_LIST_BEGIN2(outer_lst, curr, prev){
 
-        tilfa_rev_spf_result = curr->data;
-        if(node && tilfa_rev_spf_result->node != node){
+        tilfa_rem_spf_result = curr->data;
+        if(node && tilfa_rem_spf_result->node != node){
             ITERATE_LIST_CONTINUE2(outer_lst, curr, prev);
         }
 
-        inner_lst = tilfa_rev_spf_result->rev_spf_result_lst;
+        inner_lst = tilfa_rem_spf_result->rem_spf_result_lst;
 
         ITERATE_LIST_BEGIN2(inner_lst, curr1, prev1){
 
@@ -626,9 +659,9 @@ tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info,
         
         delete_singly_ll(inner_lst);
         free(inner_lst);
-        tilfa_rev_spf_result->rev_spf_result_lst = NULL;
+        tilfa_rem_spf_result->rem_spf_result_lst = NULL;
 
-        free(tilfa_rev_spf_result);
+        free(tilfa_rem_spf_result);
         ITERATIVE_LIST_NODE_DELETE2(outer_lst, curr, prev);
         
         if(node) return;
@@ -639,34 +672,6 @@ tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info,
         assert(is_singly_ll_empty(
             tilfa_info->remote_spf_results[level]));
     }
-}
-
-void
-tilfa_run_post_convergence_spf(node_t *spf_root, LEVEL level, 
-                               protected_resource_t *pr_res){
-
-    clear_tilfa_results(spf_root, level, pr_res);
-
-    /* Compute Primary next hops before Pruning the protected resource.
-     * These primary nexthops are required to disqualify the TILFA
-     * backups which overlaps with primary nexthops of the destination*/
-    compute_tilfa_pre_convergence_spf_primary_nexthops(spf_root, level);
-
-    /*Ostracize the protected resources from the topology*/
-    tilfa_topology_prune_protected_resource(spf_root, pr_res);
-
-    /*We also need primary nexthops of P-nodes on the Post-Convergence SPF
-     *path. Using these Primary nexthops, We shall explore extended p-space*/
-    compute_tilfa_post_convergence_spf_primary_nexthops(spf_root, level);
-
-    /*Now compute PC-spf paths to all destinations*/
-    compute_spf_paths(spf_root, level, TILFA_RUN);
-
-    /*Add the protected resources back to the topology*/
-    tilfa_topology_unprune_protected_resource(spf_root, pr_res);
-
-    /*Compute segment lists now*/
-    tilfa_compute_segment_lists(spf_root, level, pr_res);
 }
 
 spf_path_result_t *
@@ -755,13 +760,12 @@ tilfa_does_nexthop_overlap(internal_nh_t *one_nh,
     return FALSE;
 }
 
-static void
+static internal_nh_t **
 tilfa_p_node_qualification_test_wrt_root(
                 node_t *spf_root,
                 node_t *node_to_test, 
                 protected_resource_t *pr_res,
-                LEVEL level,
-                internal_nh_t **nexthop){ /*Array of nexthops, O/P*/
+                LEVEL level){
 
 /* Algorithm :
  * step 1 : For a given potential p-node "node_to_test", 
@@ -769,14 +773,29 @@ tilfa_p_node_qualification_test_wrt_root(
  * step 2 : Get the primary nexthops for a p-node from a
  * pre-convergence spf results
  * step 3 : Ignore all nexthops of step 1 whose ifindex overlaps with
- * nexthops of obtained from step 2 i.e. 
- * Remaining Nexthops = nexthops of step 1 - nexthops of step 2
- * step 4 : Test p-node criteria of "node_to_test" through remaining
- * nexthops obtained in step 3
+ * nexthops obtained from step 2 i.e. 
+ * Remaining Nexthops = nexthops of step 1 - nexthops of step 2. Reason
+ * being tilfa backups must not coincide with primary nexthops.
+ * step 4 : Test extended p-node criteria of "node_to_test" through remaining
+ * nexthops as nbrs of PLR obtained in step 3
  * step 5 : Add +ve results obtained in step 4 to nexthop array
  * */
     tilfa_info_t *tilfa_info = spf_root->tilfa_info;
     uint8_t n = 0;
+    
+    spf_result_t *res = NULL;
+
+    internal_nh_t **tilfa_post_c_active_nxthops_for_pnodes = 
+        tilfa_lookup_post_convergence_active_primary_nexthops_of_pnodes
+            (tilfa_info, node_to_test, level, &res);
+
+    assert(res);
+
+    if(tilfa_post_c_active_nxthops_for_pnodes)
+        return tilfa_post_c_active_nxthops_for_pnodes;
+
+    tilfa_post_c_active_nxthops_for_pnodes = 
+        res->tilfa_post_c_active_nxthops_for_pnodes[level];
 
     internal_nh_t *post_convergence_nhps = 
         tilfa_lookup_post_convergence_primary_nexthops(tilfa_info,
@@ -784,7 +803,7 @@ tilfa_p_node_qualification_test_wrt_root(
     
     if(!post_convergence_nhps || 
         is_nh_list_empty2(post_convergence_nhps))
-        return;
+        return NULL;
 
     internal_nh_t *pre_convergence_nhps =
         tilfa_lookup_pre_convergence_primary_nexthops(tilfa_info,
@@ -792,7 +811,7 @@ tilfa_p_node_qualification_test_wrt_root(
 
     if(!pre_convergence_nhps || 
         is_nh_list_empty2(pre_convergence_nhps))
-        return ;
+        return NULL;
 
     int i = 0;
     node_t *nbr_node = NULL;
@@ -836,7 +855,8 @@ tilfa_p_node_qualification_test_wrt_root(
             uint32_t dist_E_to_pnode = tilfa_dist_from_x_to_y(
                 tilfa_info, protected_node, node_to_test, level);
             if(dist_nbr_to_pnode < dist_nbr_to_E + dist_E_to_pnode){
-                nexthop[n++] = &post_convergence_nhps[i];
+                tilfa_post_c_active_nxthops_for_pnodes[n++] = 
+                    &post_convergence_nhps[i];
                 continue;
             }
         }
@@ -844,10 +864,15 @@ tilfa_p_node_qualification_test_wrt_root(
         if(pr_res->link_protection){
             if(dist_nbr_to_pnode < 
                 (dist_nbr_to_S + edge->metric[level])){
-                nexthop[n++] = &post_convergence_nhps[i];
+                tilfa_post_c_active_nxthops_for_pnodes[n++] 
+                    = &post_convergence_nhps[i];
             }
         }
     }
+
+    if(tilfa_post_c_active_nxthops_for_pnodes[0])
+        return tilfa_post_c_active_nxthops_for_pnodes;
+    return NULL;
 }
 
 
@@ -916,3 +941,351 @@ tilfa_q_node_qualification_test_wrt_destination(
     }
     return FALSE;
 }
+
+static boolean
+tilfa_is_destination_impacted(tilfa_info_t *tilfa_info, 
+                              node_t *dest, LEVEL level,
+                              protected_resource_t *pr_res){
+
+    internal_nh_t *pre_convergence_nhps = NULL;
+
+    pre_convergence_nhps = tilfa_lookup_pre_convergence_primary_nexthops
+                            (tilfa_info, dest, level);
+
+    if(is_nh_list_empty2(pre_convergence_nhps)){
+        return FALSE;
+    }
+
+    /*Just check the OIF overlap*/
+    int i = 0;
+
+    for(; i < MAX_NXT_HOPS; i++){
+
+        if(is_empty_internal_nh(&pre_convergence_nhps[i]))
+            return FALSE;
+
+        if(pr_res->protected_link == pre_convergence_nhps[i].oif)
+            return TRUE;
+
+    }
+    return FALSE;
+}
+
+static void
+tilfa_record_segment_list(node_t *spf_root, int n, 
+                          internal_nh_t **nexthops, 
+                          node_t *p_node, 
+                          node_t *q_node, 
+                          LEVEL level, 
+                          int pq_distance,
+                          node_t *dest_node, 
+                          protected_resource_t *pr_res){
+
+    printf("%s : Destination %s, level %s\n", 
+        __FUNCTION__, dest_node->node_name, get_str_level(level));
+
+    printf("\tProtected Resource : Link");
+    printf("\tResource Name : (%s)%s\n",
+            pr_res->plr_node->node_name,
+            pr_res->protected_link->intf_name);
+    printf("\tProtection type : LP : %sset   NP : %sset\n",
+            pr_res->link_protection ? "" : "un",
+            pr_res->node_protection ? "" : "un");
+
+    printf("\t\tnexthop count : %d\n", n);
+
+    int i = 0;
+
+    for( ; i < n ; i++){
+
+        printf("\t\t\toif = %s, gw_ip = %s, node = %s, P-node = %s"
+               ", Q-node = %s, pq_distance = %d\n",
+            nexthops[i]->oif->intf_name, 
+            next_hop_gateway_pfx(nexthops[i]),
+            nexthops[i]->node->node_name, 
+            p_node->node_name, 
+            q_node->node_name, pq_distance);
+    }
+}
+static void
+print_raw_tilfa_path(internal_nh_t **nexthops, node_t *p_node, 
+                 node_t *q_node, node_t *dest){
+
+    printf("DEST = %s\n", dest->node_name);
+
+    if(!nexthops){
+        printf("Nexthop Array : NULL"); 
+    }
+    else if(!nexthops[0]){
+        printf("Nexthop Array : Empty");
+    }
+    else{
+        int i = 0;
+        for( ; nexthops[i]; i++){
+            printf("oif = %s, gw = %s\n", 
+                nexthops[i]->oif->intf_name, 
+                nexthops[i]->gw_prefix);
+        }
+    }
+    printf("p_node = %s, q_node = %s\n", 
+            p_node ? p_node->node_name : "Nil" ,
+            q_node ? q_node->node_name : "Nil");
+}
+
+static void
+tilfa_examine_tilfa_path_for_segment_list(
+        glthread_t *path, void *arg){
+
+    glthread_t *curr;
+    
+    fn_ptr_arg_t *fn_ptr_arg = (fn_ptr_arg_t *)arg;
+    tilfa_info_t *tilfa_info = fn_ptr_arg->tilfa_info;
+    protected_resource_t *pr_res = fn_ptr_arg->pr_res;
+    LEVEL level = fn_ptr_arg->level;
+
+    glthread_t *spf_root_entry = path->right;
+    node_t *spf_root = 
+        GET_PRED_INFO_NODE_FROM_GLTHREAD(spf_root_entry);
+
+    glthread_t *first_hop_node_entry = path->right->right;
+
+    node_t *first_hop_node = 
+        GET_PRED_INFO_NODE_FROM_GLTHREAD(first_hop_node_entry);
+
+    glthread_t *last_entry;
+    ITERATE_GLTHREAD_BEGIN(path, curr){
+        last_entry = curr;
+    } ITERATE_GLTHREAD_END(path, curr);
+
+    /*Traverse the path from Destination to first hop node*/
+    
+    node_t *curr_node = NULL;
+    internal_nh_t **nxthops = NULL;
+    boolean search_for_q_node = TRUE;
+    boolean search_for_p_node = FALSE;
+    glthread_t *dest_entry = last_entry;
+    
+    node_t *dst_node = 
+        GET_PRED_INFO_NODE_FROM_GLTHREAD(dest_entry);
+
+    glthread_t *p_node = NULL;
+    glthread_t *q_node = dest_entry;
+
+    curr_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(last_entry);
+
+    while(last_entry != first_hop_node_entry){
+        
+        if(search_for_q_node == TRUE &&
+            search_for_p_node == TRUE){
+            assert(0);
+        }
+
+        if(search_for_q_node == FALSE && 
+            search_for_p_node == FALSE){
+            break;
+        }
+
+        nxthops = NULL;
+
+        if(last_entry == dest_entry){
+            
+            /*Examinining the Destination*/
+            /*Q-node Test : Pass, recede.... */
+            q_node = last_entry;
+            goto done;
+        }
+        else{
+            /*if we are searching Q-node*/
+            if(search_for_q_node == TRUE){
+
+                if(tilfa_q_node_qualification_test_wrt_destination(
+                    spf_root, curr_node, dst_node, pr_res, level)){
+                    /*Q-node Test : Pass, recede.... */
+                    q_node = last_entry;
+                    goto done;
+                }
+                else{
+                    /*q_node is our final Q-node now*/
+                    search_for_q_node = FALSE;
+                    search_for_p_node = TRUE;
+                    /*check if curr_node is also a p-node,
+                     * simply continue with same curr node*/
+                    continue;
+                }
+            }
+            else if(search_for_p_node == TRUE){
+                /*Test if curr node is a p-node*/
+                nxthops = tilfa_p_node_qualification_test_wrt_root(
+                        spf_root, curr_node, pr_res, level);
+
+                if(nxthops){
+                    p_node = last_entry;
+                    search_for_p_node = FALSE;
+                }
+                else{
+                    /*P-node Test failed, recede....*/
+                    goto done;
+                }
+            }
+            else{
+                assert(0);
+            }
+        }
+        done:
+            last_entry = last_entry->left;
+            curr_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(last_entry);
+    } /* while ends*/
+    
+    /* We are here, because the node under inspection is
+     * a direct nbr of root. Check what is our status..*/
+    
+    if( search_for_q_node == FALSE &&
+        search_for_p_node == FALSE){
+
+        goto TILFA_FOUND; 
+    }
+
+    else if(search_for_q_node == FALSE &&
+        search_for_p_node == TRUE){
+
+        assert(!p_node);
+
+        /*All direct nbrs are p-nodes*/
+        nxthops = tilfa_p_node_qualification_test_wrt_root(
+                  spf_root, curr_node, 
+                  pr_res, level);
+
+        if(nxthops){
+            p_node = last_entry;
+            search_for_p_node = FALSE;
+        }
+        else{
+            /*There is no p-node exists*/
+        }
+    }
+    else if(search_for_q_node == TRUE &&
+            search_for_p_node == FALSE){
+
+        /*Check if first-hop node is a Q-node ?*/
+        if(tilfa_q_node_qualification_test_wrt_destination(
+            spf_root, curr_node, dst_node, pr_res, level)){
+            q_node = last_entry;;
+            search_for_q_node = FALSE;
+            search_for_p_node = TRUE;
+            nxthops = tilfa_p_node_qualification_test_wrt_root(
+                    spf_root, curr_node, pr_res, level);
+
+            if(nxthops){
+                p_node = last_entry;
+                search_for_p_node = FALSE;
+            }
+
+        }
+        else{
+            /*There is not even a q-node*/
+        }
+    }
+    else if(search_for_q_node == TRUE &&
+            search_for_p_node == TRUE){
+        
+        /* We shall be looking either for q-node or 
+         * p-node, but not both at any given time*/
+        assert(0);    
+    }
+
+    TILFA_FOUND:
+    print_raw_tilfa_path(nxthops, 
+        p_node ? GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node) : 0,
+        q_node ? GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node): 0, 
+        dst_node);
+}
+
+static void
+tilfa_compute_segment_lists_per_destination(
+                        node_t *spf_root, 
+                        LEVEL level,
+                        protected_resource_t *pr_res,
+                        node_t *dst_node){
+
+    fn_ptr_arg_t fn_ptr_arg;
+    fn_ptr_arg.tilfa_info = spf_root->tilfa_info;
+    fn_ptr_arg.pr_res = pr_res;
+    fn_ptr_arg.level = level;
+
+    trace_spf_path_to_destination_node(spf_root, 
+                    dst_node, level, 
+                    tilfa_examine_tilfa_path_for_segment_list,
+                    (void *)&fn_ptr_arg, TRUE);     
+}
+
+
+
+/*Main TILFA algorithm is implemented in this function*/
+static void
+tilfa_compute_segment_lists(node_t *spf_root, LEVEL level, 
+                            protected_resource_t *pr_res){
+
+    spf_result_t *result = NULL;
+    singly_ll_node_t *curr = NULL;
+    
+    ll_t *pre_convergence_spf_result_lst = 
+        tilfa_get_pre_convergence_spf_result_list(
+            spf_root->tilfa_info, level);
+
+    node_t *dst_node = NULL;
+
+    sprintf(instance->traceopts->b, "Node : %s : level %s, Segment List "
+            "Computation for Protected Res : %s, LP : %sset : NP : %sset",
+        spf_root->node_name, get_str_level(level), 
+        pr_res->protected_link->intf_name,
+        pr_res->link_protection ? "" : "un", 
+        pr_res->node_protection ? "" : "un");
+    trace(instance->traceopts, SPF_EVENTS_BIT);
+
+    ITERATE_LIST_BEGIN(pre_convergence_spf_result_lst, curr){
+
+        result = curr->data;
+        dst_node = result->node;
+
+        if(dst_node->node_type[level] == PSEUDONODE)
+            continue;
+
+        if(!tilfa_is_destination_impacted(spf_root->tilfa_info,
+            dst_node, level, pr_res)){
+            sprintf(instance->traceopts->b, "Node : %s : level %s, Dest Node %s is not impacted",
+                spf_root->node_name, get_str_level(level), dst_node->node_name);
+            trace(instance->traceopts, TILFA_BIT);
+            continue;
+        }
+
+        tilfa_compute_segment_lists_per_destination
+            (spf_root, level, pr_res, dst_node);
+
+    } ITERATE_LIST_END;
+}
+
+void
+tilfa_run_post_convergence_spf(node_t *spf_root, LEVEL level, 
+                               protected_resource_t *pr_res){
+
+    /* Clear all intermediate or final results which are computed per-
+     * protected resource*/
+    tilfa_clear_all_post_convergence_results(spf_root, level, pr_res);
+
+    /*Ostracize the protected resources from the topology*/
+    tilfa_topology_prune_protected_resource(spf_root, pr_res);
+
+    /*We also need primary nexthops of P-nodes on the Post-Convergence SPF
+     *path. Using these Primary nexthops, We shall explore extended p-space*/
+    compute_tilfa_post_convergence_spf_primary_nexthops(spf_root, level);
+
+    /*Now compute PC-spf paths to all destinations*/
+    compute_spf_paths(spf_root, level, TILFA_RUN);
+
+    /*Add the protected resources back to the topology*/
+    tilfa_topology_unprune_protected_resource(spf_root, pr_res);
+
+    /*Compute segment lists now*/
+    tilfa_compute_segment_lists(spf_root, level, pr_res);
+}
+

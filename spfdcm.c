@@ -826,6 +826,10 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
             enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, SPRING_ROUTE_CAL_BIT):
                 disable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
             break;
+        case CMDCODE_DEBUG_TRACEOPTIONS_TILFA:
+            enable_or_disable == CONFIG_ENABLE ? enable_spf_trace(instance, TILFA_BIT):
+                disable_spf_trace(instance, TILFA_BIT);
+            break;
         case CMDCODE_DEBUG_TRACEOPTIONS_ALL:
             switch(enable_or_disable){
                 case CONFIG_ENABLE:
@@ -837,6 +841,7 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     enable_spf_trace(instance, ROUTING_TABLE_BIT);
                     enable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
                     enable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
+                    enable_spf_trace(instance, TILFA_BIT);
                     break;
                 case CONFIG_DISABLE:
                     disable_spf_trace(instance, DIJKSTRA_BIT);
@@ -847,6 +852,7 @@ set_unset_traceoptions(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_di
                     disable_spf_trace(instance, ROUTING_TABLE_BIT);
                     disable_spf_trace(instance, CONFLICT_RESOLUTION_BIT);
                     disable_spf_trace(instance, SPRING_ROUTE_CAL_BIT);
+                    disable_spf_trace(instance, TILFA_BIT);
                     break;
                 default:
                     assert(0);
@@ -943,7 +949,7 @@ show_spf_run_handler(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_disa
             show_spf_path_predecessors(spf_root, level);
             break;
         case CMDCODE_SHOW_SPF_PATH_LIST:
-            trace_spf_path_to_destination_node(spf_root, dst_node, level, print_spf_paths, NULL, FALSE);
+            trace_spf_path_to_destination_node(spf_root, dst_node, level, print_spf_paths, NULL, TRUE);
             break;
         case CMDCODE_SHOW_SPF_RUN_PRC:
             partial_spf_run(spf_root, level);
@@ -1401,6 +1407,12 @@ spf_init_dcm(){
                     static param_t trace;
                     init_param(&trace, CMD, "trace", 0, 0, INVALID, 0, "set trace");
                     libcli_register_param(&set, &trace);
+                    {
+                        static param_t tilfa;
+                        init_param(&tilfa, CMD, "tilfa", set_unset_traceoptions, 0, INVALID, 0, "Enable trace for Tilfa");
+                        libcli_register_param(&trace, &tilfa);
+                        set_param_cmd_code(&tilfa, CMDCODE_DEBUG_TRACEOPTIONS_TILFA);
+                    }
                     {
                         static param_t trace_all;
                         init_param(&trace_all, CMD, "all", set_unset_traceoptions, 0, INVALID, 0, "Enable|Disable all traces");

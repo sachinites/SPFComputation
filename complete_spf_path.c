@@ -43,6 +43,8 @@
 
 extern instance_t *instance;
 extern void init_instance_traversal(instance_t * instance);
+extern boolean tilfa_is_link_pruned(edge_t *edge);
+extern boolean tilfa_is_node_pruned(node_t *node);
 
 static unsigned int spf_level_version[MAX_LEVEL] = {0, 0, 0};
 
@@ -63,9 +65,9 @@ pred_info_compare_fn(void *_pred_info_1, void *_pred_info_2){
     pred_info_t *pred_info_1 = _pred_info_1,
                 *pred_info_2 = _pred_info_2;
 
-    if(pred_info_1->node == pred_info_2->node && 
+    if(pred_info_1->node == pred_info_2->node/* && 
         pred_info_1->oif == pred_info_2->oif &&
-        !strncmp(pred_info_1->gw_prefix, pred_info_2->gw_prefix, PREFIX_LEN))
+        !strncmp(pred_info_1->gw_prefix, pred_info_2->gw_prefix, PREFIX_LEN)*/)
             return 0;
      return -1;
 }
@@ -117,7 +119,8 @@ add_pred_info_to_spf_predecessors(glthread_t *spf_predecessors,
     /*Check for duplicates*/
     ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
         temp = glthread_to_pred_info(curr);
-        assert(pred_info_compare_fn((void *)pred_info, (void *)temp));
+        if(pred_info_compare_fn((void *)pred_info, (void *)temp) == 0)
+            return;
     } ITERATE_GLTHREAD_END(spf_predecessors, curr);
     
     glthread_add_next(spf_predecessors, &(pred_info->glue));
@@ -194,16 +197,6 @@ union_spf_predecessorss(glthread_t *spf_predecessors1,
         glthread_add_next(spf_predecessors1, &pred_info->glue);
     } ITERATE_GLTHREAD_END(spf_predecessors2, curr);
 }
-
-/*API to construct the SPF path from spf_root to dst_node*/
-
-typedef struct pred_info_wrapper_t_{
-
-    pred_info_t *pred_info;
-    glthread_t glue;
-} pred_info_wrapper_t;
-
-GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue, glthreadptr);
 
 /*A function to print the path*/
 void
@@ -333,17 +326,20 @@ trace_spf_path_to_destination_node(node_t *spf_root,
    /*Optimization - If Full spf run hasnt been run since the last
     * time user triggered the command to display all SR tunnels, 
     * then there is no need to recompute all tunnel paths again*/
-
+#if 0
    if((spf_level_version[level] != 
            spf_root->spf_info.spf_level_info[level].version) ||
            !spf_level_version[level]){
 
        spf_level_version[level] = 
            spf_root->spf_info.spf_level_info[level].version;
-
-       compute_spf_paths(spf_root, level, FULL_RUN);
+    
+       if(!is_post_conv_path)
+           compute_spf_paths(spf_root, level, FULL_RUN);
+       else
+           compute_spf_paths(spf_root, level, TILFA_RUN);
    }
-
+#endif
    /*Add destination node as pred_info*/
    memset(&pred_info, 0 , sizeof(pred_info_t));
    pred_info.node = dst_node;
@@ -466,6 +462,7 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
                 } ITERATE_NH_TYPE_END;
             }
             else if(spf_type == TILFA_RUN){
+                nh = IPNH;
                 res = TILFA_GET_SPF_PATH_RESULT(spf_root, candidate_node, level);
                 assert(!res);
                 res = calloc(1, sizeof(spf_path_result_t));
@@ -506,7 +503,12 @@ run_spf_paths_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
                 trace(instance->traceopts, DIJKSTRA_BIT);
                 continue;
             }
-            
+           
+            if(tilfa_is_link_pruned(edge) ||
+                tilfa_is_node_pruned(nbr_node)){
+                continue; 
+            }
+
             if((unsigned long long)candidate_node->spf_metric[level] + (IS_OVERLOADED(candidate_node, level) 
                         ? (unsigned long long)INFINITE_METRIC : (unsigned long long)edge->metric[level]) < 
                     (unsigned long long)nbr_node->spf_metric[level]){

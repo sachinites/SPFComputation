@@ -102,7 +102,7 @@ typedef struct tilfa_cfg_globals_{
 typedef struct tilfa_remote_spf_result_{
 
     node_t *node; /*root of rev spf result*/
-    ll_t *rev_spf_result_lst;
+    ll_t *rem_spf_result_lst;
 } tilfa_remote_spf_result_t;
 
 typedef struct tilfa_info_ {
@@ -115,12 +115,12 @@ typedef struct tilfa_info_ {
     ll_t *tilfa_pre_convergence_spf_results[MAX_LEVEL];
 
     /*SPF results after pruning of reources*/
-    ll_t *tilfa_spf_results[MAX_LEVEL];
+    ll_t *tilfa_post_convergence_spf_results[MAX_LEVEL];
     
     /*SPF Results of FORWARD run without Pruning of Resources*/
     glthread_t post_convergence_spf_path[MAX_LEVEL];
 
-    /* Reverse SPF Results triggered on a remote node.
+    /* SPF Results triggered on a remote node.
      * Required for PQ node evaluation*/
     ll_t *remote_spf_results[MAX_LEVEL]; 
 
@@ -133,7 +133,6 @@ typedef struct tilfa_info_ {
 
 segment_list_t *
 tilfa_get_segment_list(node_t *node, 
-                       node_t *plr_node, 
                        protected_resource_t *pr_res,
                        LEVEL level,
                        uint8_t *n_segment_list/*O/P*/);

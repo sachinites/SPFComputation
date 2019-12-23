@@ -57,6 +57,21 @@ typedef struct spf_path_result_t_{
 
 GLTHREAD_TO_STRUCT(glthread_to_spf_path_result, spf_path_result_t, glue, glthreadptr);
 
+/*API to construct the SPF path from spf_root to dst_node*/
+
+typedef struct pred_info_wrapper_t_{
+
+    pred_info_t *pred_info;
+    glthread_t glue;
+} pred_info_wrapper_t;
+
+GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue, glthreadptr);
+
+#define GET_PRED_INFO_FROM_GLTHREAD(glthread_ptr) \
+    ((glthread_to_pred_info_wrapper(glthread_ptr))->pred_info)
+#define GET_PRED_INFO_NODE_FROM_GLTHREAD(glthread_ptr) \
+    ((glthread_to_pred_info_wrapper(glthread_ptr))->pred_info->node)
+
 typedef enum{
 
     SR_NOT_ENABLED_SPF_ROOT,

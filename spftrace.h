@@ -44,6 +44,7 @@ typedef enum{
     CONFLICT_RESOLUTION_BIT,
     SPF_EVENTS_BIT,
     SPRING_ROUTE_CAL_BIT,
+    TILFA_BIT,
     TRACE_MAX_BIT
 } spf_trace_t;
 

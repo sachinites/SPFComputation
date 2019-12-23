@@ -57,6 +57,8 @@ char
             return "CONFLICT_RESOLUTION_BIT";
         case SPRING_ROUTE_CAL_BIT:
             return "SPRING_ROUTE_CAL_BIT";
+        case TILFA_BIT:
+            return "TILFA_BIT"; 
         case TRACE_MAX_BIT:
             return "TRACE_MAX_BIT";
         default:
