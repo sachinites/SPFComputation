@@ -37,7 +37,7 @@
 
 #define IF_NAME_SIZE            16
 #define NODE_NAME_SIZE          16
-#define MAX_NODE_INTF_SLOTS     10
+#define MAX_NODE_INTF_SLOTS     20
 #define PREFIX_LEN              15
 #define PREFIX_LEN_WITH_MASK    (PREFIX_LEN + 3)
 #define MAX_NXT_HOPS            8

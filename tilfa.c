@@ -763,7 +763,8 @@ tilfa_does_nexthop_overlap(internal_nh_t *one_nh,
 static internal_nh_t **
 tilfa_p_node_qualification_test_wrt_root(
                 node_t *spf_root,
-                node_t *node_to_test, 
+                node_t *node_to_test,
+                node_t *dst_node, 
                 protected_resource_t *pr_res,
                 LEVEL level){
 
@@ -807,7 +808,7 @@ tilfa_p_node_qualification_test_wrt_root(
 
     internal_nh_t *pre_convergence_nhps =
         tilfa_lookup_pre_convergence_primary_nexthops(tilfa_info,
-            node_to_test, level);
+            dst_node, level);
 
     if(!pre_convergence_nhps || 
         is_nh_list_empty2(pre_convergence_nhps))
@@ -849,11 +850,12 @@ tilfa_p_node_qualification_test_wrt_root(
         /*I think downstream criteria is automatically met since the
          * p-node lies on post-convergence path*/
 
+        uint32_t dist_E_to_pnode = tilfa_dist_from_x_to_y(
+                tilfa_info, protected_node, node_to_test, level);
+
         if(pr_res->node_protection){
             uint32_t dist_nbr_to_E = tilfa_dist_from_x_to_y(
                 tilfa_info, nbr_node, protected_node, level);
-            uint32_t dist_E_to_pnode = tilfa_dist_from_x_to_y(
-                tilfa_info, protected_node, node_to_test, level);
             if(dist_nbr_to_pnode < dist_nbr_to_E + dist_E_to_pnode){
                 tilfa_post_c_active_nxthops_for_pnodes[n++] = 
                     &post_convergence_nhps[i];
@@ -863,7 +865,7 @@ tilfa_p_node_qualification_test_wrt_root(
 
         if(pr_res->link_protection){
             if(dist_nbr_to_pnode < 
-                (dist_nbr_to_S + edge->metric[level])){
+                (dist_nbr_to_S + edge->metric[level] + dist_E_to_pnode)){
                 tilfa_post_c_active_nxthops_for_pnodes[n++] 
                     = &post_convergence_nhps[i];
             }
@@ -921,12 +923,13 @@ tilfa_q_node_qualification_test_wrt_destination(
         return FALSE;
     }
 
+    dist_protected_node_to_d = tilfa_dist_from_x_to_y(tilfa_info,
+            protected_node, destination, level);
+
     if(pr_res->node_protection){
         /*Test Node protection status*/
         dist_q_to_protected_node = tilfa_dist_from_x_to_y(tilfa_info,
             node_to_test, protected_node, level);
-        dist_protected_node_to_d = tilfa_dist_from_x_to_y(tilfa_info,
-            protected_node, destination, level);
 
         if(dist_q_to_d < dist_q_to_protected_node + dist_protected_node_to_d){
             return TRUE;
@@ -935,7 +938,8 @@ tilfa_q_node_qualification_test_wrt_destination(
     /*If node protection is not feasilble, check for link protection*/
     if(pr_res->link_protection){
         /*Test Link protection Status*/ 
-        if(dist_q_to_d < dist_q_to_S + edge->metric[level]){
+        if(dist_q_to_d < dist_q_to_S + edge->metric[level] 
+                + dist_protected_node_to_d){
             return TRUE;
         }
     }
@@ -1108,6 +1112,10 @@ tilfa_examine_tilfa_path_for_segment_list(
                     /*q_node is our final Q-node now*/
                     search_for_q_node = FALSE;
                     search_for_p_node = TRUE;
+
+                    /*Rewind by 1 along the post-c path*/
+                    curr_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node);
+                    last_entry = last_entry->right;
                     /*check if curr_node is also a p-node,
                      * simply continue with same curr node*/
                     continue;
@@ -1116,7 +1124,7 @@ tilfa_examine_tilfa_path_for_segment_list(
             else if(search_for_p_node == TRUE){
                 /*Test if curr node is a p-node*/
                 nxthops = tilfa_p_node_qualification_test_wrt_root(
-                        spf_root, curr_node, pr_res, level);
+                        spf_root, curr_node, dst_node, pr_res, level);
 
                 if(nxthops){
                     p_node = last_entry;
@@ -1153,14 +1161,16 @@ tilfa_examine_tilfa_path_for_segment_list(
         /*All direct nbrs are p-nodes*/
         nxthops = tilfa_p_node_qualification_test_wrt_root(
                   spf_root, curr_node, 
-                  pr_res, level);
+                  dst_node, pr_res, level);
 
         if(nxthops){
             p_node = last_entry;
             search_for_p_node = FALSE;
         }
         else{
-            /*There is no p-node exists*/
+            /* The direct nbr is not a p-node because Dest
+             * pre-c primary nexthop overlap with p-node's
+             * post-c primary nexthops*/
         }
     }
     else if(search_for_q_node == TRUE &&
@@ -1173,16 +1183,33 @@ tilfa_examine_tilfa_path_for_segment_list(
             search_for_q_node = FALSE;
             search_for_p_node = TRUE;
             nxthops = tilfa_p_node_qualification_test_wrt_root(
-                    spf_root, curr_node, pr_res, level);
-
+                    spf_root, curr_node, dst_node, pr_res, level);
             if(nxthops){
                 p_node = last_entry;
                 search_for_p_node = FALSE;
             }
-
+            else{
+                /* The direct nbr is not a p-node because Dest
+                 * pre-c primary nexthop overlap with p-node's
+                 * post-c primary nexthops*/
+            }
         }
         else{
-            /*There is not even a q-node*/
+            /*now test the current node for p-node*/
+            search_for_q_node = FALSE;
+            search_for_p_node = TRUE;
+            nxthops = tilfa_p_node_qualification_test_wrt_root(
+                        spf_root, curr_node, dst_node, pr_res, level);
+            if(nxthops){
+                p_node = last_entry;
+                search_for_p_node = FALSE;
+                goto TILFA_FOUND;
+            }
+            else{
+                /* The direct nbr is not a p-node because Dest
+                 * pre-c primary nexthop overlap with p-node's
+                 * post-c primary nexthops*/
+            }
         }
     }
     else if(search_for_q_node == TRUE &&
@@ -1193,6 +1220,11 @@ tilfa_examine_tilfa_path_for_segment_list(
         assert(0);    
     }
 
+    if(search_for_p_node == TRUE && 
+        p_node == NULL){
+       
+       /*Tilfa not found as P-node do not exist*/
+    }
     TILFA_FOUND:
     print_raw_tilfa_path(nxthops, 
         p_node ? GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node) : 0,
