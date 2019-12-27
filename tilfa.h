@@ -40,7 +40,6 @@ typedef struct edge_end_ interface_t;
 
 typedef enum{
 
-    TILFA_PREFIX_SID,
     TILFA_PREFIX_SID_REFERENCE,
     TILFA_ADJ_SID
 } tilfa_seg_type;
