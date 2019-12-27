@@ -205,3 +205,9 @@ show_node_adj_sids(node_t *node){
         }
     }
 }
+
+mpls_label_t
+get_adj_sid_minimum(node_t *node1, node_t *node2, LEVEL level){
+
+    return 0;
+}

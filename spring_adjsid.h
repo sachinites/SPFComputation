@@ -178,4 +178,9 @@ is_static_adj_sid_exist_on_interface(edge_end_t *interface, mpls_label_t label);
 boolean
 is_static_adj_sid_in_use(node_t *node, mpls_label_t label);
 
+/*Get the adj sid of the least cost adjacency. Node1 and Node2
+ * must be nbrs (LAN or P2P)*/
+mpls_label_t
+get_adj_sid_minimum(node_t *node1, node_t *node2, LEVEL level);
+
 #endif /* __ADJ_SID__ */

@@ -38,6 +38,57 @@
 
 typedef struct edge_end_ interface_t;
 
+typedef enum{
+
+    TILFA_PREFIX_SID,
+    TILFA_PREFIX_SID_REFERENCE,
+    TILFA_ADJ_SID
+} tilfa_seg_type;
+
+typedef struct gen_segment_list_{
+
+    interface_t *oif;
+    char gw_ip[PREFIX_LEN + 1];
+
+    struct s_t{
+        tilfa_seg_type seg_type;
+        union gen_segment_list_u_{
+            node_t *node;
+            mpls_label_t adj_sid;
+        }u;
+    };
+    struct s_t inet3_mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
+    MPLS_STACK_OP inet3_stack_op[MPLS_STACK_OP_LIMIT_MAX];
+
+    struct s_t mpls0_mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
+    MPLS_STACK_OP mpls0_stack_op[MPLS_STACK_OP_LIMIT_MAX];
+
+} gen_segment_list_t;
+
+char *
+tilfa_print_one_liner_segment_list(
+            gen_segment_list_t *gen_segment_list, 
+            boolean inet3, boolean mpls0);
+
+
+static inline boolean
+tilfa_is_gensegment_lst_empty_inet3(
+        gen_segment_list_t *gen_segment_list){
+
+    if(gen_segment_list->inet3_stack_op[0] == STACK_OPS_UNKNOWN)
+        return TRUE;
+    return FALSE;
+}
+
+static inline boolean
+tilfa_is_gensegment_lst_empty_mpls0(
+        gen_segment_list_t *gen_segment_list){
+
+    if(gen_segment_list->mpls0_stack_op[0] == STACK_OPS_UNKNOWN)
+        return TRUE;
+    return FALSE;
+}
+
 typedef struct segment_list_{
 
     interface_t *oif;
@@ -52,7 +103,23 @@ typedef struct protected_resource_{
     interface_t *protected_link;
     boolean link_protection;
     boolean node_protection;
+    int ref_count;
 } protected_resource_t;
+
+static inline void tilfa_unlock_protected_resource(
+        protected_resource_t *pr_res){
+
+    pr_res->ref_count--;
+    assert(pr_res->ref_count >= 0);
+    if(!pr_res->ref_count)
+        free(pr_res);
+}
+
+static inline void tilfa_lock_protected_resource(
+        protected_resource_t *pr_res){
+
+    pr_res->ref_count++;
+}
 
 static inline boolean
 tlfa_protected_resource_equal(protected_resource_t *pr_res1,
@@ -72,16 +139,14 @@ tlfa_protected_resource_equal(protected_resource_t *pr_res1,
 
 typedef struct tilfa_segment_list_{
 
-    /*protected Resource is the Key*/
-    protected_resource_t pr_res;
-
+    node_t *dest;
+    protected_resource_t *pr_res;
     uint8_t n_segment_list;
-    segment_list_t segment_list[MAX_NXT_HOPS];
-
-    glthread_t segment_list_glue;
+    gen_segment_list_t gen_segment_list[MAX_NXT_HOPS];
+    glthread_t gen_segment_list_glue;
 } tilfa_segment_list_t;
-GLTHREAD_TO_STRUCT(tilfa_segment_list_to_segment_list, 
-                    tilfa_segment_list_t, segment_list_glue, curr);
+GLTHREAD_TO_STRUCT(tilfa_segment_list_to_gensegment_list, 
+                    tilfa_segment_list_t, gen_segment_list_glue, curr);
 
 typedef struct tilfa_lcl_config_{
 
@@ -110,7 +175,7 @@ typedef struct tilfa_info_ {
     tilfa_cfg_globals_t tilfa_gl_var;
     glthread_t tilfa_lcl_config_head;
 
-    protected_resource_t current_resource_pruned;
+    protected_resource_t *current_resource_pruned;
 
     ll_t *tilfa_pre_convergence_spf_results[MAX_LEVEL];
 
@@ -131,9 +196,10 @@ typedef struct tilfa_info_ {
     boolean is_tilfa_pruned;
 } tilfa_info_t;
 
-segment_list_t *
+gen_segment_list_t *
 tilfa_get_segment_list(node_t *node, 
                        protected_resource_t *pr_res,
+                       node_t *dst_node,
                        LEVEL level,
                        uint8_t *n_segment_list/*O/P*/);
 
