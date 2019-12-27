@@ -82,31 +82,6 @@ tilfa_lookup_pre_convergence_primary_nexthops
     return res->next_hop[IPNH];
 }
 
-static internal_nh_t **
-tilfa_lookup_post_convergence_active_primary_nexthops_of_pnodes
-    (tilfa_info_t *tilfa_info, node_t *node, LEVEL level,
-    spf_result_t **spf_result /*O/P*/){
-
-
-     assert(!(*spf_result));
-
-     ll_t *lst = tilfa_get_post_convergence_spf_result_list(
-                    tilfa_info, level);
-
-    spf_result_t *res = singly_ll_search_by_key(lst, (void *)node);
-    if(!res) return NULL;
-
-    *spf_result = res;
-
-    internal_nh_t **active_primary_nxthops = 
-        res->tilfa_post_c_active_nxthops_for_pnodes;
-    
-    if(!active_primary_nxthops[0])
-        return NULL;
-
-    return active_primary_nxthops;
-}
-
 static internal_nh_t *
 tilfa_lookup_post_convergence_primary_nexthops
             (tilfa_info_t *tilfa_info, node_t *node, LEVEL level){
@@ -379,7 +354,7 @@ show_tilfa_database(node_t *node){
                 tilfa_lcl_config->node_protection ? "" : "un");
     } ITERATE_GLTHREAD_END(&tilfa_info->tilfa_lcl_config_head, curr);
     
-    printf("\t\t Tilfa Results:\n");
+    printf("\tTilfa Results:\n");
     
     LEVEL level_it;
     for(level_it = LEVEL1; level_it < MAX_LEVEL; level_it++){
@@ -387,14 +362,14 @@ show_tilfa_database(node_t *node){
         ITERATE_GLTHREAD_BEGIN(&tilfa_info->tilfa_segment_list_head[level_it], curr){
 
             tilfa_segment_list = tilfa_segment_list_to_gensegment_list(curr);
-            printf("\t\t\tProtected Resource Name : (%s)%s, Dest Protected : %s\n", 
+            printf("\t\tProtected Resource Name : (%s)%s, Dest Protected : %s\n", 
                     tilfa_segment_list->pr_res->plr_node->node_name,
                     tilfa_segment_list->pr_res->protected_link->intf_name,
                     tilfa_segment_list->dest->node_name);
-            printf("\t\t\tProtection type : LP : %sset   NP : %sset\n",
+            printf("\t\tProtection type : LP : %sset   NP : %sset\n",
                     tilfa_segment_list->pr_res->link_protection ? "" : "un",
                     tilfa_segment_list->pr_res->node_protection ? "" : "un");
-            printf("\t\t\t%s, n_segment_list = %d\n", 
+            printf("\t\t%s, n_segment_list = %d\n", 
                 get_str_level(level_it), tilfa_segment_list->n_segment_list);
 
             for(i = 0 ; i < tilfa_segment_list->n_segment_list; i++){
@@ -898,125 +873,6 @@ tilfa_p_node_qualification_test_wrt_root_new(
 
     return FALSE;
 }
-#if 0
-static internal_nh_t **
-tilfa_p_node_qualification_test_wrt_root(
-                node_t *spf_root,
-                node_t *node_to_test,
-                node_t *first_hop_node,
-                node_t *dst_node, 
-                protected_resource_t *pr_res,
-                LEVEL level){
-
-/* Algorithm :
- * step 1 : For a given potential p-node "node_to_test", 
- * get the primary nexthops from post-convergene results
- * step 2 : Get the primary nexthops for a p-node from a
- * pre-convergence spf results
- * step 3 : Ignore all nexthops of step 1 whose ifindex overlaps with
- * nexthops obtained from step 2 i.e. 
- * Remaining Nexthops = nexthops of step 1 - nexthops of step 2. Reason
- * being tilfa backups must not coincide with primary nexthops.
- * step 4 : Test extended p-node criteria of "node_to_test" through remaining
- * nexthops as nbrs of PLR obtained in step 3
- * step 5 : Add +ve results obtained in step 4 to nexthop array
- * */
-    tilfa_info_t *tilfa_info = spf_root->tilfa_info;
-    uint8_t n = 0;
-    
-    spf_result_t *res = NULL;
-
-    internal_nh_t **tilfa_post_c_active_nxthops_for_pnodes = 
-        tilfa_lookup_post_convergence_active_primary_nexthops_of_pnodes
-            (tilfa_info, node_to_test, level, &res);
-
-    assert(res);
-
-    if(tilfa_post_c_active_nxthops_for_pnodes)
-        return tilfa_post_c_active_nxthops_for_pnodes;
-
-    tilfa_post_c_active_nxthops_for_pnodes = 
-        res->tilfa_post_c_active_nxthops_for_pnodes;
-
-    internal_nh_t *post_convergence_nhps = 
-        tilfa_lookup_post_convergence_primary_nexthops(tilfa_info,
-            node_to_test, level);
-    
-    if(!post_convergence_nhps || 
-        is_nh_list_empty2(post_convergence_nhps))
-        return NULL;
-
-    internal_nh_t *pre_convergence_nhps =
-        tilfa_lookup_pre_convergence_primary_nexthops(tilfa_info,
-            dst_node, level);
-
-    if(!pre_convergence_nhps || 
-        is_nh_list_empty2(pre_convergence_nhps))
-        return NULL;
-
-    int i = 0;
-    node_t *nbr_node = NULL;
-
-    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(
-                        pr_res->protected_link);
-    node_t *protected_node = edge->to.node;
-
-    for(; i < MAX_NXT_HOPS; i++){
-        if(is_empty_internal_nh(&post_convergence_nhps[i]))
-            break;
-        /*check if backup nexthop overlaps with any primary nxthop*/
-        if(tilfa_does_nexthop_overlap(&post_convergence_nhps[i],
-                pre_convergence_nhps))
-            continue;
-
-        /*Now test p-node condition*/
-        nbr_node = post_convergence_nhps[i].node;
-        assert(nbr_node);
-        assert(post_convergence_nhps[i].nh_type == IPNH);
-       
-        assert(pr_res->plr_node == spf_root);
-        
-        uint32_t dist_nbr_to_pnode = tilfa_dist_from_x_to_y(
-            tilfa_info, nbr_node, node_to_test , level);
-        uint32_t dist_nbr_to_S = tilfa_dist_from_x_to_y(
-            tilfa_info, nbr_node, spf_root, level);
-        uint32_t dist_S_to_pnode = tilfa_dist_from_self(
-            tilfa_info, node_to_test, level);
-
-        /*loop free wrt Source*/
-        if(!(dist_nbr_to_pnode < dist_nbr_to_S + dist_S_to_pnode))
-            continue;
-
-        /*I think downstream criteria is automatically met since the
-         * p-node lies on post-convergence path*/
-
-        uint32_t dist_E_to_pnode = tilfa_dist_from_x_to_y(
-                tilfa_info, protected_node, node_to_test, level);
-
-        if(pr_res->node_protection){
-            uint32_t dist_nbr_to_E = tilfa_dist_from_x_to_y(
-                tilfa_info, nbr_node, protected_node, level);
-            if(dist_nbr_to_pnode < dist_nbr_to_E + dist_E_to_pnode){
-                tilfa_post_c_active_nxthops_for_pnodes[n++] = 
-                    &post_convergence_nhps[i];
-                continue;
-            }
-        }
-
-        if(pr_res->link_protection){
-            if(dist_nbr_to_pnode < 
-                (dist_nbr_to_S + edge->metric[level] + dist_E_to_pnode)){
-                tilfa_post_c_active_nxthops_for_pnodes[n++] 
-                    = &post_convergence_nhps[i];
-            }
-        }
-    }
-
-    if(tilfa_post_c_active_nxthops_for_pnodes[0])
-        return tilfa_post_c_active_nxthops_for_pnodes;
-    return NULL;
-}
-#endif
 
 static boolean
 tilfa_q_node_qualification_test_wrt_destination(
@@ -1906,7 +1762,7 @@ tilfa_print_one_liner_segment_list(
 
     if(inet3){
 
-        rc = snprintf(buffer, 1024, "\t\t\t\tinet3 %s, %s\t",
+        rc = snprintf(buffer, 1024, "\t\t\tinet3 %s, %s\t",
                 gen_segment_list->oif->intf_name,
                 gen_segment_list->gw_ip);
             
@@ -1944,7 +1800,7 @@ tilfa_print_one_liner_segment_list(
             rc += snprintf(buffer + rc, 1024, "\n");
         }
 
-        rc += snprintf(buffer + rc, 1024, "\t\t\t\tmpls0 %s, %s\t",
+        rc += snprintf(buffer + rc, 1024, "\t\t\tmpls0 %s, %s\t",
                 gen_segment_list->oif->intf_name,
                 gen_segment_list->gw_ip);
 

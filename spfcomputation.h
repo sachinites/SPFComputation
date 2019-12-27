@@ -195,11 +195,6 @@ typedef struct spf_result_{
     unsigned int spf_metric;
     unsigned int lsp_metric;
     internal_nh_t next_hop[NH_MAX][MAX_NXT_HOPS];
-
-    /*used by Tilfa. This is a set of nexthops which :
-     * 1. Do not overlap with any pre-convergence primary nexthops
-     * 2. 'node' is a p-node wrt to these primary nexthops*/
-    internal_nh_t *tilfa_post_c_active_nxthops_for_pnodes[MAX_NXT_HOPS];
     node_backup_req_t backup_requirement[MAX_LEVEL];
 } spf_result_t;
 

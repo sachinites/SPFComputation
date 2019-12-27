@@ -73,7 +73,7 @@ main(int argc, char **argv){
     //instance = pseudonode_ecmp_topo();
     //instance = lsp_ecmp_topo();
     //instance = build_multi_area_topo();
-    //instance = build_ring_topo();
+    instance = build_ring_topo();
     //instance = build_ring_topo_7nodes();
     //instance = build_ecmp_topo2();
     //instance = build_cisco_example_topo();
@@ -87,7 +87,7 @@ main(int argc, char **argv){
     //instance = one_hop_backup();
     //instance = tilfa_topo_parallel_links();
     //instance = tilfa_topo_one_hop_test();
-    instance = tilfa_topo_p_q_distance_1();
+    //instance = tilfa_topo_p_q_distance_1();
     start_shell();
     return 0;
 }
