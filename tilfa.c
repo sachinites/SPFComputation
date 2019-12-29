@@ -972,36 +972,47 @@ tilfa_is_destination_impacted(tilfa_info_t *tilfa_info,
 }
 
 static void
-print_raw_tilfa_path(internal_nh_t **nexthops, node_t *p_node, 
-                 node_t *q_node, node_t *dest, int q_distance, 
+print_raw_tilfa_path(node_t *spf_root, 
+                 internal_nh_t **nexthops, 
+                 node_t *p_node, 
+                 node_t *q_node, 
+                 node_t *dest, 
+                 int q_distance, 
                  int pq_distance){
 
-    printf("DEST = %s\n", dest->node_name);
+    sprintf(instance->traceopts->b, "%s()\nPLR node = %s, DEST = %s", 
+        __FUNCTION__, spf_root->node_name, dest->node_name);
+    trace(instance->traceopts, TILFA_BIT);
 
     if(!nexthops){
-        printf("Nexthop Array : NULL"); 
+        sprintf(instance->traceopts->b, "Nexthop Array : NULL"); 
+        trace(instance->traceopts, TILFA_BIT);
     }
     else if(!nexthops[0]){
-        printf("Nexthop Array : Empty");
+        sprintf(instance->traceopts->b, "Nexthop Array : Empty");
+        trace(instance->traceopts, TILFA_BIT);
     }
     else{
         int i = 0;
         for( ; nexthops[i]; i++){
-            printf("oif = %s, gw = %s\n", 
+            sprintf(instance->traceopts->b, "oif = %s, gw = %s", 
                 nexthops[i]->oif->intf_name, 
                 nexthops[i]->gw_prefix);
+            trace(instance->traceopts, TILFA_BIT);
         }
     }
-    printf("p_node = %s(%d), q_node = %s(%d)\n", 
+
+    sprintf(instance->traceopts->b, "p_node = %s(%d), q_node = %s(%d)", 
             p_node ? p_node->node_name : "Nil" ,
             pq_distance,
             q_node ? q_node->node_name : "Nil",
             q_distance);
+    trace(instance->traceopts, TILFA_BIT);
 }
 
 #define TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(seglst_ptr, nxthop_ptr)   \
-            seglst_ptr->oif = nxthop_ptr->oif;                              \
-            strncpy(seglst_ptr->gw_ip, nxthop_ptr->gw_prefix, PREFIX_LEN);\
+            seglst_ptr->oif = nxthop_ptr->oif;                                 \
+            strncpy(seglst_ptr->gw_ip, nxthop_ptr->gw_prefix, PREFIX_LEN);     \
             seglst_ptr->gw_ip[PREFIX_LEN] = '\0';
 
 static int
@@ -1016,7 +1027,6 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                       int pq_distance,
                       internal_nh_t **first_hop_segments){
 
-    spf_result_t *res = NULL;
     tilfa_info_t *tilfa_info = spf_root->tilfa_info;
 
     assert(pq_distance >=0 && q_distance >= 0);
@@ -1029,18 +1039,12 @@ tilfa_compute_segment_list_from_tilfa_raw_results
     */                                                                              
     int i = 0;
     node_t *nxthop_node = NULL;
-    internal_nh_t *nxthop = NULL;
     uint8_t stack_index = 0;
     mpls_label_t adj_sid = 0;
 
-    while(first_hop_segments[i]){
-        nxthop = first_hop_segments[i];
-        nxthop_node = nxthop->node;
-        assert(nxthop_node);
-        stack_index = 0;
-
-        TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
-                (&gensegment_list[i]), nxthop);
+    /*First hop node shall be same for all FHS*/
+    nxthop_node = first_hop_segments[0]->node;
+    assert(nxthop_node);
 
         /*In Case 1.x and 2.x are scenarios where P and Q node is a single
          * PQ node. We will vary PQ node to cover all possible positions along
@@ -1062,17 +1066,24 @@ tilfa_compute_segment_list_from_tilfa_raw_results
 
             assert(q_distance >= 2 && pq_distance == 0);
 
-            /* inet.3
-             * push prefix sid of Destination only*/
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = dest;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
-            /* mpls.0
-             * swap prefix sid of Destination only*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = dest;
-            gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
-        }
+            while(first_hop_segments[i]){
+
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /* inet.3
+                 * push prefix sid of Destination only*/
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = dest;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+                /* mpls.0
+                 * swap prefix sid of Destination only*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = dest;
+                gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+                i++;
+            }
+        } 
         
         /*Case 1.2 : Direct Nexthop + penultimate hop node (Triangle case, LFA)
          * S ------NH(pq-node)------- D
@@ -1082,18 +1093,25 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_distance == 1){
 
             assert(q_distance == 1 && pq_distance == 0);
-            
-            /*inet.3*/
-            /*PUSH the prefix sid of Destination*/
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = dest;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
 
-            /*mpls.0*/
-            /*Swap the dest node only*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = dest;
-            gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+            while(first_hop_segments[i]){
+
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /*inet.3*/
+                /*PUSH the prefix sid of Destination*/
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = dest;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+
+                /*mpls.0*/
+                /*Swap the dest node only*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = dest;
+                gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+                i++;
+            }
         }
         /* Case 1.3 : Direct nexthop + Destination(Directly connected Destination Case)
          * S ------------------- D(pq-node)
@@ -1103,15 +1121,21 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_node == dest){
 
             assert(pq_distance == 0 && q_distance == 0);
-            
-            /* inet.3 */
-            gensegment_list[i].inet3_stack_op[stack_index] = STACK_OPS_UNKNOWN;
 
-            /* mpls.0 */
+            while(first_hop_segments[i]){
 
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = NULL;
-            gensegment_list[i].mpls0_stack_op[stack_index] = POP;
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /* inet.3 */
+                gensegment_list[i].inet3_stack_op[stack_index] = STACK_OPS_UNKNOWN;
+
+                /* mpls.0 */
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = NULL;
+                gensegment_list[i].mpls0_stack_op[stack_index] = POP;
+                i++;
+            }
         }
         /* Case 2.1 : PQ node is strictly between nexthop and penultimate hop of Destination(RLFA case)
          * S----NH------A(pq-node)--------B-----DEST
@@ -1122,20 +1146,27 @@ tilfa_compute_segment_list_from_tilfa_raw_results
 
             assert(q_distance >= 2 && pq_distance == 0);
 
-            /*inet.3*/
-            /*First push the PQ node and then the destination*/
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.node = dest;
-            gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+            while(first_hop_segments[i]){
 
-            /*mpls.0*/
-            /*Push the PQ node only*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /*inet.3*/
+                /*First push the PQ node and then the destination*/
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.node = dest;
+                gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+
+                /*mpls.0*/
+                /*Push the PQ node only*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
+                i++;
+            }
         }
 
         /* Case 2.2 : PQ node is strictly beyond nexthop and also a penultimate hop of Destination(RLFA case)
@@ -1146,18 +1177,26 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_distance == 1){
 
             assert(q_distance == 1 && pq_distance == 0);
-            
-            /*inet.3*/
-            /*Push the PQ node only*/
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
 
-            /*mpls.0*/
-            /*Swap the PQ node only*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+            while(first_hop_segments[i]){
+
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+
+                /*inet.3*/
+                /*Push the PQ node only*/
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+
+                /*mpls.0*/
+                /*Swap the PQ node only*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+                i++;
+            }
         }
         
         /* Case 2.3 : PQ node is strictly beyond nexthop and a Destination
@@ -1168,18 +1207,25 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_node == dest){
 
             assert(q_distance == 0 && pq_distance == 0);
-            
-            /*inet.3*/
-            /*Push the PQ node only*/
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
 
-            /*mpls.0*/
-            /*Swap the PQ node only*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+            while(first_hop_segments[i]){
+
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /*inet.3*/
+                /*Push the PQ node only*/
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+
+                /*mpls.0*/
+                /*Swap the PQ node only*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+                i++;
+            }
         }
         
         /* case 4.x are scenarios when P and Q nodes are nbrs of each other along
@@ -1200,21 +1246,28 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_distance >= 2){
 
             assert(pq_distance == 1 && q_distance >= 2 && 
-                p_node != q_node);
+                    p_node != q_node);
 
-            /*inet.3*/
-            adj_sid = get_adj_sid_minimum(p_node, q_node, level);
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.adj_sid = adj_sid;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.node = dest;
-            gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+            while(first_hop_segments[i]){
 
-            /*mpls.0*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.adj_sid = adj_sid;
-            gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /*inet.3*/
+                adj_sid = get_adj_sid_minimum(p_node, q_node, level);
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.adj_sid = adj_sid;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.node = dest;
+                gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+
+                /*mpls.0*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.adj_sid = adj_sid;
+                gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
+                i++;
+            }
         }
         /* Case 4.2 : p-node is nexthop node AND
          *            Q-node is a penultimate hop of destination
@@ -1231,21 +1284,28 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_distance == 1){
 
             assert(pq_distance == 1 && q_distance == 1 && 
-                p_node != q_node);
+                    p_node != q_node);
 
-            /*inet.3*/
-            adj_sid = get_adj_sid_minimum(p_node, q_node, level);
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.adj_sid = adj_sid;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.node = dest;
-            gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+            while(first_hop_segments[i]){
 
-            /*mpls.0*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.adj_sid = adj_sid;
-            gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /*inet.3*/
+                adj_sid = get_adj_sid_minimum(p_node, q_node, level);
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.adj_sid = adj_sid;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.node = dest;
+                gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+
+                /*mpls.0*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.adj_sid = adj_sid;
+                gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
+                i++;
+            }
         }
         /* Case 4.3 : p-node is nexthop node AND
          *            Q-node is a destination
@@ -1262,18 +1322,26 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_distance == 0){
 
             assert(pq_distance == 1 && q_distance == 1 && 
-                p_node != q_node && q_node == dest);
+                    p_node != q_node && q_node == dest);
 
-            /*inet.3*/
-            adj_sid = get_adj_sid_minimum(p_node, q_node, level); 
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.adj_sid = adj_sid;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+            while(first_hop_segments[i]){
 
-            /*mpls.0*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.adj_sid = adj_sid;
-            gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+
+                /*inet.3*/
+                adj_sid = get_adj_sid_minimum(p_node, q_node, level); 
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.adj_sid = adj_sid;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+
+                /*mpls.0*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.adj_sid = adj_sid;
+                gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+                i++;
+            }
         }
         /* case 5.x are scenarios when P and Q nodes are nbrs of each other along
          * the post-C path and P-node is not a direct nexthop node*/
@@ -1295,27 +1363,34 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_distance >= 2){
 
             assert(pq_distance == 1 && q_distance >= 2 && 
-                p_node != q_node);
+                    p_node != q_node);
 
-            /*inet.3*/
-            adj_sid = get_adj_sid_minimum(p_node, q_node, level);
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
-            gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+2].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+2].u.node = dest;
-            gensegment_list[i].inet3_stack_op[stack_index+2] = PUSH;
+            while(first_hop_segments[i]){
 
-            /*mpls.0*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
-            gensegment_list[i].mpls0_stack_op[stack_index+1] = PUSH;
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /*inet.3*/
+                adj_sid = get_adj_sid_minimum(p_node, q_node, level);
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
+                gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+2].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+2].u.node = dest;
+                gensegment_list[i].inet3_stack_op[stack_index+2] = PUSH;
+
+                /*mpls.0*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
+                gensegment_list[i].mpls0_stack_op[stack_index+1] = PUSH;
+                i++;
+            }
         }
         /* Case 5.2 : p-node is not a nexthop node AND
          *            Q-node is a penultimate hop of destination
@@ -1335,26 +1410,33 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_node != dest){
 
             assert(pq_distance == 1 && q_distance == 1 && 
-                p_node != q_node);
+                    p_node != q_node);
 
-            /*inet.3*/
-            adj_sid = get_adj_sid_minimum(p_node, q_node, level);
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
-            gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+2].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+2].u.node = dest;
-            gensegment_list[i].inet3_stack_op[stack_index+2] = PUSH;
-            /*mpls.0*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
-            gensegment_list[i].mpls0_stack_op[stack_index+1] = PUSH;
+            while(first_hop_segments[i]){
+
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /*inet.3*/
+                adj_sid = get_adj_sid_minimum(p_node, q_node, level);
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
+                gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+2].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+2].u.node = dest;
+                gensegment_list[i].inet3_stack_op[stack_index+2] = PUSH;
+                /*mpls.0*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].mpls0_stack_op[stack_index] = PUSH;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
+                gensegment_list[i].mpls0_stack_op[stack_index+1] = PUSH;
+                i++;
+            }
         }
         /* Case 5.3 : p-node is not nexthop node AND
          *            Q-node is a destination
@@ -1373,26 +1455,31 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 q_distance == 0){
 
             assert(pq_distance == 1 && q_distance == 0 && 
-                p_node == q_node);
+                    p_node == q_node);
 
-            /*inet.3*/
-            adj_sid = get_adj_sid_minimum(p_node, q_node, level);
-            gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
-            gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
-            /*mpls.0*/
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
-            gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
-            gensegment_list[i].mpls0_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
-            gensegment_list[i].mpls0_stack_op[stack_index+1] = PUSH;
+            while(first_hop_segments[i]){
+
+                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                        (&gensegment_list[i]), first_hop_segments[i]);
+
+                /*inet.3*/
+                adj_sid = get_adj_sid_minimum(p_node, q_node, level);
+                gensegment_list[i].inet3_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].inet3_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].inet3_stack_op[stack_index] = PUSH;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].inet3_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
+                gensegment_list[i].inet3_stack_op[stack_index+1] = PUSH;
+                /*mpls.0*/
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index].u.node = p_node;
+                gensegment_list[i].mpls0_stack_op[stack_index] = SWAP;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index+1].seg_type = TILFA_ADJ_SID;
+                gensegment_list[i].mpls0_mpls_label_out[stack_index+1].u.adj_sid = adj_sid;
+                gensegment_list[i].mpls0_stack_op[stack_index+1] = PUSH;
+                i++;
+            }
         }
-        i++;
-    }
     return i;
 }
 
@@ -1624,11 +1711,11 @@ tilfa_examine_tilfa_path_for_segment_list(
     }
 
     TILFA_FOUND:
-    print_raw_tilfa_path(first_hop_segments, 
+    print_raw_tilfa_path(spf_root, first_hop_segments, 
         p_node ? GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node) : 0,
         q_node ? GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node): 0, 
         dst_node, q_distance, pq_distance);
-
+    
     tilfa_segment_list_t *tilfa_segment_list = 
         calloc(1, sizeof(tilfa_segment_list_t));
     
