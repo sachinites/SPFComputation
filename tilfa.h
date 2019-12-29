@@ -161,6 +161,7 @@ typedef struct tilfa_cfg_globals_{
     
     boolean is_enabled;
     uint8_t max_segments_allowed;
+    boolean tilfa_leverage_ecmp;
 } tilfa_cfg_globals_t;
 
 typedef struct tilfa_remote_spf_result_{
@@ -178,7 +179,7 @@ typedef struct tilfa_info_ {
 
     ll_t *tilfa_pre_convergence_spf_results[MAX_LEVEL];
 
-    /*SPF results after pruning of reources*/
+    /* SPF results after pruning of reources*/
     ll_t *tilfa_post_convergence_spf_results[MAX_LEVEL];
     
     /*SPF Results of FORWARD run without Pruning of Resources*/
@@ -186,9 +187,11 @@ typedef struct tilfa_info_ {
 
     /* SPF Results triggered on a remote node.
      * Required for PQ node evaluation*/
-    ll_t *remote_spf_results[MAX_LEVEL]; 
+    ll_t *remote_spf_results[MAX_LEVEL];
 
-    /*To be stored in Remote Destinations, 
+    ll_t *pre_convergence_remote_reverse_spf_results[MAX_LEVEL];
+
+    /* To be stored in Remote Destinations, 
      * not local*/
     glthread_t tilfa_segment_list_head[MAX_LEVEL];
 
@@ -232,9 +235,18 @@ compute_tilfa(node_t *spf_root, LEVEL level);
 
 void
 tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info, 
-                            node_t *node, LEVEL level);
+                            node_t *node, LEVEL level,
+                            boolean reverse_spf);
 
 spf_path_result_t *
 TILFA_GET_SPF_PATH_RESULT(node_t *spf_root, node_t *node, LEVEL level);
+
+int
+tilfa_copy_gensegment_list_stacks(gen_segment_list_t *src, 
+                                  gen_segment_list_t *dst,
+                                  boolean inet3, 
+                                  boolean mpls0,
+                                  int src_stack_index,
+                                  int dst_stack_index);
 
 #endif /* __TILFA__ */
