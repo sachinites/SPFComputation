@@ -187,7 +187,7 @@ typedef struct tilfa_info_ {
 
     /* SPF Results triggered on a remote node.
      * Required for PQ node evaluation*/
-    ll_t *remote_spf_results[MAX_LEVEL];
+    ll_t *pre_convergence_remote_forward_spf_results[MAX_LEVEL];
 
     ll_t *pre_convergence_remote_reverse_spf_results[MAX_LEVEL];
 
@@ -234,7 +234,7 @@ void
 compute_tilfa(node_t *spf_root, LEVEL level);
 
 void
-tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info, 
+tilfa_clear_preconvergence_remote_spf_results(tilfa_info_t *tilfa_info, 
                             node_t *node, LEVEL level,
                             boolean reverse_spf);
 

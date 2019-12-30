@@ -80,14 +80,14 @@ main(int argc, char **argv){
     //instance = broadcast_link_protecting_lfa();
     //instance = build_multi_link_topo();
     //instance = lsp_as_backup_topo();
-    instance = build_rlfa_topo();
+    //instance = build_rlfa_topo();
     //instance = build_lfa_topo();
     //instance = overload_router_topo();
     //instance = multi_primary_nxt_hops();
     //instance = one_hop_backup();
     //instance = tilfa_topo_parallel_links();
     //instance = tilfa_topo_one_hop_test();
-    //instance = tilfa_topo_p_q_distance_1();
+    instance = tilfa_topo_p_q_distance_1();
     start_shell();
     return 0;
 }

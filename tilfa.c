@@ -125,7 +125,7 @@ tilfa_get_remote_spf_result_lst(tilfa_info_t *tilfa_info,
     
     ll_t *outer_lst = reverse_spf ? 
         tilfa_info->pre_convergence_remote_reverse_spf_results[level] : 
-        tilfa_info->remote_spf_results[level]; 
+        tilfa_info->pre_convergence_remote_forward_spf_results[level]; 
     
     assert(node);
 
@@ -281,7 +281,7 @@ init_tilfa(node_t *node){
 
         init_glthread(&(node->tilfa_info->post_convergence_spf_path[level_it]));
 
-        node->tilfa_info->remote_spf_results[level_it] = init_singly_ll();
+        node->tilfa_info->pre_convergence_remote_forward_spf_results[level_it] = init_singly_ll();
     
         init_glthread(&node->tilfa_info->tilfa_segment_list_head[level_it]);
     }
@@ -490,9 +490,9 @@ tilfa_clear_all_pre_convergence_results(node_t *node, LEVEL level){
    
    delete_singly_ll(tilfa_info->tilfa_pre_convergence_spf_results[level]);
 
-   tilfa_clear_remote_spf_results(tilfa_info, 0, level, FALSE);
+   tilfa_clear_preconvergence_remote_spf_results(tilfa_info, 0, level, FALSE);
    
-   tilfa_clear_remote_spf_results(tilfa_info, 0, level, TRUE);
+   tilfa_clear_preconvergence_remote_spf_results(tilfa_info, 0, level, TRUE);
 
    tilfa_clear_segments_list(&(tilfa_info->tilfa_segment_list_head[level]), 0);
 }
@@ -655,7 +655,7 @@ compute_tilfa(node_t *spf_root, LEVEL level){
  * nodes. Pass reverse_spf as TRUE or FALSE to clear remote
  * spf results for forward or reverse spf run*/
 void
-tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info,
+tilfa_clear_preconvergence_remote_spf_results(tilfa_info_t *tilfa_info,
                             node_t *node, LEVEL level, 
                             boolean reverse_spf){
 
@@ -668,7 +668,7 @@ tilfa_clear_remote_spf_results(tilfa_info_t *tilfa_info,
     ll_t *inner_lst = NULL;
     ll_t *outer_lst = reverse_spf ? 
         tilfa_info->pre_convergence_remote_reverse_spf_results[level]:
-        tilfa_info->remote_spf_results[level];
+        tilfa_info->pre_convergence_remote_forward_spf_results[level];
 
     ITERATE_LIST_BEGIN2(outer_lst, curr, prev){
 
@@ -1054,11 +1054,137 @@ print_raw_tilfa_path(node_t *spf_root,
             strncpy(seglst_ptr->gw_ip, nxthop_ptr->gw_prefix, PREFIX_LEN);     \
             seglst_ptr->gw_ip[PREFIX_LEN] = '\0';
 
+
+static boolean 
+tilfa_attempt_connect_p_q_by_prefix_sid(node_t *spf_root,
+                                     node_t *p_node, 
+                                     node_t *q_node, 
+                                     LEVEL level,
+                                     protected_resource_t *pr_res){
+
+    tilfa_info_t *tilfa_info = spf_root->tilfa_info;
+
+    edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(
+            pr_res->protected_link);
+
+    node_t *protected_node = edge->to.node;
+
+    uint32_t dist_pnode_to_qnode = tilfa_dist_from_x_to_y(
+            tilfa_info, p_node, q_node, level);
+    uint32_t dist_pnode_to_S = tilfa_dist_from_x_to_y(
+            tilfa_info, p_node, spf_root, level);
+    uint32_t dist_S_to_qnode = tilfa_dist_from_self(
+            tilfa_info, q_node, level);
+
+    /*loop free wrt Source*/
+    if(!(dist_pnode_to_qnode < dist_pnode_to_S + dist_S_to_qnode))
+        return FALSE;
+
+    /*I think downstream criteria is automatically met since the
+     * curr_node lies on post-convergence path*/
+
+    uint32_t dist_pnode_to_E = tilfa_dist_from_x_to_y(
+            tilfa_info, p_node, protected_node, level);
+    uint32_t dist_E_to_qnode = tilfa_dist_from_x_to_y(
+            tilfa_info, protected_node, q_node, level);
+
+    if(pr_res->node_protection){
+        if(dist_pnode_to_qnode < dist_pnode_to_E + dist_E_to_qnode){
+            return TRUE;
+        }
+    }
+    if(pr_res->link_protection){
+        if(dist_pnode_to_qnode <
+                (dist_pnode_to_S + edge->metric[level] + dist_E_to_qnode)){
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/* A function to compute the segment list connecting non-adjacent P - Q
+ * nodes. Will introduce ecmp3 version of the function if i come across
+ * more optimized algorithm to connect P-Q nodes.*/
+static int
+tilfa_compute_segment_list_from_tilfa_raw_results_leveraging_ecmp2
+                    ( node_t *spf_root, 
+                      glthread_t *p_node_thread, 
+                      glthread_t *q_node_thread, 
+                      node_t *dest,
+                      LEVEL level, 
+                      gen_segment_list_t *gensegment_list,
+                      int q_distance, 
+                      int pq_distance,
+                      internal_nh_t **first_hop_segments,
+                      protected_resource_t *pr_res){
+
+
+    int stack_top = 0;
+    boolean is_pq_prefix_sid_connected = FALSE;
+    uint32_t adj_sid = 0;
+
+    glthread_t *p_node_thread_temp = p_node_thread;
+    glthread_t *q_node_thread_temp = q_node_thread;
+
+    node_t *q_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node_thread);
+    node_t *p_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread);
+    
+    while(1){
+
+        is_pq_prefix_sid_connected = tilfa_attempt_connect_p_q_by_prefix_sid(
+            spf_root, p_node, q_node, level, pr_res);
+        
+        if(is_pq_prefix_sid_connected){
+            
+            /*Push prefix sid of q-node*/
+            gensegment_list->inet3_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
+            gensegment_list->inet3_mpls_label_out[stack_top].u.node = q_node;
+            gensegment_list->inet3_stack_op[stack_top] = PUSH;
+            gensegment_list->mpls0_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
+            gensegment_list->mpls0_mpls_label_out[stack_top].u.node = q_node;
+            gensegment_list->mpls0_stack_op[stack_top] = PUSH;
+            stack_top++;
+            p_node = q_node;
+            p_node_thread_temp = q_node_thread_temp;
+            q_node_thread_temp = q_node_thread;
+            q_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node_thread_temp);
+            if(p_node == q_node)
+                break;
+            is_pq_prefix_sid_connected = FALSE;
+        }
+        else{
+            
+            q_node_thread_temp = q_node_thread_temp->left;
+            q_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node_thread_temp);
+            if(q_node == p_node){
+                
+                /*Push the Adj segment p_node --> p_node_next*/
+                gensegment_list->inet3_mpls_label_out[stack_top].seg_type = TILFA_ADJ_SID;
+                adj_sid = get_adj_sid_minimum(p_node,
+                            GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread_temp->right), level);
+                gensegment_list->inet3_mpls_label_out[stack_top].u.adj_sid = adj_sid;
+                gensegment_list->inet3_stack_op[stack_top] = PUSH;
+                gensegment_list->mpls0_mpls_label_out[stack_top].seg_type = TILFA_ADJ_SID;
+                gensegment_list->mpls0_mpls_label_out[stack_top].u.adj_sid = adj_sid;
+                gensegment_list->mpls0_stack_op[stack_top] = PUSH;
+                stack_top++;
+                p_node_thread_temp = p_node_thread_temp->right;
+                p_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread_temp);
+                q_node_thread_temp = q_node_thread;
+                q_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node_thread_temp);
+                if(p_node == q_node) break;
+            }
+        }
+    }
+    return stack_top;
+}
+
+/*Obsolete function, no more used*/
 static int
 tilfa_compute_segment_list_from_tilfa_raw_results_leveraging_ecmp
                     ( node_t *spf_root, 
-                      glthread_t *p_node, 
-                      node_t *q_node, 
+                      glthread_t *p_node_thread, 
+                      glthread_t *q_node_thread, 
                       node_t *dest,
                       LEVEL level, 
                       gen_segment_list_t *gensegment_list,
@@ -1074,9 +1200,9 @@ tilfa_compute_segment_list_from_tilfa_raw_results_leveraging_ecmp
     if(!first_hop_segments[0])
         return 0;
   
-    node_t *curr_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node);
-    glthread_t *curr_node_thread = p_node;
-
+    node_t *q_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node_thread);
+    node_t *curr_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread);
+    glthread_t *curr_node_thread = p_node_thread;
     edge_t *edge = GET_EGDE_PTR_FROM_EDGE_END(
                         pr_res->protected_link);
     
@@ -1451,7 +1577,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 i++;
             }
         }
-        
+#if 0       
         /* case 4.x are scenarios when P and Q nodes are nbrs of each other along
          * the post-C path and P-node is a direct nexthop node*/
         
@@ -1704,6 +1830,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 i++;
             }
         }
+#endif
     return i;
 }
 
@@ -1955,9 +2082,10 @@ tilfa_examine_tilfa_path_for_segment_list(
     }
     else{
         int segment_list_len_from_p_to_q =
-            tilfa_compute_segment_list_from_tilfa_raw_results_leveraging_ecmp(
-                    spf_root, p_node,
-                    GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node),
+            tilfa_compute_segment_list_from_tilfa_raw_results_leveraging_ecmp2(
+                    spf_root, 
+                    p_node,
+                    q_node,
                     dst_node, level,
                     tilfa_segment_list->gen_segment_list,
                     q_distance, pq_distance,
