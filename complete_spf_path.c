@@ -354,8 +354,6 @@ trace_spf_path_to_destination_node(node_t *spf_root,
        res = TILFA_GET_SPF_PATH_RESULT(spf_root, dst_node, level);
    }
    if(!res){
-       printf("Spf root : %s, Dst Node : %s. Path not found", 
-               spf_root->node_name, dst_node->node_name);
        return;
    }
    glthread_t *spf_predecessors = &res->pred_db;

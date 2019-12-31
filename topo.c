@@ -1460,10 +1460,161 @@ tilfa_topo_page_408_node_protection(){
     return instance;
 }
 
+instance_t *
+tilfa_topo_2_adj_segment_example(){
+
+#if 0
+
+/* PLR node : R2, Link protected : eth0/1(connected to R3, Node protection)
+ * TILFA path to D from PLR should take 2 Adj Segment : Adj[R7-R8], Adj[R8-R4]
+ * output :
+ * Protected Resource Name : (R2)eth0/1, Dest Protected : D
+ * Protection type : LP : unset   NP : set
+ * LEVEL1, n_segment_list = 1
+ *         inet3 eth0/2, 60.1.1.2  0(PUSH)  0(PUSH)  <prefix sid D>(PUSH)
+ *         mpls0 eth0/2, 60.1.1.2  0(PUSH)  0(PUSH)
+ *
+ * Topology Reference : Figure 3, Page 16, SR Tilfa IETF RFC
+ * */
+
+                                                                                                                            +-------+
+                          PLR                                      +--------+                +--------+                     |       |
++-------+-            +-------+             +-----+                +-       |        1       |        |         1           |  D    |
+|       |      1      |       |     1       |     |     1          |        +----------------+  R5    +---------------------+       |
+|  S    +-------------+  R2   +-------------+ R3  +----------------+  R4    |                |        |                     |       |
+|       |             |       |             |     |                |        |                +--------+                     +-------+
++-------+             +--\----+             +-+---\                +---+----+
+                          \                   |    \                   |
+                           \                  |     \                  |
+                            \                 |      \                 |
+                             \1k              |       \                |
+                              \               |        \               |
+                               \              |1        \ 1            |
+                                \             |          \             |
+                                 \            |           \            |
+                                  \           |            \           |1k
+                                   \          |             \          |
+                                    \         |              \         |
+                                    +---------+---+           \        |
+                                    |             |            \       |
+                                    |    R7       |             \      |
+                                    |             |              \     |
+                                    +------+---+--+               +----+---+
+                                           |   |        1k        |        |
+                                           |   +------------------+  R8    |
+                                           |                      |        |
+                                           |                      +----+---+
+                                           |1k                         |    
+                                           |                           |
+                                           |                           |1
+                                           |                           |
+                                      +----+-----+                     |
+                                      |          |                +----+----+
+                                      |          |       1        |         |
+                                      |    R9    +----------------+  R10    |
+                                      |          |                |         |
+                                      +----------+                +---------+
+
+#endif
 
 
+   instance_t *instance = get_new_instance();
+
+   node_t *S = create_new_node(instance, "S", AREA1, "122.1.1.1");
+   node_t *R2 =  create_new_node(instance,  "R2", AREA1,  "122.1.1.2");
+   node_t *R3 =  create_new_node(instance,  "R3", AREA1,  "122.1.1.3");
+   node_t *R4 =  create_new_node(instance,  "R4", AREA1,  "122.1.1.4");
+   node_t *R5 =  create_new_node(instance,  "R5", AREA1,  "122.1.1.5");
+   node_t *D =  create_new_node(instance,  "D", AREA1,  "122.1.1.10");
+   node_t *R7 =  create_new_node(instance,  "R7", AREA1,  "122.1.1.7");
+   node_t *R8 =  create_new_node(instance,  "R8", AREA1,  "122.1.1.8");
+   node_t *R9 =  create_new_node(instance,  "R9", AREA1,  "122.1.1.9");
+   node_t *R10  = create_new_node(instance, "R10", AREA1, "122.1.1.10");
+
+   prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_30_1_1_1_24 = create_new_prefix("30.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_30_1_1_2_24 = create_new_prefix("30.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_40_1_1_1_24 = create_new_prefix("40.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_40_1_1_2_24 = create_new_prefix("40.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_50_1_1_1_24 = create_new_prefix("50.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_50_1_1_2_24 = create_new_prefix("50.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_60_1_1_1_24 = create_new_prefix("60.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_60_1_1_2_24 = create_new_prefix("60.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_70_1_1_1_24 = create_new_prefix("70.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_70_1_1_2_24 = create_new_prefix("70.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_80_1_1_1_24 = create_new_prefix("80.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_80_1_1_2_24 = create_new_prefix("80.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_90_1_1_1_24 = create_new_prefix("90.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_90_1_1_2_24 = create_new_prefix("90.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_100_1_1_1_24 = create_new_prefix("100.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_100_1_1_2_24 = create_new_prefix("100.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_110_1_1_1_24 = create_new_prefix("110.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_110_1_1_2_24 = create_new_prefix("110.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_120_1_1_1_24 = create_new_prefix("120.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_120_1_1_2_24 = create_new_prefix("120.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_130_1_1_1_24 = create_new_prefix("130.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_130_1_1_2_24 = create_new_prefix("130.1.1.2", 24, LEVEL1);
 
 
+    edge_t *S_R2_edge = create_new_edge("eth0/1", "eth0/3", 1,
+            prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL1);
+    
+    edge_t *R2_R3_edge = create_new_edge("eth0/1", "eth0/3", 1,
+            prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL1);
+    
+    edge_t *R3_R4_edge = create_new_edge("eth0/1", "eth0/3", 1,
+            prefix_30_1_1_1_24, prefix_30_1_1_2_24, LEVEL1);
+    
+    edge_t *R4_R5_edge = create_new_edge("eth0/1", "eth0/3", 1,
+            prefix_40_1_1_1_24, prefix_40_1_1_2_24, LEVEL1);
+    
+    edge_t *R5_D_edge = create_new_edge("eth0/1", "eth0/3", 1,
+            prefix_50_1_1_1_24, prefix_50_1_1_2_24, LEVEL1);
+
+    edge_t *R2_R7_edge = create_new_edge("eth0/2", "eth0/3", 1000,
+            prefix_60_1_1_1_24, prefix_60_1_1_2_24, LEVEL1);
+
+    edge_t *R3_R7_edge = create_new_edge("eth0/3", "eth0/0", 1,
+            prefix_70_1_1_1_24, prefix_70_1_1_2_24, LEVEL1);
+    
+    edge_t *R3_R8_edge = create_new_edge("eth0/1", "eth0/4", 1,
+            prefix_80_1_1_1_24, prefix_80_1_1_2_24, LEVEL1);
+    
+    edge_t *R4_R8_edge = create_new_edge("eth0/1", "eth0/0", 1000,
+            prefix_90_1_1_1_24, prefix_90_1_1_2_24, LEVEL1);
+    
+    edge_t *R7_R8_edge = create_new_edge("eth0/1", "eth0/3", 1000,
+            prefix_100_1_1_1_24, prefix_100_1_1_2_24, LEVEL1);
+    
+    edge_t *R7_R9_edge = create_new_edge("eth0/2", "eth0/0", 1000,
+            prefix_110_1_1_1_24, prefix_110_1_1_2_24, LEVEL1);
+    
+    edge_t *R9_R10_edge = create_new_edge("eth0/1", "eth0/3", 1,
+            prefix_120_1_1_1_24, prefix_120_1_1_2_24, LEVEL1);
+    
+    edge_t *R8_R10_edge = create_new_edge("eth0/2", "eth0/0", 1,
+            prefix_130_1_1_1_24, prefix_130_1_1_2_24, LEVEL1);
+    
+    insert_edge_between_2_nodes(S_R2_edge, S, R2, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R2_R3_edge, R2, R3, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R3_R4_edge, R3, R4, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R4_R5_edge, R4, R5, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R5_D_edge, R5, D, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R2_R7_edge, R2, R7, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R3_R7_edge, R3, R7, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R3_R8_edge, R3, R8, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R7_R8_edge, R7, R8, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R7_R9_edge, R7, R9, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R9_R10_edge, R9, R10, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R8_R10_edge, R8, R10, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R4_R8_edge, R4, R8, BIDIRECTIONAL);
+
+    set_instance_root(instance, R2);
+    return instance;
+}
 
 static instance_t *old_instance = NULL;
 

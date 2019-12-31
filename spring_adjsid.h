@@ -158,10 +158,10 @@ typedef struct lan_intf_adj_sid_{
 GLTHREAD_TO_STRUCT(glthread_to_cfg_lan_adj_sid, lan_intf_adj_sid_t, cfg_glthread, glthreadptr);
    
 void 
-print_lan_adj_sid_info(lan_intf_adj_sid_t *lan_intf_adj_sid);
+print_lan_adj_sid_info(edge_end_t *interface, lan_intf_adj_sid_t *lan_intf_adj_sid);
 
 void
-print_p2p_adj_sid_info(p2p_intf_adj_sid_t *p2p_intf_adj_sid);
+print_p2p_adj_sid_info(edge_end_t *interface, p2p_intf_adj_sid_t *p2p_intf_adj_sid);
 
 void
 set_adj_sid(node_t *node, char *intf_name, LEVEL level, unsigned int label, char *nbr_sys_id, int cmdcode);

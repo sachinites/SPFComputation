@@ -59,6 +59,8 @@ extern instance_t * tilfa_topo_parallel_links();
 extern instance_t * tilfa_topo_one_hop_test();
 extern instance_t * tilfa_topo_p_q_distance_1();
 extern instance_t * tilfa_topo_page_408_node_protection();
+extern instance_t * tilfa_topo_2_adj_segment_example();
+
 /*Globals */
 instance_t *instance = NULL;
 
@@ -88,7 +90,8 @@ main(int argc, char **argv){
     //instance = tilfa_topo_parallel_links();
     //instance = tilfa_topo_one_hop_test();
     //instance = tilfa_topo_p_q_distance_1();
-    instance = tilfa_topo_page_408_node_protection();
+    //instance = tilfa_topo_page_408_node_protection();
+      instance = tilfa_topo_2_adj_segment_example();
     start_shell();
     return 0;
 }

@@ -35,11 +35,14 @@
 #include "spring_adjsid.h"
 #include "spfcmdcodes.h"
 #include "instance.h"
+#include "spfutil.h"
 
 void
-print_lan_adj_sid_info(lan_intf_adj_sid_t *lan_intf_adj_sid){
+print_lan_adj_sid_info(edge_end_t *interface, 
+                       lan_intf_adj_sid_t *lan_intf_adj_sid){
 
-    printf("Adj sid : %u, type = %s, Nbr Sys id : %s\n", 
+    printf("Interface %s : LAN Adj sid : %u, type = %s, Nbr Sys id : %s\n",
+        interface->intf_name,
         lan_intf_adj_sid->sid.sid, 
         lan_intf_adj_sid->adj_sid_type == ADJ_SID_TYPE_INDEX ? "INDEX" : "LABEL",
         lan_intf_adj_sid->nbr_system_id);
@@ -49,9 +52,11 @@ print_lan_adj_sid_info(lan_intf_adj_sid_t *lan_intf_adj_sid){
 }
 
 void
-print_p2p_adj_sid_info(p2p_intf_adj_sid_t *p2p_intf_adj_sid){
+print_p2p_adj_sid_info(edge_end_t *interface, 
+                       p2p_intf_adj_sid_t *p2p_intf_adj_sid){
 
-    printf("Adj sid : %u, type = %s\n", 
+    printf("Interface %s : PTP Adj sid : %u, type = %s\n",
+        interface->intf_name,
         p2p_intf_adj_sid->sid.sid, 
         p2p_intf_adj_sid->adj_sid_type == ADJ_SID_TYPE_INDEX ? "INDEX" : "LABEL");
     printf("\t");
@@ -190,7 +195,7 @@ show_node_adj_sids(node_t *node){
                 p2p_intf_adj_sid = &interface->cfg_p2p_adj_sid_db[level_it][prot_type];               
                 if(!p2p_intf_adj_sid->sid.sid)
                     continue;
-                print_p2p_adj_sid_info(p2p_intf_adj_sid); 
+                print_p2p_adj_sid_info(interface, p2p_intf_adj_sid); 
             }
         }
 
@@ -199,7 +204,7 @@ show_node_adj_sids(node_t *node){
                 lan_adj_sid_list = &interface->cfg_lan_adj_sid_db[level_it][prot_type];
                 ITERATE_GLTHREAD_BEGIN(lan_adj_sid_list, curr){
                     lan_intf_adj_sid = glthread_to_cfg_lan_adj_sid(curr);                
-                    print_lan_adj_sid_info(lan_intf_adj_sid); 
+                    print_lan_adj_sid_info(interface, lan_intf_adj_sid); 
                 }ITERATE_GLTHREAD_END(lan_adj_sid_list, curr);
             }
         }
@@ -209,5 +214,27 @@ show_node_adj_sids(node_t *node){
 mpls_label_t
 get_adj_sid_minimum(node_t *node1, node_t *node2, LEVEL level){
 
-    return 0;
+    /*Let us first search a P2P adj sid*/
+    int i = 0;
+    edge_end_t *interface;
+    edge_t *edge = NULL;
+    unsigned int metric = 0xFFFFFFFF;
+    p2p_intf_adj_sid_t *p2p_intf_adj_sid = NULL;
+
+    for(; i < MAX_NODE_INTF_SLOTS; i++){
+        interface = node1->edges[i];
+        if(!interface) break;
+        edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(interface);
+        if(get_edge_direction(node1, edge) != OUTGOING) continue;
+        if(is_broadcast_link(edge, level)) continue;
+        if(!IS_LEVEL_SET(GET_EDGE_END_LEVEL(interface), level)) continue;
+        if(!edge->status) continue;
+        if(edge->to.node != node2) continue;
+        if(metric > edge->metric[level]){
+            if(!&interface->cfg_p2p_adj_sid_db[level][UNPROTECTED_ADJ_SID]) continue;
+            p2p_intf_adj_sid = &interface->cfg_p2p_adj_sid_db[level][UNPROTECTED_ADJ_SID];
+            metric = edge->metric[level];
+        }
+    }
+    return p2p_intf_adj_sid ? p2p_intf_adj_sid->sid.sid : 0;
 }
