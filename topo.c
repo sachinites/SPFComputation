@@ -1357,6 +1357,114 @@ tilfa_topo_p_q_distance_1(){
     set_instance_root(instance, R0);
     return instance;
 }
+
+instance_t *
+tilfa_topo_page_408_node_protection(){
+
+   instance_t *instance = get_new_instance();
+
+   node_t *R11 = create_new_node(instance, "R11", AREA1, "122.1.1.11");
+   node_t *R1 =  create_new_node(instance,  "R1", AREA1,  "122.1.1.1");
+   node_t *R5 =  create_new_node(instance,  "R5", AREA1,  "122.1.1.5");
+   node_t *R4 =  create_new_node(instance,  "R4", AREA1,  "122.1.1.4");
+   node_t *R3 =  create_new_node(instance,  "R3", AREA1,  "122.1.1.3");
+   node_t *R2 =  create_new_node(instance,  "R2", AREA1,  "122.1.1.2");
+   node_t *R6 =  create_new_node(instance,  "R6", AREA1,  "122.1.1.6");
+   node_t *R7 =  create_new_node(instance,  "R7", AREA1,  "122.1.1.7");
+   node_t *R8 =  create_new_node(instance,  "R8", AREA1,  "122.1.1.8");
+   node_t *R9 =  create_new_node(instance,  "R9", AREA1,  "122.1.1.9");
+   node_t *R10  = create_new_node(instance, "R10", AREA1, "122.1.1.10");
+
+   prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_30_1_1_1_24 = create_new_prefix("30.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_30_1_1_2_24 = create_new_prefix("30.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_40_1_1_1_24 = create_new_prefix("40.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_40_1_1_2_24 = create_new_prefix("40.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_50_1_1_1_24 = create_new_prefix("50.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_50_1_1_2_24 = create_new_prefix("50.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_60_1_1_1_24 = create_new_prefix("60.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_60_1_1_2_24 = create_new_prefix("60.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_70_1_1_1_24 = create_new_prefix("70.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_70_1_1_2_24 = create_new_prefix("70.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_80_1_1_1_24 = create_new_prefix("80.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_80_1_1_2_24 = create_new_prefix("80.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_90_1_1_1_24 = create_new_prefix("90.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_90_1_1_2_24 = create_new_prefix("90.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_100_1_1_1_24 = create_new_prefix("100.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_100_1_1_2_24 = create_new_prefix("100.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_110_1_1_1_24 = create_new_prefix("110.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_110_1_1_2_24 = create_new_prefix("110.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_120_1_1_1_24 = create_new_prefix("120.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_120_1_1_2_24 = create_new_prefix("120.1.1.2", 24, LEVEL1);
+   prefix_t *prefix_130_1_1_1_24 = create_new_prefix("130.1.1.1", 24, LEVEL1);
+   prefix_t *prefix_130_1_1_2_24 = create_new_prefix("130.1.1.2", 24, LEVEL1);
+
+
+    edge_t *R11_R1_edge1 = create_new_edge("eth0/2", "eth0/0", 10,
+            prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL1);
+
+    edge_t *R1_R2_edge1 = create_new_edge("eth0/1", "eth0/3", 10,
+            prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL1);
+
+    edge_t *R1_R5_edge1 = create_new_edge("eth0/2", "eth0/0", 10,
+            prefix_30_1_1_1_24, prefix_30_1_1_2_24, LEVEL1);
+
+    edge_t *R5_R4_edge1 = create_new_edge("eth0/2", "eth0/0", 10,
+            prefix_40_1_1_1_24, prefix_40_1_1_2_24, LEVEL1);
+    
+    edge_t *R4_R3_edge1 = create_new_edge("eth0/1", "eth0/3", 40,
+            prefix_50_1_1_1_24, prefix_50_1_1_2_24, LEVEL1);
+
+    edge_t *R3_R2_edge1 = create_new_edge("eth0/0", "eth0/2", 10,
+            prefix_60_1_1_1_24, prefix_60_1_1_2_24, LEVEL1);
+    
+    edge_t *R2_R6_edge1 = create_new_edge("eth0/0", "eth0/2", 10,
+            prefix_70_1_1_1_24, prefix_70_1_1_2_24, LEVEL1);
+
+    edge_t *R3_R7_edge1 = create_new_edge("eth0/1", "eth0/3", 10,
+            prefix_80_1_1_1_24, prefix_80_1_1_2_24, LEVEL1);
+    
+    edge_t *R7_R8_edge1 = create_new_edge("eth0/0", "eth0/2", 10,
+            prefix_90_1_1_1_24, prefix_90_1_1_2_24, LEVEL1);
+    
+    edge_t *R8_R9_edge1 = create_new_edge("eth0/0", "eth0/2", 10,
+            prefix_100_1_1_1_24, prefix_100_1_1_2_24, LEVEL1);
+
+    edge_t *R9_R10_edge1 = create_new_edge("eth0/0", "eth0/2", 10,
+            prefix_110_1_1_1_24, prefix_110_1_1_2_24, LEVEL1);
+    
+    edge_t *R6_R10_edge1 = create_new_edge("eth0/1", "eth0/3", 10,
+            prefix_120_1_1_1_24, prefix_120_1_1_2_24, LEVEL1);
+
+    edge_t *R2_R9_edge1 = create_new_edge("eth0/1", "eth0/3", 10,
+            prefix_130_1_1_1_24, prefix_130_1_1_2_24, LEVEL1);
+
+    insert_edge_between_2_nodes(R11_R1_edge1, R11, R1, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R1_R2_edge1, R1, R2, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R1_R5_edge1, R1, R5, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R5_R4_edge1, R5, R4, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R4_R3_edge1, R4, R3, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R3_R2_edge1, R3, R2, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R2_R6_edge1, R2, R6, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R3_R7_edge1, R3, R7, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R7_R8_edge1, R7, R8, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R8_R9_edge1, R8, R9, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R9_R10_edge1, R9, R10, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R6_R10_edge1, R6, R10, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R2_R9_edge1, R2, R9, BIDIRECTIONAL);
+
+    set_instance_root(instance, R1);
+    return instance;
+}
+
+
+
+
+
+
 static instance_t *old_instance = NULL;
 
 int
