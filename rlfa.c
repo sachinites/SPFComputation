@@ -181,11 +181,18 @@ Compute_PHYSICAL_Neighbor_SPFs(node_t *spf_root, LEVEL level){
            *pn_node = NULL;
     edge_t *edge1 = NULL, *edge2 = NULL;
 
-    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, nbr_node, pn_node, edge1, edge2, level){
+    glthread_t glthread_head;
+    init_glthread(&glthread_head);
 
-        Compute_and_Store_Forward_SPF(nbr_node, level);
-    }
-    ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, nbr_node, pn_node, level);
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, nbr_node, pn_node, edge1, edge2, level){
+        if(IS_GLTHREAD_LIST_EMPTY(&nbr_node->temp_thread)){
+            Compute_and_Store_Forward_SPF(nbr_node, level);
+            glthread_add_next(&glthread_head, &nbr_node->temp_thread);
+        }
+    } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, nbr_node, pn_node, level);
+    ITERATE_NODE_PHYSICAL_NBRS_BEGIN(spf_root, nbr_node, pn_node, edge1, edge2, level){
+        remove_glthread(&nbr_node->temp_thread);
+    } ITERATE_NODE_PHYSICAL_NBRS_END(spf_root, nbr_node, pn_node, level);
 }
 
 void
@@ -194,12 +201,19 @@ Compute_LOGICAL_Neighbor_SPFs(node_t *spf_root, LEVEL level){
     
     node_t *nbr_node = NULL;
     edge_t *edge1 = NULL;
+    glthread_t glthread_head;
+
+    init_glthread(&glthread_head);
 
     ITERATE_NODE_LOGICAL_NBRS_BEGIN(spf_root, nbr_node, edge1, level){
-
-        Compute_and_Store_Forward_SPF(nbr_node, level);
-    }
-    ITERATE_NODE_LOGICAL_NBRS_END;
+        if(IS_GLTHREAD_LIST_EMPTY(&nbr_node->temp_thread)){
+            Compute_and_Store_Forward_SPF(nbr_node, level);
+            glthread_add_next(&glthread_head, &nbr_node->temp_thread);
+        }
+    } ITERATE_NODE_LOGICAL_NBRS_END;
+    ITERATE_NODE_LOGICAL_NBRS_BEGIN(spf_root, nbr_node, edge1, level){
+        remove_glthread(&nbr_node->temp_thread);
+    } ITERATE_NODE_LOGICAL_NBRS_END;
 }
 
 static boolean

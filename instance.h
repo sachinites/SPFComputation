@@ -102,6 +102,7 @@ typedef struct _node_t{
     
     /*Our implementation specific*/
     char flags[MAX_LEVEL];
+    glthread_t temp_thread; /*For temporary work*/
 
     /*LDP related config*/
     ldp_config_t ldp_config;
