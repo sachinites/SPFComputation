@@ -36,6 +36,7 @@
 #include "instanceconst.h"
 #include "glthread.h"
 #include "bitarr.h"
+#include "sr_tlv_api.h"
 
 typedef struct _node_t node_t;
 typedef struct edge_end_ edge_end_t;

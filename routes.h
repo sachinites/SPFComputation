@@ -111,9 +111,6 @@ ROUTE_FLUSH_BACKUP_NH_LIST(routes_t *route, nh_type_t nh){
     delete_singly_ll(route->backup_nh_list[nh]);
 }
 
-#define ROUTE_ADD_BACKUP_NH(routeptr, nodeptr)      \
-    singly_ll_add_node_by_val(routeptr->backup_nh_list, nodeptr)
-
 #define ROUTE_ADD_TO_ROUTE_LIST(spfinfo_ptr, routeptr, topo)               \
     singly_ll_add_node_by_val(spfinfo_ptr->routes_list[topo], routeptr);   \
     singly_ll_add_node_by_val(spfinfo_ptr->priority_routes_list[topo], routeptr)

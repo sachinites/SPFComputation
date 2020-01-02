@@ -39,6 +39,7 @@
 #include "spfcmdcodes.h"
 #include "spfutil.h"
 #include "spftrace.h"
+#include "routes.h"
 
 extern instance_t *instance;
 typedef struct fn_ptr_arg_{
@@ -201,49 +202,6 @@ tilfa_dist_from_x_to_y_reverse_spf(tilfa_info_t *tilfa_info,
 
     return (uint32_t)x_res->spf_metric;
 }
-
-#if 0
-gen_segment_list_t **
-tilfa_get_segment_list(node_t *node,
-                       node_t *dst_node, /*key*/
-                       LEVEL level,
-                       uint8_t *n_segment_list/*O/P*/){
-
-    glthread_t *curr;
-    
-    gen_segment_list_t *gen_segment_list_db = 
-        calloc(MAX_NXT_HOPS, sizeof(gen_segment_list_t *));
-
-    tilfa_info_t *tilfa_info = node->tilfa_info;
-    if(!tilfa_info) return NULL;
-
-    if(level != LEVEL1 && level != LEVEL2){
-        assert(0);
-    }
-    
-    *n_segment_list = 0;
-
-    glthread_t *tilfa_segment_list =
-            &tilfa_info->tilfa_segment_list_head[level];
-
-    if(IS_GLTHREAD_LIST_EMPTY(tilfa_segment_list)) return NULL;
-
-    ITERATE_GLTHREAD_BEGIN(tilfa_segment_list, curr){
-
-        tilfa_segment_list_t *tilfa_segment_list = 
-            tilfa_segment_list_to_gensegment_list(curr);
-
-        if(dst_node != tilfa_segment_list->dest)
-            continue;
-
-        if(tilfa_segment_list->n_segment_list){
-            *n_segment_list = tilfa_segment_list->n_segment_list;
-            return tilfa_segment_list->gen_segment_list;
-        }
-    } ITERATE_GLTHREAD_END(tilfa_segment_list, curr);
-    return NULL;
-}
-#endif
 
 void
 init_tilfa(node_t *node){
@@ -824,7 +782,7 @@ tilfa_compute_first_hop_segments(node_t *spf_root,
 }
 
 static boolean
-tilfa_p_node_qualification_test_wrt_root_new(
+tilfa_p_node_qualification_test_wrt_root(
                 node_t *spf_root,
                 node_t *node_to_test,
                 node_t *first_hop_node,
@@ -925,8 +883,8 @@ tilfa_q_node_qualification_test_wrt_destination(
     if(node_to_test == destination)
         return TRUE;
 
-    uint32_t dist_q_to_d = tilfa_dist_from_x_to_y(tilfa_info,
-                node_to_test, destination, level);
+    uint32_t dist_q_to_d = tilfa_dist_from_x_to_y_reverse_spf(tilfa_info,
+                destination, node_to_test, level);
     
     uint32_t dist_q_to_protected_node = INFINITE_METRIC,
              dist_protected_node_to_d = INFINITE_METRIC,
@@ -944,8 +902,8 @@ tilfa_q_node_qualification_test_wrt_destination(
 
     /* Mandatory condition should be satisified : 
      * q node must be loop-free node wrt S*/
-    dist_q_to_S = tilfa_dist_from_x_to_y(tilfa_info,
-            node_to_test, spf_root, level);
+    dist_q_to_S = tilfa_dist_from_x_to_y_reverse_spf(tilfa_info,
+            spf_root, node_to_test, level);
     
     dist_S_to_d = tilfa_dist_from_self(tilfa_info,
             destination, level);
@@ -959,8 +917,8 @@ tilfa_q_node_qualification_test_wrt_destination(
 
     if(pr_res->node_protection){
         /*Test Node protection status*/
-        dist_q_to_protected_node = tilfa_dist_from_x_to_y(tilfa_info,
-            node_to_test, protected_node, level);
+        dist_q_to_protected_node = tilfa_dist_from_x_to_y_reverse_spf(tilfa_info,
+            protected_node, node_to_test, level);
 
         if(dist_q_to_d < dist_q_to_protected_node + dist_protected_node_to_d){
             return TRUE;
@@ -1048,7 +1006,8 @@ print_raw_tilfa_path(node_t *spf_root,
 #define TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(seglst_ptr, nxthop_ptr)   \
             seglst_ptr->oif = nxthop_ptr->oif;                                 \
             strncpy(seglst_ptr->gw_ip, nxthop_ptr->gw_prefix, PREFIX_LEN);     \
-            seglst_ptr->gw_ip[PREFIX_LEN] = '\0';
+            seglst_ptr->gw_ip[PREFIX_LEN] = '\0';                              \
+            seglst_ptr->nxthop = nxthop_ptr->node;
 
 
 static boolean 
@@ -1574,7 +1533,7 @@ tilfa_examine_tilfa_path_for_segment_list(
             }
             else if(search_for_p_node == TRUE){
                 /*Test if curr node is a p-node*/
-                if(tilfa_p_node_qualification_test_wrt_root_new(
+                if(tilfa_p_node_qualification_test_wrt_root(
                             spf_root, curr_node, first_hop_node, 
                             dst_node, pr_res, level, 
                             first_hop_segments)){
@@ -1617,7 +1576,7 @@ tilfa_examine_tilfa_path_for_segment_list(
         assert(!p_node);
 
         /*All direct nbrs are p-nodes*/
-        if(tilfa_p_node_qualification_test_wrt_root_new(
+        if(tilfa_p_node_qualification_test_wrt_root(
                   spf_root, curr_node, first_hop_node, 
                   dst_node, pr_res, level,
                   first_hop_segments)){
@@ -1641,7 +1600,7 @@ tilfa_examine_tilfa_path_for_segment_list(
             q_distance++;
             search_for_q_node = FALSE;
             search_for_p_node = TRUE;
-            if(tilfa_p_node_qualification_test_wrt_root_new(
+            if(tilfa_p_node_qualification_test_wrt_root(
                     spf_root, curr_node, first_hop_node, 
                     dst_node, pr_res, level,
                     first_hop_segments)){
@@ -1660,7 +1619,7 @@ tilfa_examine_tilfa_path_for_segment_list(
             /*now test the current node for p-node*/
             search_for_q_node = FALSE;
             search_for_p_node = TRUE;
-            if(tilfa_p_node_qualification_test_wrt_root_new(
+            if(tilfa_p_node_qualification_test_wrt_root(
                         spf_root, curr_node, first_hop_node, 
                         dst_node, pr_res, level,
                         first_hop_segments)){
@@ -1985,3 +1944,183 @@ tilfa_copy_gensegment_list_stacks(
     }
     return dst_start_stack_index;
 }
+
+#if 0
+gen_segment_list_t **
+tilfa_get_segment_list(node_t *node,
+                       node_t *dst_node, /*key*/
+                       LEVEL level,
+                       uint8_t *n_segment_list/*O/P*/){
+
+    glthread_t *curr;
+    
+    gen_segment_list_t *gen_segment_list_db = 
+        calloc(MAX_NXT_HOPS, sizeof(gen_segment_list_t *));
+
+    tilfa_info_t *tilfa_info = node->tilfa_info;
+    if(!tilfa_info) return NULL;
+
+    if(level != LEVEL1 && level != LEVEL2){
+        assert(0);
+    }
+    
+    *n_segment_list = 0;
+
+    glthread_t *tilfa_segment_list =
+            &tilfa_info->tilfa_segment_list_head[level];
+
+    if(IS_GLTHREAD_LIST_EMPTY(tilfa_segment_list)) return NULL;
+
+    ITERATE_GLTHREAD_BEGIN(tilfa_segment_list, curr){
+
+        tilfa_segment_list_t *tilfa_segment_list = 
+            tilfa_segment_list_to_gensegment_list(curr);
+
+        if(dst_node != tilfa_segment_list->dest)
+            continue;
+
+        if(tilfa_segment_list->n_segment_list){
+            *n_segment_list = tilfa_segment_list->n_segment_list;
+            return tilfa_segment_list->gen_segment_list;
+        }
+    } ITERATE_GLTHREAD_END(tilfa_segment_list, curr);
+    return NULL;
+}
+#endif
+boolean
+tilfa_fill_nxthop_from_segment_lst(routes_t *route,
+                                   internal_nh_t *nxthop, 
+                                   gen_segment_list_t *gensegment_lst,
+                                   protected_resource_t *pr_res,
+                                   boolean inet3,
+                                   boolean mpls0){
+
+    assert((inet3 && !mpls0) || 
+            (!inet3 && mpls0));
+     
+    nxthop->level = route->level;
+    nxthop->oif = gensegment_lst->oif;
+    nxthop->protected_link = pr_res->protected_link;
+    nxthop->node = gensegment_lst->nxthop;
+    strncpy(nxthop->gw_prefix, gensegment_lst->gw_ip, PREFIX_LEN);
+    nxthop->nh_type = LSPNH;
+    nxthop->lfa_type = TILFA;
+    nxthop->proxy_nbr = gensegment_lst->nxthop;
+    nxthop->rlfa = 0;      /*Not Valid for TILFA*/
+
+    int i = MPLS_STACK_OP_LIMIT_MAX - 1,
+        j = 0;
+    if(inet3){
+        for(; i >= 0; i--){
+            if(gensegment_lst->inet3_stack_op[i] == STACK_OPS_UNKNOWN)
+                continue;
+            if(gensegment_lst->inet3_mpls_label_out[i].seg_type == TILFA_ADJ_SID){
+                nxthop->mpls_label_out[j] = gensegment_lst->inet3_mpls_label_out[i].u.adj_sid;
+            }
+            else if(gensegment_lst->inet3_mpls_label_out[i].seg_type == TILFA_PREFIX_SID_REFERENCE){
+                
+                if(!is_node_spring_enabled(gensegment_lst->inet3_mpls_label_out[i].u.node, route->level))
+                    return FALSE;
+
+                nxthop->mpls_label_out[j] = PREFIX_SID_LABEL(
+                    gensegment_lst->inet3_mpls_label_out[i].u.node->srgb, 
+                    (prefix_t *)ROUTE_GET_BEST_PREFIX(route));
+            }
+            if(nxthop->mpls_label_out[j] == 0)
+                return FALSE;
+            nxthop->stack_op[j] = gensegment_lst->inet3_stack_op[i];
+            j++;
+        }
+    }
+    else if(mpls0){
+        for(; i >= 0; i--){
+            if(gensegment_lst->mpls0_stack_op[i] == STACK_OPS_UNKNOWN)
+                continue;
+             if(gensegment_lst->mpls0_mpls_label_out[i].seg_type == TILFA_ADJ_SID){
+                nxthop->mpls_label_out[j] = gensegment_lst->mpls0_mpls_label_out[i].u.adj_sid;
+             }
+             else if(gensegment_lst->mpls0_mpls_label_out[i].seg_type == TILFA_PREFIX_SID_REFERENCE){
+                
+                if(!is_node_spring_enabled(gensegment_lst->mpls0_mpls_label_out[i].u.node, route->level))
+                    return FALSE;
+
+                nxthop->mpls_label_out[j] = PREFIX_SID_LABEL(
+                    gensegment_lst->mpls0_mpls_label_out[i].u.node->srgb,
+                    (prefix_t *)ROUTE_GET_BEST_PREFIX(route));
+             }
+             if(nxthop->mpls_label_out[j] == 0)
+                 return FALSE;
+            nxthop->stack_op[j] = gensegment_lst->mpls0_stack_op[i];
+            j++;
+        }
+    }
+    nxthop->root_metric = 0;
+    nxthop->dest_metric = 0;
+    nxthop->ref_count = NULL;
+    nxthop->is_eligible = TRUE;
+    return TRUE;
+}
+
+void
+route_fetch_tilfa_backups(node_t *spf_root, 
+                          routes_t *route, 
+                          boolean inet3, 
+                          boolean mpls0){
+
+    assert((inet3 && !mpls0) || 
+            (!inet3 && mpls0));
+     
+    assert(route->rt_type == SPRING_T);
+
+    int i = 0;
+    node_t *ecmp_dst = NULL;
+    prefix_t *prefix = NULL;
+    singly_ll_node_t *list_node = NULL;
+    tilfa_segment_list_t *tilfa_segment_list = NULL;
+
+    tilfa_info_t *tilfa_info = spf_root->tilfa_info;
+
+    glthread_t *curr;
+    glthread_t *tilfa_segment_list_head =
+        &tilfa_info->tilfa_segment_list_head[route->level];
+
+    internal_nh_t *tilfa_bck_up = NULL;
+
+    prefix_pref_data_t prefix_pref;
+    prefix_pref_data_t route_pref = route_preference(route->flags, route->level);
+    
+    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
+    
+        prefix = list_node->data;
+        prefix_pref = route_preference(prefix->prefix_flags, route->level);
+        
+        if(route_pref.pref != prefix_pref.pref)
+            break;
+
+        ecmp_dst = prefix->hosting_node;
+
+        ITERATE_GLTHREAD_BEGIN(tilfa_segment_list_head, curr){
+
+            tilfa_segment_list = tilfa_segment_list_to_gensegment_list(curr);
+            
+            if(tilfa_segment_list->dest != ecmp_dst)
+                continue;
+            
+            for( i = 0; i < tilfa_segment_list->n_segment_list; i++){
+                
+                tilfa_bck_up = calloc(1, sizeof(internal_nh_t));
+
+                if(tilfa_fill_nxthop_from_segment_lst(route, tilfa_bck_up, 
+                                  &tilfa_segment_list->gen_segment_list[i],
+                                  tilfa_segment_list->pr_res, inet3, mpls0)){
+
+                    ROUTE_ADD_NH(route->backup_nh_list[LSPNH], tilfa_bck_up);
+                }
+                else{
+                    free(tilfa_bck_up);
+                }
+            }
+        } ITERATE_GLTHREAD_END(tilfa_segment_list, curr);
+    }ITERATE_LIST_END;
+}
+

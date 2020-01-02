@@ -48,7 +48,7 @@ typedef struct gen_segment_list_{
 
     interface_t *oif;
     char gw_ip[PREFIX_LEN + 1];
-
+    node_t *nxthop;
     struct s_t{
         tilfa_seg_type seg_type;
         union gen_segment_list_u_{
@@ -245,5 +245,12 @@ tilfa_copy_gensegment_list_stacks(gen_segment_list_t *src,
                                   boolean mpls0,
                                   int src_stack_index,
                                   int dst_stack_index);
+boolean
+tilfa_fill_nxthop_from_segment_lst(routes_t *route,
+        internal_nh_t *nxthop,
+        gen_segment_list_t *gensegment_lst,
+        protected_resource_t *pr_res,
+        boolean inet3,
+        boolean mpls0);
 
 #endif /* __TILFA__ */

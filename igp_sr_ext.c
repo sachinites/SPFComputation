@@ -169,28 +169,6 @@ prefix_sid_search(node_t *node, LEVEL level, unsigned int prefix_sid_val){
     return NULL;
 }
 
-/*This fn returns the best prefix which is also
- * SR Active prefix. In case of ECMP, all best prefixes will
- * have same usable SIDs due to conflict resolution test*/
-static prefix_t *
-get_best_sr_active_route_prefix(routes_t *route){
-
-    singly_ll_node_t *list_node = NULL;
-    prefix_t *prefix = NULL;
-    
-    prefix_pref_data_t route_pref = route_preference(route->flags, route->level);
-    prefix_pref_data_t prefix_pref;
-
-    ITERATE_LIST_BEGIN(route->like_prefix_list, list_node){
-        prefix = list_node->data;   
-        assert(IS_PREFIX_SR_ACTIVE(prefix)); 
-        prefix_pref = route_preference(prefix->prefix_flags, route->level);
-        if(route_pref.pref != prefix_pref.pref)
-            break;
-        return prefix;
-    }ITERATE_LIST_END;
-    return NULL;
-}
 
 prefix_sid_subtlv_t *
 get_node_segment_prefix_sid(node_t *node, LEVEL level){

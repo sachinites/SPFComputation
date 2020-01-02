@@ -1148,6 +1148,8 @@ get_str_lfa_type(lfa_type_t lfa_type){
             return "BROADCAST_LINK_PROTECTION_RLFA_DOWNSTREAM";
         case BROADCAST_LINK_AND_NODE_PROTECTION_RLFA:
             return "BROADCAST_LINK_AND_NODE_PROTECTION_RLFA";
+        case TILFA:
+            return "TILFA";
         default:
             return "UNKNOWN_LFA_TYPE";
     }

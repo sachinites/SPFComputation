@@ -48,6 +48,12 @@ static void
 enhanced_start_route_installation(spf_info_t *spf_info,
                          LEVEL level, rtttype_t rtttype);
 
+extern void
+route_fetch_tilfa_backups(node_t *spf_root,
+                          routes_t *route,
+                          boolean inet3,
+                          boolean mpls0);
+
 static boolean
 is_destination_has_multiple_primary_nxthops(spf_result_t *D_res){
 
@@ -1359,8 +1365,8 @@ show_internal_routing_tree(node_t *node, char *prefix, char mask, rtttype_t rt_t
                                     is_internal_backup_nexthop_rsvp(nexthop) ? "RSVP" : \
                                                rt_type == UNICAST_T ? "LDP" : "SPRING",
                                     is_internal_backup_nexthop_rsvp(nexthop) ?  nexthop->node->node_name :
-                                    nexthop->rlfa->node_name,
-                                    nexthop->rlfa->router_id,
+                                    nexthop->rlfa ? nexthop->rlfa->node_name : "Nil",
+                                    nexthop->rlfa ? nexthop->rlfa->router_id : "Nil",
                                     next_hop_oif_name(*nexthop),
                                     backup_next_hop_protection_name(*nexthop), 6000);
                             break;
@@ -1500,7 +1506,8 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
                 }  ITERATE_LIST_END;
             } ITERATE_NH_TYPE_END;
 
-            springify_unicast_route(spf_root, (void *)sr_route, prefix_sid->sid.sid);  
+            springify_unicast_route(spf_root, (void *)sr_route, prefix_sid->sid.sid);
+            
         } ITERATE_GLTHREAD_END(&D_res->prefix_sids_thread_lst[level], curr);
     } ITERATE_LIST_END;
 }
@@ -1629,28 +1636,6 @@ enhanced_start_route_installation_unicast(spf_info_t *spf_info, LEVEL level){
     } ITERATE_LIST_END;
 }
 
-static boolean
-is_route_have_backup_protection(routes_t *route, edge_end_t *protected_link){
-
-    edge_t *edge = GET_EGDE_PTR_FROM_FROM_EDGE_END(protected_link);
-
-    if(!IS_LEVEL_SET(edge->level, route->level))
-        return FALSE;
-
-    nh_type_t nh;
-    singly_ll_node_t *list_node = NULL;
-    internal_nh_t *nxthop = NULL;
-
-    ITERATE_NH_TYPE_BEGIN(nh){
-        ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
-            nxthop = list_node->data;
-            if(nxthop->protected_link == protected_link)
-                return TRUE;  
-        } ITERATE_LIST_END;
-    } ITERATE_NH_TYPE_END;
-    return FALSE;
-}
-
 static void
 enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
 
@@ -1678,7 +1663,9 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
         memset(&rt_key, 0, sizeof(rt_key_t));
         strncpy(RT_ENTRY_PFX(&rt_key), route->rt_key.u.prefix.prefix, PREFIX_LEN);
         RT_ENTRY_MASK(&rt_key) = route->rt_key.u.prefix.mask;
-       
+      
+        route_fetch_tilfa_backups(GET_SPF_INFO_NODE(spf_info, level), route, TRUE, FALSE);
+
         /*Install springified IPV4 routes in inet.3 table. RSVP LSP Nexthops 
          * should not be springified in the first place*/ 
         ITERATE_LIST_BEGIN(route->primary_nh_list[IPNH], list_node2){
@@ -1737,7 +1724,7 @@ enhanced_start_route_installation_spring(spf_info_t *spf_info, LEVEL level){
             nxthop = list_node2->data;
             if(is_internal_backup_nexthop_rsvp(nxthop))
                 continue; /*ToDo : Support RSVP later . . . */
-            if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop) || !is_node_spring_enabled(nxthop->rlfa, level)){
+            if(!IS_INTERNAL_NH_SPRINGIFIED(nxthop) || !is_node_spring_enabled(nxthop->rlfa, level) || nxthop->lfa_type == TILFA){
 #ifdef __ENABLE_TRACE__                
                 sprintf(instance->traceopts->b, "node : %s : route %s/%u, at %s backup nexthop (%s)%s not installed not spring capable", 
                 GET_SPF_INFO_NODE(spf_info, level)->node_name, route->rt_key.u.prefix.prefix, route->rt_key.u.prefix.mask, 
