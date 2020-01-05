@@ -573,8 +573,7 @@ spf_init(candidate_tree_t *ctree,
         if(is_nh_list_empty2(&nbr_node->direct_next_hop[level][IPNH][0]) &&
                 is_nh_list_empty2(&nbr_node->direct_next_hop[level][LSPNH][0])){
             if(edge->etype == LSP){
-                intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
-                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], ZERO_IP);
+                build_mpls_nexthop_from_lsp(&spf_root->spf_info, &nbr_node->direct_next_hop[level][LSPNH][0], (&edge->from)->intf_name, level); 
             }
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
@@ -593,8 +592,7 @@ spf_init(candidate_tree_t *ctree,
                 clear_spf_predecessors(&nbr_node->pred_lst[level][nh]);
             } ITERATE_NH_TYPE_END;
             if(edge->etype == LSP){
-                intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][0], level, edge, nbr_node);
-                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][0], ZERO_IP);
+                build_mpls_nexthop_from_lsp(&spf_root->spf_info, &nbr_node->direct_next_hop[level][LSPNH][0], (&edge->from)->intf_name, level);
             }
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][0], level, edge, nbr_node);
@@ -612,8 +610,7 @@ spf_init(candidate_tree_t *ctree,
             }
             
             if(edge->etype == LSP){
-                intialize_internal_nh_t(nbr_node->direct_next_hop[level][LSPNH][nh_index], level, edge, nbr_node);
-                set_next_hop_gw_pfx(nbr_node->direct_next_hop[level][LSPNH][nh_index], ZERO_IP);
+                build_mpls_nexthop_from_lsp(&spf_root->spf_info, &nbr_node->direct_next_hop[level][LSPNH][nh_index], (&edge->from)->intf_name, level);
             }
             else{
                 intialize_internal_nh_t(nbr_node->direct_next_hop[level][IPNH][nh_index], level, edge, nbr_node);
@@ -886,4 +883,37 @@ DIST_X_Y(node_t *X, node_t *Y, LEVEL _level){
     }
     assert(0);
 }
+
+bool_t
+build_mpls_nexthop_from_lsp(spf_info_t *spf_info,
+                            internal_nh_t *lspnh,
+                            char *lsp_name, 
+                            LEVEL level){
+
+    node_t *spf_root = GET_SPF_INFO_NODE(spf_info, level);
+    rsvp_tunnel_t *rsvp_tunnel = look_up_rsvp_tunnel(
+                spf_root, lsp_name); 
+
+    if(!rsvp_tunnel) return FALSE;
+
+    memset(lspnh, 0, sizeof(internal_nh_t));
+    lspnh->level = level;
+    lspnh->oif = rsvp_tunnel->physical_oif;
+    lspnh->protected_link = NULL;
+    lspnh->node = rsvp_tunnel->egress_lsr;
+    strncpy(lspnh->gw_prefix, rsvp_tunnel->gateway, PREFIX_LEN);
+    lspnh->gw_prefix[PREFIX_LEN] = '\0';
+    lspnh->nh_type = LSPNH;
+    lspnh->lfa_type = UNKNOWN_LFA_TYPE;
+    lspnh->proxy_nbr = (GET_EGDE_PTR_FROM_FROM_EDGE_END(lspnh->oif))->to.node;
+    lspnh->rlfa = NULL;
+    lspnh->mpls_label_out[0] = rsvp_tunnel->rsvp_label;
+    lspnh->stack_op[0] = PUSH;
+    lspnh->root_metric = 0;
+    lspnh->dest_metric = 0;
+    lspnh->ref_count = 0;
+    lspnh->is_eligible = TRUE;
+    return TRUE;
+}
+
 

@@ -64,6 +64,17 @@ print_p2p_adj_sid_info(edge_end_t *interface,
     printf("\n");
 }
 
+mpls_label_t 
+get_p2p_adj_sid_label(edge_end_t *interface, 
+                      ADJ_SID_PROTECTION_TYPE asf, 
+                      LEVEL level){
+
+    p2p_intf_adj_sid_t *p2p_intf_adj_sid = NULL;
+    p2p_intf_adj_sid = &interface->cfg_p2p_adj_sid_db[level][asf];
+    if(!p2p_intf_adj_sid) return 0;
+    return p2p_intf_adj_sid->sid.sid;
+}
+
 void
 unset_adj_sid(node_t *node, char *intf_name, LEVEL level, unsigned int label){
 

@@ -1003,11 +1003,25 @@ print_raw_tilfa_path(node_t *spf_root,
     trace(instance->traceopts, TILFA_BIT);
 }
 
-#define TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(seglst_ptr, nxthop_ptr)   \
-            seglst_ptr->oif = nxthop_ptr->oif;                                 \
-            strncpy(seglst_ptr->gw_ip, nxthop_ptr->gw_prefix, PREFIX_LEN);     \
-            seglst_ptr->gw_ip[PREFIX_LEN] = '\0';                              \
-            seglst_ptr->nxthop = nxthop_ptr->node;
+#define TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(seglst_ptr, nxthop_ptr, _stack_top, _level, _dest)   \
+            seglst_ptr->oif = nxthop_ptr->oif;                                             \
+            strncpy(seglst_ptr->gw_ip, nxthop_ptr->gw_prefix, PREFIX_LEN);                 \
+            seglst_ptr->gw_ip[PREFIX_LEN] = '\0';                                          \
+            seglst_ptr->nxthop = nxthop_ptr->node;                                         \
+            if((GET_EGDE_PTR_FROM_FROM_EDGE_END(nxthop_ptr->oif))->etype == LSP){          \
+                seglst_ptr->inet3_mpls_label_out[_stack_top].seg_type =  TILFA_ADJ_SID;    \
+                seglst_ptr->inet3_mpls_label_out[_stack_top].u.adj_sid =                   \
+                    get_p2p_adj_sid_label(nxthop_ptr->oif, _level, UNPROTECTED_ADJ_SID);   \
+                seglst_ptr->inet3_stack_op[_stack_top] = PUSH;                             \
+                seglst_ptr->mpls0_mpls_label_out[_stack_top].seg_type = TILFA_ADJ_SID;     \
+                seglst_ptr->mpls0_mpls_label_out[_stack_top].u.adj_sid =                   \
+                    get_p2p_adj_sid_label(nxthop_ptr->oif, _level, UNPROTECTED_ADJ_SID);   \
+                if((GET_EGDE_PTR_FROM_FROM_EDGE_END(nxthop_ptr->oif))->to.node == _dest)   \
+                    seglst_ptr->mpls0_stack_op[_stack_top] = SWAP;                         \
+                else                                                                       \
+                    seglst_ptr->mpls0_stack_op[_stack_top] = PUSH;                         \
+                _stack_top++;                                                              \
+            }
 
 
 static boolean 
@@ -1188,7 +1202,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
-                        (&gensegment_list[i]), first_hop_segments[i]);
+                        (&gensegment_list[i]), first_hop_segments[i], stack_top, level, dest);
 
                 /* inet.3
                  * push prefix sid of Destination only*/
@@ -1216,7 +1230,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
-                        (&gensegment_list[i]), first_hop_segments[i]);
+                        (&gensegment_list[i]), first_hop_segments[i], stack_top, level, dest);
 
                 /*inet.3*/
                 /*PUSH the prefix sid of Destination*/
@@ -1244,7 +1258,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
-                        (&gensegment_list[i]), first_hop_segments[i]);
+                        (&gensegment_list[i]), first_hop_segments[i], stack_top, level, dest);
 
                 /* inet.3 */
                 gensegment_list[i].inet3_stack_op[stack_top] = STACK_OPS_UNKNOWN;
@@ -1268,7 +1282,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
-                        (&gensegment_list[i]), first_hop_segments[i]);
+                        (&gensegment_list[i]), first_hop_segments[i], stack_top, level, dest);
 
                 /*inet.3*/
                 /*First push the PQ node and then the destination*/
@@ -1300,7 +1314,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
-                        (&gensegment_list[i]), first_hop_segments[i]);
+                        (&gensegment_list[i]), first_hop_segments[i], stack_top, level, dest);
 
 
                 /*inet.3*/
@@ -1330,7 +1344,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
-                        (&gensegment_list[i]), first_hop_segments[i]);
+                        (&gensegment_list[i]), first_hop_segments[i], stack_top, level, dest);
 
                 /*inet.3*/
                 /*Push the PQ node only*/
@@ -1359,7 +1373,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
-                        (&gensegment_list[i]), first_hop_segments[i]);
+                        (&gensegment_list[i]), first_hop_segments[i], stack_top, level, dest);
 
                     if(nxthop_node != p_node){
                         /*push the prefix sid of p-node in inet.3 and mpls0*/
@@ -1945,48 +1959,6 @@ tilfa_copy_gensegment_list_stacks(
     return dst_start_stack_index;
 }
 
-#if 0
-gen_segment_list_t **
-tilfa_get_segment_list(node_t *node,
-                       node_t *dst_node, /*key*/
-                       LEVEL level,
-                       uint8_t *n_segment_list/*O/P*/){
-
-    glthread_t *curr;
-    
-    gen_segment_list_t *gen_segment_list_db = 
-        calloc(MAX_NXT_HOPS, sizeof(gen_segment_list_t *));
-
-    tilfa_info_t *tilfa_info = node->tilfa_info;
-    if(!tilfa_info) return NULL;
-
-    if(level != LEVEL1 && level != LEVEL2){
-        assert(0);
-    }
-    
-    *n_segment_list = 0;
-
-    glthread_t *tilfa_segment_list =
-            &tilfa_info->tilfa_segment_list_head[level];
-
-    if(IS_GLTHREAD_LIST_EMPTY(tilfa_segment_list)) return NULL;
-
-    ITERATE_GLTHREAD_BEGIN(tilfa_segment_list, curr){
-
-        tilfa_segment_list_t *tilfa_segment_list = 
-            tilfa_segment_list_to_gensegment_list(curr);
-
-        if(dst_node != tilfa_segment_list->dest)
-            continue;
-
-        if(tilfa_segment_list->n_segment_list){
-            *n_segment_list = tilfa_segment_list->n_segment_list;
-            return tilfa_segment_list->gen_segment_list;
-        }
-    } ITERATE_GLTHREAD_END(tilfa_segment_list, curr);
-    return NULL;
-}
-#endif
 boolean
 tilfa_fill_nxthop_from_segment_lst(routes_t *route,
                                    internal_nh_t *nxthop, 

@@ -110,7 +110,7 @@ run_spf_run_all_nodes(param_t *param, ser_buff_t *tlv_buf, op_mode enable_or_dis
 
     _run_spf_run_all_nodes();
     /*now reconstruct all RSVP tunnels*/
-    _reconstruct_all_rsvp_tunnels();
+    //_reconstruct_all_rsvp_tunnels();
     return 0;
 }
 

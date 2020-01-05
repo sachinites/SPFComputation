@@ -183,4 +183,8 @@ is_static_adj_sid_in_use(node_t *node, mpls_label_t label);
 mpls_label_t
 get_adj_sid_minimum(node_t *node1, node_t *node2, LEVEL level);
 
+mpls_label_t
+get_p2p_adj_sid_label(edge_end_t *interface,
+                      ADJ_SID_PROTECTION_TYPE asf,
+                      LEVEL level);
 #endif /* __ADJ_SID__ */

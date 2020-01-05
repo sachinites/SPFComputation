@@ -77,6 +77,31 @@ typedef struct internal_nh_t_{
 
 /*macros to operate on above internal_nh_t DS*/
 
+static boolean
+is_internal_nh_t_stack_equal(internal_nh_t *nh1, 
+                             internal_nh_t *nh2){
+
+    int i = 0;
+    for( ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
+        if(nh1->mpls_label_out[i] != nh2->mpls_label_out[i] ||
+            nh1->stack_op[i] != nh2->stack_op[i])
+            return FALSE;
+    }
+    return TRUE;
+}
+
+static void
+copy_internal_nh_t_stacks(internal_nh_t *src_nh,
+                          internal_nh_t *dst_nh){
+
+    int i = 0;
+    for( ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
+
+        dst_nh->mpls_label_out[i] = src_nh->mpls_label_out[i];
+        dst_nh->stack_op[i] = src_nh->stack_op[i];
+    }
+}
+
 #define next_hop_type(_internal_nh_t)                \
     ((_internal_nh_t).nh_type)
 
@@ -116,7 +141,10 @@ typedef struct internal_nh_t_{
     (_internal_nh_t).rlfa = NULL;                                            \
     (_internal_nh_t).root_metric = 0;                                        \
     (_internal_nh_t).dest_metric = 0;                                        \
-    (_internal_nh_t).is_eligible = FALSE
+    (_internal_nh_t).is_eligible = FALSE;                                    \
+    memset((_internal_nh_t).mpls_label_out, 0, sizeof(mpls_label_t) * MPLS_STACK_OP_LIMIT_MAX);\
+    memset((_internal_nh_t).stack_op, 0, sizeof(MPLS_STACK_OP) * MPLS_STACK_OP_LIMIT_MAX);
+
 
 #define copy_internal_nh_t(_src, _dst)    \
     (_dst).level = (_src).level;          \
@@ -130,9 +158,9 @@ typedef struct internal_nh_t_{
     (_dst).rlfa = (_src).rlfa;                          \
     (_dst).root_metric = (_src).root_metric;            \
     (_dst).dest_metric = (_src).dest_metric;            \
-    (_dst).is_eligible = (_src).is_eligible
+    (_dst).is_eligible = (_src).is_eligible;            \
+    copy_internal_nh_t_stacks((&_src), (&_dst));
 
-/*ToDo : MPLS Label stack has been skipped for comparison*/
 #define is_internal_nh_t_equal(_nh1, _nh2)                   \
     (_nh1.level == _nh2.level && _nh1.node == _nh2.node &&   \
     _nh1.oif == _nh2.oif && _nh1.nh_type == _nh2.nh_type &&  \
@@ -140,7 +168,9 @@ typedef struct internal_nh_t_{
     _nh1.lfa_type == _nh2.lfa_type &&                        \
     _nh1.rlfa == _nh2.rlfa &&                                \
     _nh1.root_metric == _nh2.root_metric &&                  \
-    _nh1.dest_metric == _nh2.dest_metric)
+    _nh1.dest_metric == _nh2.dest_metric &&                  \
+    (is_internal_nh_t_stack_equal((&_nh1), (&_nh2)) == TRUE))
+
 
 #define is_internal_nh_t_empty(_nh) \
     ((_nh).oif == NULL)
@@ -159,7 +189,7 @@ typedef struct internal_nh_t_{
             printf("\t%s----%s---->%-s(%s(%s)) protecting : %s -- %s Root Metric : %u, Dst Metric : %u\n",          \
             nxthop->oif->intf_name,                                                                                 \
             next_hop_type(*_internal_nh_t_ptr) == IPNH ? "IPNH" : "LSPNH",                                          \
-            next_hop_type(*_internal_nh_t_ptr) == IPNH ? next_hop_gateway_pfx(_internal_nh_t_ptr) : "",             \
+            next_hop_gateway_pfx(_internal_nh_t_ptr),                                                               \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->node_name : _internal_nh_t_ptr->rlfa->node_name,   \
             _internal_nh_t_ptr->node ? _internal_nh_t_ptr->node->router_id : _internal_nh_t_ptr->rlfa->router_id,   \
             _internal_nh_t_ptr->protected_link->intf_name, get_str_lfa_type(_internal_nh_t_ptr->lfa_type),          \
@@ -299,5 +329,11 @@ DIST_X_Y(node_t *X, node_t *Y, LEVEL _level);
 
 void
 spf_only_intitialization(node_t *spf_root, LEVEL level);
+
+bool_t
+build_mpls_nexthop_from_lsp(spf_info_t *spf_info,
+                            internal_nh_t *lspnh,
+                            char *lsp_name, 
+                            LEVEL level);
 
 #endif /* __SPFCOMPUTATION__ */

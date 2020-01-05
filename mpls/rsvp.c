@@ -389,8 +389,8 @@ NEXT_NODE:
             init_glthread(&new_nexthop->glthread);
             
             /*collect RSVP data*/
-            rsvp_tunnel_data->physical_oif = new_nexthop->oif;
-            strncpy(rsvp_tunnel_data->gateway, new_nexthop->gw_prefix, PREFIX_LEN);
+            //rsvp_tunnel_data->physical_oif = new_nexthop->oif;
+            //strncpy(rsvp_tunnel_data->gateway, new_nexthop->gw_prefix, PREFIX_LEN);
 
             /*Now install it in inet.3 table*/
             rc = mpls_0_rt_un_route_install_nexthop(mpls_0_rib, &inet_key, rt_un_entry->level, new_nexthop);

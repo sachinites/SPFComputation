@@ -47,7 +47,7 @@ typedef struct rsvp_tunnel_{
 
     char lsp_name[RSVP_LSP_NAME_SIZE];/*key*/
     edge_end_t *physical_oif;
-    char gateway[PREFIX_LEN];
+    char gateway[PREFIX_LEN + 1];
     node_t *egress_lsr;
     mpls_label_t rsvp_label;
     glthread_t glthread;

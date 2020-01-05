@@ -256,10 +256,10 @@ inverse_topology(instance_t *instance, LEVEL level);
 #define GET_NODE_PREFIX_LIST(node_ptr, level)   (node_ptr->local_prefix_list[level])
 
 #define GET_EGDE_PTR_FROM_FROM_EDGE_END(edge_end_ptr)   \
-    (edge_t *)((char *)edge_end_ptr - (unsigned int)&(((edge_t *)0)->from))
+    (edge_t *)((char *)edge_end_ptr - (size_t)&(((edge_t *)0)->from))
 
 #define GET_EGDE_PTR_FROM_TO_EDGE_END(edge_end_ptr)     \
-    (edge_t *)((char *)edge_end_ptr - (unsigned int)&(((edge_t *)0)->to))
+    (edge_t *)((char *)edge_end_ptr - (size_t)&(((edge_t *)0)->to))
 
 #define IS_OVERLOADED(nodeptr, level)                   \
     IS_BIT_SET(nodeptr->attributes[level], OVERLOAD_BIT)

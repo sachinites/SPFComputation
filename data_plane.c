@@ -192,6 +192,9 @@ free_rt_un_entry(rt_un_entry_t *rt_un_entry){
 
     ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
         nxt_hop = glthread_to_unified_nh(curr);
+        if(nxt_hop->protocol == RSVP_PROTO ||
+            nxt_hop->protocol == LDP_PROTO)
+            continue;
         remove_glthread(curr);
         free_un_nexthop(nxt_hop);    
     } ITERATE_GLTHREAD_END(&rt_un_entry->nh_list_head, curr);
@@ -763,7 +766,10 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
 
     switch(nxthop_type){
         case IPV4_RSVP_NH:
-            break; /*Later*/
+            SET_BIT(un_nh->flags, IPV4_RSVP_NH);
+            un_nh->nh.inet3_nh.mpls_label_out[0] = nexthop->mpls_label_out[0];
+            un_nh->nh.inet3_nh.stack_op[0] = nexthop->stack_op[0];
+            return un_nh;
         case IPV4_LDP_NH: /*This functionality should go in ldpify_rlfa_nexthop()*/
         {
             if(is_node_best_prefix_originator(nexthop_node, route)){
