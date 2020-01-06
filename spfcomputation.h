@@ -135,7 +135,7 @@ copy_internal_nh_t_stacks(internal_nh_t *src_nh,
     (_internal_nh_t).oif   = &_oif_edge->from;                               \
     (_internal_nh_t).protected_link = NULL;                                  \
     (_internal_nh_t).node  = _node;                                          \
-    (_internal_nh_t).nh_type = _oif_edge->etype;                             \
+    (_internal_nh_t).nh_type = _oif_edge->etype == LSP ? LSPNH : IPNH;       \
     (_internal_nh_t).lfa_type = UNKNOWN_LFA_TYPE;                            \
     (_internal_nh_t).proxy_nbr = NULL;                                       \
     (_internal_nh_t).rlfa = NULL;                                            \

@@ -58,6 +58,10 @@ show_mpls_rsvp_label_local_bindings(node_t *node);
 extern void
 transient_mpls_pfe_engine(node_t *node, mpls_label_stack_t *mpls_label_stack,
                           node_t **next_node);
+extern glthread_t *
+tilfa_get_post_convergence_spf_path_head(
+        tilfa_info_t *tilfa_info, LEVEL level);
+
 extern boolean
 tilfa_update_config(node_t *plr_node,
             char *protected_link,
@@ -511,8 +515,12 @@ insert_lsp_as_forward_adjacency(node_t *ingress_lsr_node,
 
     edge_t *lsp = create_new_lsp_adj(lsp_name, metric, level);
     lsp->fa = rsvp_tunnel;
-
     insert_edge_between_2_nodes(lsp, ingress_lsr_node, lsp->fa->egress_lsr, UNIDIRECTIONAL);
+    /*RSVP label is to be treated as Adj sid for FAs*/
+    set_adj_sid(ingress_lsr_node, lsp_name, level, 
+                rsvp_tunnel->rsvp_label, 
+                lsp->fa->egress_lsr->node_name, 
+                CMDCODE_CONFIG_NODE_INTF_P2P_ADJ_SID_UNPROTECTED);
     return TRUE;
 }
 
@@ -979,18 +987,16 @@ show_spf_path_predecessors(node_t *spf_root, LEVEL level){
     glthread_t *curr = NULL, *curr2 = NULL;
     glthread_t *pred_db = NULL;
     spf_path_result_t *spf_path_result = NULL;
-    nh_type_t nh;
 
-    compute_spf_paths(spf_root, level, FULL_RUN);
+    //compute_spf_paths(spf_root, level, FULL_RUN);
 
-    ITERATE_NH_TYPE_BEGIN(nh){
-
-        ITERATE_GLTHREAD_BEGIN(&spf_root->spf_path_result[level][nh], curr){
+        ITERATE_GLTHREAD_BEGIN(
+            tilfa_get_post_convergence_spf_path_head(spf_root->tilfa_info, level), curr){
 
             spf_path_result = glthread_to_spf_path_result(curr);
 
-            printf("Node : %s, %s pred db for NH-TYPE : %s\n", spf_path_result->node->node_name,
-                    get_str_level(level), nh == IPNH ? "IPNH" : "LSPNH");
+            printf("Node : %s, %s pred db\n", spf_path_result->node->node_name,
+                    get_str_level(level));
 
             pred_db = &spf_path_result->pred_db;
 
@@ -1001,8 +1007,7 @@ show_spf_path_predecessors(node_t *spf_root, LEVEL level){
                         pred_info->oif->intf_name,
                         pred_info->gw_prefix);
             } ITERATE_GLTHREAD_END(pred_db, curr2);
-        } ITERATE_GLTHREAD_END(&spf_root->spf_path_result[level][nh], curr);
-    } ITERATE_NH_TYPE_END;
+        } ITERATE_GLTHREAD_END(&spf_root->tilfa_info->post_convergence_spf_path, curr);
 }
 
 

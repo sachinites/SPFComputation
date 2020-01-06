@@ -108,9 +108,11 @@ clear_spf_predecessors(glthread_t *spf_predecessors);
 typedef struct _glthread glthread_t;
 
 void
-add_pred_info_to_spf_predecessors(glthread_t *spf_predecessors, 
+add_pred_info_to_spf_predecessors(spf_info_t *spf_info, 
+                           glthread_t *spf_predecessors, 
                            node_t *pred_node, 
-                           edge_end_t *oif, char *gw_prefix);
+                           edge_end_t *oif, char *gw_prefix,
+                           LEVEL level);
 
 /*Del predecessor info from path list*/
 void
