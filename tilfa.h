@@ -61,7 +61,7 @@ typedef struct gen_segment_list_{
 
     struct s_t mpls0_mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
     MPLS_STACK_OP mpls0_stack_op[MPLS_STACK_OP_LIMIT_MAX];
-
+    boolean is_fhs_rsvp_lsp;
 } gen_segment_list_t;
 
 char *

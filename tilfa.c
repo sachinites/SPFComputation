@@ -725,6 +725,7 @@ tilfa_is_node_pruned(node_t *node){
     return node->tilfa_info->is_tilfa_pruned;
 }
 
+/*Code Duplicacy detected !!*/
 static boolean
 tilfa_does_nexthop_overlap(internal_nh_t *one_nh, 
                 internal_nh_t *nh_lst){
@@ -775,6 +776,52 @@ tilfa_does_nexthop_overlap(internal_nh_t *one_nh,
     return FALSE;
 }
 
+static boolean
+tilfa_does_nexthop_overlap2(internal_nh_t *one_nh, 
+                internal_nh_t **nh_lst){
+
+    int i = 0;
+    
+    for(; i < MAX_NXT_HOPS; i++){
+    
+        if(!nh_lst[i]) return FALSE;
+        
+        switch(nh_lst[i]->nh_type){
+            case UNICAST:
+                switch(one_nh->nh_type){
+                    case UNICAST:
+                        if(one_nh->oif == nh_lst[i]->oif)
+                            return TRUE;
+                    break;
+                    case LSP:
+                        if(one_nh->oif == nh_lst[i]->oif)
+                            return TRUE;
+                    break;
+                    default:
+                    ;
+                }
+            break;
+            case LSP:
+                switch(one_nh->nh_type){
+                    case UNICAST:
+                        if(one_nh->oif == nh_lst[i]->oif)
+                            return TRUE; 
+                    break;
+                    case LSP:
+                        if(one_nh->oif == nh_lst[i]->oif)
+                            return TRUE;
+                    break;
+                    default:
+                    ;
+                }
+            break;
+            default:
+                ;
+        }
+    }
+    return FALSE;
+}
+
 static int
 tilfa_compute_first_hop_segments(node_t *spf_root, 
                 node_t *first_hop_node,
@@ -788,13 +835,15 @@ tilfa_compute_first_hop_segments(node_t *spf_root,
    internal_nh_t *first_hop_segment_array = NULL;
    
    tilfa_info_t *tilfa_info = spf_root->tilfa_info;
-   nh_type_t nh;
+   nh_type_t nh = LSPNH;
 
    memset(first_hop_segments, 0, 
         sizeof(internal_nh_t *) * MAX_NXT_HOPS);
 
-   ITERATE_NH_TYPE_BEGIN(nh){
-       
+   /* First collect RSVP LSP NHs, followed
+    * by IPNH. This is done to reject IPNHs over
+    * RSVP LSP NHs in case of conflicts*/
+   do{
        first_hop_segment_array = 
            tilfa_lookup_post_convergence_primary_nexthops(tilfa_info,
                    first_hop_node, level, nh);
@@ -812,10 +861,19 @@ tilfa_compute_first_hop_segments(node_t *spf_root,
            if(tilfa_does_nexthop_overlap(first_hop_segment,
                        dst_pre_convergence_nhps))
                continue;
+            /* Weed out conflicting nexthops. For example,
+             * Two RSVP LSPs can go out of same physical interface
+             * Or RSVP LSP oif can coincide with IPNH*/
+            if(tilfa_does_nexthop_overlap2(first_hop_segment, 
+                first_hop_segments))  /*This needs to be addressed, incompatible arg passed*/
+               continue;
            first_hop_segments[n++] = first_hop_segment;
            if(n == MAX_NXT_HOPS) return n;
        }
-   } ITERATE_NH_TYPE_END;
+       if(nh == LSPNH)
+           nh = IPNH;
+       else break;
+   }while(1);
    return n;
 }
 
@@ -1065,6 +1123,7 @@ TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
         else
             gen_segment_list->mpls0_stack_op[*stack_top] = PUSH;
         (*stack_top)++;
+        gen_segment_list->is_fhs_rsvp_lsp = TRUE;
     }
     return TRUE;
 }
@@ -1136,8 +1195,8 @@ tilfa_compute_segment_list_connecting_p_q_nodes
 
 
     int stack_top = 0;
-    boolean is_pq_prefix_sid_connected = FALSE;
     uint32_t adj_sid = 0;
+    boolean is_pq_prefix_sid_connected = FALSE;
 
     glthread_t *p_node_thread_temp = p_node_thread;
     glthread_t *q_node_thread_temp = q_node_thread;
@@ -1286,13 +1345,10 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 gensegment_list[i].inet3_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
                 gensegment_list[i].inet3_mpls_label_out[stack_top].u.node = dest;
                 gensegment_list[i].inet3_stack_op[stack_top] = PUSH;
-#if 0
+                
                 /*mpls.0*/
-                /*Swap the dest node only*/
-                gensegment_list[i].mpls0_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
-                gensegment_list[i].mpls0_mpls_label_out[stack_top].u.node = dest;
-                gensegment_list[i].mpls0_stack_op[stack_top] = SWAP;
-#endif
+                /*No need to push anything else in mpls0 stack*/
+                gensegment_list[i].mpls0_stack_op[stack_top] = STACK_OPS_UNKNOWN;
                 i++;
             }
         }
@@ -1495,14 +1551,116 @@ tilfa_compute_segment_list_from_tilfa_raw_results
     return i;
 }
 
+static boolean
+tilfa_is_fhs_overlap(
+        tilfa_segment_list_t *tilfa_segment_list,
+        int count,
+        gen_segment_list_t *gen_segment_list){
+
+    int i;
+
+    for(i = 0; i < count; i++){
+
+        if(gen_segment_list->oif == 
+                tilfa_segment_list->gen_segment_list[i].oif)
+            return TRUE;
+    }
+    return FALSE;;
+}
+
+static void
+tilfa_merge_tilfa_segment_lists_by_destination(
+        tilfa_segment_list_t *src, 
+        tilfa_segment_list_t *dst){
+
+    tilfa_segment_list_t temp;
+    memset(&temp, 0, sizeof(tilfa_segment_list_t));
+
+    int i = 0,
+        j = 0;
+
+    tilfa_segment_list_t *array[] = {src, dst};
+    
+    int k = 0; 
+    /*copy all RSVP LSP FHS to temp*/
+    for( ; k < 2; k++){
+        for( i = 0; i < array[k]->n_segment_list; i++){
+
+            if(!array[k]->gen_segment_list[i].is_fhs_rsvp_lsp)
+                continue;
+            
+            if( k == 1){
+                if(tilfa_is_fhs_overlap(&temp, j, 
+                        &array[k]->gen_segment_list[i]))
+                    continue;
+            }
+            memcpy(&temp.gen_segment_list[j], &array[k]->gen_segment_list[i], 
+                    sizeof(gen_segment_list_t));
+            j++;
+
+            if(j == MAX_NXT_HOPS){
+                memcpy(array[k]->gen_segment_list, temp.gen_segment_list,
+                        sizeof(temp.gen_segment_list));
+                array[k]->n_segment_list = MAX_NXT_HOPS;
+                return;
+            }
+        }
+    }
+
+    /*Now copy IPNH from src and dst*/
+    for( k = 0; k < 2; k++){
+        for( i = 0; i < array[k]->n_segment_list; i++){
+
+            if(array[k]->gen_segment_list[i].is_fhs_rsvp_lsp)
+                continue;
+
+            if(tilfa_is_fhs_overlap(&temp, j, 
+                        &array[k]->gen_segment_list[i]))
+                continue;
+
+            memcpy(&temp.gen_segment_list[j], &array[k]->gen_segment_list[i], 
+                    sizeof(gen_segment_list_t));
+            j++;
+
+            if(j == MAX_NXT_HOPS){
+                memcpy(array[k]->gen_segment_list, temp.gen_segment_list,
+                        sizeof(temp.gen_segment_list));
+                array[k]->n_segment_list = MAX_NXT_HOPS;
+                return;
+            }
+        }
+    }
+    memcpy(src->gen_segment_list, temp.gen_segment_list,
+        sizeof(temp.gen_segment_list));
+    src->n_segment_list = j;
+}
+
 static void
 tilfa_record_segment_list(node_t *spf_root, 
                           LEVEL level, 
                           node_t *dst_node, 
                           tilfa_segment_list_t *tilfa_segment_list){
 
+    glthread_t *curr;
     tilfa_segment_list->dest = dst_node;
+    tilfa_segment_list_t *tilfa_segment_list_ptr = NULL;
+    
     init_glthread(&tilfa_segment_list->gen_segment_list_glue);
+
+    ITERATE_GLTHREAD_BEGIN(&spf_root->tilfa_info->tilfa_segment_list_head[level], curr){
+
+        tilfa_segment_list_ptr = tilfa_segment_list_to_gensegment_list(curr);
+        
+        if(tilfa_segment_list_ptr->dest != dst_node) continue;
+
+        tilfa_merge_tilfa_segment_lists_by_destination(
+                tilfa_segment_list_ptr, 
+                tilfa_segment_list);
+        free(tilfa_segment_list);
+
+        return;
+    } ITERATE_GLTHREAD_END(&spf_root->tilfa_info->tilfa_segment_list_head[level], curr);
+
     glthread_add_next(&spf_root->tilfa_info->tilfa_segment_list_head[level], 
         &tilfa_segment_list->gen_segment_list_glue);
 }
@@ -2136,16 +2294,12 @@ route_fetch_tilfa_backups(node_t *spf_root,
             
             for( i = 0; i < tilfa_segment_list->n_segment_list; i++){
                 
-                tilfa_bck_up = calloc(1, sizeof(internal_nh_t));
-
                 if(tilfa_fill_nxthop_from_segment_lst(route, tilfa_bck_up, 
                                   &tilfa_segment_list->gen_segment_list[i],
                                   tilfa_segment_list->pr_res, inet3, mpls0)){
-
+                    
+                    tilfa_bck_up = calloc(1, sizeof(internal_nh_t));
                     ROUTE_ADD_NH(route->backup_nh_list[LSPNH], tilfa_bck_up);
-                }
-                else{
-                    free(tilfa_bck_up);
                 }
             }
         } ITERATE_GLTHREAD_END(tilfa_segment_list, curr);
