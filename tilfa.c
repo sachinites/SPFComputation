@@ -1286,12 +1286,13 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 gensegment_list[i].inet3_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
                 gensegment_list[i].inet3_mpls_label_out[stack_top].u.node = dest;
                 gensegment_list[i].inet3_stack_op[stack_top] = PUSH;
-
+#if 0
                 /*mpls.0*/
                 /*Swap the dest node only*/
                 gensegment_list[i].mpls0_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
                 gensegment_list[i].mpls0_mpls_label_out[stack_top].u.node = dest;
                 gensegment_list[i].mpls0_stack_op[stack_top] = SWAP;
+#endif
                 i++;
             }
         }
