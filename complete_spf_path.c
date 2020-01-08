@@ -285,10 +285,14 @@ print_sr_tunnel_paths(glthread_t *path, void *arg){
 }
 
 static void
-construct_spf_path_recursively(node_t *spf_root, glthread_t *spf_predecessors, 
-                           LEVEL level, nh_type_t nh, glthread_t *path, 
-                           spf_path_processing_fn_ptr fn_ptr, void *fn_ptr_arg,
-                           boolean is_post_conv_path){
+construct_spf_path_recursively(node_t *spf_root, 
+                               glthread_t *spf_predecessors, 
+                               LEVEL level, 
+                               nh_type_t nh, 
+                               glthread_t *path, 
+                               spf_path_processing_fn_ptr fn_ptr, 
+                               void *fn_ptr_arg,
+                               boolean is_post_conv_path){
 
     glthread_t *curr = NULL;
     pred_info_t *pred_info = NULL;

@@ -781,7 +781,7 @@ tilfa_does_nexthop_overlap2(internal_nh_t *one_nh,
                 internal_nh_t **nh_lst){
 
     int i = 0;
-    
+    return FALSE; 
     for(; i < MAX_NXT_HOPS; i++){
     
         if(!nh_lst[i]) return FALSE;
@@ -867,6 +867,7 @@ tilfa_compute_first_hop_segments(node_t *spf_root,
             if(tilfa_does_nexthop_overlap2(first_hop_segment, 
                 first_hop_segments))  /*This needs to be addressed, incompatible arg passed*/
                continue;
+           
            first_hop_segments[n++] = first_hop_segment;
            if(n == MAX_NXT_HOPS) return n;
        }
@@ -1559,6 +1560,7 @@ tilfa_is_fhs_overlap(
 
     int i;
 
+    return FALSE;
     for(i = 0; i < count; i++){
 
         if(gen_segment_list->oif == 
@@ -1570,16 +1572,16 @@ tilfa_is_fhs_overlap(
 
 static void
 tilfa_merge_tilfa_segment_lists_by_destination(
-        tilfa_segment_list_t *src, 
-        tilfa_segment_list_t *dst){
-
-    tilfa_segment_list_t temp;
-    memset(&temp, 0, sizeof(tilfa_segment_list_t));
+        tilfa_segment_list_t *dst, 
+        tilfa_segment_list_t *src){
 
     int i = 0,
         j = 0;
 
-    tilfa_segment_list_t *array[] = {src, dst};
+    tilfa_segment_list_t temp;
+    memset(&temp, 0, sizeof(tilfa_segment_list_t));
+
+    tilfa_segment_list_t *array[] = {dst, src};
     
     int k = 0; 
     /*copy all RSVP LSP FHS to temp*/
@@ -1630,9 +1632,9 @@ tilfa_merge_tilfa_segment_lists_by_destination(
             }
         }
     }
-    memcpy(src->gen_segment_list, temp.gen_segment_list,
+    memcpy(dst->gen_segment_list, temp.gen_segment_list,
         sizeof(temp.gen_segment_list));
-    src->n_segment_list = j;
+    dst->n_segment_list = j;
 }
 
 static void
