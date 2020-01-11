@@ -904,8 +904,9 @@ build_mpls_nexthop_from_lsp(spf_info_t *spf_info,
     strncpy(lspnh->gw_prefix, rsvp_tunnel->gateway, PREFIX_LEN);
     lspnh->gw_prefix[PREFIX_LEN] = '\0';
     lspnh->nh_type = LSPNH;
-    lspnh->lfa_type = UNKNOWN_LFA_TYPE;
-    lspnh->proxy_nbr = (GET_EGDE_PTR_FROM_FROM_EDGE_END(lspnh->oif))->to.node;
+    lspnh->lfa_type = NO_LFA;
+    lspnh->proxy_nbr = 
+        (GET_EGDE_PTR_FROM_FROM_EDGE_END(lspnh->oif))->to.node;
     lspnh->rlfa = NULL;
     lspnh->mpls_label_out[0] = rsvp_tunnel->rsvp_label;
     lspnh->stack_op[0] = PUSH;

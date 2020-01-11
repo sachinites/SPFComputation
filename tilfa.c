@@ -1191,7 +1191,6 @@ tilfa_compute_segment_list_connecting_p_q_nodes
                       gen_segment_list_t *gensegment_list,
                       int q_distance, 
                       int pq_distance,
-                      internal_nh_t **first_hop_segments,
                       protected_resource_t *pr_res){
 
 
@@ -1910,7 +1909,6 @@ tilfa_examine_tilfa_path_for_segment_list(
                     dst_node, level,
                     tilfa_segment_list->gen_segment_list,
                     q_distance, pq_distance,
-                    first_hop_segments,
                     pr_res);
 
         if(!segment_list_len_from_p_to_q){
