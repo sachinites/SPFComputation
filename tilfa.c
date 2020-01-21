@@ -781,7 +781,7 @@ tilfa_does_nexthop_overlap2(internal_nh_t *one_nh,
                 internal_nh_t **nh_lst){
 
     int i = 0;
-    return FALSE; 
+    //return FALSE; 
     for(; i < MAX_NXT_HOPS; i++){
     
         if(!nh_lst[i]) return FALSE;
@@ -2270,6 +2270,7 @@ route_fetch_tilfa_backups(node_t *spf_root,
     glthread_t *tilfa_segment_list_head =
         &tilfa_info->tilfa_segment_list_head[route->level];
 
+    internal_nh_t tilfa_bck_up_lcl;
     internal_nh_t *tilfa_bck_up = NULL;
 
     prefix_pref_data_t prefix_pref;
@@ -2294,11 +2295,12 @@ route_fetch_tilfa_backups(node_t *spf_root,
             
             for( i = 0; i < tilfa_segment_list->n_segment_list; i++){
                 
-                if(tilfa_fill_nxthop_from_segment_lst(route, tilfa_bck_up, 
+                if(tilfa_fill_nxthop_from_segment_lst(route, &tilfa_bck_up_lcl, 
                                   &tilfa_segment_list->gen_segment_list[i],
                                   tilfa_segment_list->pr_res, inet3, mpls0)){
                     
                     tilfa_bck_up = calloc(1, sizeof(internal_nh_t));
+                    copy_internal_nh_t(tilfa_bck_up_lcl, (*tilfa_bck_up));
                     ROUTE_ADD_NH(route->backup_nh_list[LSPNH], tilfa_bck_up);
                 }
             }
