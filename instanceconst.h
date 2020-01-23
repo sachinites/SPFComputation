@@ -60,6 +60,8 @@ typedef char FLAG;
 typedef char BYTE;
 typedef unsigned int mpls_label_t;
 
+#define NO_TAG  0xFFFFFFFF
+
 /*Edge properties*/
 typedef enum{
     UNIDIRECTIONAL,

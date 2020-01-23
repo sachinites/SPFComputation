@@ -247,5 +247,8 @@ get_adj_sid_minimum(node_t *node1, node_t *node2, LEVEL level){
             metric = edge->metric[level];
         }
     }
-    return p2p_intf_adj_sid ? p2p_intf_adj_sid->sid.sid : 0;
+    return p2p_intf_adj_sid ? 
+           (p2p_intf_adj_sid->sid.sid != 0 && 
+             p2p_intf_adj_sid->sid.sid != NO_TAG) ? \
+             p2p_intf_adj_sid->sid.sid : NO_TAG : NO_TAG;
 }
