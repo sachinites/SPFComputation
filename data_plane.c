@@ -787,12 +787,12 @@ inet_3_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto,
         break;
         case IPV4_SPRING_NH:
         {
+            SET_BIT(un_nh->flags, IPV4_SPRING_NH);
             if(is_node_best_prefix_originator(nexthop_node, route)){
                 /* No need to label the packet when src and dest are 
                  * direct nbrs - that is there is not transient nxthop*/
                 return un_nh;
             }
-            SET_BIT(un_nh->flags, IPV4_SPRING_NH);
             if(!is_node_spring_enabled(nexthop_node, route->level)){
                 /*If nexthop node is not spring enabled, we cannot obtain 
                  * outgoing SR label for it. Try for LDP label instead.
