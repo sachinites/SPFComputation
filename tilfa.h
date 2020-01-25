@@ -42,7 +42,8 @@ typedef struct edge_end_ interface_t;
 typedef enum{
 
     TILFA_PREFIX_SID_REFERENCE,
-    TILFA_ADJ_SID
+    TILFA_ADJ_SID,
+    RSVP_LSP_LABEL
 } tilfa_seg_type;
 
 typedef struct gen_segment_list_{
@@ -69,7 +70,7 @@ typedef struct gen_segment_list_{
     boolean is_fhs_rsvp_lsp;
 } gen_segment_list_t;
 
-static void
+void
 tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
                   int stack_index,
                   boolean inet3,
@@ -77,53 +78,23 @@ tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
                   node_t *from_node,
                   node_t *to_node,
                   LEVEL level,
-                  mpls_label_t adj_sid){
+                  mpls_label_t adj_sid,
+                  tilfa_seg_type seg_type);
 
-    assert((inet3 && !mpls0) || 
-        (!inet3 && mpls0));
-
-    assert(((from_node && to_node) && (adj_sid == NO_TAG))|| 
-            ((!from_node && !to_node) && (adj_sid != NO_TAG)));
-
-    if(inet3){
-        gen_segment_list->inet3_mpls_label_out[stack_index].seg_type 
-            = TILFA_ADJ_SID;
-        gen_segment_list->inet3_mpls_label_out[stack_index].u.adj_sid.from_node = from_node;
-        gen_segment_list->inet3_mpls_label_out[stack_index].u.adj_sid.to_node = to_node;
-        gen_segment_list->inet3_mpls_label_out[stack_index].u.adj_sid.adj_sid = 
-            (adj_sid == NO_TAG && from_node && to_node) ? 
-                get_adj_sid_minimum(from_node, to_node, level):
-                adj_sid;
-    }
-    else if(mpls0){
-        gen_segment_list->mpls0_mpls_label_out[stack_index].seg_type 
-            = TILFA_ADJ_SID;
-        gen_segment_list->mpls0_mpls_label_out[stack_index].u.adj_sid.from_node = from_node;
-        gen_segment_list->mpls0_mpls_label_out[stack_index].u.adj_sid.to_node = to_node;
-        gen_segment_list->mpls0_mpls_label_out[stack_index].u.adj_sid.adj_sid =
-            (adj_sid == NO_TAG && from_node && to_node) ?
-                get_adj_sid_minimum(from_node, to_node, level):
-                adj_sid;
-    }
-}
-
-#define TILFA_SET_INET3_ACTUAL_ADJ_SID(gen_segment_list_ptr,    \
-        stack_index, adj_sid)\
-        (tilfa_set_adj_sid(gen_segment_list_ptr, stack_index,\
-        TRUE, FALSE, 0, 0, LEVEL_UNKNOWN, adj_sid))
-
-#define TILFA_SET_MPLS0_ACTUAL_ADJ_SID(gen_segment_list_ptr,    \
-        stack_index, adj_sid)\
-        (tilfa_set_adj_sid(gen_segment_list_ptr, stack_index,\
-        FALSE, TRUE, 0, 0, LEVEL_UNKNOWN, adj_sid))
+void
+tilfa_genseglst_fill_oif_gateway_from_nexthop(
+                  node_t *spf_root,
+                  LEVEL level,
+                  gen_segment_list_t *gen_segment_list,
+                  internal_nh_t *nxthop_ptr,
+                  int *stack_top,
+                  node_t *dest);
 
 #define TILFA_SEGLIST_IS_INET3_ADJ_SID_SET(gen_segment_list_ptr, stack_index)   \
-    (gen_segment_list_ptr->inet3_mpls_label_out[stack_index].seg_type == TILFA_ADJ_SID && \
-    gen_segment_list_ptr->inet3_mpls_label_out[stack_index].u.adj_sid.adj_sid != NO_TAG)
+    (gen_segment_list_ptr->inet3_mpls_label_out[stack_index].u.adj_sid.adj_sid != NO_TAG)
 
 #define TILFA_SEGLIST_IS_MPLS0_ADJ_SID_SET(gen_segment_list_ptr, stack_index)   \
-    (gen_segment_list_ptr->mpls0_mpls_label_out[stack_index].seg_type == TILFA_ADJ_SID && \
-    gen_segment_list_ptr->mpls0_mpls_label_out[stack_index].u.adj_sid.adj_sid != NO_TAG)
+    (gen_segment_list_ptr->mpls0_mpls_label_out[stack_index].u.adj_sid.adj_sid != NO_TAG)
 
 #define TILFA_GET_INET3_ADJ_SID(gen_segment_list_ptr, stack_index)  \
     (gen_segment_list_ptr->inet3_mpls_label_out[stack_index].u.adj_sid.adj_sid)

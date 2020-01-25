@@ -90,16 +90,38 @@ is_internal_nh_t_stack_equal(internal_nh_t *nh1,
     return TRUE;
 }
 
-static void
-copy_internal_nh_t_stacks(internal_nh_t *src_nh,
-                          internal_nh_t *dst_nh){
+static int
+copy_mpls_label_stacks(mpls_label_t *src_mpls_label_stack,
+                       MPLS_STACK_OP *src_stack_op,
+                       mpls_label_t *dst_mpls_label_stack,
+                       MPLS_STACK_OP *dst_stack_op,
+                       int max_stack_size){
 
     int i = 0;
-    for( ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
+    for( ; i < max_stack_size; i++){
 
-        dst_nh->mpls_label_out[i] = src_nh->mpls_label_out[i];
-        dst_nh->stack_op[i] = src_nh->stack_op[i];
+        dst_mpls_label_stack[i] = 0;
+        dst_stack_op[i] = STACK_OPS_UNKNOWN;
     }
+    for( i = 0; i < max_stack_size; i++){
+
+        if(src_stack_op[i] == STACK_OPS_UNKNOWN)
+            return i;
+        dst_stack_op[i] = src_stack_op[i];
+        dst_mpls_label_stack[i] = src_mpls_label_stack[i];
+    }
+    return i;
+}
+
+static int
+copy_internal_nh_t_stacks(internal_nh_t *src, 
+                          internal_nh_t *dst){
+
+    return (copy_mpls_label_stacks(src->mpls_label_out,
+                src->stack_op,
+                dst->mpls_label_out,
+                dst->stack_op,
+                MPLS_STACK_OP_LIMIT_MAX));
 }
 
 #define next_hop_type(_internal_nh_t)                \

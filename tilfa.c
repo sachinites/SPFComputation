@@ -1100,34 +1100,55 @@ print_raw_tilfa_path(node_t *spf_root,
     trace(instance->traceopts, TILFA_BIT);
 }
 
-static inline boolean
-TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+void
+tilfa_genseglst_fill_oif_gateway_from_nexthop(
+                node_t *spf_root,
+                LEVEL level,
                 gen_segment_list_t *gen_segment_list, 
                 internal_nh_t *nxthop_ptr, 
                 int *stack_top, 
                 node_t *dest){
 
+    int i = 0;
     gen_segment_list->oif = nxthop_ptr->oif;  /*Actual Physical Interface*/
     strncpy(gen_segment_list->gw_ip, nxthop_ptr->gw_prefix, PREFIX_LEN);
     gen_segment_list->gw_ip[PREFIX_LEN] = '\0';
     gen_segment_list->nxthop = nxthop_ptr->node;
+    
     if(nxthop_ptr->nh_type == LSPNH){
 
-        TILFA_SET_INET3_ACTUAL_ADJ_SID(gen_segment_list, 
-            *stack_top, nxthop_ptr->mpls_label_out[0]);
-        gen_segment_list->inet3_stack_op[*stack_top] = PUSH;
+        /* Copy the entire RSVP LSP label stack into gen_segment_list
+         * inet3 label stack with bottom most stack operation as PUSH*/
+        for( i = 0 ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
 
-        TILFA_SET_MPLS0_ACTUAL_ADJ_SID(gen_segment_list, 
-            *stack_top, nxthop_ptr->mpls_label_out[0]);
+            if(nxthop_ptr->stack_op[i] == STACK_OPS_UNKNOWN)
+                break;
+            tilfa_set_adj_sid(gen_segment_list, *stack_top + i, 
+                TRUE, FALSE, spf_root, nxthop_ptr->node, level, 
+                nxthop_ptr->mpls_label_out[i], RSVP_LSP_LABEL);
+            gen_segment_list->inet3_stack_op[*stack_top + i] = PUSH;
+        }
+
+        /* Copy the entire RSVP LSP label stack into gen_segment_list
+         * mpls.0 label stack with bottom most stack operation as SWAP*/
+        for( i = 0 ; i < MPLS_STACK_OP_LIMIT_MAX; i++){
+
+            if(nxthop_ptr->stack_op[i] == STACK_OPS_UNKNOWN)
+                break;
+            tilfa_set_adj_sid(gen_segment_list, *stack_top + i, 
+                FALSE, TRUE, spf_root, nxthop_ptr->node, level, 
+                nxthop_ptr->mpls_label_out[i], RSVP_LSP_LABEL);
+            gen_segment_list->mpls0_stack_op[*stack_top + i] = PUSH;
+        }
+
+        /*Overwrite the bottom most label with SWAP if RSVP LSP tail-end
+         * destination is also a nexthop*/
         if(nxthop_ptr->node == dest)
             gen_segment_list->mpls0_stack_op[*stack_top] = SWAP;
-        else
-            gen_segment_list->mpls0_stack_op[*stack_top] = PUSH;
 
-        (*stack_top)++;
+        *stack_top += i;
         gen_segment_list->is_fhs_rsvp_lsp = TRUE;
     }
-    return TRUE;
 }
 
 static boolean 
@@ -1175,6 +1196,42 @@ tilfa_attempt_connect_p_q_by_prefix_sid(node_t *spf_root,
         }
     }
     return FALSE;
+}
+
+void
+tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
+                  int stack_index,
+                  boolean inet3,
+                  boolean mpls0,
+                  node_t *from_node,
+                  node_t *to_node,
+                  LEVEL level,
+                  mpls_label_t adj_sid,
+                  tilfa_seg_type seg_type){
+
+    assert((inet3 && !mpls0) ||
+            (!inet3 && mpls0));
+
+    if(inet3){
+        gen_segment_list->inet3_mpls_label_out[stack_index].seg_type
+            = seg_type;
+        gen_segment_list->inet3_mpls_label_out[stack_index].u.adj_sid.from_node = from_node;
+        gen_segment_list->inet3_mpls_label_out[stack_index].u.adj_sid.to_node = to_node;
+        gen_segment_list->inet3_mpls_label_out[stack_index].u.adj_sid.adj_sid =
+            (adj_sid == NO_TAG && from_node && to_node && seg_type == TILFA_ADJ_SID) ?
+            get_adj_sid_minimum(from_node, to_node, level):
+            adj_sid;
+    }
+    else if(mpls0){
+        gen_segment_list->mpls0_mpls_label_out[stack_index].seg_type
+            = seg_type;
+        gen_segment_list->mpls0_mpls_label_out[stack_index].u.adj_sid.from_node = from_node;
+        gen_segment_list->mpls0_mpls_label_out[stack_index].u.adj_sid.to_node = to_node;
+        gen_segment_list->mpls0_mpls_label_out[stack_index].u.adj_sid.adj_sid =
+            (adj_sid == NO_TAG && from_node && to_node && seg_type == TILFA_ADJ_SID) ?
+            get_adj_sid_minimum(from_node, to_node, level):
+            adj_sid;
+    }
 }
 
 /* A function to compute the segment list connecting non-adjacent P - Q
@@ -1236,13 +1293,13 @@ tilfa_compute_segment_list_connecting_p_q_nodes
                 tilfa_set_adj_sid(gensegment_list, stack_top, 
                     TRUE, FALSE, p_node, 
                     GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread_temp->right), 
-                    level, NO_TAG);
+                    level, NO_TAG, TILFA_ADJ_SID);
                 gensegment_list->inet3_stack_op[stack_top] = PUSH;
 
                 tilfa_set_adj_sid(gensegment_list, stack_top, 
                     FALSE, TRUE, p_node, 
                     GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread_temp->right), 
-                    level, NO_TAG);
+                    level, NO_TAG, TILFA_ADJ_SID);
 
                 gensegment_list->mpls0_stack_op[stack_top] = PUSH;
                 stack_top++;
@@ -1311,7 +1368,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
                 
                 stack_top = 0;
-                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level, 
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /* inet.3
@@ -1340,7 +1397,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /*inet.3*/
@@ -1367,7 +1424,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /* inet.3 */
@@ -1392,7 +1449,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /*inet.3*/
@@ -1425,7 +1482,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
 
@@ -1456,7 +1513,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /*inet.3*/
@@ -1486,7 +1543,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                TILFA_GENSEGLST_FILL_OIF_GATEWAY_FROM_NXTHOP(
+                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                     if(nxthop_node != p_node){
@@ -2090,6 +2147,20 @@ tilfa_print_one_liner_segment_list(
                             get_str_stackops(gen_segment_list->inet3_stack_op[i]));
                     }
                 break;
+                case RSVP_LSP_LABEL:
+                    if(TILFA_SEGLIST_IS_INET3_ADJ_SID_SET(gen_segment_list, i)){
+                    rc += snprintf(buffer + rc, 1024, "%u(%s)  ",
+                            gen_segment_list->inet3_mpls_label_out[i].u.adj_sid.adj_sid,
+                            get_str_stackops(gen_segment_list->inet3_stack_op[i]));
+                    }
+                    else{
+                    assert(0); /*Label must be allocated for RSVP LSP*/
+                    rc += snprintf(buffer + rc, 1024, "[%s-->>%s](%s)  ",
+                            gen_segment_list->inet3_mpls_label_out[i].u.adj_sid.from_node->node_name,
+                            gen_segment_list->inet3_mpls_label_out[i].u.adj_sid.to_node->node_name,
+                            get_str_stackops(gen_segment_list->inet3_stack_op[i]));
+                    }
+                break;
                 default:
                     ;
             }
@@ -2136,6 +2207,19 @@ tilfa_print_one_liner_segment_list(
                             get_str_stackops(gen_segment_list->mpls0_stack_op[i]));
                     }
                 break;
+                case RSVP_LSP_LABEL:
+                    if(TILFA_SEGLIST_IS_INET3_ADJ_SID_SET(gen_segment_list, i)){
+                    rc += snprintf(buffer + rc, 1024, "%u(%s)  ",
+                            gen_segment_list->inet3_mpls_label_out[i].u.adj_sid.adj_sid,
+                            get_str_stackops(gen_segment_list->inet3_stack_op[i]));
+                    }
+                    else{
+                    assert(0); /*Label must be allocated for RSVP LSP*/
+                    rc += snprintf(buffer + rc, 1024, "[%s-->>%s](%s)  ",
+                            gen_segment_list->inet3_mpls_label_out[i].u.adj_sid.from_node->node_name,
+                            gen_segment_list->inet3_mpls_label_out[i].u.adj_sid.to_node->node_name,
+                            get_str_stackops(gen_segment_list->inet3_stack_op[i]));
+                    }
                 default:
                     ;
             }
