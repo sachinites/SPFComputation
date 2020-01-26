@@ -114,6 +114,16 @@ copy_mpls_label_stacks(mpls_label_t *src_mpls_label_stack,
 }
 
 static int
+mpls_label_stack_depth(internal_nh_t *internal_nh){
+
+    int i = 0;
+    while(internal_nh->stack_op[i] != STACK_OPS_UNKNOWN){
+        i++;
+    }
+    return i;
+}
+
+static int
 copy_internal_nh_t_stacks(internal_nh_t *src, 
                           internal_nh_t *dst){
 

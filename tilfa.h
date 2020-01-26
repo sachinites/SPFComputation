@@ -51,6 +51,7 @@ typedef struct gen_segment_list_{
     interface_t *oif;
     char gw_ip[PREFIX_LEN + 1];
     node_t *nxthop;
+    boolean is_fhs_rsvp_lsp;
     struct s_t{
         tilfa_seg_type seg_type;
         union gen_segment_list_u_{
@@ -64,11 +65,35 @@ typedef struct gen_segment_list_{
     };
     struct s_t inet3_mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
     MPLS_STACK_OP inet3_stack_op[MPLS_STACK_OP_LIMIT_MAX];
-
     struct s_t mpls0_mpls_label_out[MPLS_STACK_OP_LIMIT_MAX];
     MPLS_STACK_OP mpls0_stack_op[MPLS_STACK_OP_LIMIT_MAX];
-    boolean is_fhs_rsvp_lsp;
 } gen_segment_list_t;
+
+static int
+gen_segment_list_mpls_label_stack_depth(
+            gen_segment_list_t *gen_segment_list, 
+            boolean inet3, 
+            boolean mpls0){
+
+    assert((inet3 && !mpls0) ||
+        (!inet3 && mpls0));
+
+    int i = 0 ;
+
+    if(inet3){
+
+        while(gen_segment_list->inet3_stack_op[i] != STACK_OPS_UNKNOWN){
+            i++;
+        }
+    }
+    else if(mpls0){
+
+        while(gen_segment_list->mpls0_stack_op[i] != STACK_OPS_UNKNOWN){
+            i++;
+        }
+    }
+    return i;
+}
 
 void
 tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
@@ -82,7 +107,7 @@ tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
                   tilfa_seg_type seg_type);
 
 void
-tilfa_genseglst_fill_oif_gateway_from_nexthop(
+tilfa_genseglst_fill_first_hop_segment(
                   node_t *spf_root,
                   LEVEL level,
                   gen_segment_list_t *gen_segment_list,

@@ -1101,7 +1101,7 @@ print_raw_tilfa_path(node_t *spf_root,
 }
 
 void
-tilfa_genseglst_fill_oif_gateway_from_nexthop(
+tilfa_genseglst_fill_first_hop_segment(
                 node_t *spf_root,
                 LEVEL level,
                 gen_segment_list_t *gen_segment_list, 
@@ -1114,7 +1114,7 @@ tilfa_genseglst_fill_oif_gateway_from_nexthop(
     strncpy(gen_segment_list->gw_ip, nxthop_ptr->gw_prefix, PREFIX_LEN);
     gen_segment_list->gw_ip[PREFIX_LEN] = '\0';
     gen_segment_list->nxthop = nxthop_ptr->node;
-    
+
     if(nxthop_ptr->nh_type == LSPNH){
 
         /* Copy the entire RSVP LSP label stack into gen_segment_list
@@ -1141,10 +1141,10 @@ tilfa_genseglst_fill_oif_gateway_from_nexthop(
             gen_segment_list->mpls0_stack_op[*stack_top + i] = PUSH;
         }
 
-        /*Overwrite the bottom most label with SWAP if RSVP LSP tail-end
+        /*Overwrite the top most label with SWAP if RSVP LSP tail-end
          * destination is also a nexthop*/
         if(nxthop_ptr->node == dest)
-            gen_segment_list->mpls0_stack_op[*stack_top] = SWAP;
+            gen_segment_list->mpls0_stack_op[*stack_top + i] = SWAP;
 
         *stack_top += i;
         gen_segment_list->is_fhs_rsvp_lsp = TRUE;
@@ -1268,10 +1268,12 @@ tilfa_compute_segment_list_connecting_p_q_nodes
         if(is_pq_prefix_sid_connected){
             
             /*Push prefix sid of q-node*/
-            gensegment_list->inet3_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
+            gensegment_list->inet3_mpls_label_out[stack_top].seg_type = 
+                TILFA_PREFIX_SID_REFERENCE;
             gensegment_list->inet3_mpls_label_out[stack_top].u.node = q_node;
             gensegment_list->inet3_stack_op[stack_top] = PUSH;
-            gensegment_list->mpls0_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
+            gensegment_list->mpls0_mpls_label_out[stack_top].seg_type = 
+                TILFA_PREFIX_SID_REFERENCE;
             gensegment_list->mpls0_mpls_label_out[stack_top].u.node = q_node;
             gensegment_list->mpls0_stack_op[stack_top] = PUSH;
             stack_top++;
@@ -1300,8 +1302,8 @@ tilfa_compute_segment_list_connecting_p_q_nodes
                     FALSE, TRUE, p_node, 
                     GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread_temp->right), 
                     level, NO_TAG, TILFA_ADJ_SID);
-
                 gensegment_list->mpls0_stack_op[stack_top] = PUSH;
+
                 stack_top++;
                 p_node_thread_temp = p_node_thread_temp->right;
                 p_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread_temp);
@@ -1368,7 +1370,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
                 
                 stack_top = 0;
-                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level, 
+                tilfa_genseglst_fill_first_hop_segment(spf_root, level, 
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /* inet.3
@@ -1397,7 +1399,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
+                tilfa_genseglst_fill_first_hop_segment(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /*inet.3*/
@@ -1424,7 +1426,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
+                tilfa_genseglst_fill_first_hop_segment(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /* inet.3 */
@@ -1449,7 +1451,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
+                tilfa_genseglst_fill_first_hop_segment(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /*inet.3*/
@@ -1482,7 +1484,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
+                tilfa_genseglst_fill_first_hop_segment(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
 
@@ -1513,7 +1515,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
+                tilfa_genseglst_fill_first_hop_segment(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                 /*inet.3*/
@@ -1543,7 +1545,7 @@ tilfa_compute_segment_list_from_tilfa_raw_results
             while(first_hop_segments[i]){
 
                 stack_top = 0;
-                tilfa_genseglst_fill_oif_gateway_from_nexthop(spf_root, level,
+                tilfa_genseglst_fill_first_hop_segment(spf_root, level,
                         (&gensegment_list[i]), first_hop_segments[i], &stack_top, dest);
 
                     if(nxthop_node != p_node){
@@ -1718,7 +1720,6 @@ tilfa_record_segment_list(node_t *spf_root,
                 tilfa_segment_list_ptr, 
                 tilfa_segment_list);
         free(tilfa_segment_list);
-
         return;
     } ITERATE_GLTHREAD_END(&spf_root->tilfa_info->tilfa_segment_list_head[level], curr);
 
@@ -2276,6 +2277,8 @@ tilfa_copy_gensegment_list_stacks(
     return dst_start_stack_index;
 }
 
+/* We execute MPLs label stack of nexthop from top to
+ * bottom on the packet (i.e. from higher index to index = 0).*/
 boolean
 tilfa_fill_nxthop_from_segment_lst(routes_t *route,
                                    internal_nh_t *nxthop, 
@@ -2297,50 +2300,47 @@ tilfa_fill_nxthop_from_segment_lst(routes_t *route,
     nxthop->proxy_nbr = gensegment_lst->nxthop;
     nxthop->rlfa = 0;      /*Not Valid for TILFA*/
 
-    int i = MPLS_STACK_OP_LIMIT_MAX - 1,
-        j = 0;
+    int i = 0;
     if(inet3){
-        for(; i >= 0; i--){
+        for(i = 0; i < MPLS_STACK_OP_LIMIT_MAX; i++){
             if(gensegment_lst->inet3_stack_op[i] == STACK_OPS_UNKNOWN)
                 continue;
             if(TILFA_SEGLIST_IS_INET3_ADJ_SID_SET(gensegment_lst, i)){
-                nxthop->mpls_label_out[j] = TILFA_GET_INET3_ADJ_SID(gensegment_lst, i);
+                nxthop->mpls_label_out[i] = TILFA_GET_INET3_ADJ_SID(gensegment_lst, i);
             }
             else if(gensegment_lst->inet3_mpls_label_out[i].seg_type == TILFA_PREFIX_SID_REFERENCE){
                 
                 if(!is_node_spring_enabled(gensegment_lst->inet3_mpls_label_out[i].u.node, route->level))
                     return FALSE;
 
-                nxthop->mpls_label_out[j] = PREFIX_SID_LABEL(
+                nxthop->mpls_label_out[i] = PREFIX_SID_LABEL(
                     gensegment_lst->inet3_mpls_label_out[i].u.node->srgb, 
                     (prefix_t *)ROUTE_GET_BEST_PREFIX(route));
             }
-            if(nxthop->mpls_label_out[j] == NO_TAG)
+            if(nxthop->mpls_label_out[i] == NO_TAG)
                 return FALSE;
-            nxthop->stack_op[j] = gensegment_lst->inet3_stack_op[i];
-            j++;
+            nxthop->stack_op[i] = gensegment_lst->inet3_stack_op[i];
         }
     }
     else if(mpls0){
-        for(; i >= 0; i--){
+        for(i = 0; i < MPLS_STACK_OP_LIMIT_MAX; i++){
             if(gensegment_lst->mpls0_stack_op[i] == STACK_OPS_UNKNOWN)
                 continue;
              if(TILFA_SEGLIST_IS_MPLS0_ADJ_SID_SET(gensegment_lst, i)){
-                nxthop->mpls_label_out[j] = TILFA_GET_MPLS0_ADJ_SID(gensegment_lst, i);
+                nxthop->mpls_label_out[i] = TILFA_GET_MPLS0_ADJ_SID(gensegment_lst, i);
              }
              else if(gensegment_lst->mpls0_mpls_label_out[i].seg_type == TILFA_PREFIX_SID_REFERENCE){
                 
                 if(!is_node_spring_enabled(gensegment_lst->mpls0_mpls_label_out[i].u.node, route->level))
                     return FALSE;
 
-                nxthop->mpls_label_out[j] = PREFIX_SID_LABEL(
+                nxthop->mpls_label_out[i] = PREFIX_SID_LABEL(
                     gensegment_lst->mpls0_mpls_label_out[i].u.node->srgb,
                     (prefix_t *)ROUTE_GET_BEST_PREFIX(route));
              }
-             if(nxthop->mpls_label_out[j] == NO_TAG)
+             if(nxthop->mpls_label_out[i] == NO_TAG)
                  return FALSE;
-            nxthop->stack_op[j] = gensegment_lst->mpls0_stack_op[i];
-            j++;
+            nxthop->stack_op[i] = gensegment_lst->mpls0_stack_op[i];
         }
     }
     nxthop->root_metric = 0;
