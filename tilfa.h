@@ -126,6 +126,30 @@ tilfa_genseglst_fill_first_hop_segment(
 #define TILFA_GET_MPLS0_ADJ_SID(gen_segment_list_ptr, stack_index)  \
     (gen_segment_list_ptr->mpls0_mpls_label_out[stack_index].u.adj_sid.adj_sid)
 
+
+static node_t *
+tilfa_get_adj_sid_to_node(
+        gen_segment_list_t *gen_segment_list, 
+        int stack_index,
+        boolean inet3, boolean mpls0){
+
+    if(inet3){
+
+        if(gen_segment_list->inet3_mpls_label_out[stack_index].seg_type == TILFA_ADJ_SID ||
+            gen_segment_list->inet3_mpls_label_out[stack_index].seg_type == RSVP_LSP_LABEL)
+            return gen_segment_list->inet3_mpls_label_out[stack_index].u.adj_sid.to_node;
+    }
+    
+    else if(mpls0){
+
+        if(gen_segment_list->mpls0_mpls_label_out[stack_index].seg_type == TILFA_ADJ_SID ||
+            gen_segment_list->mpls0_mpls_label_out[stack_index].seg_type == RSVP_LSP_LABEL)
+            return gen_segment_list->mpls0_mpls_label_out[stack_index].u.adj_sid.to_node;
+    }
+    assert(0);
+    return NULL;
+}
+
 char *
 tilfa_print_one_liner_segment_list(
             gen_segment_list_t *gen_segment_list, 

@@ -1198,6 +1198,9 @@ tilfa_attempt_connect_p_q_by_prefix_sid(node_t *spf_root,
     return FALSE;
 }
 
+/* This fn is used to store Adj sid or RSVP LSP label in inet3/mpls
+ * label stack. RSVP LSP label are stored in adj-sid notion in 
+ * label stack*/
 void
 tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
                   int stack_index,
@@ -1211,6 +1214,9 @@ tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
 
     assert((inet3 && !mpls0) ||
             (!inet3 && mpls0));
+
+    assert(adj_sid == TILFA_ADJ_SID || 
+        adj_sid == RSVP_LSP_LABEL);
 
     if(inet3){
         gen_segment_list->inet3_mpls_label_out[stack_index].seg_type
@@ -1410,7 +1416,9 @@ tilfa_compute_segment_list_from_tilfa_raw_results
                 
                 /*mpls.0*/
                 /*No need to push anything else in mpls0 stack*/
-                gensegment_list[i].mpls0_stack_op[stack_top] = STACK_OPS_UNKNOWN;
+                gensegment_list[i].mpls0_mpls_label_out[stack_top].seg_type = TILFA_PREFIX_SID_REFERENCE;
+                gensegment_list[i].mpls0_mpls_label_out[stack_top].u.node = dest;
+                gensegment_list[i].mpls0_stack_op[stack_top] = SWAP;
                 i++;
             }
         }
@@ -2301,12 +2309,15 @@ tilfa_fill_nxthop_from_segment_lst(routes_t *route,
     nxthop->rlfa = 0;      /*Not Valid for TILFA*/
 
     int i = 0;
+    node_t *srgb_node = gensegment_lst->nxthop;
+
     if(inet3){
         for(i = 0; i < MPLS_STACK_OP_LIMIT_MAX; i++){
             if(gensegment_lst->inet3_stack_op[i] == STACK_OPS_UNKNOWN)
                 continue;
             if(TILFA_SEGLIST_IS_INET3_ADJ_SID_SET(gensegment_lst, i)){
                 nxthop->mpls_label_out[i] = TILFA_GET_INET3_ADJ_SID(gensegment_lst, i);
+                srgb_node = tilfa_get_adj_sid_to_node(gensegment_lst, i, TRUE, FALSE);
             }
             else if(gensegment_lst->inet3_mpls_label_out[i].seg_type == TILFA_PREFIX_SID_REFERENCE){
                 
@@ -2314,8 +2325,9 @@ tilfa_fill_nxthop_from_segment_lst(routes_t *route,
                     return FALSE;
 
                 nxthop->mpls_label_out[i] = PREFIX_SID_LABEL(
-                    gensegment_lst->inet3_mpls_label_out[i].u.node->srgb, 
+                    srgb_node->srgb,
                     (prefix_t *)ROUTE_GET_BEST_PREFIX(route));
+                srgb_node = gensegment_lst->inet3_mpls_label_out[i].u.node;
             }
             if(nxthop->mpls_label_out[i] == NO_TAG)
                 return FALSE;
@@ -2328,6 +2340,7 @@ tilfa_fill_nxthop_from_segment_lst(routes_t *route,
                 continue;
              if(TILFA_SEGLIST_IS_MPLS0_ADJ_SID_SET(gensegment_lst, i)){
                 nxthop->mpls_label_out[i] = TILFA_GET_MPLS0_ADJ_SID(gensegment_lst, i);
+                 srgb_node = tilfa_get_adj_sid_to_node(gensegment_lst, i, FALSE, TRUE);
              }
              else if(gensegment_lst->mpls0_mpls_label_out[i].seg_type == TILFA_PREFIX_SID_REFERENCE){
                 
@@ -2335,8 +2348,9 @@ tilfa_fill_nxthop_from_segment_lst(routes_t *route,
                     return FALSE;
 
                 nxthop->mpls_label_out[i] = PREFIX_SID_LABEL(
-                    gensegment_lst->mpls0_mpls_label_out[i].u.node->srgb,
+                    srgb_node->srgb,
                     (prefix_t *)ROUTE_GET_BEST_PREFIX(route));
+                    srgb_node = gensegment_lst->mpls0_mpls_label_out[i].u.node;
              }
              if(nxthop->mpls_label_out[i] == NO_TAG)
                  return FALSE;
