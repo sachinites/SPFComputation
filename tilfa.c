@@ -1123,7 +1123,7 @@ tilfa_genseglst_fill_first_hop_segment(
 
             if(nxthop_ptr->stack_op[i] == STACK_OPS_UNKNOWN)
                 break;
-            tilfa_set_adj_sid(gen_segment_list, *stack_top + i, 
+            tilfa_insert_adj_sid_in_label_stack(gen_segment_list, *stack_top + i, 
                 TRUE, FALSE, spf_root, nxthop_ptr->node, level, 
                 nxthop_ptr->mpls_label_out[i], RSVP_LSP_LABEL);
             gen_segment_list->inet3_stack_op[*stack_top + i] = PUSH;
@@ -1135,7 +1135,7 @@ tilfa_genseglst_fill_first_hop_segment(
 
             if(nxthop_ptr->stack_op[i] == STACK_OPS_UNKNOWN)
                 break;
-            tilfa_set_adj_sid(gen_segment_list, *stack_top + i, 
+            tilfa_insert_adj_sid_in_label_stack(gen_segment_list, *stack_top + i, 
                 FALSE, TRUE, spf_root, nxthop_ptr->node, level, 
                 nxthop_ptr->mpls_label_out[i], RSVP_LSP_LABEL);
             gen_segment_list->mpls0_stack_op[*stack_top + i] = PUSH;
@@ -1202,7 +1202,7 @@ tilfa_attempt_connect_p_q_by_prefix_sid(node_t *spf_root,
  * label stack. RSVP LSP label are stored in adj-sid notion in 
  * label stack*/
 void
-tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
+tilfa_insert_adj_sid_in_label_stack(gen_segment_list_t *gen_segment_list,
                   int stack_index,
                   boolean inet3,
                   boolean mpls0,
@@ -1215,8 +1215,8 @@ tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
     assert((inet3 && !mpls0) ||
             (!inet3 && mpls0));
 
-    assert(adj_sid == TILFA_ADJ_SID || 
-        adj_sid == RSVP_LSP_LABEL);
+    assert(seg_type == TILFA_ADJ_SID || 
+        seg_type == RSVP_LSP_LABEL);
 
     if(inet3){
         gen_segment_list->inet3_mpls_label_out[stack_index].seg_type
@@ -1298,13 +1298,13 @@ tilfa_compute_segment_list_connecting_p_q_nodes
             if(q_node == p_node){
                 
                 /*Push the Adj segment p_node --> p_node_next*/
-                tilfa_set_adj_sid(gensegment_list, stack_top, 
+                tilfa_insert_adj_sid_in_label_stack(gensegment_list, stack_top, 
                     TRUE, FALSE, p_node, 
                     GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread_temp->right), 
                     level, NO_TAG, TILFA_ADJ_SID);
                 gensegment_list->inet3_stack_op[stack_top] = PUSH;
 
-                tilfa_set_adj_sid(gensegment_list, stack_top, 
+                tilfa_insert_adj_sid_in_label_stack(gensegment_list, stack_top, 
                     FALSE, TRUE, p_node, 
                     GET_PRED_INFO_NODE_FROM_GLTHREAD(p_node_thread_temp->right), 
                     level, NO_TAG, TILFA_ADJ_SID);
@@ -2134,7 +2134,7 @@ tilfa_print_one_liner_segment_list(
             switch(gen_segment_list->inet3_mpls_label_out[i].seg_type){
                 case TILFA_PREFIX_SID_REFERENCE:
                     if(gen_segment_list->inet3_stack_op[i] != POP){
-                        rc += snprintf(buffer + rc, 1024, "<prefix sid %s>(%s)  ",
+                        rc += snprintf(buffer + rc, 1024, "<Node-Sid %s>(%s)  ",
                             gen_segment_list->inet3_mpls_label_out[i].u.node->node_name,
                             get_str_stackops(gen_segment_list->inet3_stack_op[i]));
                     }
@@ -2193,7 +2193,7 @@ tilfa_print_one_liner_segment_list(
             switch(gen_segment_list->mpls0_mpls_label_out[i].seg_type){
                 case TILFA_PREFIX_SID_REFERENCE:
                 if(gen_segment_list->mpls0_stack_op[i] != POP){
-                    rc += snprintf(buffer + rc, 1024, "<prefix sid %s>(%s)  ",
+                    rc += snprintf(buffer + rc, 1024, "<Node-Sid %s>(%s)  ",
                             gen_segment_list->mpls0_mpls_label_out[i].u.node->node_name,
                             get_str_stackops(gen_segment_list->mpls0_stack_op[i]));
                 }

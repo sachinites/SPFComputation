@@ -96,7 +96,7 @@ gen_segment_list_mpls_label_stack_depth(
 }
 
 void
-tilfa_set_adj_sid(gen_segment_list_t *gen_segment_list,
+tilfa_insert_adj_sid_in_label_stack(gen_segment_list_t *gen_segment_list,
                   int stack_index,
                   boolean inet3,
                   boolean mpls0,
