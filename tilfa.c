@@ -1750,10 +1750,10 @@ tilfa_examine_tilfa_path_for_segment_list(
     node_t *spf_root = 
         GET_PRED_INFO_NODE_FROM_GLTHREAD(spf_root_entry);
 
-    glthread_t *first_hop_node_entry = path->right->right;
+    glthread_t *first_hop_node_thread = path->right->right;
 
     node_t *first_hop_node = 
-        GET_PRED_INFO_NODE_FROM_GLTHREAD(first_hop_node_entry);
+        GET_PRED_INFO_NODE_FROM_GLTHREAD(first_hop_node_thread);
 
     glthread_t *last_entry;
     ITERATE_GLTHREAD_BEGIN(path, curr){
@@ -1783,7 +1783,7 @@ tilfa_examine_tilfa_path_for_segment_list(
 
     curr_node = GET_PRED_INFO_NODE_FROM_GLTHREAD(last_entry);
     
-    while(last_entry != first_hop_node_entry){
+    while(last_entry != first_hop_node_thread){
         
         if(search_for_q_node == TRUE &&
             search_for_p_node == TRUE){
@@ -1909,29 +1909,41 @@ tilfa_examine_tilfa_path_for_segment_list(
             }
             else{
                 /* The direct nbr is not a p-node because Dest
-                 * pre-c primary nexthop overlap with p-node's
-                 * post-c primary nexthops*/
+                *  pre-c primary nexthop overlap with p-node's
+                *  post-c primary nexthops*/
+                pq_distance = -1;
             }
         }
         else{
             /*now test the current node for p-node*/
             search_for_q_node = FALSE;
             search_for_p_node = TRUE;
+            /*First hop node is not a q-node, step-back
+             * and test the last explored q node whether it
+             * was p-node or not*/
             if(tilfa_p_node_qualification_test_wrt_root(
-                        spf_root, curr_node, first_hop_node, 
+                        spf_root, GET_PRED_INFO_NODE_FROM_GLTHREAD(q_node), 
+                        first_hop_node, 
                         dst_node, pr_res, level,
                         first_hop_segments)){
                 
-                p_node = last_entry;
+                p_node = q_node;
                 search_for_p_node = FALSE;
-                pq_distance = 1;
+                pq_distance = 0;
                 goto TILFA_FOUND;
             }
             else{
-                /* The direct nbr is not a p-node because Dest
-                 * pre-c primary nexthop overlap with p-node's
-                 * post-c primary nexthops*/
-                pq_distance = -1;
+                /* Now we have to test if first_hop_node has a 
+                 * valid first hop segments or not*/
+                if(tilfa_p_node_qualification_test_wrt_root(
+                            spf_root, first_hop_node, first_hop_node, 
+                            dst_node, pr_res,
+                            level, first_hop_segments)){
+                    search_for_p_node = FALSE;
+                    pq_distance = 1;
+                    p_node = first_hop_node_thread;
+                    goto TILFA_FOUND;
+                }
             }
         }
     }

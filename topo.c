@@ -1615,6 +1615,134 @@ tilfa_topo_2_adj_segment_example(){
     return instance;
 }
 
+/*                                                                      +---------+
+ *                                                                      |         |
+ *                                                                      |   R2    |
+ *      +---------------------------------------------------------------+ 192.1.1.2+---------------------------------------------++-----------+
+ *      |                                                               |         |                                                          |
+ *      |                                                               +---------+                                                          |
+ *      |                                                                                                                                    |
+ *      |                                                                                                                                    |
+ *      |                                                                                                                                    |
+ *      |                                                                                                                                    |
+ *      |                                                                +---------+                                                         |
+ *      |                                                                |   R5    +---------------+                                         |
+ *      |                                       +------------------------+192.1.1.5|               |                                         |
+ *      |                                       |                        |         |               |                                         |
+ *      |                                       |                        +---------+               |                                         |
+ *      |                                       |                                             +----+-----+-----+                        ++---+--+--+
+ * +----+---+                               +---+-------+                                     |    R7          |                        |          |
+ * |        |                               | R4        |                                     +- 192.1.1.7     +-----------+------------| R3       |
+ * |  R1    +-------------------------------+192.168.1.4|                                     |                |                        |192.1.1.3 |
+ * |192.1.1.1|                              |           |                                     +----+----+---+--+                        |          |
+ * +----+---+                               +---+------++                                          |        |                           +-------+--+
+ *      |                                       |                         +--------+               |        |
+ *      |                                       |                         |  R6    |               |        |
+ *      |                                       |                         |192.1.1.6---------------+        |
+ *      |                                       +-------------------------+        |                        |
+ *      |                                                                 |        |                        |
+ *      |                                                                 +--------+                        |
+ *      |                                                                                                   |
+ *      |                                                                                                   |
+ *      |                                                                                                   |
+ *      |                                                                                                   |
+ *      |                                                                                                   |   
+ *      |                                            +---------+                    +---------+             |   
+ *      |                                            |  R8     |                    |  R9     |             |   
+ *      |                                            |192.1.1.8|                    |192.1.1.9+---------+---+   
+ *      +--------------------------------------------+         +--------------------|         |                 
+ *                                                   |         |                    |         |                 
+ *                                                   +---------+                    +---------+       
+ */
+ 
+instance_t *
+tilfa_ecmp_topology(){
+
+    instance_t *instance = get_new_instance();
+    
+    node_t *R1 = create_new_node(instance,  "R1", AREA1, "192.1.1.1");
+    node_t *R2 = create_new_node(instance,  "R2", AREA1, "192.1.1.2");
+    node_t *R3 = create_new_node(instance,  "R3", AREA1, "192.1.1.3");
+    node_t *R4 = create_new_node(instance,  "R4", AREA1, "192.1.1.4");
+    node_t *R5 = create_new_node(instance,  "R5", AREA1, "192.1.1.5");
+    node_t *R6 = create_new_node(instance,  "R6", AREA1, "192.1.1.6");
+    node_t *R7 = create_new_node(instance,  "R7", AREA1, "192.1.1.7");
+    node_t *R8 = create_new_node(instance,  "R8", AREA1, "192.1.1.8");
+    node_t *R9 = create_new_node(instance,  "R9", AREA1, "192.1.1.9");
+
+
+    prefix_t *prefix_10_1_1_1_24 = create_new_prefix("10.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_10_1_1_2_24 = create_new_prefix("10.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_20_1_1_1_24 = create_new_prefix("20.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_20_1_1_2_24 = create_new_prefix("20.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_30_1_1_1_24 = create_new_prefix("30.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_30_1_1_2_24 = create_new_prefix("30.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_40_1_1_1_24 = create_new_prefix("40.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_40_1_1_2_24 = create_new_prefix("40.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_50_1_1_1_24 = create_new_prefix("50.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_50_1_1_2_24 = create_new_prefix("50.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_60_1_1_1_24 = create_new_prefix("60.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_60_1_1_2_24 = create_new_prefix("60.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_70_1_1_1_24 = create_new_prefix("70.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_70_1_1_2_24 = create_new_prefix("70.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_80_1_1_1_24 = create_new_prefix("80.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_80_1_1_2_24 = create_new_prefix("80.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_90_1_1_1_24 = create_new_prefix("90.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_90_1_1_2_24 = create_new_prefix("90.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_100_1_1_1_24 = create_new_prefix("100.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_100_1_1_2_24 = create_new_prefix("100.1.1.2", 24, LEVEL1);
+    prefix_t *prefix_110_1_1_1_24 = create_new_prefix("110.1.1.1", 24, LEVEL1);
+    prefix_t *prefix_110_1_1_2_24 = create_new_prefix("110.1.1.2", 24, LEVEL1);
+    
+    edge_t *R1_R2_edge = create_new_edge("eth0/1", "eth0/2", 10,
+            prefix_10_1_1_1_24, prefix_10_1_1_2_24, LEVEL1);
+
+    edge_t *R2_R3_edge = create_new_edge("eth0/3", "eth0/4", 10,
+            prefix_20_1_1_1_24, prefix_20_1_1_2_24, LEVEL1);
+    
+    edge_t *R1_R4_edge = create_new_edge("eth0/5", "eth0/6", 10,
+            prefix_30_1_1_1_24, prefix_30_1_1_2_24, LEVEL1);
+    
+    edge_t *R1_R8_edge = create_new_edge("eth0/7", "eth0/8", 10,
+            prefix_40_1_1_1_24, prefix_40_1_1_2_24, LEVEL1);
+    
+    edge_t *R4_R5_edge = create_new_edge("eth0/9", "eth0/10", 10,
+            prefix_50_1_1_1_24, prefix_50_1_1_2_24, LEVEL1);
+    
+    edge_t *R4_R6_edge = create_new_edge("eth0/11", "eth0/12", 10,
+            prefix_60_1_1_1_24, prefix_60_1_1_2_24, LEVEL1);
+    
+    edge_t *R5_R7_edge = create_new_edge("eth0/13", "eth0/14", 10,
+            prefix_70_1_1_1_24, prefix_70_1_1_2_24, LEVEL1);
+    
+    edge_t *R6_R7_edge = create_new_edge("eth0/15", "eth0/16", 10,
+            prefix_80_1_1_1_24, prefix_80_1_1_2_24, LEVEL1);
+    
+    edge_t *R7_R3_edge = create_new_edge("eth0/17", "eth0/18", 10,
+            prefix_90_1_1_1_24, prefix_90_1_1_2_24, LEVEL1);
+
+    edge_t *R8_R9_edge = create_new_edge("eth0/19", "eth0/20", 10,
+            prefix_100_1_1_1_24, prefix_100_1_1_2_24, LEVEL1);
+    
+    edge_t *R9_R7_edge = create_new_edge("eth0/21", "eth0/22", 10,
+            prefix_110_1_1_1_24, prefix_110_1_1_2_24, LEVEL1);
+    
+    insert_edge_between_2_nodes(R1_R2_edge, R1, R2, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R2_R3_edge, R2, R3, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R1_R4_edge, R1, R4, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R1_R8_edge, R1, R8, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R4_R5_edge, R4, R5, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R4_R6_edge, R4, R6, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R5_R7_edge, R5, R7, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R6_R7_edge, R6, R7, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R7_R3_edge, R7, R3, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R8_R9_edge, R8, R9, BIDIRECTIONAL);
+    insert_edge_between_2_nodes(R9_R7_edge, R9, R7, BIDIRECTIONAL);
+
+    set_instance_root(instance, R1);
+    return instance;
+}
+
 static instance_t *old_instance = NULL;
 
 int
