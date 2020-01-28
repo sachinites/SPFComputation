@@ -1651,6 +1651,39 @@ tilfa_is_fhs_overlap(
     return FALSE;;
 }
 
+static boolean
+tilfa_is_identical_gen_segment_list(
+    gen_segment_list_t *gen_segment_list1,
+    gen_segment_list_t *gen_segment_list2){
+
+        if(memcmp(gen_segment_list1, 
+                  gen_segment_list2, 
+                  sizeof(gen_segment_list_t)) == 0)
+            return TRUE;
+        return FALSE;
+}
+
+/* Function to check if gen_segment_list already exists in
+ * tilfa_segment_list which contains "n_seglist" SID lists*/
+static boolean
+tilfa_is_segment_already_exists(
+        tilfa_segment_list_t *tilfa_segment_list,
+        gen_segment_list_t *gen_segment_list,
+        int n_seglist){
+
+    int i  = 0;
+    for( ; i < n_seglist ; i++){
+
+        if(tilfa_is_identical_gen_segment_list(
+            &tilfa_segment_list->gen_segment_list[i], 
+            gen_segment_list)){
+    
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 static void
 tilfa_merge_tilfa_segment_lists_by_destination(
         tilfa_segment_list_t *dst, 
@@ -1676,6 +1709,15 @@ tilfa_merge_tilfa_segment_lists_by_destination(
                 if(tilfa_is_fhs_overlap(&temp, j, 
                         &array[k]->gen_segment_list[i]))
                     continue;
+
+                /* Before adding the final the Generic SID list into the
+                 * collection of final results, check of the identical 
+                 * SID list already exists. It might be possible that
+                 * two different ECMP tilfa paths may reduce to same SID 
+                 * list*/
+                if(tilfa_is_segment_already_exists(&temp,
+                        &array[k]->gen_segment_list[i], j))
+                    continue;
             }
             memcpy(&temp.gen_segment_list[j], &array[k]->gen_segment_list[i], 
                     sizeof(gen_segment_list_t));
@@ -1697,9 +1739,20 @@ tilfa_merge_tilfa_segment_lists_by_destination(
             if(array[k]->gen_segment_list[i].is_fhs_rsvp_lsp)
                 continue;
 
-            if(tilfa_is_fhs_overlap(&temp, j, 
-                        &array[k]->gen_segment_list[i]))
-                continue;
+            if(k == 1){
+                if(tilfa_is_fhs_overlap(&temp, j, 
+                            &array[k]->gen_segment_list[i]))
+                    continue;
+                
+                /* Before adding the final the Generic SID list into the
+                 * collection of final results, check of the identical 
+                 * SID list already exists. It might be possible that
+                 * two different ECMP tilfa paths may reduce to same SID 
+                 * list*/
+                if(tilfa_is_segment_already_exists(&temp,
+                            &array[k]->gen_segment_list[i], j))
+                    continue;
+            }
 
             memcpy(&temp.gen_segment_list[j], &array[k]->gen_segment_list[i], 
                     sizeof(gen_segment_list_t));
