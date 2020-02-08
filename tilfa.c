@@ -1792,6 +1792,7 @@ tilfa_record_segment_list(node_t *spf_root,
         tilfa_merge_tilfa_segment_lists_by_destination(
                 tilfa_segment_list_ptr, 
                 tilfa_segment_list);
+        tilfa_unlock_protected_resource(tilfa_segment_list->pr_res);
         free(tilfa_segment_list);
         return;
     } ITERATE_GLTHREAD_END(&spf_root->tilfa_info->tilfa_segment_list_head[level], curr);
