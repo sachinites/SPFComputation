@@ -256,7 +256,7 @@ create_targeted_ldp_tunnel(node_t *ingress_lsr, /*Ingress LSR*/
 
         ITERATE_GLTHREAD_BEGIN(&rt_un_entry->nh_list_head, curr){
             nexthop = glthread_to_unified_nh(curr);
-            if(nexthop->oif == oif && !strncpy(nexthop->gw_prefix, gw_ip, PREFIX_LEN) && 
+            if(nexthop->oif == oif && !strncmp(nexthop->gw_prefix, gw_ip, PREFIX_LEN) && 
                     nexthop->protocol == LDP_PROTO){
                 assert(nexthop->nh_node == proxy_nbr);
                 is_exist = TRUE;
