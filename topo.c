@@ -35,6 +35,7 @@
 #include "libcli.h"
 #include "spfcmdcodes.h"
 #include "spfclihandler.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
 
@@ -1884,7 +1885,7 @@ config_dynamic_topology(param_t *param,
             }
 
             if(!prefix){
-                prefix = calloc(1, sizeof(prefix_t));
+                prefix = XCALLOC(1, prefix_t);
                 BIND_PREFIX(edge->from.prefix[LEVEL1], prefix);
             }
             else{
@@ -1909,7 +1910,7 @@ config_dynamic_topology(param_t *param,
             prefix = edge_end->prefix[LEVEL1];
             
             if(!prefix){
-                prefix = calloc(1, sizeof(prefix_t));
+                prefix = XCALLOC(1, prefix_t);
                 BIND_PREFIX(edge_end->prefix[LEVEL1], prefix);
             }
             else{

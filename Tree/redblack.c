@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include "redblack.h"
 #endif
+#include "../LinuxMemoryManager/uapi_mm.h"
+
 /**
  * @file
  *
@@ -51,7 +53,7 @@ redblack_root_free (rbroot *root)
 #ifdef _KERNEL
     FREE(root, M_IFSTATE);
 #else
-    free(root);
+    XFREE(root);
 #endif
 }
 

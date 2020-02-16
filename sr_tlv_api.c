@@ -36,6 +36,7 @@
 #include "spfutil.h"
 #include "bitsop.h"
 #include "glthread.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 void
 diplay_prefix_sid(prefix_t *prefix){
@@ -210,7 +211,7 @@ update_prefix_sid(node_t *node, prefix_t *prefix,
     prefix_sid_subtlv_t *prefix_sid = NULL;
                 
     if(!prefix->psid_thread_ptr){
-        prefix_sid = calloc(1, sizeof(prefix_sid_subtlv_t));
+        prefix_sid = XCALLOC(1, prefix_sid_subtlv_t);
         prefix_sid->type = PREFIX_SID_SUBTLV_TYPE;
         prefix_sid->length = 0; /*never used*/
         prefix_sid->flags = 0;
@@ -267,5 +268,5 @@ free_prefix_sid(prefix_t *prefix){
     prefix_sid_subtlv_t *prefix_sid = glthread_to_prefix_sid(glthread);
     prefix_sid->prefix = NULL;
     remove_glthread(glthread);
-    free(prefix_sid);
+    XFREE(prefix_sid);
 }

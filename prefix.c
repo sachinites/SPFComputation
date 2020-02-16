@@ -41,13 +41,14 @@
 #include "routes.h"
 #include "spftrace.h"
 #include "sr_tlv_api.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
 
 prefix_t *
 create_new_prefix(const char *prefix, unsigned char mask, LEVEL level){
 
-    prefix_t *prefix2 = calloc(1, sizeof(prefix_t));
+    prefix_t *prefix2 = XCALLOC(1, prefix_t);
     if(prefix)
         strncpy(prefix2->prefix, prefix, PREFIX_LEN);
     prefix2->prefix[PREFIX_LEN] = '\0';
@@ -488,11 +489,11 @@ void
 free_prefix(prefix_t *prefix){
     
     if(!prefix->psid_thread_ptr){
-        free(prefix);
+        XFREE(prefix);
         return;
     }
     free_prefix_sid(prefix);    
-    free(prefix);
+    XFREE(prefix);
 }
 
 /*Return true if node is one of the best prefix originator for a route*/

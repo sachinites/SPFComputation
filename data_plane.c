@@ -15,7 +15,7 @@
  *        
  *        This file is part of the SPDComputation distribution (https://github.com/sachinites).
  *        Copyright (c) 2017 Abhishek Sagar.
- *        This program is free software: you can redistribute it and/or modify
+ *        This program is XFREE software: you can redistribute it and/or modify
  *        it under the terms of the GNU General Public License as published by  
  *        the Free Software Foundation, version 3.
  *
@@ -38,6 +38,7 @@
 #include "ldp.h"
 #include "spfutil.h"
 #include "stack.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
 void
@@ -176,16 +177,16 @@ is_mpls_0_un_nh_t_equal(internal_un_nh_t *nh1, internal_un_nh_t *nh2){
 
 void
 free_un_nexthop(internal_un_nh_t *nh){
-    free(nh);
+    XFREE(nh);
 }
 
 internal_un_nh_t *
 malloc_un_nexthop(){
-    return calloc(1, sizeof(internal_un_nh_t));
+    return XCALLOC(1, internal_un_nh_t);
 }
 
 int
-free_rt_un_entry(rt_un_entry_t *rt_un_entry){
+XFREE_rt_un_entry(rt_un_entry_t *rt_un_entry){
 
     internal_un_nh_t *nxt_hop = NULL;
     glthread_t *curr = NULL;
@@ -201,7 +202,7 @@ free_rt_un_entry(rt_un_entry_t *rt_un_entry){
     
     if(IS_GLTHREAD_LIST_EMPTY((&rt_un_entry->glthread))){
         remove_glthread(&rt_un_entry->glthread);
-        free(rt_un_entry);
+        XFREE(rt_un_entry);
         return 0;
     }
     return -1;
@@ -243,7 +244,7 @@ inet_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     internal_un_nh_t *existing_nh = NULL;
 
     if(!rt_un_entry){
-        rt_un_entry = calloc(1, sizeof(rt_un_entry_t));
+        rt_un_entry = XCALLOC(1, rt_un_entry_t);
         memcpy(&rt_un_entry->rt_key, rt_key, sizeof(rt_key_t));
         time(&rt_un_entry->last_refresh_time);
         rt_un_entry->level = level;
@@ -381,7 +382,7 @@ inet_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
         if(UN_RTENTRY_PFX_MATCH(temp, rt_key)){
-            free_rt_un_entry(temp);
+            XFREE_rt_un_entry(temp);
             rib->count--;
             return TRUE;
         }
@@ -407,7 +408,7 @@ inet_3_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     internal_un_nh_t *existing_nh = NULL;
 
     if(!rt_un_entry){
-        rt_un_entry = calloc(1, sizeof(rt_un_entry_t));
+        rt_un_entry = XCALLOC(1, rt_un_entry_t);
         memcpy(&rt_un_entry->rt_key, rt_key, sizeof(rt_key_t));
         time(&rt_un_entry->last_refresh_time);
         rt_un_entry->level = level;
@@ -544,7 +545,7 @@ inet_3_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
         if(UN_RTENTRY_PFX_MATCH(temp, rt_key)){
-            free_rt_un_entry(temp);
+            XFREE_rt_un_entry(temp);
             rib->count--;
             return TRUE;
         }
@@ -589,7 +590,7 @@ mpls_0_rt_un_route_install_nexthop(rt_un_table_t *rib, rt_key_t *rt_key, LEVEL l
     internal_un_nh_t *existing_nh = NULL;
 
     if(!rt_un_entry){
-        rt_un_entry = calloc(1, sizeof(rt_un_entry_t));
+        rt_un_entry = XCALLOC(1, rt_un_entry_t);
         memcpy(&rt_un_entry->rt_key, rt_key, sizeof(rt_key_t));
         time(&rt_un_entry->last_refresh_time);
         rt_un_entry->level = level;
@@ -701,7 +702,7 @@ mpls_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
         if(UN_RTENTRY_LABEL_MATCH(temp, rt_key)){
-            free_rt_un_entry(temp);
+            XFREE_rt_un_entry(temp);
             rib->count--;
             return TRUE;
         }
@@ -855,7 +856,7 @@ mpls_0_unifiy_nexthop(internal_nh_t *nexthop, PROTOCOL proto){
 rt_un_table_t *
 init_rib(rib_type_t rib_type){
 
-    rt_un_table_t * rib = calloc(1, sizeof(rt_un_table_t));
+    rt_un_table_t * rib = XCALLOC(1, rt_un_table_t);
     rib->count = 0;
     init_glthread(&rib->head);
 
@@ -907,7 +908,7 @@ flush_rib(rt_un_table_t *rib, LEVEL level){
         rt_un_entry = glthread_to_rt_un_entry(curr);
         if(rt_un_entry->level != level)
             continue;
-        rc = free_rt_un_entry(rt_un_entry);
+        rc = XFREE_rt_un_entry(rt_un_entry);
         if(rc == 0) count++;
     } ITERATE_GLTHREAD_END(&rib->head, curr);
     rib->count -= count;
@@ -1596,10 +1597,10 @@ ping(char *node_name, char *dst_prefix){
             if(IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack)){
                 /* Auto Done : :D :
                  * Get the prefix from mpls_label_stack and feed it to Ist pref order to next_node*/
-                free_mpls_label_stack(mpls_label_stack);
+                XFREE_mpls_label_stack(mpls_label_stack);
             }
             else{
-                free_mpls_label_stack(mpls_label_stack);
+                XFREE_mpls_label_stack(mpls_label_stack);
                 return -1;    
             }
         }
@@ -1630,16 +1631,16 @@ ping(char *node_name, char *dst_prefix){
 mpls_label_stack_t *
 get_new_mpls_label_stack(){
 
-        mpls_label_stack_t *mpls_stack = calloc(1, sizeof(mpls_label_stack_t));
-            mpls_stack->stack = get_new_stack();
-                return mpls_stack;
+    mpls_label_stack_t *mpls_stack = XCALLOC(1, mpls_label_stack_t);
+    mpls_stack->stack = get_new_stack();
+    return mpls_stack;
 }
 
 void
-free_mpls_label_stack(mpls_label_stack_t *mpls_label_stack){
+XFREE_mpls_label_stack(mpls_label_stack_t *mpls_label_stack){
 
         free_stack(mpls_label_stack->stack);
-            free(mpls_label_stack);
+        XFREE(mpls_label_stack);
 }
 
 void
@@ -1658,7 +1659,7 @@ void
 SWAP_MPLS_LABEL(mpls_label_stack_t *mpls_label_stack, mpls_label_t label){
 
         POP_MPLS_LABEL(mpls_label_stack);
-            PUSH_MPLS_LABEL(mpls_label_stack, label);
+        PUSH_MPLS_LABEL(mpls_label_stack, label);
 }
 
 char *

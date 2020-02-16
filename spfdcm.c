@@ -47,6 +47,7 @@
 #include "no_warn.h"
 #include "spf_candidate_tree.h"
 #include "complete_spf_path.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern
 instance_t *instance;
@@ -175,6 +176,14 @@ validate_metric_value(char *value_passed){
 
     printf("Error : Incorrect metric Value.\n");
     return VALIDATION_FAILED;
+}
+
+static int
+display_mem_usage(param_t *param, ser_buff_t *tlv_buf,
+                    op_mode enable_or_disable){
+
+    mm_print_memory_usage();
+    mm_print_block_usage();
 }
 
 static int
@@ -2006,6 +2015,13 @@ spf_init_dcm(){
     /*debug show commands*/
 
     {
+        {
+            /*debug show mem-usage*/
+            static param_t mem_usage;
+            init_param(&mem_usage, CMD, "mem-usage", display_mem_usage, 0, INVALID, 0, "Memory Usage");
+            libcli_register_param(debug_show, &mem_usage);
+            set_param_cmd_code(&mem_usage, CMDCODE_DEBUG_SHOW_MEMORY_USAGE);
+        }
         /*debug show log-status*/
         {
             static param_t log_status;

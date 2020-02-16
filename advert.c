@@ -37,6 +37,7 @@
 #include "spfutil.h"
 #include "Queue.h"
 #include "spftrace.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 char *
 advert_id_str(ADVERT_ID_T advert_id){
@@ -158,7 +159,7 @@ generate_lsp(instance_t *instance,
         assert(is_queue_empty(q));
         reuse_q(q);
     }
-    free(q);
+    XFREE(q);
     q = NULL;
 }
 

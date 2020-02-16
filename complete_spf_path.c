@@ -40,6 +40,7 @@
 #include "spf_candidate_tree.h"
 #include "no_warn.h"
 #include "sr_tlv_api.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
 extern void init_instance_traversal(instance_t * instance);
@@ -99,7 +100,7 @@ clear_spf_predecessors(glthread_t *spf_predecessors){
 
         pred_info_t *pred_info = glthread_to_pred_info(curr);
         remove_glthread(curr);
-        free(pred_info);
+        XFREE(pred_info);
     } ITERATE_GLTHREAD_END(spf_predecessors, curr);
 }
 
@@ -116,7 +117,7 @@ add_pred_info_to_spf_predecessors(spf_info_t *spf_info,
 
     pred_info_t *pred_info = NULL;
     
-    pred_info = calloc(1, sizeof(pred_info_t));
+    pred_info = XCALLOC(1, pred_info_t);
 
     pred_info->oif = oif;
     
@@ -131,7 +132,7 @@ add_pred_info_to_spf_predecessors(spf_info_t *spf_info,
     ITERATE_GLTHREAD_BEGIN(spf_predecessors, curr){
         temp = glthread_to_pred_info(curr);
         if(pred_info_compare_fn((void *)pred_info, (void *)temp) == 0){
-            free(pred_info);
+            XFREE(pred_info);
             return;
         }
     } ITERATE_GLTHREAD_END(spf_predecessors, curr);
@@ -156,7 +157,7 @@ del_pred_info_from_spf_predecessors(glthread_t *spf_predecessors, node_t *pred_n
         if(pred_info_compare_fn(&pred_info, lst_pred_info))
             continue;
         remove_glthread(&(lst_pred_info->glue));
-        free(lst_pred_info);
+        XFREE(lst_pred_info);
         return; 
     } ITERATE_GLTHREAD_END(spf_predecessors, curr);
     assert(0);
@@ -465,7 +466,7 @@ run_spf_paths_dijkastra(node_t *spf_root,
                 /*copy spf path list from node to its result*/
                 res = GET_SPF_PATH_RESULT(spf_root, candidate_node, level, nh);
                 assert(!res);
-                res = calloc(1, sizeof(spf_path_result_t));
+                res = XCALLOC(1, spf_path_result_t);
                 init_glthread(&res->pred_db);
                 init_glthread(&res->glue);
                 glthread_add_next(&spf_root->spf_path_result[level][nh], &res->glue);
@@ -484,7 +485,7 @@ run_spf_paths_dijkastra(node_t *spf_root,
             else if(spf_type == TILFA_RUN){
                 res = TILFA_GET_SPF_PATH_RESULT(spf_root, candidate_node, level);
                 assert(!res);
-                res = calloc(1, sizeof(spf_path_result_t));
+                res = XCALLOC(1, spf_path_result_t);
                 init_glthread(&res->pred_db);
                 init_glthread(&res->glue);
                 glthread_add_next(tilfa_get_post_convergence_spf_path_head(
@@ -561,7 +562,7 @@ run_spf_paths_dijkastra(node_t *spf_root,
                     ITERATE_GLTHREAD_BEGIN(&candidate_node->pred_lst[level][nh], curr){
 
                         pred_info = glthread_to_pred_info(curr);  
-                        pred_info_copy = calloc(1, sizeof(pred_info_t));
+                        pred_info_copy = XCALLOC(1, pred_info_t);
                         memcpy(pred_info_copy, pred_info, sizeof(pred_info_t));
 #ifdef __ENABLE_TRACE__                                
                         sprintf(instance->traceopts->b, "Node : %s : Predecessor copied = %s", 
@@ -623,7 +624,7 @@ run_spf_paths_dijkastra(node_t *spf_root,
                     ITERATE_GLTHREAD_BEGIN(&candidate_node->pred_lst[level][nh], curr){
 
                         pred_info = glthread_to_pred_info(curr);  
-                        pred_info_copy = calloc(1, sizeof(pred_info_t));
+                        pred_info_copy = XCALLOC(1, pred_info_t);
                         memcpy(pred_info_copy, pred_info, sizeof(pred_info_t));
 #ifdef __ENABLE_TRACE__                                
                         sprintf(instance->traceopts->b, "Node : %s : Predecessor copied = %s", 
@@ -660,7 +661,7 @@ run_spf_paths_dijkastra(node_t *spf_root,
 
                 pred_info = glthread_to_pred_info(curr);
                 remove_glthread(&pred_info->glue);
-                free(pred_info);
+                XFREE(pred_info);
             } ITERATE_GLTHREAD_END(&candidate_node->pred_lst[level][nh], curr);
         }
 #ifdef __ENABLE_TRACE__        
@@ -693,10 +694,10 @@ spf_clear_spf_path_result(node_t *spf_root, LEVEL level){
 
                 pred_info = glthread_to_pred_info(curr1);
                 remove_glthread(&pred_info->glue);
-                free(pred_info);
+                XFREE(pred_info);
             } ITERATE_GLTHREAD_END(&spf_path_result->pred_db, curr1);
             remove_glthread(&spf_path_result->glue);
-            free(spf_path_result);
+            XFREE(spf_path_result);
         } ITERATE_GLTHREAD_END(&spf_root->spf_path_result[level][nh], curr);
         init_glthread(&spf_root->spf_path_result[level][nh]);
     }ITERATE_NH_TYPE_END;
@@ -750,7 +751,7 @@ compute_spf_paths(node_t *spf_root, LEVEL level, spf_type_t spf_type){
     }
     run_spf_paths_dijkastra(spf_root, level, &instance->ctree, spf_type);
     assert(is_queue_empty(q));
-    free(q);
+    XFREE(q);
     q = NULL;
     SPF_RE_INIT_CANDIDATE_TREE(&instance->ctree);
 }

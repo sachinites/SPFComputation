@@ -1,9 +1,10 @@
 #include "Queue.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "../LinuxMemoryManager/uapi_mm.h"
 
 Queue_t* initQ(){
-	Queue_t *q = calloc(1, sizeof(Queue_t));
+	Queue_t *q = XCALLOC(1, Queue_t);
 	q->rear = Q_DEFAULT_SIZE -1;
 	q->front = q->rear;
         return q;	

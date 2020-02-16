@@ -36,6 +36,7 @@
 #include "spfcmdcodes.h"
 #include "instance.h"
 #include "spfutil.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 void
 print_lan_adj_sid_info(edge_end_t *interface, 
@@ -168,7 +169,7 @@ set_adj_sid(node_t *node, char *intf_name, LEVEL level,
     }
 
     if(head){
-        lan_intf_adj_sid_t *lan_intf_adj_sid = calloc(1, sizeof(lan_intf_adj_sid_t));
+        lan_intf_adj_sid_t *lan_intf_adj_sid = XCALLOC(1, lan_intf_adj_sid_t);
         lan_intf_adj_sid->adj_sid_type = ADJ_SID_TYPE_LABEL; /*We support only labels*/
         lan_intf_adj_sid->sid.sid = label;
         strncpy(lan_intf_adj_sid->nbr_system_id, nbr_sys_id, PREFIX_LEN);

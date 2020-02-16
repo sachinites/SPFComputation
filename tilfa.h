@@ -36,6 +36,7 @@
 #include "data_plane.h"
 #include "complete_spf_path.h"
 #include "spring_adjsid.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 typedef struct edge_end_ interface_t;
 
@@ -197,7 +198,7 @@ static inline void tilfa_unlock_protected_resource(
     pr_res->ref_count--;
     assert(pr_res->ref_count >= 0);
     if(!pr_res->ref_count)
-        free(pr_res);
+        XFREE(pr_res);
 }
 
 static inline void tilfa_lock_protected_resource(

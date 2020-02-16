@@ -1,11 +1,11 @@
 CC=gcc
 #GCOV=-fprofile-arcs -ftest-coverage
 CFLAGS=-g -Wall -O0 ${GCOV}
-INCLUDES=-I . -I ./gluethread -I ./Stack -I ./CommandParser -I ./LinkedList -I ./Queue -I ./mpls -I ./BitOp -I ./Libtrace
+INCLUDES=-I . -I ./gluethread -I ./Stack -I ./CommandParser -I ./LinkedList -I ./Queue -I ./mpls -I ./BitOp -I ./Libtrace -I ./LinuxMemoryManager
 USECLILIB=-lcli
 TARGET:rpd
 TARGET_NAME=rpd
-DSOBJ=LinkedList/LinkedListApi.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o Tree/redblack.o
+DSOBJ=LinkedList/LinkedListApi.o Queue/Queue.o Stack/stack.o gluethread/glthread.o BitOp/bitarr.o Tree/redblack.o LinuxMemoryManager/mm.o
 OBJ=advert.o \
 	instance.o \
 	routes.o \
@@ -30,7 +30,8 @@ OBJ=advert.o \
 	glevel.o \
 	spring_adjsid.o \
 	flex_algo.o	\
-	tilfa.o
+	tilfa.o	\
+	mem_init.o
 ${TARGET_NAME}:testapp.o ${OBJ} ${DSOBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -42,6 +43,9 @@ conflct_res.o:conflct_res.c
 glevel.o:glevel.c
 	@echo "Building glevel.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} glevel.c -o glevel.o
+mem_init.o:mem_init.c
+	@echo "Building mem_init.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} mem_init.c -o mem_init.o
 testapp.o:testapp.c
 	@echo "Building testapp.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} testapp.c -o testapp.o
@@ -126,6 +130,8 @@ ${DSOBJ}:
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} BitOp/bitarr.c -o BitOp/bitarr.o
 	@echo "Building Tree/redblack.o"
 	@ ${CC} ${CFLAGS} -c -I ./Tree Tree/redblack.c -o Tree/redblack.o
+	@echo "Building Linux Memory Manager LinuxMemoryManager/mm.o"
+	@ ${CC} ${CFLAGS} -c -I ./LinuxMemoryManager LinuxMemoryManager/mm.c -o LinuxMemoryManager/mm.o
 clean:
 	rm -f *.o
 	rm -f rpd
@@ -141,6 +147,7 @@ cleanall:
 	rm -f gluethread/*.o
 	rm -f BitOp/*.o
 	rm -f Tree/*.o
+	rm -f LinuxMemoryManager/*.o
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	make clean

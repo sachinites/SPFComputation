@@ -43,6 +43,7 @@
 #include "sr_tlv_api.h"
 #include "bitarr.h"
 #include "no_warn.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
 
@@ -142,7 +143,7 @@ spring_disable_cleanup(node_t *node){
     prefix_sid_subtlv_t *prefix_sid = NULL;
     
     free((SRGB_INDEX_ARRAY(node->srgb))->array);
-    free(node->srgb);
+    XFREE(node->srgb);
     node->use_spring_backups = FALSE;
 
     /*Break the association between prefixes and prefix SIDs*/

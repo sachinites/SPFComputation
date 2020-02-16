@@ -143,14 +143,14 @@ tilfa_get_remote_spf_result_lst(tilfa_info_t *tilfa_info,
 
             ITERATE_LIST_BEGIN2(inner_lst, curr1, prev1){    
                 spf_res = curr1->data;
-                free(spf_res);
+                XFREE(spf_res);
             }ITERATE_LIST_END2(inner_lst, curr1, prev1);
             delete_singly_ll(inner_lst);
             return inner_lst;
         }
     } ITERATE_LIST_END2(outer_lst, curr, prev);
 
-    tilfa_rem_spf_result = calloc(1, sizeof(tilfa_remote_spf_result_t));
+    tilfa_rem_spf_result = XCALLOC(1, tilfa_remote_spf_result_t);
     tilfa_rem_spf_result->node = node;
     tilfa_rem_spf_result->rem_spf_result_lst = init_singly_ll();
 
@@ -213,7 +213,7 @@ init_tilfa(node_t *node){
 
     LEVEL level_it;
    
-    node->tilfa_info = calloc(1, sizeof(tilfa_info_t));
+    node->tilfa_info = XCALLOC(1, tilfa_info_t);
     
     node->tilfa_info->tilfa_gl_var.max_segments_allowed = TILFA_MAX_SEGMENTS;
     init_glthread(&node->tilfa_info->tilfa_lcl_config_head);
@@ -287,7 +287,7 @@ tilfa_update_config(node_t *plr_node,
     }
     else if(link_protection != DONT_KNOW || 
             node_protection != DONT_KNOW){
-        tilfa_lcl_config = calloc(1, sizeof(tilfa_lcl_config_t));
+        tilfa_lcl_config = XCALLOC(1, tilfa_lcl_config_t);
         strncpy(tilfa_lcl_config->protected_link, protected_link, IF_NAME_SIZE);
         tilfa_lcl_config->protected_link[IF_NAME_SIZE -1] = '\0';
         if(link_protection == TRUE || link_protection == FALSE)
@@ -303,7 +303,7 @@ tilfa_update_config(node_t *plr_node,
             tilfa_lcl_config->link_protection == FALSE){
 
         remove_glthread(&tilfa_lcl_config->config_glue);
-        free(tilfa_lcl_config);
+        XFREE(tilfa_lcl_config);
         config_change = TRUE;
     }
     return config_change;
@@ -384,11 +384,11 @@ tilfa_clear_post_convergence_spf_path(
 
                 pred_info = glthread_to_pred_info(curr1);
                 remove_glthread(&pred_info->glue);
-                free(pred_info);
+                XFREE(pred_info);
             } ITERATE_GLTHREAD_END(&spf_path_result->pred_db, curr1);
 
             remove_glthread(&spf_path_result->glue);
-            free(spf_path_result);
+            XFREE(spf_path_result);
         } ITERATE_GLTHREAD_END(post_convergence_spf_path_head, curr);
 
         init_glthread(post_convergence_spf_path_head);
@@ -438,7 +438,7 @@ tilfa_clear_all_pre_convergence_results(node_t *node, LEVEL level){
    ITERATE_LIST_BEGIN(tilfa_info->tilfa_pre_convergence_spf_results[level], list_node){
 
        result = list_node->data;
-       free(result);
+       XFREE(result);
        result = NULL;
    }ITERATE_LIST_END;
    
@@ -466,7 +466,7 @@ tilfa_clear_all_post_convergence_results(node_t *spf_root, LEVEL level,
     ITERATE_LIST_BEGIN(tilfa_info->tilfa_post_convergence_spf_results[level], list_node){
 
         result = list_node->data;
-        free(result);
+        XFREE(result);
         result = NULL;
     }ITERATE_LIST_END;
 
@@ -547,7 +547,7 @@ tilfa_fill_protected_resource_from_config(node_t *plr_node,
             tilfa_lcl_config_t *tilfa_lcl_config){
 
     protected_resource_t *temp_pr_res = 
-        calloc(1, sizeof(protected_resource_t));
+        XCALLOC(1, protected_resource_t);
 
     temp_pr_res->plr_node = plr_node;
     temp_pr_res->protected_link = get_interface_from_intf_name(plr_node, 
@@ -555,7 +555,7 @@ tilfa_fill_protected_resource_from_config(node_t *plr_node,
     
     if(!temp_pr_res->protected_link){
         temp_pr_res->plr_node = NULL;
-        free(temp_pr_res);
+        XFREE(temp_pr_res);
         return;
     }
      
@@ -639,15 +639,15 @@ tilfa_clear_preconvergence_remote_spf_results(tilfa_info_t *tilfa_info,
         ITERATE_LIST_BEGIN2(inner_lst, curr1, prev1){
 
             spf_res = curr1->data;
-            free(spf_res);
+            XFREE(spf_res);
             curr1->data = NULL; 
         } ITERATE_LIST_END2(inner_lst, curr1, prev1);
         
         delete_singly_ll(inner_lst);
-        free(inner_lst);
+        XFREE(inner_lst);
         tilfa_rem_spf_result->rem_spf_result_lst = NULL;
 
-        free(tilfa_rem_spf_result);
+        XFREE(tilfa_rem_spf_result);
         ITERATIVE_LIST_NODE_DELETE2(outer_lst, curr, prev);
         
         if(node) return;
@@ -923,7 +923,7 @@ tilfa_p_node_qualification_test_wrt_root(
     uint32_t dist_S_to_pnode = tilfa_dist_from_self(
             tilfa_info, node_to_test, level);
 
-    /*loop free wrt Source*/
+    /*loop XFREE wrt Source*/
     if(!(dist_nbr_to_pnode < dist_nbr_to_S + dist_S_to_pnode))
         return FALSE;
 
@@ -998,7 +998,7 @@ tilfa_q_node_qualification_test_wrt_destination(
     node_t *protected_node = edge->to.node;
 
     /* Mandatory condition should be satisified : 
-     * q node must be loop-free node wrt S*/
+     * q node must be loop-XFREE node wrt S*/
     dist_q_to_S = tilfa_dist_from_x_to_y_reverse_spf(tilfa_info,
             spf_root, node_to_test, level);
     
@@ -1172,7 +1172,7 @@ tilfa_attempt_connect_p_q_by_prefix_sid(node_t *spf_root,
     uint32_t dist_S_to_qnode = tilfa_dist_from_self(
             tilfa_info, q_node, level);
 
-    /*loop free wrt Source*/
+    /*loop XFREE wrt Source*/
     if(!(dist_pnode_to_qnode < dist_pnode_to_S + dist_S_to_qnode))
         return FALSE;
 
@@ -2534,7 +2534,7 @@ route_fetch_tilfa_backups(node_t *spf_root,
                                   &tilfa_segment_list->gen_segment_list[i],
                                   tilfa_segment_list->pr_res, inet3, mpls0)){
                     
-                    tilfa_bck_up = calloc(1, sizeof(internal_nh_t));
+                    tilfa_bck_up = XCALLOC(1, internal_nh_t);
                     copy_internal_nh_t(tilfa_bck_up_lcl, (*tilfa_bck_up));
                     ROUTE_ADD_NH(route->backup_nh_list[LSPNH], tilfa_bck_up);
                 }

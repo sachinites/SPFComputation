@@ -36,6 +36,7 @@
 #include "Queue.h"
 #include "advert.h"
 #include "spftrace.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
 
@@ -283,7 +284,7 @@ get_system_id_from_router_id(node_t *ingress_lsr,
             }
 
             if(strncmp(nbr_node->router_id, tail_end_ip, PREFIX_LEN) == 0){
-                free(q);
+                XFREE(q);
                 q = NULL;
                 return nbr_node;
             }
@@ -293,7 +294,7 @@ get_system_id_from_router_id(node_t *ingress_lsr,
         ITERATE_NODE_PHYSICAL_NBRS_END(curr_node, nbr_node, pn_node, level);
     }
     assert(is_queue_empty(q));
-    free(q);
+    XFREE(q);
     q = NULL;
     return NULL;
 }

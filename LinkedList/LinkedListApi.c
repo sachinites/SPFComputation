@@ -4,13 +4,14 @@
 #include <memory.h>
 #include "LinkedListApi.h"
 #include <assert.h>
+#include "../LinuxMemoryManager/uapi_mm.h"
 
 ll_t* init_singly_ll(){
-    return calloc(1, sizeof(ll_t));
+    return XCALLOC(1, ll_t);
 }
 
 singly_ll_node_t* singly_ll_init_node(void* data){
-    singly_ll_node_t* node = calloc(1, sizeof(singly_ll_node_t));
+    singly_ll_node_t* node = XCALLOC(1, singly_ll_node_t);
     node->data = data;
     return node;
 }
@@ -92,14 +93,14 @@ singly_ll_delete_node(ll_t *ll, singly_ll_node_t *node){
         node->data = node->next->data;
         temp = node->next;
         node->next = node->next->next;
-        free(temp);
+        XFREE(temp);
         DEC_NODE_COUNT_SINGLY_LL(ll);
         return 0;
     }
 
     /* if node is the only node in LL*/
     if(ll->node_count == 1 && GET_HEAD_SINGLY_LL(ll) == node){
-        free(node);
+        XFREE(node);
         GET_HEAD_SINGLY_LL(ll) = NULL;
         DEC_NODE_COUNT_SINGLY_LL(ll);
         return 0;
@@ -113,7 +114,7 @@ singly_ll_delete_node(ll_t *ll, singly_ll_node_t *node){
     }
     
     trav->next = NULL;
-    free(node);
+    XFREE(node);
     DEC_NODE_COUNT_SINGLY_LL(ll);
     return 0;
 }
@@ -276,7 +277,7 @@ delete_singly_ll(ll_t *ll){
 			 *next = GET_NEXT_NODE_SINGLY_LL(head);
 
 	do{
-		free(head);
+		XFREE(head);
 		head = next;
 		if(next)
 			next = GET_NEXT_NODE_SINGLY_LL(next);
@@ -327,7 +328,7 @@ singly_ll_delete_node_by_data_ptr(ll_t *ll, void *data){
         return;
     
     singly_ll_remove_node(ll, list_node);
-    free(list_node);
+    XFREE(list_node);
     list_node = NULL;
 }
 

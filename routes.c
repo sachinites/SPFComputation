@@ -130,7 +130,7 @@ routes_t *
 route_malloc(){
 
     nh_type_t nh;
-    routes_t *route = calloc(1, sizeof(routes_t));
+    routes_t *route = XCALLOC(1, routes_t);
     ITERATE_NH_TYPE_BEGIN(nh){
         route->primary_nh_list[nh] = init_singly_ll();
         singly_ll_set_comparison_fn(route->primary_nh_list[nh], instance_node_comparison_fn);
@@ -156,7 +156,7 @@ merge_route_primary_nexthops(routes_t *route, spf_result_t *result, nh_type_t nh
 
         if(is_internal_nh_exist(route->primary_nh_list[nh], &result->next_hop[nh][i]))
             continue;
-        int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+        int_nxt_hop = XCALLOC(1, internal_nh_t);
         copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->primary_nh_list[nh], int_nxt_hop);
 #ifdef __ENABLE_TRACE__        
@@ -212,7 +212,7 @@ merge_route_backup_nexthops(routes_t *route,
             }
         }
 
-        int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+        int_nxt_hop = XCALLOC(1, internal_nh_t);
         copy_internal_nh_t(result->node->backup_next_hop[route->level][nh][i], *int_nxt_hop);
         singly_ll_add_node_by_val(route->backup_nh_list[nh], int_nxt_hop);
 #ifdef __ENABLE_TRACE__        
@@ -242,19 +242,19 @@ free_route(routes_t *route){
     
     ITERATE_NH_TYPE_BEGIN(nh){
         ROUTE_FLUSH_PRIMARY_NH_LIST(route, nh);
-        free(route->primary_nh_list[nh]);
+        XFREE(route->primary_nh_list[nh]);
         route->primary_nh_list[nh] = 0;
         ROUTE_FLUSH_BACKUP_NH_LIST(route, nh);
-        free(route->backup_nh_list[nh]);
+        XFREE(route->backup_nh_list[nh]);
         route->backup_nh_list[nh] = 0;
     } ITERATE_NH_TYPE_END;
     
     if(route->rt_type == UNICAST_T){
         delete_singly_ll(route->like_prefix_list);
     }
-    free(route->like_prefix_list);
+    XFREE(route->like_prefix_list);
     route->like_prefix_list = NULL;
-    free(route);
+    XFREE(route);
 }
 
 routes_t *
@@ -418,7 +418,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
 
         for(i = 0 ; i < MAX_NXT_HOPS; i++){
             if(!is_internal_nh_t_empty(result->next_hop[nh][i])){
-                int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+                int_nxt_hop = XCALLOC(1, internal_nh_t);
                 copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
                 ROUTE_ADD_NH(route->primary_nh_list[nh], int_nxt_hop);   
 #ifdef __ENABLE_TRACE__                    
@@ -456,7 +456,7 @@ overwrite_route(spf_info_t *spf_info, routes_t *route,
                     }
                 }
 
-                int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+                int_nxt_hop = XCALLOC(1, internal_nh_t);
                 copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
                 ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
 #ifdef __ENABLE_TRACE__                    
@@ -657,7 +657,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
 
             for(i = 0; i < MAX_NXT_HOPS; i++){
                 if(!is_internal_nh_t_empty(result->next_hop[nh][i])){
-                    int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+                    int_nxt_hop = XCALLOC(1, internal_nh_t);
                     copy_internal_nh_t(result->next_hop[nh][i], *int_nxt_hop);
                     ROUTE_ADD_NH(route->primary_nh_list[nh], int_nxt_hop);   
 #ifdef __ENABLE_TRACE__                    
@@ -671,7 +671,7 @@ update_route(spf_info_t *spf_info,          /*spf_info of computing node*/
             }
             for(i = 0 ; i < MAX_NXT_HOPS; i++){
                 if(!is_internal_nh_t_empty((result->node->backup_next_hop[level][nh][i]))){
-                    int_nxt_hop = calloc(1, sizeof(internal_nh_t));
+                    int_nxt_hop = XCALLOC(1, internal_nh_t);
                     copy_internal_nh_t((result->node->backup_next_hop[level][nh][i]), *int_nxt_hop);
                     ROUTE_ADD_NH(route->backup_nh_list[nh], int_nxt_hop);   
 #ifdef __ENABLE_TRACE__                    
@@ -1110,7 +1110,7 @@ refine_route_backups(routes_t *route){
                                 backup->protected_link->intf_name); 
                         trace(instance->traceopts, ROUTE_CALCULATION_BIT);
 #endif
-                        free(backup);
+                        XFREE(backup);
                         ITERATIVE_LIST_NODE_DELETE2(route->backup_nh_list[nh], list_node1, prev_list_node);
                     }
                 } ITERATE_LIST_END2(route->backup_nh_list[nh], list_node1, prev_list_node);
@@ -1491,7 +1491,7 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
             ITERATE_NH_TYPE_BEGIN(nh){
                 ITERATE_LIST_BEGIN(igp_route->primary_nh_list[nh], list_node){
                     nxthop = list_node->data;
-                    new_nxthop = calloc(1, sizeof(internal_nh_t));
+                    new_nxthop = XCALLOC(1, internal_nh_t);
                     copy_internal_nh_t(*nxthop, *new_nxthop);  
                     singly_ll_add_node_by_val(sr_route->primary_nh_list[nh], new_nxthop);
                 }  ITERATE_LIST_END;
@@ -1500,7 +1500,7 @@ update_node_segment_routes_for_remote(spf_info_t *spf_info, LEVEL level){
             ITERATE_NH_TYPE_BEGIN(nh){
                 ITERATE_LIST_BEGIN(igp_route->backup_nh_list[nh], list_node){
                     nxthop = list_node->data;
-                    new_nxthop = calloc(1, sizeof(internal_nh_t));
+                    new_nxthop = XCALLOC(1, internal_nh_t);
                     copy_internal_nh_t(*nxthop, *new_nxthop);  
                     singly_ll_add_node_by_val(sr_route->backup_nh_list[nh], new_nxthop);
                 }  ITERATE_LIST_END;

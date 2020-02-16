@@ -34,6 +34,7 @@
 #define __ROUTES__
 
 #include "instance.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 typedef struct routes_{
 
@@ -82,7 +83,7 @@ ROUTE_FLUSH_PRIMARY_NH_LIST(routes_t *route, nh_type_t nh){
 
     ITERATE_LIST_BEGIN(route->primary_nh_list[nh], list_node){
 
-        free(list_node->data);
+        XFREE(list_node->data);
         list_node->data = NULL;
     } ITERATE_LIST_END;
 
@@ -104,7 +105,7 @@ ROUTE_FLUSH_BACKUP_NH_LIST(routes_t *route, nh_type_t nh){
 
     ITERATE_LIST_BEGIN(route->backup_nh_list[nh], list_node){
 
-        free(list_node->data);
+        XFREE(list_node->data);
         list_node->data = NULL;
     } ITERATE_LIST_END;
 

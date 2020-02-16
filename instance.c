@@ -38,8 +38,10 @@
 #include "spfutil.h"
 #include "spftrace.h"
 #include "spf_candidate_tree.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
+extern void init_memory_manager();
 
 static void
 add_node_to_owning_instance(instance_t *instance, node_t *node){
@@ -151,7 +153,7 @@ create_new_edge(char *from_ifname,
         prefix_t *to_prefix,
         LEVEL level){/*LEVEL value can be LEVEL12 also*/
 
-    edge_t *edge = calloc(1, sizeof(edge_t));
+    edge_t *edge = XCALLOC(1, edge_t);
 
     /*ifnames may be specified as NULL in case of edges incoming to PN or 
      * outgoing from PN*/
@@ -205,7 +207,7 @@ create_new_lsp_adj(char *lsp_name,
                unsigned int metric,
                LEVEL level){
 
-    edge_t *edge = calloc(1, sizeof(edge_t));
+    edge_t *edge = XCALLOC(1, edge_t);
     strncpy(edge->from.intf_name, lsp_name, IF_NAME_SIZE);
     edge->from.intf_name[IF_NAME_SIZE - 1] = '\0';
 
@@ -391,12 +393,13 @@ extern void init_pfe();
 instance_t *
 get_new_instance(){
 
-    instance_t *instance = calloc(1, sizeof(instance_t));
+    init_memory_manager();
+    instance_t *instance = XCALLOC(1, instance_t);
     instance->instance_node_list = init_singly_ll();
     singly_ll_set_comparison_fn(instance->instance_node_list, 
         instance_node_comparison_fn);
     SPF_CANDIDATE_TREE_INIT(&instance->ctree);
-    instance->traceopts = calloc(1, sizeof(traceoptions));
+    instance->traceopts = XCALLOC(1, traceoptions);
     init_trace(instance->traceopts);
     register_display_trace_options(instance->traceopts, _spf_display_trace_options);
     enable_spf_trace(instance, SPF_EVENTS_BIT);

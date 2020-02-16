@@ -79,7 +79,7 @@ void singly_ll_add_ordered_data(ll_t *ll, void *data);
         else if(node_ptr && prev){                              \
             prev->next = node_ptr->next;                        \
         }                                                       \
-        free(node_ptr);                                         \
+        XFREE(node_ptr);                                        \
         list_ptr->node_count--;                                 \
         node_ptr = NULL;}
             

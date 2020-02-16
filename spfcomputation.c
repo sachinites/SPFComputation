@@ -42,6 +42,7 @@
 #include "no_warn.h"
 #include "complete_spf_path.h"
 #include "spf_candidate_tree.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
 
@@ -201,7 +202,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
         if(candidate_node->node_type[level] != PSEUDONODE){
             res = singly_ll_search_by_key(res_lst, candidate_node);
             if(!res) {
-                res = calloc(1, sizeof(spf_result_t));
+                res = XCALLOC(1, spf_result_t);
                 singly_ll_add_node_by_val(res_lst, (void *)res);
             }
         }
@@ -230,7 +231,7 @@ run_dijkastra(node_t *spf_root, LEVEL level, candidate_tree_t *ctree,
                 sprintf(instance->traceopts->b, "Curr node : %s, Creating New self spf result with spf root %s",
                         candidate_node->node_name, spf_root->node_name); trace(instance->traceopts, DIJKSTRA_BIT);
 #endif
-                self_res = calloc(1, sizeof(self_spf_result_t));
+                self_res = XCALLOC(1, self_spf_result_t);
                 self_res->spf_root = spf_root;
                 self_res->res = res;
                 singly_ll_add_node_by_val(candidate_node->self_spf_result[level], self_res);
@@ -468,11 +469,11 @@ spf_clear_result(node_t *spf_root, LEVEL level){
                    result->node->self_spf_result[level],
                    self_result);
 
-           free(self_result);
+           XFREE(self_result);
            self_result = NULL;
        }
         
-       free(result);
+       XFREE(result);
        result = NULL;    
    }ITERATE_LIST_END;
    delete_singly_ll(spf_root->spf_run_result[level]);
@@ -547,7 +548,7 @@ spf_init(candidate_tree_t *ctree,
         ITERATE_NODE_LOGICAL_NBRS_END;
     }
     assert(is_queue_empty(q));
-    free(q);
+    XFREE(q);
     q = NULL;
 
     /* step 3 : Initialize direct nexthops.

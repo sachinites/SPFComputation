@@ -179,4 +179,5 @@
 #define CMDCODE_DEBUG_SHOW_TILFA                            112 /*debug show instance node <node-name> tilfa*/
 #define CMDCODE_CONFIG_NODE_TILFA_ENABLE                    113 /*config node <node-name> source-packet-routing use-post-convergence-paths*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_TILFA                    114 /*config debug set trace tilfa*/
+#define CMDCODE_DEBUG_SHOW_MEMORY_USAGE                     115 /*debug show mem-usage*/
 #endif /* __SPFCMDCODES__H */

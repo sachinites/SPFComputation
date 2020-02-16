@@ -35,6 +35,7 @@
 #include "sr_tlv_api.h"
 #include "spfutil.h"
 #include <arpa/inet.h>
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t *instance;
 

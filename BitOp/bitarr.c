@@ -172,7 +172,7 @@ print_bit_array(bit_array_t *bitarr){
 int
 main(int argc, char **argv){
 
-    bit_array_t *arr = calloc(1, sizeof(bit_array_t));
+    bit_array_t *arr = XCALLOC(1, bit_array_t);
     init_bit_array(arr, 15);
     set_bit(arr, 11);
     set_bit(arr, 21);

@@ -46,6 +46,7 @@
 #include "no_warn.h"
 #include "complete_spf_path.h"
 #include "spring_adjsid.h"
+#include "LinuxMemoryManager/uapi_mm.h"
 
 extern instance_t * instance;
 
@@ -909,7 +910,7 @@ instance_node_spring_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode
                     return 0;
                 }
                 node->spring_enabled = TRUE;
-                node->srgb = calloc(1, sizeof(srgb_t));
+                node->srgb = XCALLOC(1, srgb_t);
                 init_srgb_defaults(node->srgb);
                 break;
             case CONFIG_DISABLE:
@@ -1067,7 +1068,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                         prefix->hosting_node->node_name, PREFIX_SID_INDEX(prefix));
                 } ITERATE_LIST_END;
                 delete_singly_ll(res);
-                free(res);
+                XFREE(res);
             }
             break;
         case CMDCODE_DEBUG_SHOW_PREFIX_SID_CONFLICT_RESULT:
@@ -1091,7 +1092,7 @@ instance_node_spring_show_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
                         prefix->hosting_node->node_name, PREFIX_SID_INDEX(prefix));
                 } ITERATE_LIST_END;
                 delete_singly_ll(res);
-                free(res);
+                XFREE(res);
             }
             break;
         case CMDCODE_SHOW_NODE_SPRING:
@@ -1139,7 +1140,7 @@ debug_trace_mpls_stack_label(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     transient_mpls_pfe_engine(node, mpls_label_stack, &next_node);
-    free_mpls_label_stack(mpls_label_stack); 
+    XFREE_mpls_label_stack(mpls_label_stack); 
     return 0;
 }
 
@@ -1239,12 +1240,12 @@ instance_node_rsvp_config_handler(param_t *param, ser_buff_t *tlv_buf, op_mode e
             if(rc == -1) {
                 printf("RSVP tunnel creation failed\n");   
             }
-            rsvp_tunnel = calloc(1, sizeof(rsvp_tunnel_t));
+            rsvp_tunnel = XCALLOC(1, rsvp_tunnel_t);
             memcpy(rsvp_tunnel, &rsvp_tunnel_data, sizeof(rsvp_tunnel_t));
             strncpy(rsvp_tunnel->lsp_name, rsvp_lsp_name, RSVP_LSP_NAME_SIZE);
             rc = add_new_rsvp_tunnel(node, rsvp_tunnel);
             if(rc == -1){
-                free(rsvp_tunnel);
+                XFREE(rsvp_tunnel);
             }
         }   
         break;

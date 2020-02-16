@@ -3,11 +3,12 @@
 #include <memory.h>
 #include <assert.h>
 #include "stack.h"
+#include "../LinuxMemoryManager/uapi_mm.h"
 
 stack_t*
 get_new_stack()
 {
-    stack_t *stack = calloc(1, sizeof(stack_t));
+    stack_t *stack = XCALLOC(1, stack_t);
     if(!stack)
         return NULL;
     memset(stack, 0, sizeof(stack_t));
@@ -100,6 +101,6 @@ void free_stack(stack_t *stack)
 {
     if(!stack)
         return;
-    free(stack);
+    XFREE(stack);
     return;
 }
