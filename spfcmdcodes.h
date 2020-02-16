@@ -180,4 +180,6 @@
 #define CMDCODE_CONFIG_NODE_TILFA_ENABLE                    113 /*config node <node-name> source-packet-routing use-post-convergence-paths*/
 #define CMDCODE_DEBUG_TRACEOPTIONS_TILFA                    114 /*config debug set trace tilfa*/
 #define CMDCODE_DEBUG_SHOW_MEMORY_USAGE                     115 /*debug show mem-usage*/
+#define CMDCODE_DEBUG_SHOW_MEMORY_USAGE_DETAIL              116 /*debug show mem-usage detail*/
+
 #endif /* __SPFCMDCODES__H */

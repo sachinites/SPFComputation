@@ -92,8 +92,8 @@ main(int argc, char **argv){
     //instance = tilfa_topo_one_hop_test();
     //instance = tilfa_topo_p_q_distance_1();
     //instance = tilfa_topo_page_408_node_protection();
-    //instance = tilfa_topo_2_adj_segment_example();
-    instance = tilfa_ecmp_topology();
+    instance = tilfa_topo_2_adj_segment_example();
+    //instance = tilfa_ecmp_topology();
     start_shell();
     return 0;
 }
