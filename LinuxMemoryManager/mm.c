@@ -159,7 +159,8 @@ mm_instantiate_new_page_family(
     char *struct_name,
     uint32_t struct_size){
 
-    vm_page_family_t *vm_page_family_curr;
+    vm_page_family_t *vm_page_family_curr = NULL;
+    vm_page_for_families_t *new_vm_page_for_families = NULL;
 
     if(struct_size > SYSTEM_PAGE_SIZE){
         printf("Error : %s() Structure %s Size exceeds system page size\n",
@@ -178,8 +179,6 @@ mm_instantiate_new_page_family(
         return;
     }
     
-    assert(!first_vm_page_for_families->next);
-
     uint32_t count = 0;
     
     ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_families, vm_page_family_curr){
@@ -195,9 +194,9 @@ mm_instantiate_new_page_family(
 
     if(count == MAX_FAMILIES_PER_VM_PAGE){
         /*Request a new vm page from kernel to add a new family*/
-        first_vm_page_for_families->next = (vm_page_for_families_t *)mm_get_new_vm_page_from_kernel(1);
-        first_vm_page_for_families = first_vm_page_for_families->next;
-        first_vm_page_for_families->next = NULL;
+        new_vm_page_for_families = (vm_page_for_families_t *)mm_get_new_vm_page_from_kernel(1);
+        new_vm_page_for_families->next = first_vm_page_for_families;
+        first_vm_page_for_families = new_vm_page_for_families;
         vm_page_family_curr = &first_vm_page_for_families->vm_page_family[0];
     }
 
