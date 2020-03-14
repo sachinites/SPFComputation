@@ -34,7 +34,10 @@
 #include <assert.h>
 #include <string.h>
 #include <unistd.h> /*for getpagesize*/
+#include <sys/mman.h>
 #include "css.h"
+
+#define __USE_MMAP__
 
 static vm_page_family_t *first_vm_page_family = NULL;
 static size_t SYSTEM_PAGE_SIZE = 0;
@@ -77,6 +80,40 @@ mm_get_available_page_index(vm_page_family_t *vm_page_family){
     return prev;
 }
 
+static void *
+mm_get_new_vm_page_from_kernel(int units){
+
+#ifndef __USE_MMAP__
+ return calloc(units, SYSTEM_PAGE_SIZE);
+#else
+    char * region = mmap(
+            sbrk(0), 
+            units * SYSTEM_PAGE_SIZE,
+            PROT_READ|PROT_WRITE|PROT_EXEC,
+            MAP_ANON|MAP_PRIVATE,
+            0,0);
+
+    if (region == MAP_FAILED) {
+        printf("Error : VM Page allocation Failed\n");
+        return NULL;
+    }
+
+    return (void *)region;
+#endif
+}
+
+static void
+mm_return_vm_page_to_kernel(void *ptr, int units){
+
+#ifndef __USE_MMAP__
+ free(ptr); 
+#else
+    if(munmap(ptr, units * SYSTEM_PAGE_SIZE)){
+        printf("Error : Could not munmap VM page to kernel");
+    }
+#endif
+}
+
 /*Return a fresh new virtual page*/
 vm_page_t *
 allocate_vm_page(vm_page_family_t *vm_page_family){
@@ -84,7 +121,7 @@ allocate_vm_page(vm_page_family_t *vm_page_family){
     vm_page_t *prev_page = 
         mm_get_available_page_index(vm_page_family);
 
-    vm_page_t *vm_page = calloc(1, SYSTEM_PAGE_SIZE);
+    vm_page_t *vm_page = mm_get_new_vm_page_from_kernel(1);
     vm_page->block_meta_data.is_free = MM_TRUE;
     vm_page->block_meta_data.block_size = 
         MAX_PAGE_ALLOCATABLE_MEMORY;
@@ -344,8 +381,6 @@ mm_get_page_satisfying_request(
 void *
 xcalloc(char *struct_name, int units){
 
-    void *result = NULL;
-
     vm_page_family_t *pg_family = 
         lookup_page_family_by_name(struct_name);
 
@@ -426,7 +461,7 @@ mm_vm_page_delete_and_free(
         if(vm_page->next)
             vm_page->next->prev = NULL;
         vm_page_family->no_of_system_calls_to_alloc_dealloc_vm_pages++;
-        free(vm_page);
+        mm_return_vm_page_to_kernel((void *)vm_page, 1);
         return;
     }
 
@@ -434,7 +469,7 @@ mm_vm_page_delete_and_free(
         vm_page->next->prev = vm_page->prev;
     vm_page->prev->next = vm_page->next;
     vm_page_family->no_of_system_calls_to_alloc_dealloc_vm_pages++;
-    free(vm_page);
+    mm_return_vm_page_to_kernel((void *)vm_page, 1);
 }
 
 static block_meta_data_t *
