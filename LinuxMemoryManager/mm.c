@@ -39,7 +39,7 @@
 
 #define __USE_MMAP__
 
-static vm_page_family_t *first_vm_page_family = NULL;
+static vm_page_for_families_t *first_vm_page_for_families = NULL;
 static size_t SYSTEM_PAGE_SIZE = 0;
 
 void
@@ -97,7 +97,7 @@ mm_get_new_vm_page_from_kernel(int units){
         printf("Error : VM Page allocation Failed\n");
         return NULL;
     }
-
+    memset(region, 0, units * SYSTEM_PAGE_SIZE);
     return (void *)region;
 #endif
 }
@@ -159,57 +159,60 @@ mm_instantiate_new_page_family(
     char *struct_name,
     uint32_t struct_size){
 
+    vm_page_family_t *vm_page_family_curr;
+
     if(struct_size > SYSTEM_PAGE_SIZE){
         printf("Error : %s() Structure %s Size exceeds system page size\n",
             __FUNCTION__, struct_name);
         return;
     }
 
-    if(!first_vm_page_family){
-        first_vm_page_family = calloc(1, sizeof(vm_page_family_t));
-        strncpy(first_vm_page_family->struct_name, struct_name,
+    if(!first_vm_page_for_families){
+        first_vm_page_for_families = (vm_page_for_families_t *)mm_get_new_vm_page_from_kernel(1);
+        first_vm_page_for_families->next = NULL;
+        strncpy(first_vm_page_for_families->vm_page_family[0].struct_name, struct_name,
             MM_MAX_STRUCT_NAME);
-        first_vm_page_family->struct_size = struct_size;
-        first_vm_page_family->first_page = NULL;
-        first_vm_page_family->next = NULL;
-        first_vm_page_family->prev = NULL;
-        init_glthread(&first_vm_page_family->free_block_priority_list_head);
+        first_vm_page_for_families->vm_page_family[0].struct_size = struct_size;
+        first_vm_page_for_families->vm_page_family[0].first_page = NULL;
+        init_glthread(&first_vm_page_for_families->vm_page_family[0].free_block_priority_list_head);
         return;
     }
+    
+    assert(!first_vm_page_for_families->next);
 
-    vm_page_family_t *vm_page_family_curr;
-
-    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_family, vm_page_family_curr){
+    uint32_t count = 0;
+    
+    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_families, vm_page_family_curr){
 
         if(strncmp(vm_page_family_curr->struct_name, 
-            struct_name, 
-            MM_MAX_STRUCT_NAME) != 0){
-            
+            struct_name,MM_MAX_STRUCT_NAME) != 0){
+            count++;
             continue;
         }
         /*Page family already exists*/
         assert(0);
-    } ITERATE_PAGE_FAMILIES_END(first_vm_page_family, vm_page_family_curr);
+    } ITERATE_PAGE_FAMILIES_END(first_vm_page_for_families, vm_page_family_curr);
 
-    /*Page family do not exist, create a new one*/
-    vm_page_family_curr = calloc(1, sizeof(vm_page_family_t));
+    if(count == MAX_FAMILIES_PER_VM_PAGE){
+        /*Request a new vm page from kernel to add a new family*/
+        first_vm_page_for_families->next = (vm_page_for_families_t *)mm_get_new_vm_page_from_kernel(1);
+        first_vm_page_for_families = first_vm_page_for_families->next;
+        first_vm_page_for_families->next = NULL;
+        vm_page_family_curr = &first_vm_page_for_families->vm_page_family[0];
+    }
+
     strncpy(vm_page_family_curr->struct_name, struct_name,
             MM_MAX_STRUCT_NAME);
     vm_page_family_curr->struct_size = struct_size;
     vm_page_family_curr->first_page = NULL;
-    init_glthread(&first_vm_page_family->free_block_priority_list_head);
-
-    /*Add new page family to the list of Page families*/
-    vm_page_family_curr->next = first_vm_page_family;
-    first_vm_page_family->prev = vm_page_family_curr;
-    first_vm_page_family = vm_page_family_curr;
+    init_glthread(&vm_page_family_curr->free_block_priority_list_head);
 }
 
 vm_page_family_t *
 lookup_page_family_by_name(char *struct_name){
 
     vm_page_family_t *vm_page_family_curr;
-    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_family, vm_page_family_curr){
+    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_families, vm_page_family_curr){
 
         if(strncmp(vm_page_family_curr->struct_name,
             struct_name,
@@ -217,7 +220,7 @@ lookup_page_family_by_name(char *struct_name){
 
             return vm_page_family_curr;
         }
-    } ITERATE_PAGE_FAMILIES_END(first_vm_page_family, vm_page_family_curr);
+    } ITERATE_PAGE_FAMILIES_END(first_vm_page_for_families, vm_page_family_curr);
     return NULL;
 }
 
@@ -571,7 +574,7 @@ mm_print_memory_usage(char *struct_name){
 
     printf("\nPage Size = %zu Bytes\n", SYSTEM_PAGE_SIZE);
 
-    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_family, vm_page_family_curr){
+    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_families, vm_page_family_curr){
 
         if(struct_name){
             if(strncmp(struct_name, vm_page_family_curr->struct_name, 
@@ -604,7 +607,7 @@ mm_print_memory_usage(char *struct_name){
 
         } ITERATE_VM_PAGE_END(vm_page_family_curr, vm_page);
         printf("\n");
-    } ITERATE_PAGE_FAMILIES_END(first_vm_page_family, vm_page_family_curr);
+    } ITERATE_PAGE_FAMILIES_END(first_vm_page_for_families, vm_page_family_curr);
 
     printf(ANSI_COLOR_MAGENTA "\nTotal Applcation Memory Usage : %u Bytes\n"
         ANSI_COLOR_RESET, total_memory_in_use_by_application);
@@ -641,7 +644,7 @@ mm_print_block_usage(){
              occupied_block_count;
     uint32_t application_memory_usage;
 
-    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_family, vm_page_family_curr){
+    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_families, vm_page_family_curr){
 
         total_block_count = 0;
         free_block_count = 0;
@@ -679,5 +682,5 @@ mm_print_block_usage(){
         vm_page_family_curr->struct_name, total_block_count,
         free_block_count, occupied_block_count, application_memory_usage);
 
-    } ITERATE_PAGE_FAMILIES_END(first_vm_page_family, vm_page_family_curr); 
+    } ITERATE_PAGE_FAMILIES_END(first_vm_page_for_families, vm_page_family_curr); 
 }
