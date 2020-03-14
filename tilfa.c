@@ -896,6 +896,12 @@ tilfa_p_node_qualification_test_wrt_root(
 
     if(!dst_pre_convergence_nhps || 
         is_nh_list_empty2(dst_pre_convergence_nhps)){
+
+        sprintf(instance->traceopts->b, "%s() : Root : %s, node_to_test : %s, dst_node : %s, "
+        "first_hop_node : %s, level %s. Result : %s", __FUNCTION__, spf_root->node_name, 
+        node_to_test->node_name, dst_node->node_name, get_str_level(level), 
+        "FAILED. Reason : No Pre-convergence Primary Nexthops for Destination");
+        trace(instance->traceopts, TILFA_BIT);
         return FALSE;
     }
 
@@ -924,8 +930,15 @@ tilfa_p_node_qualification_test_wrt_root(
             tilfa_info, node_to_test, level);
 
     /*loop XFREE wrt Source*/
-    if(!(dist_nbr_to_pnode < dist_nbr_to_S + dist_S_to_pnode))
+    if(!(dist_nbr_to_pnode < dist_nbr_to_S + dist_S_to_pnode)){
+        
+        sprintf(instance->traceopts->b, "%s() : Root : %s, node_to_test : %s, dst_node : %s, "
+        "first_hop_node : %s, level %s. Result : %s", __FUNCTION__, spf_root->node_name, 
+        node_to_test->node_name, dst_node->node_name, first_hop_node->node_name, get_str_level(level), 
+        "FAILED. Reason : No Loop free wrt Source");
+        trace(instance->traceopts, TILFA_BIT);
         return FALSE;
+    }
 
     /*I think downstream criteria is automatically met since the
      * p-node lies on post-convergence path*/
@@ -946,6 +959,13 @@ tilfa_p_node_qualification_test_wrt_root(
                     dst_pre_convergence_nhps, 
                     first_hop_segments, level) != 0);
         }
+        else{
+            sprintf(instance->traceopts->b, "%s() : Root : %s, node_to_test : %s, dst_node : %s, "
+                    "first_hop_node : %s, level %s. Result : %s", __FUNCTION__, spf_root->node_name, 
+                    node_to_test->node_name, dst_node->node_name, first_hop_node->node_name, get_str_level(level), 
+                    "FAILED. Reason : Node Protection not provided");
+            trace(instance->traceopts, TILFA_BIT);
+        }
     }
 
     if(pr_res->link_protection){
@@ -958,6 +978,14 @@ tilfa_p_node_qualification_test_wrt_root(
                         first_hop_node, 
                         dst_pre_convergence_nhps, 
                         first_hop_segments, level) != 0);
+        }
+        else{
+
+            sprintf(instance->traceopts->b, "%s() : Root : %s, node_to_test : %s, dst_node : %s, "
+                    "first_hop_node : %s, level %s. Result : %s", __FUNCTION__, spf_root->node_name, 
+                    node_to_test->node_name, dst_node->node_name, get_str_level(level), 
+                    first_hop_node->node_name, "FAILED. Reason : Link Protection not provided");
+            trace(instance->traceopts, TILFA_BIT);
         }
     }
 
@@ -1895,6 +1923,15 @@ tilfa_examine_tilfa_path_for_segment_list(
                 search_for_q_node = FALSE; 
                 break;
             }
+            else{
+                if(GET_PRED_INFO_NODE_FROM_GLTHREAD(last_entry->left) == 
+                        first_hop_node){
+                    search_for_q_node = FALSE;
+                    search_for_p_node = TRUE;
+                    pq_distance = 1;
+                    goto done;
+                }
+            }
             goto done;
         }
         else{
@@ -1916,6 +1953,15 @@ tilfa_examine_tilfa_path_for_segment_list(
                         search_for_q_node = FALSE;
                         search_for_p_node = FALSE;
                         break;
+                    }
+                    else{
+                        if(GET_PRED_INFO_NODE_FROM_GLTHREAD(last_entry->left) == 
+                            first_hop_node){
+                            search_for_q_node = FALSE;
+                            search_for_p_node = TRUE;
+                            pq_distance = 1;
+                            goto done;
+                        }
                     }
                     goto done;
                 }
