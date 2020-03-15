@@ -120,6 +120,7 @@ typedef struct vm_page_for_families_{
 #define MAX_FAMILIES_PER_VM_PAGE   \
     ((SYSTEM_PAGE_SIZE - sizeof(vm_page_for_families_t *))/sizeof(vm_page_family_t))
 
+
 static inline block_meta_data_t *
 mm_get_biggest_free_block_page_family(
         vm_page_family_t *vm_page_family){
@@ -135,6 +136,16 @@ mm_get_biggest_free_block_page_family(
 
 vm_page_t *
 allocate_vm_page();
+
+#define MARK_VM_PAGE_EMPTY(vm_page_t_ptr)                                 \
+    vm_page_t_ptr->block_meta_data.next_block = NULL;                     \
+    vm_page_t_ptr->block_meta_data.prev_block = NULL;                     \
+    vm_page_t_ptr->block_meta_data.is_free = MM_TRUE
+
+#define MM_GET_NEXT_CONTIGUOUS_PAGE_IN_HEAP_SEGMENT(vm_page_t_ptr, incr)   \
+    ((incr == '+') ? ((vm_page_t *)((char *)vm_page_t_ptr + SYSTEM_PAGE_SIZE)): \
+     ((vm_page_t *)((char *)vm_page_t_ptr - SYSTEM_PAGE_SIZE)))
+
 
 void
 mm_init();
@@ -163,13 +174,23 @@ lookup_page_family_by_name(char *struct_name);
     }}
 
 #define ITERATE_VM_PAGE_ALL_BLOCKS_BEGIN(vm_page_ptr, curr)    \
-{\
-    curr = &vm_page_ptr->block_meta_data;\
-    block_meta_data_t *next = NULL;\
-    for( ; curr; curr = next){\
+{                                                              \
+    curr = &vm_page_ptr->block_meta_data;                      \
+    block_meta_data_t *next = NULL;                            \
+    for( ; curr; curr = next){                                 \
         next = NEXT_META_BLOCK(curr);
 
-#define ITERATE_VM_PAGE_ALL_BLOCKS_END(vm_page_ptr, curr)   \
+#define ITERATE_VM_PAGE_ALL_BLOCKS_END(vm_page_ptr, curr)      \
+    }}
+
+#define ITERATE_HEAP_SEGMENT_PAGE_WISE_BEGIN(vm_page_begin_ptr, curr)   \
+{                                                               \
+    void *heap_segment_end = sbrk(0);                           \
+    for(curr = (vm_page_t *)vm_page_begin_ptr;                  \
+            (void *)curr != heap_segment_end;                       \
+            curr = MM_GET_NEXT_CONTIGUOUS_PAGE_IN_HEAP_SEGMENT(curr, '+')){    \
+
+#define ITERATE_HEAP_SEGMENT_PAGE_WISE_END(vm_page_begin_ptr, curr) \
     }}
 
 void mm_vm_page_delete_and_free(vm_page_t *vm_page);

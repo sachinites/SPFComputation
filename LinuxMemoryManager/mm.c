@@ -35,28 +35,33 @@
 #include <string.h>
 #include <unistd.h> /*for getpagesize*/
 #include <sys/mman.h>
+#include <errno.h>
 #include "css.h"
 
-#define __USE_MMAP__
+#undef __USE_MMAP__
+#define __USE_BRK__
+#undef __USE_GLIBC__
 
 static vm_page_for_families_t *first_vm_page_for_families = NULL;
 static size_t SYSTEM_PAGE_SIZE = 0;
+void *gb_hsba = NULL;
 
 void
 mm_init(){
 
     SYSTEM_PAGE_SIZE = getpagesize() * 2;
+    gb_hsba = sbrk(0);
 }
 
 static inline uint32_t
-mm_max_page_allocatable_memory(){
+mm_max_page_allocatable_memory(int units){
 
     return (uint32_t)
-        (SYSTEM_PAGE_SIZE - offset_of(vm_page_t, page_memory));
+        ((SYSTEM_PAGE_SIZE * units) - offset_of(vm_page_t, page_memory));
 }
 
-#define MAX_PAGE_ALLOCATABLE_MEMORY \
-    (mm_max_page_allocatable_memory())
+#define MAX_PAGE_ALLOCATABLE_MEMORY(units) \
+    (mm_max_page_allocatable_memory(units))
 
 static vm_page_t *
 mm_get_available_page_index(vm_page_family_t *vm_page_family){
@@ -80,12 +85,36 @@ mm_get_available_page_index(vm_page_family_t *vm_page_family){
     return prev;
 }
 
-static void *
+static vm_page_t *
+mm_sbrk_get_available_page_from_heap_segment(int units){
+
+    vm_page_t *vm_page_curr = NULL;
+    
+    vm_page_t *first_vm_page = (vm_page_t *)gb_hsba;
+
+    ITERATE_HEAP_SEGMENT_PAGE_WISE_BEGIN(first_vm_page, vm_page_curr){
+        if(mm_is_vm_page_empty(vm_page_curr)){
+            return vm_page_curr;
+        }
+    }ITERATE_HEAP_SEGMENT_PAGE_WISE_END(first_vm_page, vm_page_curr);
+    /*No free Page could be found, expand heap segment*/
+    vm_page_curr = (vm_page_t *)sbrk(SYSTEM_PAGE_SIZE * units);
+
+    if(!vm_page_curr){
+        printf("Error : Heap Segment Expansion Failed, error no = %d\n", errno);
+    }
+    return vm_page_curr;
+}
+
+static vm_page_t *
 mm_get_new_vm_page_from_kernel(int units){
 
-#ifndef __USE_MMAP__
- return calloc(units, SYSTEM_PAGE_SIZE);
-#else
+    vm_page_t *vm_page = NULL;
+
+#ifdef __USE_GLIBC__
+    vm_page = (vm_page_t *)calloc(units, SYSTEM_PAGE_SIZE);
+
+#elif defined(__USE_MMAP__)
     char * region = mmap(
             sbrk(0), 
             units * SYSTEM_PAGE_SIZE,
@@ -97,20 +126,68 @@ mm_get_new_vm_page_from_kernel(int units){
         printf("Error : VM Page allocation Failed\n");
         return NULL;
     }
-    memset(region, 0, units * SYSTEM_PAGE_SIZE);
-    return (void *)region;
+    vm_page = (vm_page_t *)region;
+
+#elif defined(__USE_BRK__)
+    vm_page = mm_sbrk_get_available_page_from_heap_segment(units);;
+
 #endif
+    memset(vm_page, 0, units * SYSTEM_PAGE_SIZE);
+    return vm_page;
+}
+
+static void
+mm_sbrk_free_vm_page(vm_page_t *vm_page, int units){
+
+    /* If this VM page is the top-most page of Heap Memory
+     * Segment, then lower down the heap memory segment.
+     * Note that, once you lower down the heap memory segment
+     * this page shall be out of allotted valid virtual address
+     * of a process, and any access to it shall result in
+     * segmentation fault*/
+    /* Also note that, if the VM page is the top-most page of Heap Memory
+     * then it could be possible there are free contiguous pages below
+     * this VM page. We need to lowered down break pointer freeing all
+     * contiguous VM pages lying below this VM page*/
+
+    if((void *)vm_page !=
+            (void *)((char *)sbrk(0) - (SYSTEM_PAGE_SIZE * units))){
+        return;
+    }
+
+    vm_page_t *bottom_most_free_page = NULL;
+
+    for(bottom_most_free_page =
+            MM_GET_NEXT_CONTIGUOUS_PAGE_IN_HEAP_SEGMENT(vm_page, '-');
+            mm_is_vm_page_empty(bottom_most_free_page);
+            bottom_most_free_page =
+            MM_GET_NEXT_CONTIGUOUS_PAGE_IN_HEAP_SEGMENT(bottom_most_free_page, '-')){
+
+        if((void *)bottom_most_free_page == gb_hsba)
+            break;
+    }
+
+    if((void *)bottom_most_free_page != gb_hsba){
+        bottom_most_free_page =
+            MM_GET_NEXT_CONTIGUOUS_PAGE_IN_HEAP_SEGMENT(bottom_most_free_page, '+');
+    }
+    /*Now lower down the break pointer*/
+    assert(!brk((void *)bottom_most_free_page));
 }
 
 static void
 mm_return_vm_page_to_kernel(void *ptr, int units){
 
-#ifndef __USE_MMAP__
- free(ptr); 
-#else
+  MARK_VM_PAGE_EMPTY(((vm_page_t *)ptr));
+
+#ifdef __USE_GLIBC__
+    free(ptr); 
+#elif defined(__USE_MMAP__)
     if(munmap(ptr, units * SYSTEM_PAGE_SIZE)){
         printf("Error : Could not munmap VM page to kernel");
     }
+#elif defined(__USE_BRK__)
+    mm_sbrk_free_vm_page((vm_page_t *)ptr, units);
 #endif
 }
 
@@ -124,7 +201,7 @@ allocate_vm_page(vm_page_family_t *vm_page_family){
     vm_page_t *vm_page = mm_get_new_vm_page_from_kernel(1);
     vm_page->block_meta_data.is_free = MM_TRUE;
     vm_page->block_meta_data.block_size = 
-        MAX_PAGE_ALLOCATABLE_MEMORY;
+        MAX_PAGE_ALLOCATABLE_MEMORY(1);
     vm_page->block_meta_data.offset = 
         offset_of(vm_page_t, block_meta_data);
     init_glthread(&vm_page->block_meta_data.priority_thread_glue);
@@ -394,7 +471,7 @@ xcalloc(char *struct_name, int units){
         return NULL;
     }
     
-    if(units * pg_family->struct_size > MAX_PAGE_ALLOCATABLE_MEMORY){
+    if(units * pg_family->struct_size > MAX_PAGE_ALLOCATABLE_MEMORY(1)){
         
         printf("Error : Memory Requested Exceeds Page Size\n");
         assert(0);
@@ -463,6 +540,8 @@ mm_vm_page_delete_and_free(
         if(vm_page->next)
             vm_page->next->prev = NULL;
         vm_page_family->no_of_system_calls_to_alloc_dealloc_vm_pages++;
+        vm_page->next = NULL;
+        vm_page->prev = NULL;
         mm_return_vm_page_to_kernel((void *)vm_page, 1);
         return;
     }
