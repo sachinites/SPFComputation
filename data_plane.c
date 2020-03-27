@@ -1597,10 +1597,10 @@ ping(char *node_name, char *dst_prefix){
             if(IS_MPLS_LABEL_STACK_EMPTY(mpls_label_stack)){
                 /* Auto Done : :D :
                  * Get the prefix from mpls_label_stack and feed it to Ist pref order to next_node*/
-                XFREE_mpls_label_stack(mpls_label_stack);
+                free_mpls_label_stack(mpls_label_stack);
             }
             else{
-                XFREE_mpls_label_stack(mpls_label_stack);
+                free_mpls_label_stack(mpls_label_stack);
                 return -1;    
             }
         }
@@ -1637,7 +1637,7 @@ get_new_mpls_label_stack(){
 }
 
 void
-XFREE_mpls_label_stack(mpls_label_stack_t *mpls_label_stack){
+free_mpls_label_stack(mpls_label_stack_t *mpls_label_stack){
 
         free_stack(mpls_label_stack->stack);
         XFREE(mpls_label_stack);

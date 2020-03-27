@@ -38,8 +38,8 @@
 #include <errno.h>
 #include "css.h"
 
-#undef __USE_MMAP__
-#define __USE_BRK__
+#define __USE_MMAP__
+#undef __USE_BRK__
 #undef __USE_GLIBC__
 
 static vm_page_for_families_t *first_vm_page_for_families = NULL;
@@ -707,9 +707,7 @@ mm_print_memory_usage(char *struct_name){
         memory_app_use_to_total_memory_ratio);
 
     printf("Total Memory being used by Memory Manager = %lu Bytes\n",
-        ((cumulative_vm_pages_claimed_from_kernel *\
-        SYSTEM_PAGE_SIZE) + 
-        (number_of_struct_families * sizeof(vm_page_family_t))));
+        cumulative_vm_pages_claimed_from_kernel * SYSTEM_PAGE_SIZE); 
 }
 
 void

@@ -1140,7 +1140,7 @@ debug_trace_mpls_stack_label(param_t *param, ser_buff_t *tlv_buf, op_mode enable
     
     node = (node_t *)singly_ll_search_by_key(instance->instance_node_list, node_name);
     transient_mpls_pfe_engine(node, mpls_label_stack, &next_node);
-    XFREE_mpls_label_stack(mpls_label_stack); 
+    free_mpls_label_stack(mpls_label_stack); 
     return 0;
 }
 
