@@ -65,6 +65,7 @@ void config_topology_commands(param_t *config);
 extern int
 show_tilfa_handler(param_t *param, ser_buff_t *tlv_buf,
                     op_mode enable_or_disable);
+extern void srte_init_dcm(param_t *config_node_node_name);
 
 static void
 show_spf_results(node_t *spf_root, LEVEL level){
@@ -1581,6 +1582,7 @@ spf_init_dcm(){
             init_param(&spring, CMD, "source-packet-routing", instance_node_spring_config_handler, 0, INVALID, 0, "Enable Spring");
             libcli_register_param(&config_node_node_name, &spring);
             set_param_cmd_code(&spring, CMDCODE_CONFIG_NODE_SEGMENT_ROUTING_ENABLE);
+            srte_init_dcm(&spring);
             {
                 /*config node <node-name> source-packet-routing node-segment <node-sid-value>*/ 
                 static param_t node_segment;

@@ -445,7 +445,7 @@ is_prefix_byte_equal(prefix_t *prefix1, prefix_t *prefix2,
 
     if(strncmp(prefix1->prefix, prefix2->prefix, PREFIX_LEN) == 0   &&
         prefix1->mask == prefix2->mask                              &&
-        prefix1->metric == prefix2->metric + prefix2_hosting_node_metric                         &&
+        prefix1->metric == prefix2->metric + prefix2_hosting_node_metric &&
         prefix1->hosting_node == prefix2->hosting_node)
             return 1;
     return 0;

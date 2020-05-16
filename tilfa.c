@@ -589,10 +589,10 @@ compute_tilfa(node_t *spf_root, LEVEL level){
 
     tilfa_clear_all_pre_convergence_results(spf_root, level);
 
-    compute_tilfa_pre_convergence_spf_primary_nexthops(spf_root, level);
-
     if(IS_GLTHREAD_LIST_EMPTY(&tilfa_info->tilfa_lcl_config_head))
         return;
+
+    compute_tilfa_pre_convergence_spf_primary_nexthops(spf_root, level);
 
     ITERATE_GLTHREAD_BEGIN(&tilfa_info->tilfa_lcl_config_head, curr){
         

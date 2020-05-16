@@ -885,6 +885,8 @@ DIST_X_Y(node_t *X, node_t *Y, LEVEL _level){
     assert(0);
 }
 
+/*ToDo : The current implementation is buggy, the RSVP LSP
+ * NH must be imported from rib*/
 bool_t
 build_mpls_nexthop_from_lsp(spf_info_t *spf_info,
                             internal_nh_t *lspnh,

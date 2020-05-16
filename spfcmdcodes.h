@@ -182,4 +182,8 @@
 #define CMDCODE_DEBUG_SHOW_MEMORY_USAGE                     115 /*debug show mem-usage*/
 #define CMDCODE_DEBUG_SHOW_MEMORY_USAGE_DETAIL              116 /*debug show mem-usage detail*/
 
+/*SRTE*/
+#define CMDCODE_CONFIG_SRTE_POLICY_TO_ADDR                  117 /*config node <node-name> spring spring-path <path-name> to <ip-addr>*/
+#define CMDCODE_CONFIG_SRTE_TUNNEL_MEMBER_SEG_LST           118 /*config node <node-name> spring spring-path <path-name> primary <seg-lst-name>*/
+#define CMDCODE_CONFIG_SRTE_SEG_LST                         119 /*config node <node-name> spring segment-list <seg-lst-name> <hope-name> [label | ip-address] <value>*/
 #endif /* __SPFCMDCODES__H */

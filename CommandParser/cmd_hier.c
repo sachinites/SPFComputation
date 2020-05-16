@@ -465,7 +465,7 @@ support_cmd_negation(param_t *param){
         }
         break;
     }
-
+    
     assert(i <= CHILDREN_END_INDEX);
     param->options[i] = no_param;
     no_param->parent = param;

@@ -31,7 +31,8 @@ OBJ=advert.o \
 	spring_adjsid.o \
 	flex_algo.o	\
 	tilfa.o	\
-	mem_init.o
+	mem_init.o \
+	srte_dcm.o
 ${TARGET_NAME}:testapp.o ${OBJ} ${DSOBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
@@ -43,6 +44,9 @@ conflct_res.o:conflct_res.c
 glevel.o:glevel.c
 	@echo "Building glevel.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} glevel.c -o glevel.o
+srte_dcm.o:srte_dcm.c
+	@echo "Building srte_dcm.o"
+	@ ${CC} ${CFLAGS} -c ${INCLUDES} srte_dcm.c -o srte_dcm.o
 mem_init.o:mem_init.c
 	@echo "Building mem_init.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} mem_init.c -o mem_init.o
