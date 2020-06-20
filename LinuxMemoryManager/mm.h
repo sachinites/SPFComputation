@@ -89,10 +89,10 @@ typedef struct vm_page_{
     if (free_meta_block->next_block)\
     free_meta_block->next_block->prev_block = free_meta_block
 
-#define mm_bind_blocks_for_deallocation(freed_meta_block_top, freed_meta_block_down)    \
-    freed_meta_block_top->next_block = freed_meta_block_down->next_block;               \
-    if(freed_meta_block_down->next_block)                                               \
-    freed_meta_block_down->next_block->prev_block = freed_meta_block_top
+#define mm_bind_blocks_for_deallocation(freed_meta_block_down, freed_meta_block_top)    \
+    freed_meta_block_down->next_block = freed_meta_block_top->next_block;               \
+    if(freed_meta_block_top->next_block)                                                \
+    freed_meta_block_top->next_block->prev_block = freed_meta_block_down
 
 vm_bool_t
 mm_is_vm_page_empty(vm_page_t *vm_page);
@@ -103,8 +103,6 @@ typedef struct vm_page_family_{
     char struct_name[MM_MAX_STRUCT_NAME];
     uint32_t struct_size;
     vm_page_t *first_page;
-    struct vm_page_family_ *next;
-    struct vm_page_family_ *prev;
     glthread_t free_block_priority_list_head;
     /*Statistics*/
     uint32_t total_memory_in_use_by_app;
@@ -146,9 +144,6 @@ allocate_vm_page();
     ((incr == '+') ? ((vm_page_t *)((char *)vm_page_t_ptr + SYSTEM_PAGE_SIZE)): \
      ((vm_page_t *)((char *)vm_page_t_ptr - SYSTEM_PAGE_SIZE)))
 
-
-void
-mm_init();
 
 #define ITERATE_PAGE_FAMILIES_BEGIN(vm_page_for_families_ptr, curr)       \
 {                                                            \

@@ -239,7 +239,7 @@ mm_instantiate_new_page_family(
     vm_page_family_t *vm_page_family_curr = NULL;
     vm_page_for_families_t *new_vm_page_for_families = NULL;
 
-    if(struct_size > SYSTEM_PAGE_SIZE){
+    if(struct_size > mm_max_page_allocatable_memory(1)){
         printf("Error : %s() Structure %s Size exceeds system page size\n",
             __FUNCTION__, struct_name);
         return;
@@ -287,16 +287,23 @@ mm_instantiate_new_page_family(
 vm_page_family_t *
 lookup_page_family_by_name(char *struct_name){
 
-    vm_page_family_t *vm_page_family_curr;
-    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_families, vm_page_family_curr){
+    vm_page_family_t *vm_page_family_curr = NULL;
+    vm_page_for_families_t *vm_page_for_families_curr = NULL;
 
-        if(strncmp(vm_page_family_curr->struct_name,
-            struct_name,
-            MM_MAX_STRUCT_NAME) == 0){
+    for(vm_page_for_families_curr = first_vm_page_for_families; 
+            vm_page_for_families_curr; 
+            vm_page_for_families_curr = vm_page_for_families_curr->next){
 
-            return vm_page_family_curr;
-        }
-    } ITERATE_PAGE_FAMILIES_END(first_vm_page_for_families, vm_page_family_curr);
+        ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_families, vm_page_family_curr){
+
+            if(strncmp(vm_page_family_curr->struct_name,
+                        struct_name,
+                        MM_MAX_STRUCT_NAME) == 0){
+
+                return vm_page_family_curr;
+            }
+        } ITERATE_PAGE_FAMILIES_END(first_vm_page_for_families, vm_page_family_curr);
+    }
     return NULL;
 }
 
@@ -349,76 +356,93 @@ mm_family_new_page_add(vm_page_family_t *vm_page_family){
 /* Fn to mark block_meta_data as being Allocated for
  * 'size' bytes of application data. Return TRUE if 
  * block allocation succeeds*/
+
 static vm_bool_t
-mm_allocate_free_block(
+mm_split_free_data_block_for_allocation(
             vm_page_family_t *vm_page_family,
-            block_meta_data_t *block_meta_data, 
+            block_meta_data_t *block_meta_data,
             uint32_t size){
-
-    assert(block_meta_data->is_free == MM_TRUE);
-
-    assert(block_meta_data->block_size >= size);
-
-    uint32_t remaining_size = 
-            block_meta_data->block_size - size;
-
-    block_meta_data->is_free = MM_FALSE;
-    block_meta_data->block_size = size;
- 
-    /*Unchanged*/
-    //block_meta_data->offset =  ??
-    
-    /* Since this block of memory is not allocated, remove it from
-     * priority list of free blocks*/
-    remove_glthread(&block_meta_data->priority_thread_glue);
-
-    vm_page_family->total_memory_in_use_by_app += 
-        sizeof(block_meta_data_t) + size;
-    /* No need to do anything else if this block is completely used
-     * to satisfy memory request*/
-    if(!remaining_size)
-        return MM_TRUE;
-
-    /* If the remaining memory chunk in this free block is unusable
-     * because of fragmentation - however this should not be possible
-     * except the boundry condition*/
-    if(remaining_size < 
-        (sizeof(block_meta_data_t) + vm_page_family->struct_size)){
-        /*printf("Warning : %uB Memory Unusable at page bottom\n", 
-            remaining_size);*/
-        return MM_TRUE;
-    }
 
     block_meta_data_t *next_block_meta_data = NULL;
 
-    next_block_meta_data = NEXT_META_BLOCK_BY_SIZE(block_meta_data);
+    assert(block_meta_data->is_free == MM_TRUE);
 
-    next_block_meta_data->is_free = MM_TRUE;
+    if(block_meta_data->block_size < size){
+        return MM_FALSE;
+    }
 
-    next_block_meta_data->block_size = 
-        remaining_size - sizeof(block_meta_data_t);
+    uint32_t remaining_size =
+        block_meta_data->block_size - size;
 
-    next_block_meta_data->offset = block_meta_data->offset + 
-        sizeof(block_meta_data_t) + block_meta_data->block_size;
+    block_meta_data->is_free = MM_FALSE;
+    block_meta_data->block_size = size;
 
-    init_glthread(&next_block_meta_data->priority_thread_glue); 
+    /*Unchanged*/
+    /*block_meta_data->offset =  ??*/
+
+    /* Since this block of memory is going to be allocated to the application, 
+     * remove it from priority list of free blocks*/
+    remove_glthread(&block_meta_data->priority_thread_glue);
     
-    mm_bind_blocks_for_allocation(block_meta_data, next_block_meta_data);
-    
-    mm_add_free_block_meta_data_to_free_block_list(
-            vm_page_family, next_block_meta_data);
+    vm_page_family->total_memory_in_use_by_app +=
+            sizeof(block_meta_data_t) + size;
+
+    /*Case 1 : No Split*/
+    if(!remaining_size){
+        /*No need to repair linkages, they do not change*/
+        //mm_bind_blocks_for_allocation(block_meta_data, next_block_meta_data);
+        return MM_TRUE;
+    }
+
+    /*Case 3 : Partial Split : Soft Internal Fragmentation*/
+    else if(sizeof(block_meta_data_t) < remaining_size && 
+        remaining_size < (sizeof(block_meta_data_t) + vm_page_family->struct_size)){
+        /*New Meta block is to be created*/
+        next_block_meta_data = NEXT_META_BLOCK_BY_SIZE(block_meta_data);
+        next_block_meta_data->is_free = MM_TRUE;
+        next_block_meta_data->block_size =
+            remaining_size - sizeof(block_meta_data_t);
+        next_block_meta_data->offset = block_meta_data->offset +
+            sizeof(block_meta_data_t) + block_meta_data->block_size;
+        init_glthread(&next_block_meta_data->priority_thread_glue);
+        mm_add_free_block_meta_data_to_free_block_list(
+                vm_page_family, next_block_meta_data);
+        mm_bind_blocks_for_allocation(block_meta_data, next_block_meta_data);
+    }
+
+    /*Case 3 : Partial Split : Hard Internal Fragmentation*/
+    else if(remaining_size < sizeof(block_meta_data_t)){
+        //next_block_meta_data = block_meta_data->next_block;
+        /*No need to repair linkages, they do not change*/
+        //mm_bind_blocks_for_allocation(block_meta_data, next_block_meta_data);
+    }
+
+    /*Case 2 : Full Split  : New Meta block is Created*/
+    else {
+        /*New Meta block is to be created*/
+        next_block_meta_data = NEXT_META_BLOCK_BY_SIZE(block_meta_data);
+        next_block_meta_data->is_free = MM_TRUE;
+        next_block_meta_data->block_size =
+            remaining_size - sizeof(block_meta_data_t);
+        next_block_meta_data->offset = block_meta_data->offset +
+            sizeof(block_meta_data_t) + block_meta_data->block_size;
+        init_glthread(&next_block_meta_data->priority_thread_glue);
+        mm_add_free_block_meta_data_to_free_block_list(
+                vm_page_family, next_block_meta_data);
+        mm_bind_blocks_for_allocation(block_meta_data, next_block_meta_data);
+    }
 
     return MM_TRUE;
 }
 
-static vm_page_t *
-mm_get_page_satisfying_request(
+static block_meta_data_t *
+mm_allocate_free_data_block(
         vm_page_family_t *vm_page_family,
-        uint32_t req_size, 
-        block_meta_data_t **block_meta_data/*O/P*/){
+        uint32_t req_size){ 
 
     vm_bool_t status = MM_FALSE;
     vm_page_t *vm_page = NULL;
+    block_meta_data_t *block_meta_data = NULL;
 
     block_meta_data_t *biggest_block_meta_data = 
         mm_get_biggest_free_block_page_family(vm_page_family); 
@@ -428,31 +452,27 @@ mm_get_page_satisfying_request(
 
         /*Time to add a new page to Page family to satisfy the request*/
         vm_page = mm_family_new_page_add(vm_page_family);
+
         /*Allocate the free block from this page now*/
-        status = mm_allocate_free_block(vm_page_family, 
+        status = mm_split_free_data_block_for_allocation(vm_page_family, 
                     &vm_page->block_meta_data, req_size);
 
-        if(status == MM_FALSE){
-            *block_meta_data = NULL;
-             mm_vm_page_delete_and_free(vm_page);
-             return NULL;
-        }
+        if(status)
+            return &vm_page->block_meta_data;
 
-        *block_meta_data = &vm_page->block_meta_data;
-        return vm_page;
-    }
-    /*The biggest block meta data can satisfy the request*/
-    status = mm_allocate_free_block(vm_page_family, 
-        biggest_block_meta_data, req_size);
-        
-    if(status == MM_FALSE){
-        *block_meta_data = NULL;
         return NULL;
     }
+    /*Step 3*/
+    /*The biggest block meta data can satisfy the request*/
+    if(biggest_block_meta_data){
+        status = mm_split_free_data_block_for_allocation(vm_page_family, 
+                biggest_block_meta_data, req_size);
+    }
 
-    *block_meta_data = biggest_block_meta_data;
-
-    return MM_GET_PAGE_FROM_META_BLOCK(biggest_block_meta_data);
+    if(status)
+        return biggest_block_meta_data;
+    
+    return NULL;
 }
 
 /* The public fn to be invoked by the application for Dynamic 
@@ -460,6 +480,7 @@ mm_get_page_satisfying_request(
 void *
 xcalloc(char *struct_name, int units){
 
+    /*Step 1*/
     vm_page_family_t *pg_family = 
         lookup_page_family_by_name(struct_name);
 
@@ -478,38 +499,27 @@ xcalloc(char *struct_name, int units){
         return NULL;
     }
 
-    if(!pg_family->first_page){
-
-        pg_family->first_page = mm_family_new_page_add(pg_family);
-
-        if(mm_allocate_free_block(pg_family, 
-                    &pg_family->first_page->block_meta_data, 
-                    units * pg_family->struct_size)){
-            memset((char *)pg_family->first_page->page_memory, 0,
-                units * pg_family->struct_size);
-            return (void *)pg_family->first_page->page_memory;
-        }
-    }
-    
     /*Find the page which can satisfy the request*/
-    block_meta_data_t *free_block_meta_data;
-
-    vm_page_t *vm_page_curr = mm_get_page_satisfying_request(
-                        pg_family, units * pg_family->struct_size,
-                        &free_block_meta_data);
+    block_meta_data_t *free_block_meta_data = NULL;
+    
+    free_block_meta_data = mm_allocate_free_data_block(
+                            pg_family, units * pg_family->struct_size);
 
     if(free_block_meta_data){
-        /*Sanity Checks*/
-        if(free_block_meta_data->is_free == MM_TRUE || 
-            !IS_GLTHREAD_LIST_EMPTY(&free_block_meta_data->priority_thread_glue)){
-            assert(0);
-        }
         memset((char *)(free_block_meta_data + 1), 0, free_block_meta_data->block_size);
         return  (void *)(free_block_meta_data + 1);
     }
 
-    assert(0);
     return NULL;
+}
+
+static int 
+mm_get_hard_internal_memory_frag_size(
+            block_meta_data_t *first,
+            block_meta_data_t *second){
+
+    block_meta_data_t *next_block = NEXT_META_BLOCK_BY_SIZE(first);  
+    return (int)((unsigned long)second - (unsigned long)(next_block));
 }
 
 static void
@@ -518,9 +528,6 @@ mm_union_free_blocks(block_meta_data_t *first,
 
     assert(first->is_free == MM_TRUE &&
         second->is_free == MM_TRUE);
-
-    first->block_size += sizeof(block_meta_data_t) +
-            second->block_size;
     remove_glthread(&first->priority_thread_glue);
     remove_glthread(&second->priority_thread_glue);
     mm_bind_blocks_for_deallocation(first, second);
@@ -565,15 +572,33 @@ mm_free_blocks(block_meta_data_t *to_be_free_block){
 
     vm_page_family_t *vm_page_family = hosting_page->pg_family;
 
-    vm_page_family->total_memory_in_use_by_app -= 
-        sizeof(block_meta_data_t) + to_be_free_block->block_size;
+    return_block = to_be_free_block;
     
     to_be_free_block->is_free = MM_TRUE;
     
-    return_block = to_be_free_block;
-
     block_meta_data_t *next_block = NEXT_META_BLOCK(to_be_free_block);
 
+    /*Handling Hard IF memory*/
+    if(next_block){
+        /*Scenario 1 : When data block to be freed is not the last 
+         * upper most meta block in a VM data page*/
+        to_be_free_block->block_size += 
+            mm_get_hard_internal_memory_frag_size (to_be_free_block, next_block);
+    }
+    else {
+        /* Scenario 2: Page Boundry condition*/
+        /* Block being freed is the upper most free data block
+         * in a VM data page, check of hard internal fragmented 
+         * memory and merge*/
+        char *end_address_of_vm_page = (char *)((char *)hosting_page + SYSTEM_PAGE_SIZE);
+        char *end_address_of_free_data_block = 
+            (char *)(to_be_free_block + 1) + to_be_free_block->block_size;
+        int internal_mem_fragmentation = (int)((unsigned long)end_address_of_vm_page - 
+                (unsigned long)end_address_of_free_data_block);
+        to_be_free_block->block_size += internal_mem_fragmentation;
+    }
+    
+    /*Now perform Merging*/
     if(next_block && next_block->is_free == MM_TRUE){
         /*Union two free blocks*/
         mm_union_free_blocks(to_be_free_block, next_block);
@@ -586,7 +611,7 @@ mm_free_blocks(block_meta_data_t *to_be_free_block){
         mm_union_free_blocks(prev_block, to_be_free_block);
         return_block = prev_block;
     }
-    
+   
     if(mm_is_vm_page_empty(hosting_page)){
         mm_vm_page_delete_and_free(hosting_page);
         return NULL;
@@ -759,4 +784,27 @@ mm_print_block_usage(){
         free_block_count, occupied_block_count, application_memory_usage);
 
     } ITERATE_PAGE_FAMILIES_END(first_vm_page_for_families, vm_page_family_curr); 
+}
+
+void
+mm_print_registered_page_families(){
+
+    vm_page_family_t *vm_page_family_curr = NULL;
+    vm_page_for_families_t *vm_page_for_families_curr = NULL;
+
+    for(vm_page_for_families_curr = first_vm_page_for_families; 
+        vm_page_for_families_curr; 
+        vm_page_for_families_curr = vm_page_for_families_curr->next){
+
+        ITERATE_PAGE_FAMILIES_BEGIN(vm_page_for_families_curr, 
+            vm_page_family_curr){
+
+
+            printf("Page Family : %s, Size = %u\n", 
+                vm_page_family_curr->struct_name,
+                vm_page_family_curr->struct_size);
+
+        } ITERATE_PAGE_FAMILIES_END(vm_page_for_families_curr,
+            vm_page_family_curr);
+    }
 }
