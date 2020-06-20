@@ -186,7 +186,7 @@ malloc_un_nexthop(){
 }
 
 int
-XFREE_rt_un_entry(rt_un_entry_t *rt_un_entry){
+free_rt_un_entry(rt_un_entry_t *rt_un_entry){
 
     internal_un_nh_t *nxt_hop = NULL;
     glthread_t *curr = NULL;
@@ -382,7 +382,7 @@ inet_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
         if(UN_RTENTRY_PFX_MATCH(temp, rt_key)){
-            XFREE_rt_un_entry(temp);
+            free_rt_un_entry(temp);
             rib->count--;
             return TRUE;
         }
@@ -545,7 +545,7 @@ inet_3_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
         if(UN_RTENTRY_PFX_MATCH(temp, rt_key)){
-            XFREE_rt_un_entry(temp);
+            free_rt_un_entry(temp);
             rib->count--;
             return TRUE;
         }
@@ -702,7 +702,7 @@ mpls_0_rt_un_route_delete(rt_un_table_t *rib, rt_key_t *rt_key){
     ITERATE_GLTHREAD_BEGIN(&rib->head, curr){
         temp = glthread_to_rt_un_entry(curr);
         if(UN_RTENTRY_LABEL_MATCH(temp, rt_key)){
-            XFREE_rt_un_entry(temp);
+            free_rt_un_entry(temp);
             rib->count--;
             return TRUE;
         }
@@ -908,7 +908,7 @@ flush_rib(rt_un_table_t *rib, LEVEL level){
         rt_un_entry = glthread_to_rt_un_entry(curr);
         if(rt_un_entry->level != level)
             continue;
-        rc = XFREE_rt_un_entry(rt_un_entry);
+        rc = free_rt_un_entry(rt_un_entry);
         if(rc == 0) count++;
     } ITERATE_GLTHREAD_END(&rib->head, curr);
     rib->count -= count;
