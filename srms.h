@@ -61,7 +61,7 @@ typedef struct srms_sid_label_binding_tlv_{
 } srms_sid_label_binding_tlv_t;
 
 GLTHREAD_TO_STRUCT(glthread_to_srms_sid_lbl_binding_tlv, \
-        srms_sid_label_binding_tlv_t, glthread, glthreadptr);
+        srms_sid_label_binding_tlv_t, glthread);
 
 /*Flags used for srms_sid_label_binding_tlv_t*/
 #define SRMS_ATTACHED_FLAG  3

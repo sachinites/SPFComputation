@@ -182,7 +182,7 @@ typedef struct internal_un_nh_t_{
     glthread_t glthread;
 } internal_un_nh_t;
 
-GLTHREAD_TO_STRUCT(glthread_to_unified_nh, internal_un_nh_t, glthread, glthreadptr);
+GLTHREAD_TO_STRUCT(glthread_to_unified_nh, internal_un_nh_t, glthread);
 
 static inline char *
 get_str_nexthop_type(char flags){
@@ -221,7 +221,7 @@ typedef struct rt_un_entry_{
     glthread_t glthread;
 } rt_un_entry_t;
 
-GLTHREAD_TO_STRUCT(glthread_to_rt_un_entry, rt_un_entry_t, glthread, glthreadptr);
+GLTHREAD_TO_STRUCT(glthread_to_rt_un_entry, rt_un_entry_t, glthread);
 
 static inline internal_un_nh_t *
 GET_FIRST_NH(rt_un_entry_t *rt_un_entry, FLAG nh_type, 

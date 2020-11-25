@@ -46,7 +46,7 @@ typedef struct pred_info_t_{
     glthread_t glue;
 } pred_info_t;
 
-GLTHREAD_TO_STRUCT(glthread_to_pred_info, pred_info_t, glue, glthreadptr);
+GLTHREAD_TO_STRUCT(glthread_to_pred_info, pred_info_t, glue);
 
 typedef struct spf_path_result_t_{
 
@@ -55,7 +55,7 @@ typedef struct spf_path_result_t_{
     glthread_t glue;
 } spf_path_result_t;
 
-GLTHREAD_TO_STRUCT(glthread_to_spf_path_result, spf_path_result_t, glue, glthreadptr);
+GLTHREAD_TO_STRUCT(glthread_to_spf_path_result, spf_path_result_t, glue);
 
 /*API to construct the SPF path from spf_root to dst_node*/
 
@@ -65,7 +65,7 @@ typedef struct pred_info_wrapper_t_{
     glthread_t glue;
 } pred_info_wrapper_t;
 
-GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue, glthreadptr);
+GLTHREAD_TO_STRUCT(glthread_to_pred_info_wrapper, pred_info_wrapper_t, glue);
 
 #define GET_PRED_INFO_FROM_GLTHREAD(glthread_ptr) \
     ((glthread_to_pred_info_wrapper(glthread_ptr))->pred_info)

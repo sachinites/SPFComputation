@@ -53,7 +53,7 @@ typedef struct rsvp_tunnel_{
     glthread_t glthread;
 } rsvp_tunnel_t;
 
-GLTHREAD_TO_STRUCT(glthread_to_rsvp_tunnel, rsvp_tunnel_t, glthread, glthreadptr);
+GLTHREAD_TO_STRUCT(glthread_to_rsvp_tunnel, rsvp_tunnel_t, glthread);
 
 void
 print_rsvp_tunnel_info(rsvp_tunnel_t *rsvp_tunnel);

@@ -232,7 +232,7 @@ typedef struct tilfa_segment_list_{
     glthread_t gen_segment_list_glue;
 } tilfa_segment_list_t;
 GLTHREAD_TO_STRUCT(tilfa_segment_list_to_gensegment_list, 
-                    tilfa_segment_list_t, gen_segment_list_glue, curr);
+                    tilfa_segment_list_t, gen_segment_list_glue);
 
 typedef struct tilfa_lcl_config_{
 
@@ -242,7 +242,7 @@ typedef struct tilfa_lcl_config_{
   glthread_t config_glue;
 } tilfa_lcl_config_t;
 GLTHREAD_TO_STRUCT(tilfa_lcl_config_to_config_glue, 
-        tilfa_lcl_config_t, config_glue, curr);
+        tilfa_lcl_config_t, config_glue);
 
 typedef struct tilfa_cfg_globals_{
     

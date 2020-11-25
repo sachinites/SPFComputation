@@ -155,7 +155,7 @@ typedef struct lan_intf_adj_sid_{
     glthread_t cfg_glthread;
 } lan_intf_adj_sid_t;
 
-GLTHREAD_TO_STRUCT(glthread_to_cfg_lan_adj_sid, lan_intf_adj_sid_t, cfg_glthread, glthreadptr);
+GLTHREAD_TO_STRUCT(glthread_to_cfg_lan_adj_sid, lan_intf_adj_sid_t, cfg_glthread);
    
 void 
 print_lan_adj_sid_info(edge_end_t *interface, lan_intf_adj_sid_t *lan_intf_adj_sid);

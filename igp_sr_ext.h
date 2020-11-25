@@ -263,7 +263,7 @@ typedef struct _prefix_sid_subtlv_t{
     prefix_t *prefix; /*back pointer to owning prefix*/
 } prefix_sid_subtlv_t;
 
-GLTHREAD_TO_STRUCT(glthread_to_prefix_sid, prefix_sid_subtlv_t, glthread, glthreadptr);
+GLTHREAD_TO_STRUCT(glthread_to_prefix_sid, prefix_sid_subtlv_t, glthread);
 
 /*Macro applicable for prefix_sid_subtlv_t and srms_sid_label_binding_tlv_t*/
 #define GET_SID_TLV_TYPE(glthreadptr)   \
