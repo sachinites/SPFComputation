@@ -62,11 +62,17 @@ extern instance_t * tilfa_topo_page_408_node_protection();
 extern instance_t * tilfa_topo_2_adj_segment_example();
 extern instance_t * tilfa_ecmp_topology();
 
+extern void event_dispatcher_init();
+extern void event_dispatcher_run();
+
 /*Globals */
 instance_t *instance = NULL;
 
 int
 main(int argc, char **argv){
+
+    event_dispatcher_init();
+    event_dispatcher_run();
 
     /* Lib cli initialization */
     spf_init_dcm();

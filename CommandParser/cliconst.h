@@ -28,11 +28,11 @@
 #define TERMINAL_NAME_SIZE      CONS_INPUT_BUFFER_SIZE
 #define TLV_MAX_BUFFER_SIZE     1024
 #define POSSIBILITY_ARRAY_SIZE  10 
-#define DEFAULT_DEVICE_NAME     "root@juniper"
+#define DEFAULT_DEVICE_NAME     "tcp-ip-stack"
 #define MODE_CHARACTER          "/"
 #define SUBOPTIONS_CHARACTER    "?"
 #define CMD_EXPANSION_CHARACTER "."
-#define MAX_OPTION_SIZE         64
+#define MAX_OPTION_SIZE         16
 #define CMD_HIST_RECORD_FILE    "CMD_HIST_RECORD_FILE.txt"
 #define FILE_CMD_SIZE_MAX       (LEAF_VALUE_HOLDER_SIZE * MAX_CMD_TREE_DEPTH)
 #define MODE_PARAM_INDEX        0
@@ -73,7 +73,7 @@ typedef enum{
 #define CONFIG_SUPPORTSAVE_ENABLE   5
 #define CONFIG_CONSOLEN_NAME_NAME   6
 #define DEBUG_SHOW_CMDTREE          7
-
+#define CONFIG_LOAD_FILE			8
 
 typedef enum{
     COMPLETE,

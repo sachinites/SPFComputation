@@ -48,7 +48,7 @@ dump_all_commands(param_t *root, unsigned int index){
         }
         else if(IS_PARAM_LEAF(root)){
             untokenize(index);
-            memset(temp, 0, LEAF_VALUE_HOLDER_SIZE + 2);
+            memset(temp, 0, sizeof(temp));
             sprintf(temp, "<%s>", GET_LEAF_ID(root));
             tokenize(temp, strlen(GET_LEAF_ID(root)) + 2, index);
         }
@@ -314,6 +314,30 @@ config_mode_enter_handler(param_t *param, ser_buff_t *b, op_mode enable_or_disab
     return 0;
 }
 
+extern void
+parse_file(char *file_name);
+
+int
+load_file_handler(param_t *param, ser_buff_t *b, op_mode enable_or_disable){
+
+	char *file_name = NULL;
+	tlv_struct_t *tlv = NULL;
+
+	TLV_LOOP_BEGIN(b, tlv) {
+
+		if (strncmp(tlv->leaf_id, "file-name",
+				strlen("file-name")) == 0) {
+
+			file_name = tlv->value;
+		}
+	} TLV_LOOP_END;
+
+	assert(file_name);
+	
+	parse_file(file_name);	
+	return 0;
+}
+
 int
 negate_callback(param_t *param, ser_buff_t *b, op_mode enable_or_disable){
     printf("Command Negation - Type the cmd following to Negate\n");
@@ -358,7 +382,8 @@ show_help_handler(param_t *param, ser_buff_t *b, op_mode enable_or_disable){
     printf("    f. debug show cmdtree - Show entire command tree\n");
     printf("    g. show history - show history of commands triggered\n");
     printf("    h. repeat - repeat the last command\n");
-    printf(ANSI_COLOR_YELLOW "                      Author : Abhishek Sagar, Juniper Networks\n" ANSI_COLOR_RESET);
+	printf(ANSI_COLOR_YELLOW "                      Author : Abhishek Sagar, Juniper Networks\n" ANSI_COLOR_RESET);
+	printf(ANSI_COLOR_YELLOW "                      Visit : www.csepracticals.com for more courses and projects\n" ANSI_COLOR_RESET);
     return 0;
 }
 

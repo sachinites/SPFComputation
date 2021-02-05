@@ -32,11 +32,13 @@ OBJ=advert.o \
 	flex_algo.o	\
 	tilfa.o	\
 	mem_init.o \
-	srte_dcm.o
+	srte_dcm.o \
+	EventDispatcher/event_dispatcher.o
+
 ${TARGET_NAME}:testapp.o ${OBJ} ${DSOBJ}
 	@echo "Building final executable : ${TARGET_NAME}"
 	@echo "Linking with libcli.a(${USECLILIB})"
-	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} ${DSOBJ} -o ${TARGET_NAME} -L ./CommandParser ${USECLILIB}
+	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o ${OBJ} ${DSOBJ} -o ${TARGET_NAME} -L ./CommandParser ${USECLILIB} -lpthread
 	@echo "Executable created : ${TARGET_NAME}. Finished."
 conflct_res.o:conflct_res.c
 	@echo "Building conflct_res.o"
@@ -122,6 +124,9 @@ spfclihandler.o:spfclihandler.c
 Libtrace/libtrace.o:Libtrace/libtrace.c
 	@echo "Building Libtrace/libtrace.o" 
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} Libtrace/libtrace.c -o Libtrace/libtrace.o
+EventDispatcher/event_dispatcher.o:EventDispatcher/event_dispatcher.c
+	@echo "Building EventDispatcher/event_dispatcher.o"
+	${CC} ${CFLAGS} -c -I EventDispatcher -I gluethread EventDispatcher/event_dispatcher.c -o EventDispatcher/event_dispatcher.o
 ${DSOBJ}:
 	(cd LinkedList;  make)
 	@echo "Building Queue/Queue.o"
@@ -152,6 +157,7 @@ cleanall:
 	rm -f BitOp/*.o
 	rm -f Tree/*.o
 	rm -f LinuxMemoryManager/*.o
+	rm -f EventDispatcher/*.o
 	(cd LinkedList; make clean)
 	(cd CommandParser; make clean)
 	make clean

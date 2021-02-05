@@ -3,10 +3,10 @@ CFLAGS=-g -Wall
 INCLUDES=-I .
 CLILIB=libcli.a
 TARGET:exe ${CLILIB}
-OBJ=cmd_hier.o parser.o serialize.o string_util.o clistd.o clicbext.o
+OBJ=cmd_hier.o parser.o serialize.o string_util.o clistd.o clicbext.o ../EventDispatcher/event_dispatcher.o ../gluethread/glthread.o
 exe:testapp.o ${CLILIB}
 	@echo "Building final executable"
-	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o -o exe -L . -lcli
+	@ ${CC} ${CFLAGS} ${INCLUDES} testapp.o -o exe -L . -lcli -lpthread
 cmd_hier.o:cmd_hier.c
 	@echo "Building cmd_hier.o"
 	@ ${CC} ${CFLAGS} -c ${INCLUDES} cmd_hier.c -o cmd_hier.o
@@ -32,15 +32,15 @@ ${CLILIB}: ${OBJ}
 	@echo "Building Library ${CLILIB}"
 	ar rs ${CLILIB} ${OBJ}
 clean:
-	rm exe
-	rm *.o
-	rm ${CLILIB}
-	rm CMD_HIST_RECORD_FILE.txt || true
+	rm -f exe
+	rm -f *.o
+	rm -f ${CLILIB}
+	rm -f CMD_HIST_RECORD_FILE.txt
 install:
 	cp ${CLILIB} /usr/local/lib/
 	cp libcli.h /usr/include/
 	cp cmdtlv.h /usr/include/
 uninstall:
-	rm /usr/local/lib/${CLILIB}
-	rm /usr/include/libcli.h
-	rm /usr/include/cmdtlv.h
+	rm -f /usr/local/lib/${CLILIB}
+	rm -f /usr/include/libcli.h
+	rm -f /usr/include/cmdtlv.h
