@@ -64,7 +64,7 @@ create_new_node(instance_t *instance, char *node_name, AREA area, char *router_i
         return NULL;
     }
 
-    node_t * node = calloc(1, sizeof(node_t));
+    node_t * node = XCALLOC(1, node_t);
     strncpy(node->node_name, node_name, NODE_NAME_SIZE);
     node->node_name[NODE_NAME_SIZE - 1] = '\0';
     strncpy(node->router_id, router_id, PREFIX_LEN);

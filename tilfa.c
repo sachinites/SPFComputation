@@ -409,7 +409,7 @@ tilfa_clear_segments_list(
         if(!pr_res){
             remove_glthread(&tilfa_segment_list->gen_segment_list_glue);
             tilfa_unlock_protected_resource(tilfa_segment_list->pr_res);
-            free(tilfa_segment_list);
+            XFREE(tilfa_segment_list);
             tilfa_segment_list = NULL;
             continue;
         }
@@ -417,7 +417,7 @@ tilfa_clear_segments_list(
                     pr_res)){
             remove_glthread(&tilfa_segment_list->gen_segment_list_glue);
             tilfa_unlock_protected_resource(tilfa_segment_list->pr_res);
-            free(tilfa_segment_list);
+            XFREE(tilfa_segment_list);
             tilfa_segment_list = NULL;
             return;
         }
@@ -1821,7 +1821,7 @@ tilfa_record_segment_list(node_t *spf_root,
                 tilfa_segment_list_ptr, 
                 tilfa_segment_list);
         tilfa_unlock_protected_resource(tilfa_segment_list->pr_res);
-        free(tilfa_segment_list);
+        XFREE(tilfa_segment_list);
         return;
     } ITERATE_GLTHREAD_END(&spf_root->tilfa_info->tilfa_segment_list_head[level], curr);
 
@@ -2109,7 +2109,7 @@ tilfa_examine_tilfa_path_for_segment_list(
         dst_node, q_distance, pq_distance);
     
     tilfa_segment_list_t *tilfa_segment_list = 
-        calloc(1, sizeof(tilfa_segment_list_t));
+        XCALLOC(1, tilfa_segment_list_t);
 
     if(pq_distance == 0){
         tilfa_segment_list->n_segment_list = 
@@ -2133,7 +2133,7 @@ tilfa_examine_tilfa_path_for_segment_list(
                     pr_res);
 
         if(!segment_list_len_from_p_to_q){
-            free(tilfa_segment_list);
+            XFREE(tilfa_segment_list);
             return;
         }
 
@@ -2153,7 +2153,7 @@ tilfa_examine_tilfa_path_for_segment_list(
     }
 
     if(tilfa_segment_list->n_segment_list == 0){
-        free(tilfa_segment_list);
+        XFREE(tilfa_segment_list);
         return;
     }
 

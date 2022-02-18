@@ -32,7 +32,7 @@
 #define __MM__
 
 #include <stdint.h>
-#include "gluethread/glthread.h"
+#include "../gluethread/glthread.h"
 #include <stddef.h> /*for size_t*/
 
 
@@ -52,7 +52,7 @@ typedef struct block_meta_data_{
     struct block_meta_data_ *next_block;
 } block_meta_data_t;
 GLTHREAD_TO_STRUCT(glthread_to_block_meta_data, 
-    block_meta_data_t, priority_thread_glue, glthread_ptr);
+    block_meta_data_t, priority_thread_glue);
 
 #define offset_of(container_structure, field_name)  \
     ((size_t)&(((container_structure *)0)->field_name))
@@ -65,6 +65,7 @@ typedef struct vm_page_{
     struct vm_page_ *prev;
     struct vm_page_family_ *pg_family; /*back pointer*/
     uint32_t page_index;
+    uint32_t page_size;
     block_meta_data_t block_meta_data;
     char page_memory[0];
 } vm_page_t;
@@ -147,10 +148,10 @@ allocate_vm_page();
 
 #define ITERATE_PAGE_FAMILIES_BEGIN(vm_page_for_families_ptr, curr)       \
 {                                                            \
-    uint32_t count = 0;                                      \
+    uint32_t _count = 0;                                     \
     for(curr = (vm_page_family_t *)&vm_page_for_families_ptr->vm_page_family[0];   \
-        curr->struct_size && count < MAX_FAMILIES_PER_VM_PAGE; \
-        curr++,count++){
+        curr->struct_size && _count < MAX_FAMILIES_PER_VM_PAGE; \
+        curr++,_count++){
 
 #define ITERATE_PAGE_FAMILIES_END(vm_page_for_families_ptr, curr)   }}
 

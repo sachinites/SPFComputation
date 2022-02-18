@@ -68,7 +68,7 @@ init_memory_manager(){
     MM_REG_STRUCT(rt_un_entry_t);
     MM_REG_STRUCT(rt_un_table_t);
     MM_REG_STRUCT(mpls_label_stack_t);
-    //MM_REG_STRUCT(node_t);
+    MM_REG_STRUCT(node_t);
     MM_REG_STRUCT(edge_t);
     MM_REG_STRUCT(instance_t);
     MM_REG_STRUCT(traceoptions);
@@ -92,6 +92,6 @@ init_memory_manager(){
     MM_REG_STRUCT(protected_resource_t);     
     MM_REG_STRUCT(tilfa_cfg_globals_t);
     MM_REG_STRUCT(glthread_t);
-    //MM_REG_STRUCT(gen_segment_list_t);
-    //MM_REG_STRUCT(tilfa_segment_list_t);
+    MM_REG_STRUCT(gen_segment_list_t);
+    MM_REG_STRUCT(tilfa_segment_list_t);
 }
